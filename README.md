@@ -31,4 +31,4 @@ chemistry and materials science, please see
 [OpenFermion-Cirq](https://github.com/quantumlib/openfermion-cirq)
 
 
-ReCirq is not an official Google product. Copyright 2020 The Cirq Developers.
+ReCirq is not an official Google product. Copyright 2020 Google.
