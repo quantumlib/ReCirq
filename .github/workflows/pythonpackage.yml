@@ -40,6 +40,6 @@ jobs:
         pytest -v
     - name: Build documentation
       run: |
-        pip install sphinx nbconvert nbsphinx jupyter_client
-        conda install nb_conda nb_conda_kernels
+        # Secretly backed by conda, which does not play nice with nbsphinx
+        conda install -yq nbformat nbconvert jupyter_client nb_conda nb_conda_kernels
         cd docs && make clean && make html
