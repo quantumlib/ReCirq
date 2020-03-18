@@ -12,28 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Python package
+name: Deploy Docs
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches:
+    - master
+
+env:
+  PROJECT_ID: ${{ secrets.PROJECT_ID }}
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.7, 3.8]
-
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up GCloud
+      uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        version: '270.0.0'
+        service_account_email: ${{ secrets.SA_EMAIL }}
+        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+    - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.7'
 
     - name: Install dependencies
       run: |
@@ -41,21 +46,12 @@ jobs:
         pip install -r requirements.txt
         pip install --no-deps -e .
 
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        pytest -v
-
     - name: Build documentation
       run: |
         pip install sphinx nbsphinx jupyter_client ipykernel
         sudo apt-get install pandoc
         cd docs && make clean && make html
+
+    - name: Deploy
+      run: |
+        gcloud app deploy docs/appengine/app.yaml --project=$PROJECT_ID
