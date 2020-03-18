@@ -43,5 +43,5 @@ jobs:
         # Secretly backed by conda, which does not play nice with nbsphinx
         conda install -yq ipykernel nbformat nbconvert \
                           jupyter_client nb_conda nb_conda_kernels
-        pip install sphinx
+        pip install sphinx nbsphinx
         cd docs && make clean && make SPHINXBUILD='python -m sphinx' html
