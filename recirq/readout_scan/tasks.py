@@ -27,9 +27,9 @@ import recirq
 
 
 
-@cirq.json_serializable_dataclass(namespace='recirq.readout_scan', 
-                                  registry=recirq.Registry,
-                                  frozen=True)
+@recirq.json_serializable_dataclass(namespace='recirq.readout_scan', 
+                                    registry=recirq.Registry,
+                                    frozen=True)
 class ReadoutScanTask:
     """Scan over Ry(theta) angles from -pi/2 to 3pi/2 tracing out a sinusoid
     which is primarily affected by readout error.

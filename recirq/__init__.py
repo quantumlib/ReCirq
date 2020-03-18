@@ -23,6 +23,7 @@ from recirq.serialization_utils import (
     Registry,
     BitArray,
     NumpyArray,
+    json_serializable_dataclass,
 )
 
 from recirq.engine_utils import (
