@@ -40,5 +40,5 @@ jobs:
         pytest -v
     - name: Build documentation
       run: |
-        pip install sphinx nbsphinx jupyter_client
+        pip install sphinx nbconvert nbsphinx ipython jupyter_client
         cd docs && make clean && make html
