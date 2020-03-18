@@ -27,6 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install --no-deps -e .
     - name: Lint with flake8
       run: |
         pip install flake8
@@ -38,3 +39,8 @@ jobs:
       run: |
         pip install pytest
         pytest -v
+    - name: Build documentation
+      run: |
+        pip install sphinx nbsphinx jupyter_client ipykernel
+        sudo apt-get install pandoc
+        cd docs && make clean && make html
