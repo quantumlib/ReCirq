@@ -40,8 +40,5 @@ jobs:
         pytest -v
     - name: Build documentation
       run: |
-        # Secretly backed by conda, which does not play nice with nbsphinx
-        conda install -yq ipykernel nbformat nbconvert \
-                          jupyter_client nb_conda nb_conda_kernels
-        pip install sphinx nbsphinx
-        cd docs && make clean && make SPHINXBUILD='python -m sphinx' html
+        pip install sphinx nbsphinx jupyter_client ipykernel
+        cd docs && make clean && make html
