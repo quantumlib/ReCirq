@@ -20,10 +20,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      run: |
-        conda install python=${{ matrix.python-version }}
-        which python
-        which pip
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -42,6 +41,7 @@ jobs:
     - name: Build documentation
       run: |
         # Secretly backed by conda, which does not play nice with nbsphinx
-        conda install -yq sphinx ipykernel nbformat nbconvert \
+        conda install -yq ipykernel nbformat nbconvert \
                           jupyter_client nb_conda nb_conda_kernels
+        pip install sphinx
         cd docs && make clean && make SPHINXBUILD='python -m sphinx' html
