@@ -19,10 +19,11 @@ import io
 import itertools
 import os
 import sys
-from typing import Dict, Any, Type, Union, List
+from typing import Dict, Any, Type, Union, List, Optional
 
 import numpy as np
 
+import cirq
 from cirq import protocols
 
 if sys.version_info > (3, 8):
@@ -155,6 +156,62 @@ class BitArray:
 
     def __eq__(self, other):
         return np.array_equal(self.bits, other.bits)
+
+
+def json_serializable_dataclass(_cls: Optional[Type] = None,
+                                *,
+                                namespace: Optional[str] = None,
+                                registry: Optional[Any] = None,
+                                init: bool = True,
+                                repr: bool = True,
+                                eq: bool = True,
+                                order: bool = False,
+                                unsafe_hash: bool = False,
+                                frozen: bool = False):
+    """
+    Create a dataclass that supports JSON serialization
+
+    This function defers to the ordinary ``dataclass`` decorator but appends
+    the ``_json_dict_`` protocol method which automatically determines
+    the appropriate fields from the dataclass.
+
+    Args:
+        namespace: An optional prefix to the value associated with the
+            key "cirq_type". The namespace name will be joined with the
+            class name via a dot (.)
+        init, repr, eq, order, unsafe_hash, frozen: Forwarded to the
+            ``dataclass`` constructor.
+    """
+
+    def wrap(cls):
+        cls = dataclasses.dataclass(cls,
+                                    init=init,
+                                    repr=repr,
+                                    eq=eq,
+                                    order=order,
+                                    unsafe_hash=unsafe_hash,
+                                    frozen=frozen)
+
+        cls._json_dict_ = lambda obj: cirq.obj_to_dict_helper(
+            obj, [f.name for f in dataclasses.fields(cls)], namespace=namespace)
+
+        if registry is not None:
+            if namespace is not None:
+                prefix = '{}.'.format(namespace)
+            else:
+                prefix = ''
+            registry.register(prefix + cls.__name__, cls)
+
+        return cls
+
+    # _cls is used to deduce if we're being called as
+    # @json_serialiable_dataclass or @json_serializable_dataclass().
+    if _cls is None:
+        # We're called with parens.
+        return wrap
+
+    # We're called as @dataclass without parens.
+    return wrap(_cls)
 
 
 def _recirq_class_resolver(cirq_type: str) -> Union[None, Type]:

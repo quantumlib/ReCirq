@@ -38,3 +38,7 @@ jobs:
       run: |
         pip install pytest
         pytest -v
+    - name: Build documentation
+      run: |
+        pip install sphinx nbsphinx
+        cd docs && make clean && make html
