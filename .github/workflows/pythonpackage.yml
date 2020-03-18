@@ -42,4 +42,5 @@ jobs:
     - name: Build documentation
       run: |
         pip install sphinx nbsphinx jupyter_client ipykernel
+        apt-get install pandoc
         cd docs && make clean && make html
