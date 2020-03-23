@@ -37,3 +37,10 @@ navigation.
 
     readout_scan_tasks
 
+.. toctree::
+    :maxdepth: 1
+    :caption: QAOA
+    :hidden:
+
+    qaoa/problem_generation_tasks
+    qaoa/Example-Problems
