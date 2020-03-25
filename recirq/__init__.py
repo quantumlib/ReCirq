@@ -15,6 +15,7 @@
 from recirq.serialization_utils import (
     exists,
     save,
+    load,
     roundrobin,
     read_json,
     iterload_records,

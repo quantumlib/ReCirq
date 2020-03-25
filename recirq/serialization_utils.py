@@ -241,6 +241,11 @@ def read_json(file_or_fn=None, *, json_text=None, resolvers=None):
                                resolvers=resolvers)
 
 
+def load(task, base_dir):
+    fn = f'{base_dir}/{task.fn}.json'
+    return read_json(fn)
+
+
 def iterload_records(dataset_id: str, base_dir: str):
     """Helper function to iteratively load records saved while
     following the data collection idioms.
