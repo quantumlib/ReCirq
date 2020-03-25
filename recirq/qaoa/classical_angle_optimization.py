@@ -14,6 +14,18 @@ EVEN_DEGREE_ONLY, ODD_DEGREE_ONLY = 0, 1
                                     registry=recirq.Registry,
                                     frozen=True)
 class OptimizationResult:
+    """The result of a classical angle optimization for QAOA.
+
+    You may want to use :py:func:`optimize_instance_interp_heuristic`.
+
+    Attributes:
+        p: QAOA depth hyperparameter p. The number of parameters is 2*p.
+        f_val: The value of the <C> at the optimal angles
+        gammas: An array of p gamma angles
+        betas: An array of p beta angles
+        min_c: The minimum value of C over all bitstrings
+        max_c: The maximum value of C over all bitstrings
+    """
     p: int
     f_val: float
     gammas: np.ndarray
@@ -41,11 +53,12 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
             be beta=gamma=pi/8. The following guesses will be random.
         node_to_index_map: dictionary that maps nodes to 0-based integer indices
             (optional, default None, which means use mapping based on iteration)
+        dtype: The numpy datatype used during construction of the Hamiltonian
+            matrix.
+        verbose: Whether to print out status updates.
 
-    Returns: is given in dictionary format {p: (F_p, param_p)}
-        p = depth/level of QAOA, goes from 1 to p_max
-        F_p = <C> achieved by the optimum found at depth p
-        param_p = 2*p parameters for the QAOA at depth p
+    Returns:
+        A list of :py:class:`OptimizationResult`
     """
     # TODO: remove node_to_index_map; mandate 0-indexing.
 

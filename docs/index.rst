@@ -42,5 +42,6 @@ navigation.
     :caption: QAOA
     :hidden:
 
-    qaoa/problem_generation_tasks
     qaoa/Example-Problems
+    qaoa/problem_generation_tasks
+    qaoa/angle_precomputation_tasks

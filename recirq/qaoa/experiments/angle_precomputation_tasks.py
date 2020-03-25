@@ -24,6 +24,16 @@ DEFAULT_BASE_DIR = os.path.expanduser(f'~/cirq-results/{EXPERIMENT_NAME}')
                                     registry=recirq.Registry,
                                     frozen=True)
 class AnglePrecomputationTask:
+    """Pre-compute optimized angles classically for a given problem.
+
+    See Also:
+        :py:func:`precompute_angles`
+
+    Attributes:
+        dataset_id: A unique identifier for this dataset.
+        generation_task: The input task which specifies the problem.
+        p: QAOA depth hyperparameter p. The number of parameters is 2*p.
+    """
     dataset_id: str
     generation_task: ProblemGenerationTask
     p: int
@@ -81,9 +91,7 @@ def _get_optima(in_task: ProblemGenerationTask,
 
 def precompute_angles(task: AnglePrecomputationTask,
                       base_dir=None, problem_generation_base_dir=None):
-    """Given a set of parameters that completely specifies a QAOA problem,
-    generate and save a graph representation and optimal angles.
-    """
+    """Execute a :py:func:`AnglePrecomputationTask` task."""
     if base_dir is None:
         base_dir = DEFAULT_BASE_DIR
 
