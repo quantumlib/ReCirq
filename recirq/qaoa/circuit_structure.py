@@ -5,6 +5,7 @@ import numpy as np
 
 import cirq
 import cirq.google as cg
+
 try:
     from cirq.interop.quirk import QuirkQubitPermutationGate
 except ImportError:
@@ -79,8 +80,10 @@ def find_circuit_structure_violations(circuit: cirq.Circuit):
     mom_classes = get_moment_classes(circuit)
     return _find_circuit_structure_violations(mom_classes)
 
+
 class BadlyStructuredCircuitError(ValueError):
     pass
+
 
 def validate_well_structured(circuit: cirq.Circuit,
                              allow_terminal_permutations=False):

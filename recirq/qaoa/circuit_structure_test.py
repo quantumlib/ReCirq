@@ -29,14 +29,12 @@ def test_get_moment_class():
     # Both phasedxpow
     assert get_moment_class(cirq.Moment([
         cirq.PhasedXPowGate(phase_exponent=0).on(q0),
-        cirq.PhasedXPowGate(phase_exponent=0.5).on(q1)])) \
-           == cirq.PhasedXPowGate
+        cirq.PhasedXPowGate(phase_exponent=0.5).on(q1)])) == cirq.PhasedXPowGate
 
     # Both Z
     assert get_moment_class(cirq.Moment([
         cirq.ZPowGate(exponent=0.123).on(q0),
-        cirq.ZPowGate(exponent=0.5).on(q1)])) \
-           == cirq.ZPowGate
+        cirq.ZPowGate(exponent=0.5).on(q1)])) == cirq.ZPowGate
 
     # SYC
     assert get_moment_class(cirq.Moment([cg.SYC(q0, q1)])) == cg.SycamoreGate
@@ -46,8 +44,7 @@ def test_get_moment_class():
 
     # Permutation
     assert get_moment_class(cirq.Moment([
-        QuirkQubitPermutationGate('', '', [1, 0]).on(q0, q1)])) \
-           == QuirkQubitPermutationGate
+        QuirkQubitPermutationGate('', '', [1, 0]).on(q0, q1)])) == QuirkQubitPermutationGate
 
 
 def test_get_moment_classes():
