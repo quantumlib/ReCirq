@@ -7,6 +7,8 @@ import numpy as np
 import cirq
 from cirq.google import SycamoreGate
 from cirq.google.optimizers.convert_to_sycamore_gates import swap_rzz, rzz
+from recirq.qaoa.problems import _validate_problem_graph
+
 try:
     from cirq.interop.quirk import QuirkQubitPermutationGate
 except ImportError:
@@ -44,7 +46,7 @@ class ZZSwap(cirq.Gate):
 
 
 def compile_problem_unitary_to_zzswap(
-        problem: nx.Graph,
+        problem_graph: nx.Graph,
         gamma: float,
         qubits: Sequence[cirq.Qid],
 ):
@@ -57,7 +59,7 @@ def compile_problem_unitary_to_zzswap(
                         for i in range(lowest_active_qubit, n_qubits - 1, 2))
         for i, j in active_pairs:
             p, q = order[i], order[j]
-            weight = problem[p][q]['weight']
+            weight = problem_graph[p][q]['weight']
             yield ZZSwap(
                 zz_exponent=2 * gamma * weight / np.pi,
                 zz_global_shift=-0.5,
@@ -65,27 +67,17 @@ def compile_problem_unitary_to_zzswap(
             order[i], order[j] = q, p
 
 
-def _validate_problem_graph(problem: nx.Graph):
-    if not sorted(problem.nodes) == list(range(problem.number_of_nodes())):
-        raise ValueError("Problem graph must have contiguous integer nodes, "
-                         "not {}".format(problem.nodes))
-
-    for i1, i2, weight in problem.edges.data('weight'):
-        if weight is None:
-            raise ValueError(f"Problem edges must have `weight` data; edge ({i1}, {i2})")
-
-
 class ProblemUnitary(cirq.Gate):
-    def __init__(self, problem: nx.Graph, gamma: float):
-        _validate_problem_graph(problem)
-        self.problem = problem
+    def __init__(self, problem_graph: nx.Graph, gamma: float):
+        _validate_problem_graph(problem_graph)
+        self.problem_graph = problem_graph
         self.gamma = gamma
 
     def _num_qubits_(self) -> int:
-        return self.problem.number_of_nodes()
+        return self.problem_graph.number_of_nodes()
 
     def _decompose_(self, qubits) -> 'cirq.OP_TREE':
-        for i1, i2, weight in self.problem.edges.data('weight'):
+        for i1, i2, weight in self.problem_graph.edges.data('weight'):
             q0 = qubits[i1]
             q1 = qubits[i2]
             yield cirq.ZZPowGate(
@@ -128,7 +120,8 @@ def compile_problem_unitary_to_swap_network(circuit: cirq.Circuit):
             if (op.gate is not None and isinstance(op.gate, ProblemUnitary)
                     and not isinstance(op.gate, SwapNetworkProblemUnitary)):
                 gate = op.gate  # type: ProblemUnitary
-                new_gate = SwapNetworkProblemUnitary(problem=gate.problem, gamma=gate.gamma)
+                new_gate = SwapNetworkProblemUnitary(problem_graph=gate.problem_graph,
+                                                     gamma=gate.gamma)
                 new_op = new_gate.on(*op.qubits)
                 new_ops.append(new_op)
 
@@ -173,7 +166,7 @@ class _SwapNetworkToZZSWAP(cirq.PointOptimizer):
                 clear_span=1,
                 clear_qubits=op.qubits,
                 new_operations=compile_problem_unitary_to_zzswap(
-                    gate.problem, gate.gamma, op.qubits)
+                    gate.problem_graph, gate.gamma, op.qubits)
             )
 
 
@@ -186,7 +179,7 @@ def compile_swap_network_to_zzswap(circuit: cirq.Circuit, *, mutate=False):
     return c2
 
 
-def hardware_graph(problem: nx.Graph, gamma: float, node_coordinates: List[Tuple[int, int]],
+def hardware_graph(problem_graph: nx.Graph, gamma: float, node_coordinates: List[Tuple[int, int]],
                    qubits: Sequence[cirq.Qid]):
     row_start = min(r for r, c in node_coordinates)
     row_end = max(r for r, c in node_coordinates) + 1
@@ -208,10 +201,10 @@ def hardware_graph(problem: nx.Graph, gamma: float, node_coordinates: List[Tuple
                     continue
                 node1 = coord_to_i[coord1]
                 node2 = coord_to_i[coord2]
-                if (node1, node2) not in problem.edges:
+                if (node1, node2) not in problem_graph.edges:
                     continue
 
-                weight = problem.edges[node1, node2]['weight']
+                weight = problem_graph.edges[node1, node2]['weight']
 
                 yield cirq.ZZPowGate(exponent=2 * gamma * weight / np.pi, global_shift=-0.5) \
                     .on(qubits[node1], qubits[node2])
@@ -288,7 +281,7 @@ class _ProblemUnitaryToHardwareGraph(cirq.PointOptimizer):
             return cirq.PointOptimizationSummary(
                 clear_span=1,
                 clear_qubits=op.qubits,
-                new_operations=hardware_graph(gate.problem, gate.gamma,
+                new_operations=hardware_graph(gate.problem_graph, gate.gamma,
                                               self._node_coordinates, op.qubits),
                 preserve_moments=True,
             )
@@ -306,8 +299,8 @@ def compile_problem_unitary_to_hardware_graph(circuit: cirq.Circuit,
     return c2
 
 
-def _problem_to_zz(problem: nx.Graph, qubits: Sequence[cirq.Qid], gamma: float):
-    for i1, i2, weight in problem.edges.data('weight'):
+def _problem_to_zz(problem_graph: nx.Graph, qubits: Sequence[cirq.Qid], gamma: float):
+    for i1, i2, weight in problem_graph.edges.data('weight'):
         q0 = qubits[i1]
         q1 = qubits[i2]
         yield cirq.ZZPowGate(
@@ -327,7 +320,7 @@ class _ProblemUnitaryToZZ(cirq.PointOptimizer):
                 clear_span=1,
                 clear_qubits=op.qubits,
                 new_operations=_problem_to_zz(
-                    problem=gate.problem,
+                    problem_graph=gate.problem_graph,
                     qubits=op.qubits,
                     gamma=gate.gamma),
             )

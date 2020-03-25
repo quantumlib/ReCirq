@@ -14,8 +14,7 @@ except ImportError:
 from cirq.testing import random_special_unitary
 
 from recirq.qaoa.gates_and_compilation import ZZSwap, compile_problem_unitary_to_zzswap, \
-    ProblemUnitary, \
-    _validate_problem_graph, DriverUnitary, SwapNetworkProblemUnitary, \
+    ProblemUnitary, DriverUnitary, SwapNetworkProblemUnitary, \
     compile_problem_unitary_to_swap_network, compile_swap_network_to_zzswap, \
     single_qubit_matrix_to_phased_x_z_const_depth, zzswap_as_syc, zz_as_syc, \
     compile_driver_unitary_to_rx, compile_single_qubit_gates, compile_to_syc, \
@@ -59,31 +58,10 @@ def test_compile_problem_unitary_to_zzswap():
     u1 = circuit1.unitary()
 
     circuit2 = cirq.Circuit(
-        compile_problem_unitary_to_zzswap(problem=problem, gamma=gamma, qubits=q),
-        compile_problem_unitary_to_zzswap(problem=problem, gamma=0, qubits=q))
+        compile_problem_unitary_to_zzswap(problem_graph=problem, gamma=gamma, qubits=q),
+        compile_problem_unitary_to_zzswap(problem_graph=problem, gamma=0, qubits=q))
     u2 = circuit2.unitary()
     np.testing.assert_allclose(u1, u2)
-
-
-def test_validate_problem_qubit_nodes():
-    def random_sk_model(n: int):
-        graph = nx.complete_graph(n)
-        graph = nx.relabel_nodes(
-            graph,
-            mapping={i: cirq.LineQubit(i) for i in range(n)})
-        return random_plus_minus_1_weights(graph)
-
-    problem = random_sk_model(n=3)
-    with pytest.raises(ValueError) as e:
-        _validate_problem_graph(problem)
-    assert e.match(r'Problem graph must have contiguous integer nodes.*')
-
-
-def test_validate_problem_no_weight():
-    problem = nx.complete_graph(n=3)
-    with pytest.raises(ValueError) as e:
-        _validate_problem_graph(problem)
-    assert e.match(r'Problem edges must have `weight` data.*')
 
 
 def test_problem_unitary():
@@ -92,7 +70,7 @@ def test_problem_unitary():
     problem = nx.complete_graph(n=n)
     problem = random_plus_minus_1_weights(problem, rs=np.random.RandomState(52))
     gamma = 0.151
-    problem_unitary = ProblemUnitary(problem=problem, gamma=gamma)
+    problem_unitary = ProblemUnitary(problem_graph=problem, gamma=gamma)
     u1 = cirq.unitary(problem_unitary)
 
     circuit = cirq.Circuit()
@@ -110,7 +88,7 @@ def test_swap_network_problem_unitary():
     problem = nx.complete_graph(n=n)
     problem = random_plus_minus_1_weights(problem, rs=np.random.RandomState(52))
     gamma = 0.151
-    spu = SwapNetworkProblemUnitary(problem=problem, gamma=gamma)
+    spu = SwapNetworkProblemUnitary(problem_graph=problem, gamma=gamma)
     u1 = cirq.unitary(spu)
 
     circuit = cirq.Circuit()
@@ -128,7 +106,7 @@ def test_compile_problem_unitary_to_swap_network_p1():
     problem = nx.complete_graph(n=n)
     problem = random_plus_minus_1_weights(problem)
 
-    c1 = cirq.Circuit(ProblemUnitary(problem=problem, gamma=0.123).on(*q))
+    c1 = cirq.Circuit(ProblemUnitary(problem_graph=problem, gamma=0.123).on(*q))
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
     assert isinstance(c2.moments[-1].operations[0].gate, QuirkQubitPermutationGate)
@@ -145,8 +123,8 @@ def test_compile_problem_unitary_to_swap_network_p2():
     problem = random_plus_minus_1_weights(problem)
 
     c1 = cirq.Circuit(
-        ProblemUnitary(problem=problem, gamma=0.123).on(*q),
-        ProblemUnitary(problem=problem, gamma=0.321).on(*q),
+        ProblemUnitary(problem_graph=problem, gamma=0.123).on(*q),
+        ProblemUnitary(problem_graph=problem, gamma=0.321).on(*q),
     )
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
@@ -162,7 +140,7 @@ def test_compile_swap_network_to_zzswap():
     problem = nx.complete_graph(n=n)
     problem = random_plus_minus_1_weights(problem)
 
-    c1 = cirq.Circuit(ProblemUnitary(problem=problem, gamma=0.123).on(*q))
+    c1 = cirq.Circuit(ProblemUnitary(problem_graph=problem, gamma=0.123).on(*q))
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
     c3 = compile_swap_network_to_zzswap(c2)
@@ -180,9 +158,9 @@ def test_compile_sk_problem_unitary_to_zzswap_2():
     problem = random_plus_minus_1_weights(problem)
 
     c1 = cirq.Circuit(
-        ProblemUnitary(problem=problem, gamma=0.123).on(*q),
+        ProblemUnitary(problem_graph=problem, gamma=0.123).on(*q),
         DriverUnitary(num_qubits=n, beta=0.456).on(*q),
-        ProblemUnitary(problem=problem, gamma=0.789).on(*q),
+        ProblemUnitary(problem_graph=problem, gamma=0.789).on(*q),
     )
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
