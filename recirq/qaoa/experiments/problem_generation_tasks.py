@@ -122,6 +122,8 @@ def _get_device_graph(device_name: str) -> nx.Graph:
 
 
 def _get_central_qubit(device_name: str) -> cirq.GridQubit:
+    """Helper function to get the 'central' qubit from which we
+    grow the hardware grid problems."""
     if device_name == 'Sycamore23':
         return cirq.GridQubit(6, 3)
 
