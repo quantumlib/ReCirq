@@ -14,7 +14,7 @@ try:
 except ImportError:
     from cirq.contrib.quirk import QuirkQubitPermutationGate
 
-from qaoa_experiment.circuit_structure import validate_well_structured, get_moment_classes
+from recirq.qaoa.circuit_structure import validate_well_structured, get_moment_classes
 
 
 class ZZSwap(cirq.Gate):
