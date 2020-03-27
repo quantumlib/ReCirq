@@ -19,7 +19,7 @@ from recirq.qaoa.experiments.problem_generation_tasks import SKProblemGeneration
 
 def main():
     dataset_id = '2020-03-19'
-    growing_grid_problem_tasks = [
+    hardware_grid_problem_tasks = [
         HardwareGridProblemGenerationTask(
             dataset_id=dataset_id,
             device_name='Sycamore23',
@@ -48,7 +48,7 @@ def main():
         for n in range(3, 23 + 1) if 3 * n % 2 == 0
     ]
 
-    for task in growing_grid_problem_tasks:
+    for task in hardware_grid_problem_tasks:
         generate_hardware_grid_problem(task)
     for task in sk_problem_tasks:
         generate_sk_problem(task)
