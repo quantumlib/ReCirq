@@ -84,7 +84,6 @@ def _get_optima(in_task: ProblemGenerationTask,
         p_max=p_max,
         param_guess_at_p1=param_guess,
         verbose=True,
-        dtype=np.float64,
     )
     return {op.p: op for op in optima}
 

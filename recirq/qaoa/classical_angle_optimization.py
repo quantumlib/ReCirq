@@ -69,8 +69,8 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
     def qaoa_fun(param):
         return ising_qaoa_grad(N, HamC, param, flag_z2_sym=True, dtype=dtype)
 
-    min_c = np.min(HamC)
-    max_c = np.max(HamC)
+    min_c = np.real_if_close(np.min(HamC))
+    max_c = np.real_if_close(np.max(HamC))
 
     # check if the node degrees are always odd or even
     # TODO: Why do we mod 2 twice?
