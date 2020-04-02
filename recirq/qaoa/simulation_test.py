@@ -15,8 +15,8 @@
 import numpy as np
 import networkx as nx
 
-from qaoa_experiment.simulation.simulate import ising_qaoa_grad
-from recirq.qaoa.simulation import multiply_single_spin, evolve_by_HamB, create_ZZ_HamC
+from recirq.qaoa.simulation import multiply_single_spin, evolve_by_HamB, \
+    create_ZZ_HamC, ising_qaoa_grad
 
 
 def test_multiply_single_spin():
