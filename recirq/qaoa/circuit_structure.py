@@ -1,3 +1,17 @@
+# Copyright 2020 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from dataclasses import dataclass
 from typing import Callable
 
@@ -14,6 +28,20 @@ except ImportError:
 
 @dataclass(frozen=True)
 class HomogeneousCircuitStats:
+    """Statistics about a well-structured circuit.
+
+    See Also:
+        :py:func:`validate_well_structured`
+
+    Attributes:
+        num_phx: Number of layers of PhasedXPowGate
+        num_z: Number of layers of ZPowGate
+        num_syc: Number of layers of SYC entangling gates
+        has_permutation: Whether there's a classical permutation of
+            indices at the end of the circuit
+        has_measurement: Whether there's a measurement at the end of the
+            circuit
+    """
     num_phx: int
     num_z: int
     num_syc: int
@@ -172,7 +200,7 @@ def validate_well_structured(circuit: cirq.Circuit,
                                                 hit_measurement)
 
 
-def idle_qubits_by_moment(circuit: cirq.Circuit):
+def _idle_qubits_by_moment(circuit: cirq.Circuit):
     qubits = circuit.all_qubits()
     for i, moment in enumerate(circuit.moments):
         idle_qubits = qubits - moment.qubits
@@ -180,4 +208,5 @@ def idle_qubits_by_moment(circuit: cirq.Circuit):
 
 
 def count_circuit_holes(circuit: cirq.Circuit):
-    return sum(len(iq) for _, iq in idle_qubits_by_moment(circuit))
+    """Count the number of "holes" in a circuit where nothing is happening."""
+    return sum(len(iq) for _, iq in _idle_qubits_by_moment(circuit))
