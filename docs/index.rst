@@ -43,5 +43,6 @@ navigation.
     :hidden:
 
     qaoa/Example-Problems
+    qaoa/hardware-grid-qaoa-circuits
     qaoa/problem_generation_tasks
     qaoa/angle_precomputation_tasks
