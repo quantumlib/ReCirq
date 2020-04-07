@@ -22,7 +22,16 @@ def get_generic_qaoa_circuit(
         qubits: List[cirq.Qid],
         gammas: Sequence[float],
         betas: Sequence[float],
-):
+) -> cirq.Circuit:
+    """Return a QAOA circuit with 'generic' N-body Problem and Driver unitaries
+
+    Args:
+        problem_graph: A graph with contiguous 0-indexed integer nodes and
+            edges with a 'weight' attribute.
+        qubits: The qubits to use in construction of the circuit.
+        gammas: Gamma angles to use as parameters for problem unitaries
+        betas: Beta angles to use as parameters for driver unitaries
+    """
     layers = [cirq.H.on_each(*qubits)]
     assert len(gammas) == len(betas)
     for gamma, beta in zip(gammas, betas):
@@ -32,20 +41,32 @@ def get_generic_qaoa_circuit(
     return circuit
 
 
-def old_grid_model_to_new_problem(graph: nx.Graph):
-    qubits = sorted(graph.nodes)
-    coordinates = [(q.row, q.col) for q in qubits]
-    problem = nx.relabel_nodes(graph, {q: i for i, q in enumerate(qubits)})
-    return problem, qubits, coordinates
-
-
-def get_routed_grid_model_circuit(
-        problem: nx.Graph,
+def get_routed_hardware_grid_circuit(
+        problem_graph: nx.Graph,
         qubits: List[cirq.Qid],
         coordinates: List[Tuple[int, int]],
         gammas: Sequence[float],
         betas: Sequence[float]) -> cirq.Circuit:
-    circuit = get_generic_qaoa_circuit(problem, qubits, gammas, betas)
+    """Return a QAOA circuit "routed" according to sequential activation
+    of the four links in the degree-4 hardware graph.
+
+    See Also:
+        :py:func:`get_compiled_hardware_grid_circuit`
+
+    Args:
+        problem_graph: A graph with contiguous 0-indexed integer nodes and
+            edges with a 'weight' attribute.
+        qubits: The qubits to use in construction of the circuit.
+        coordinates: A mapping from problem node to position on a 2D grid to
+            help the "routing".
+        gammas: Gamma angles to use as parameters for problem unitaries
+        betas: Beta angles to use as parameters for driver unitaries
+    """
+    circuit = get_generic_qaoa_circuit(
+        problem_graph=problem_graph,
+        qubits=qubits,
+        gammas=gammas,
+        betas=betas)
     circuit = compile_problem_unitary_to_hardware_graph(circuit, coordinates)
     circuit = compile_driver_unitary_to_rx(circuit)
     return circuit
@@ -54,13 +75,17 @@ def get_routed_grid_model_circuit(
 def get_compiled_hardware_grid_circuit(
         problem: HardwareGridProblem,
         qubits: List[cirq.Qid],
-        gammas: Sequence[float], betas: Sequence[float],
+        gammas: Sequence[float],
+        betas: Sequence[float],
         non_negligible=True) \
         -> Tuple[cirq.Circuit, List[cirq.Qid]]:
     """Get a fully-compiled grid model circuit.
 
     Args:
-        problem, qubits, coordinates, gammas, betas: As expected.
+        problem: A HardwareGridProblem
+        qubits: The qubits to use in construction of the circuit.
+        gammas: Gamma angles to use as parameters for problem unitaries
+        betas: Beta angles to use as parameters for driver unitaries
         non_negligible: Whether to compile out negligible gates. This will
             preserve the quality that the returned circuit has homogeneous
             gate types in each moment but may make it so the predictable
@@ -74,7 +99,12 @@ def get_compiled_hardware_grid_circuit(
             consistency with other problem types. This will be a copy of
             `qubits`.
     """
-    circuit = get_routed_grid_model_circuit(problem.graph, qubits, problem.coordinates, gammas, betas)
+    circuit = get_routed_hardware_grid_circuit(
+        problem_graph=problem.graph,
+        qubits=qubits,
+        coordinates=problem.coordinates,
+        gammas=gammas,
+        betas=betas)
     circuit = compile_to_syc(circuit)
     mcircuit = circuit + cirq.measure(*qubits, key='z')
     mcircuit = compile_out_virtual_z(mcircuit)

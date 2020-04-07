@@ -118,10 +118,10 @@ def random_plus_minus_1_weights(graph: nx.Graph, rs: Optional[np.random.RandomSt
     elif not isinstance(rs, np.random.RandomState):
         raise ValueError("Invalid random state: {}".format(rs))
 
-    problem = nx.Graph()
+    problem_graph = nx.Graph()
     for n1, n2 in graph.edges:
-        problem.add_edge(n1, n2, weight=rs.choice([-1, 1]))
-    return problem
+        problem_graph.add_edge(n1, n2, weight=rs.choice([-1, 1]))
+    return problem_graph
 
 
 @dataclass
