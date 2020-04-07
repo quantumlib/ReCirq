@@ -1,24 +1,25 @@
 import os
 from collections import defaultdict
 from functools import lru_cache
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple
 
 import networkx as nx
 import numpy as np
-import cirq
 
-# TODO: Major hack. pytket expects cirq.devices.UnconstrainedDevice which was renamed
+import cirq
+import recirq
+
+# TODO: Major shim. pytket expects cirq.devices.UnconstrainedDevice which was renamed
 import cirq.devices
 
 cirq.devices.UnconstrainedDevice = cirq.devices.UNCONSTRAINED_DEVICE
-# End major hack.
+# End major shim.
 
 import pytket.cirq
 import pytket._routing
 
 
-
-def calibration_data_to_graph(calib_dict):
+def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
     """Take the calibration data in dictionary form and return a graph
     representing the errors.
 
@@ -31,55 +32,16 @@ def calibration_data_to_graph(calib_dict):
         err_graph.add_edge(q1, q2, weight=err[0])
 
     for (q,), err in calib_dict['single_qubit_readout_p0_error'].items():
-        err_graph.node[q]['weight'] = err[0]
+        err_graph.nodes[q]['weight'] = err[0]
 
     for (q,), err in calib_dict['single_qubit_readout_p1_error'].items():
-        err_graph.node[q]['weight'] += err[0]
+        err_graph.nodes[q]['weight'] += err[0]
 
     return err_graph
 
 
-def place_on_grid(circuit: cirq.Circuit, n_rows: int, n_cols: int) \
-        -> Tuple[cirq.Circuit,
-                 Dict[cirq.Qid, cirq.Qid],
-                 Dict[cirq.Qid, cirq.Qid]]:
-    """Place a circuit on a grid.
-
-    Converts a circuit to a new circuit acting on grid qubits which respects
-    qubit adjacency and is equivalent to the given circuit up to qubit ordering.
-
-    This function does not respect any particular device topology but rather
-    uses arbitrary GridQubits.
-
-    Args:
-        circuit: The circuit to place on a grid.
-        n_rows: The number of rows in the desired grid.
-        n_cols: The number of columns in the desired grid.
-
-    Returns:
-        routed_circuit: The new circuit
-        initial_qubit_map: Initial placement of qubits
-        final_qubit_map: The final placement of qubits after action of the circuit
-    """
-    tk_circuit = pytket.cirq.cirq_to_tk(circuit)
-    architecture = pytket._routing.SquareGrid(n_rows, n_cols)
-    routed_tk_circuit, (initial_qubit_permutation, final_qubit_permutation) = (
-        pytket._routing.route(tk_circuit, architecture, decompose_swaps=False))
-
-    circuit_qubits = sorted(circuit.all_qubits())
-    grid_qubits = sorted(cirq.GridQubit.rect(n_rows, n_cols))
-    indexed_qubits = [grid_qubits[i] for i in initial_qubit_permutation]
-    routed_circuit = pytket.cirq.tk_to_cirq(routed_tk_circuit, indexed_qubits)
-    initial_qubit_map = {q: grid_qubits[i]
-                         for i, q in zip(initial_qubit_permutation, circuit_qubits)}
-    final_qubit_map = {q: grid_qubits[i]
-                       for i, q in zip(final_qubit_permutation, circuit_qubits)}
-    return routed_circuit, initial_qubit_map, final_qubit_map
-
-
-
 def place_on_device(circuit: cirq.Circuit,
-                    device: cirq.Device,
+                    device: cirq.google.XmonDevice,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
@@ -88,12 +50,9 @@ def place_on_device(circuit: cirq.Circuit,
     Converts a circuit to a new circuit that respects the adjacency of a given
     device and is equivalent to the given circuit up to qubit ordering.
 
-    TODO: following https://github.com/quantumlib/Cirq/pull/2605 this should
-          work on any device.
-
     Args:
         circuit: The circuit to place on a grid.
-        device: The Xmon or Gmon device to place the circuit on.
+        device: The device to place the circuit on.
 
     Returns:
         routed_circuit: The new circuit
@@ -102,9 +61,9 @@ def place_on_device(circuit: cirq.Circuit,
     """
     tk_circuit = pytket.cirq.cirq_to_tk(circuit)
     architecture = _device_to_tket_architecture(device)
-    routed_tk_circuit, (initial_qubit_permutation, final_qubit_permutation) = (
-        pytket._routing.route(tk_circuit, architecture, decompose_swaps=False))
-    device_qubits = sorted(device.qubits)
+    routed_tk_circuit, (initial_qubit_permutation, final_qubit_permutation) = \
+        pytket._routing.route(tk_circuit, architecture, decompose_swaps=False)
+    device_qubits = sorted(device.qubit_set())
     circuit_qubits = sorted(circuit.all_qubits())
     indexed_qubits = [device_qubits[i] for i in initial_qubit_permutation]
     routed_circuit = pytket.cirq.tk_to_cirq(routed_tk_circuit, indexed_qubits)
@@ -115,16 +74,16 @@ def place_on_device(circuit: cirq.Circuit,
     return routed_circuit, initial_qubit_map, final_qubit_map
 
 
-def _device_to_tket_architecture(device: cirq.Device):
+def _device_to_tket_architecture(device: cirq.google.XmonDevice):
     return pytket._routing.DirectedGraph(
         list(_qubit_index_edges(device)),
-        len(device.qubits)
+        len(device.qubit_set())
     )
 
 
-def _qubit_index_edges(device: cirq.Device):
-    qubit_to_index_dict = {q: i for i, q in enumerate(sorted(device.qubits))}
-    for q in device.qubits:
+def _qubit_index_edges(device: cirq.google.XmonDevice):
+    qubit_to_index_dict = {q: i for i, q in enumerate(sorted(device.qubit_set()))}
+    for q in sorted(device.qubit_set()):
         for r in device.neighbors_of(q):
             yield (qubit_to_index_dict[q], qubit_to_index_dict[r])
 
@@ -134,7 +93,7 @@ def path_weight(graph: nx.Graph, path,
     """Returns total weight of edges along a path.
 
     Args:
-        graph: a networkx.Graph object with specified edge weights
+        graph: a nx.Graph object with specified edge weights
         path: a list of nodes specifying a path on graph
         include_node_weights: whether include node weight in
                overall path weight for minimization (default=True)
@@ -147,10 +106,10 @@ def path_weight(graph: nx.Graph, path,
     weight = 0
     for i in range(len(path) - 1):
         weight += graph[path[i]][path[i + 1]]['weight']
-    if include_node_weights and 'weight' in graph.node[path[0]]:
+    if include_node_weights and 'weight' in graph.nodes[path[0]]:
         n = len(path)
         for node in path:
-            weight += graph.node[node]['weight'] / n * 2
+            weight += graph.nodes[node]['weight'] / n * 2
     return weight
 
 
@@ -219,8 +178,11 @@ def min_weight_simple_path_greedy(
     nodes in the given graph, with minimal total weight
 
     Args:
-        graph: a networkx.Graph object with specified edge weights
+        graph: a nx.Graph object with specified edge weights
         n: desired number of nodes in the simple path
+        weight_fun: a function that takes (graph, path) and gives a value
+            based on edge and node weights that we want to minimize
+            (default: uses path_weight)
 
     Returns:
         a list of nodes that describes the path, or None if not found
@@ -279,7 +241,7 @@ def make_simple_path(graph: nx.Graph, n: int):
     For a given graph object, this is deterministic.
 
     Args:
-        graph: a networkx.Graph object
+        graph: a nx.Graph object
         n: desired number of nodes in the simple path
 
     Returns:
@@ -633,16 +595,18 @@ def min_weight_simple_path_mixed_strategy(
 @lru_cache()
 def _get_device_calibration(device_name: str):
     """Get device calibration. Use an LRU cache to avoid repeated calls to
-    the web interface. It's possible this is not what you want."""
+    the web interface. It's possible this is not what you want.
+
+    TODO: move to recirq.engine_utils.
+    """
     engine = cirq.google.Engine(project_id=os.environ['GOOGLE_CLOUD_PROJECT'])
-    processor_id = get_processor_id_by_device_name(device_name)
+    processor_id = recirq.get_processor_id_by_device_name(device_name)
     calibration = engine.get_latest_calibration(processor_id)
     err_graph = calibration_data_to_graph(calibration)
     return err_graph
 
 
 PLACEMENT_STRATEGIES = {
-    # TODO: signature for brute_force
     'brute_force': min_weight_simple_path_brute_force,
     'random': random_simple_path,
     'greedy': min_weight_simple_path_greedy,
