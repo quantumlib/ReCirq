@@ -19,7 +19,7 @@ from recirq.qaoa.gates_and_compilation import ZZSwap, compile_problem_unitary_to
     single_qubit_matrix_to_phased_x_z_const_depth, zzswap_as_syc, zz_as_syc, \
     compile_driver_unitary_to_rx, compile_single_qubit_gates, compile_to_syc, \
     measure_with_final_permutation, compile_out_virtual_z, compile_to_non_negligible, \
-    hardware_graph, compile_problem_unitary_to_hardware_graph
+    _hardware_graph, compile_problem_unitary_to_hardware_graph
 
 from recirq.qaoa.problems import random_plus_minus_1_weights
 
@@ -186,7 +186,7 @@ def test_hardware_graph():
     nx.set_edge_attributes(problem, 1, name='weight')
 
     qubits = cirq.LineQubit.range(4)
-    circuit = cirq.Circuit(hardware_graph(problem, 0.123, coordinates, qubits))
+    circuit = cirq.Circuit(_hardware_graph(problem, 0.123, coordinates, qubits))
     assert circuit.to_text_diagram(transpose=True) == """  0  1        2        3
   │  │        │        │
   ZZ─ZZ^0.078 ZZ───────ZZ^0.078

@@ -1,11 +1,10 @@
 from collections import defaultdict
-from typing import Sequence, List, Optional, Tuple, Dict
+from typing import Sequence, List, Optional, Tuple, Dict, Iterator
 
 import networkx as nx
 import numpy as np
 
 import cirq
-from cirq.google import SycamoreGate
 from cirq.google.optimizers.convert_to_sycamore_gates import swap_rzz, rzz
 from recirq.qaoa.problems import _validate_problem_graph
 
@@ -14,10 +13,16 @@ try:
 except ImportError:
     from cirq.contrib.quirk import QuirkQubitPermutationGate
 
-from recirq.qaoa.circuit_structure import validate_well_structured, get_moment_classes
+from recirq.qaoa.circuit_structure import validate_well_structured
 
 
 class ZZSwap(cirq.Gate):
+    """A composite ZZPowGate followed by a SWAP.
+
+    Used as a building-block for the QAOA linear swap network for
+    fully-connected problems."
+    """
+
     def __init__(self, *,
                  zz_exponent: float,
                  zz_global_shift: float = 0):
@@ -49,7 +54,12 @@ def compile_problem_unitary_to_zzswap(
         problem_graph: nx.Graph,
         gamma: float,
         qubits: Sequence[cirq.Qid],
-):
+) -> Iterator[cirq.Operation]:
+    """Yield ZZSwap operations to implement the linear swap network.
+
+    ZZ exponents will be set according to 2*gamma*weight/pi where
+    weight is the edge weight from problem_graph.
+    """
     n_qubits = len(qubits)
     order = list(range(n_qubits))
 
@@ -69,6 +79,9 @@ def compile_problem_unitary_to_zzswap(
 
 class ProblemUnitary(cirq.Gate):
     def __init__(self, problem_graph: nx.Graph, gamma: float):
+        """An n-qubit gate representing the full problem unitary for
+        problem_graph applied with the given gamma value."""
+
         _validate_problem_graph(problem_graph)
         self.problem_graph = problem_graph
         self.gamma = gamma
@@ -94,6 +107,7 @@ class ProblemUnitary(cirq.Gate):
 
 
 class SwapNetworkProblemUnitary(ProblemUnitary):
+    """A ProblemUnitary with classical permutation of indices afterwards."""
 
     def _decompose_(self, qubits) -> 'cirq.OP_TREE':
         yield from super()._decompose_(qubits)
@@ -109,7 +123,10 @@ class SwapNetworkProblemUnitary(ProblemUnitary):
                 f'#{i + 2 + 1}' for i in range(excess_q)))
 
 
-def compile_problem_unitary_to_swap_network(circuit: cirq.Circuit):
+def compile_problem_unitary_to_swap_network(circuit: cirq.Circuit) -> cirq.Circuit:
+    """Compile ProblemUnitary's in the input circuit to
+    SwapNetworkProblemUnitary's with appropriate bookkeeping for permutation
+    that will happen during the swap network."""
     permutation = {q: q for q in circuit.all_qubits()}
 
     new_moments = []
@@ -154,6 +171,12 @@ def compile_problem_unitary_to_swap_network(circuit: cirq.Circuit):
 
 
 class _SwapNetworkToZZSWAP(cirq.PointOptimizer):
+    """Circuit optimizer to turn a high-level swap network object to ZZSwap gates.
+
+    Prefer to use :py:func:`compile_swap_network_to_zzswap`, which wraps this
+    object.
+    """
+
     def optimization_at(
             self,
             circuit: 'cirq.Circuit',
@@ -170,7 +193,9 @@ class _SwapNetworkToZZSWAP(cirq.PointOptimizer):
             )
 
 
-def compile_swap_network_to_zzswap(circuit: cirq.Circuit, *, mutate=False):
+def compile_swap_network_to_zzswap(circuit: cirq.Circuit, *, mutate=False) -> cirq.Circuit:
+    """Compile a circuit containing SwapNetworkProblemUnitary's to one
+    using ZZSwap interactions."""
     if mutate:
         c2 = circuit
     else:
@@ -179,8 +204,14 @@ def compile_swap_network_to_zzswap(circuit: cirq.Circuit, *, mutate=False):
     return c2
 
 
-def hardware_graph(problem_graph: nx.Graph, gamma: float, node_coordinates: List[Tuple[int, int]],
-                   qubits: Sequence[cirq.Qid]):
+def _hardware_graph(problem_graph: nx.Graph, gamma: float,
+                    node_coordinates: List[Tuple[int, int]],
+                    qubits: Sequence[cirq.Qid]) -> Iterator[cirq.Moment]:
+    """Used by compile_problem_unitary_to_hardware_graph.
+
+    Activates links according to node_coordinates (and using the weights
+    from problem_graph). Yield four moments (corresponding to degree-4 grid).
+    """
     row_start = min(r for r, c in node_coordinates)
     row_end = max(r for r, c in node_coordinates) + 1
     col_start = min(c for r, c in node_coordinates)
@@ -226,11 +257,20 @@ def hardware_graph(problem_graph: nx.Graph, gamma: float, node_coordinates: List
 
 
 class _ProblemUnitaryToHardwareGraph(cirq.PointOptimizer):
+    """Optimizer to compile a hardware grid problem to a hardware graph.
+
+    Prefer to use `compile_problem_unitary_to_hardware_graph`, which
+    wraps this object.
+    """
+
     def __init__(self, node_coordinates: List[Tuple[int, int]]):
         super().__init__()
         self._node_coordinates = node_coordinates
 
     def optimize_circuit(self, circuit: cirq.Circuit):
+        # Note: this includes a lot of the functionality of cirq.PointOptimizer
+        # duplicated so that this object preserves moment structure.
+        # https://github.com/quantumlib/Cirq/issues/2406
         frontier: Dict[cirq.Qid, int] = defaultdict(lambda: 0)
         i = 0
         while i < len(circuit):  # Note: circuit may mutate as we go.
@@ -281,16 +321,27 @@ class _ProblemUnitaryToHardwareGraph(cirq.PointOptimizer):
             return cirq.PointOptimizationSummary(
                 clear_span=1,
                 clear_qubits=op.qubits,
-                new_operations=hardware_graph(gate.problem_graph, gate.gamma,
-                                              self._node_coordinates, op.qubits),
+                new_operations=_hardware_graph(gate.problem_graph, gate.gamma,
+                                               self._node_coordinates, op.qubits),
                 preserve_moments=True,
             )
 
 
-def compile_problem_unitary_to_hardware_graph(circuit: cirq.Circuit,
-                                              node_coordinates: List[Tuple[int, int]],
-                                              *,
-                                              mutate=False):
+def compile_problem_unitary_to_hardware_graph(
+        circuit: cirq.Circuit,
+        node_coordinates: List[Tuple[int, int]],
+        *,
+        mutate=False) -> cirq.Circuit:
+    """Compile ProblemUnitary gates to ZZPowGate on a grid
+
+    Args:
+        circuit: The circuit
+        node_coordinates: A list which maps 0-indexed node indices to
+            coordinates on a grid; used for determining the order
+            of application of the ZZ operations in ProblemUnitary
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -300,6 +351,7 @@ def compile_problem_unitary_to_hardware_graph(circuit: cirq.Circuit,
 
 
 def _problem_to_zz(problem_graph: nx.Graph, qubits: Sequence[cirq.Qid], gamma: float):
+    """Helper function used by `compile_problem_unitary_to_arbitrary_zz`."""
     for i1, i2, weight in problem_graph.edges.data('weight'):
         q0 = qubits[i1]
         q1 = qubits[i2]
@@ -308,6 +360,13 @@ def _problem_to_zz(problem_graph: nx.Graph, qubits: Sequence[cirq.Qid], gamma: f
 
 
 class _ProblemUnitaryToZZ(cirq.PointOptimizer):
+    """An optimizer which compiles arbitrary problem graphs to ZZPowGate
+    operations without regard for connectivity.
+
+    Prefer using `compile_problem_unitary_to_arbitrary_zz`, which wraps this
+    object.
+    """
+
     def optimization_at(
             self,
             circuit: 'cirq.Circuit',
@@ -326,8 +385,18 @@ class _ProblemUnitaryToZZ(cirq.PointOptimizer):
             )
 
 
-def compile_problem_unitary_to_arbitrary_zz(circuit: cirq.Circuit,
-                                            mutate=False):
+def compile_problem_unitary_to_arbitrary_zz(
+        circuit: cirq.Circuit,
+        *,
+        mutate=False) -> cirq.Circuit:
+    """Compile ProblemUnitary gates to ZZPowGate without regard for qubit
+    connectivity.
+
+    Args:
+        circuit: The circuit
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -337,6 +406,9 @@ def compile_problem_unitary_to_arbitrary_zz(circuit: cirq.Circuit,
 
 
 class DriverUnitary(cirq.Gate):
+    """An N-body gate which applies the QAOA driver unitary with
+    parameter `beta` to all qubits."""
+
     def __init__(self, num_qubits: int, beta: float):
         self._num_qubits = num_qubits
         self.beta = beta
@@ -358,6 +430,11 @@ class DriverUnitary(cirq.Gate):
 
 
 class _DriverToRx(cirq.PointOptimizer):
+    """Convert an n-qubit driver unitary to n XPowGates.
+
+    Prefer using `compile_driver_unitary_to_rx`, which wraps this object.
+    """
+
     def optimization_at(
             self,
             circuit: 'cirq.Circuit',
@@ -374,6 +451,13 @@ class _DriverToRx(cirq.PointOptimizer):
 
 
 def compile_driver_unitary_to_rx(circuit: cirq.Circuit, *, mutate=False):
+    """Compile DriverUnitary gates to single-qubit XPowGates.
+
+    Args:
+        circuit: The circuit
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -387,7 +471,9 @@ def single_qubit_matrix_to_phased_x_z_const_depth(
 ) -> List[cirq.SingleQubitGate]:
     """Implements a single-qubit operation with a PhasedX and Z gate.
 
-    If one of the gates isn't needed, it will be omitted.
+    If one of the gates isn't needed, it will still be included with
+    zero exponent. This always returns two gates, in contrast to the
+    function in Cirq.
 
     Args:
         mat: The 2x2 unitary matrix of the operation to implement.
@@ -409,7 +495,11 @@ def single_qubit_matrix_to_phased_x_z_const_depth(
 
 
 class _SingleQubitGates(cirq.PointOptimizer):
-    """Optimizes runs of adjacent unitary 1-qubit operations."""
+    """Optimizes runs of adjacent unitary 1-qubit operations.
+
+    This uses `single_qubit_matrix_to_phased_x_z_const_depth` to make each
+    single qubit layer exactly one PhX and one Z gate.
+    """
 
     def __init__(self):
         super().__init__()
@@ -446,7 +536,17 @@ class _SingleQubitGates(cirq.PointOptimizer):
             new_operations=rewritten)
 
 
-def compile_single_qubit_gates(circuit: cirq.Circuit, *, mutate=False):
+def compile_single_qubit_gates(
+        circuit: cirq.Circuit,
+        *,
+        mutate=False) -> cirq.Circuit:
+    """Compile single qubit gates to constant-depth PhX and Z gates
+
+    Args:
+        circuit: The circuit
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -456,14 +556,16 @@ def compile_single_qubit_gates(circuit: cirq.Circuit, *, mutate=False):
     return c2
 
 
-def zzswap_as_syc(theta, q0, q1):
+def zzswap_as_syc(theta: float, q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Return a composite Exp[i theta ZZ] SWAP circuit with three SYC gates."""
     swz = cirq.Circuit(swap_rzz(theta, q0, q1))
     _SingleQubitGates().optimize_circuit(swz)
     cirq.DropEmptyMoments().optimize_circuit(swz)
     return swz
 
 
-def zz_as_syc(theta, q0, q1):
+def zz_as_syc(theta: float, q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Return an Exp[i theta ZZ] circuit with two SYC gates."""
     swz = cirq.Circuit(rzz(theta, q0, q1))
     _SingleQubitGates().optimize_circuit(swz)
     cirq.DropEmptyMoments().optimize_circuit(swz)
@@ -471,6 +573,8 @@ def zz_as_syc(theta, q0, q1):
 
 
 class _TwoQubitOperationsAsSYC(cirq.PointOptimizer):
+    """Optimizer to compile ZZSwap and ZZPowGate gates into SYC."""
+
     def optimization_at(
             self,
             circuit: 'cirq.Circuit',
@@ -494,7 +598,16 @@ class _TwoQubitOperationsAsSYC(cirq.PointOptimizer):
             )
 
 
-def compile_to_syc(circuit: cirq.Circuit, *, mutate=False):
+def compile_to_syc(circuit: cirq.Circuit,
+                   *,
+                   mutate=False) -> cirq.Circuit:
+    """Compile a QAOA circuit to SYC gates.
+
+    Args:
+        circuit: The circuit
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -505,7 +618,30 @@ def compile_to_syc(circuit: cirq.Circuit, *, mutate=False):
     return c2
 
 
-def measure_with_final_permutation(circuit: cirq.Circuit, qubits: List[cirq.Qid], mutate=False):
+def measure_with_final_permutation(
+        circuit: cirq.Circuit,
+        qubits: List[cirq.Qid],
+        *,
+        mutate=False) -> Tuple[cirq.Circuit, List[cirq.Qid]]:
+    """Apply a measurement gate at the end of a circuit and classically
+    permute qubit indices.
+
+    If the circuit contains a permutation gate at its end, the input
+    argument `qubits` will be permuted and returned as the second return
+    value.
+
+
+    Args:
+        circuit: The circuit
+        qubits: Which qubits to measure
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+
+    Returns:
+        circuit: The output circuit with measurement
+        final_qubits: The input list of qubits permuted according to the
+            final permutation gate.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -531,7 +667,19 @@ def measure_with_final_permutation(circuit: cirq.Circuit, qubits: List[cirq.Qid]
     return c2, final_qubits
 
 
-def compile_out_virtual_z(circuit: cirq.Circuit, *, mutate=False):
+def compile_out_virtual_z(
+        circuit: cirq.Circuit,
+        *,
+        mutate=False) -> cirq.Circuit:
+    """Eject Z gates from the circuit.
+
+    This is a wrapper around cirq.EjectZ()
+
+    Args:
+        circuit: The circuit
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -542,7 +690,22 @@ def compile_out_virtual_z(circuit: cirq.Circuit, *, mutate=False):
     return c2
 
 
-def compile_to_non_negligible(circuit: cirq.Circuit, *, tolerance=1e-5, mutate=False):
+def compile_to_non_negligible(
+        circuit: cirq.Circuit,
+        *,
+        tolerance=1e-5,
+        mutate=False) -> cirq.Circuit:
+    """Remove negligible gates from the circuit.
+
+    This is a wrapper around cirq.DropNegligible(tolerance)
+
+    Args:
+        circuit: The circuit
+        tolerance: Gates with trace distance below this value will be
+            considered negligible.
+        mutate: By default, return a copy of the circuit. Otherwise,
+            mutate in place.
+    """
     if mutate:
         c2 = circuit
     else:
@@ -550,65 +713,4 @@ def compile_to_non_negligible(circuit: cirq.Circuit, *, tolerance=1e-5, mutate=F
 
     cirq.DropNegligible(tolerance=tolerance).optimize_circuit(c2)
     cirq.DropEmptyMoments().optimize_circuit(c2)
-    return c2
-
-
-def compile_in_echos_4(circuit: cirq.Circuit, *, mutate=False) -> cirq.Circuit:
-    """Add echos to gaps of size 4.
-
-    The gaps must come in patterns of SYC, PhX, SYC, PhX.
-    """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
-
-    qubits = c2.all_qubits()
-    idles_by_qubits = defaultdict(list)
-    for i, moment in enumerate(c2.moments):
-        for q in qubits:
-            if q not in moment.qubits:
-                idles_by_qubits[q].append(i)
-
-    mcs = get_moment_classes(c2)
-    for q, inds in idles_by_qubits.items():
-        i_prev = inds[0]
-        start = inds[0]
-        runs = []
-        for i in inds[1:]:
-            if i == i_prev + 1:
-                # We're in a 'run' of idle slots
-                pass
-
-                if (i_prev - start + 1) == 4:
-                    # Max out at a run of four.
-                    runs.append((start, i_prev))
-                    start = i
-
-            else:
-                # The run has ended. Make a record of it
-                runs.append((start, i_prev))
-                start = i
-            i_prev = i
-
-        # Finally, make a record of the last run
-        runs.append((start, i_prev))
-
-        # Add in an echo for runs of length 4 with the correct moment classes.
-        runs = [(start, end) for start, end in runs if (end - start + 1) == 4]
-        run_mcs = [[mcs[momi] for momi in range(start, end + 1)] for start, end in runs]
-        for run_i, run_mc in enumerate(run_mcs):
-            assert run_mc == [
-                SycamoreGate, cirq.PhasedXPowGate,
-                SycamoreGate, cirq.PhasedXPowGate,
-            ], run_mc
-
-            start, end = runs[run_i]
-            c2.insert(start + 1 + 1,
-                      cirq.PhasedXPowGate(phase_exponent=0).on(q),
-                      cirq.InsertStrategy.INLINE)
-            c2.insert(start + 3 + 1,
-                      cirq.PhasedXPowGate(phase_exponent=0).on(q),
-                      cirq.InsertStrategy.INLINE)
-
     return c2
