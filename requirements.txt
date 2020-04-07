@@ -2,3 +2,4 @@ cirq-unstable==0.8.0.dev20200318154950
 
 # qaoa
 networkx
+pytket==0.1.6 # does not work with anything later
