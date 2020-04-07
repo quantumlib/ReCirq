@@ -4,61 +4,11 @@ import networkx as nx
 import numpy as np
 import pytest
 
-import cirq
-import cirq.contrib.acquaintance as cca
 import cirq.contrib.routing as ccr
 from cirq.google import Sycamore23
-from recirq.qaoa.gates_and_compilation import compile_problem_unitary_to_arbitrary_zz, \
-    compile_driver_unitary_to_rx
 from recirq.qaoa.placement import place_line_on_device, place_on_device, \
     min_weight_simple_paths_brute_force, min_weight_simple_path_greedy, path_weight, \
     min_weight_simple_path_anneal
-from recirq.qaoa.problem_circuits import get_generic_qaoa_circuit
-
-
-def permute_gate(qubits: Sequence[cirq.Qid], permutation: List[int]):
-    return cca.LinearPermutationGate(
-        num_qubits=len(qubits),
-        permutation={i: permutation[i] for i in range(len(permutation))}
-    ).on(*qubits)
-
-
-def test_place_on_device():
-    problem_graph = nx.random_regular_graph(d=3, n=10)
-    nx.set_edge_attributes(problem_graph, values=1, name='weight')
-    circuit_qubits = cirq.LineQubit.range(10)
-    gammas = np.random.randn(2)
-    betas = np.random.randn(2)
-    circuit = get_generic_qaoa_circuit(
-        problem_graph=problem_graph,
-        qubits=circuit_qubits,
-        gammas=gammas,
-        betas=betas)
-    # TODO: high-level function for getting low-level qaoa circuit
-    circuit = compile_problem_unitary_to_arbitrary_zz(circuit)
-    circuit = compile_driver_unitary_to_rx(circuit)
-
-    device = cirq.google.Bristlecone
-    routed_circuit, initial_qubit_map, final_qubit_map = place_on_device(circuit, device)
-
-    # Check that constraints are not violated
-    for _, op, _ in routed_circuit.findall_operations_with_gate_type(cirq.TwoQubitGate):
-        a, b = op.qubits
-        a = cast(cirq.GridQubit, a)
-        b = cast(cirq.GridQubit, b)
-        assert a.is_adjacent(b)
-
-    # Check that the circuits are equivalent
-    final_to_initial_qubit_map = {final_qubit_map[cq]: initial_qubit_map[cq]
-                                  for cq in circuit_qubits}
-    initial_qubits = [initial_qubit_map[cq] for cq in circuit_qubits]
-    final_permutation = [initial_qubits.index(final_to_initial_qubit_map[q])
-                         for q in initial_qubits]
-    rcircuit_with_perm = routed_circuit.copy()
-    rcircuit_with_perm.append(permute_gate(initial_qubits, final_permutation))
-    expected = circuit.unitary(qubit_order=cirq.QubitOrder.explicit(circuit_qubits))
-    actual = rcircuit_with_perm.unitary(qubit_order=cirq.QubitOrder.explicit(initial_qubits))
-    cirq.testing.assert_allclose_up_to_global_phase(expected, actual, atol=1e-8)
 
 
 def test_min_weight_simple_paths_brute_force():
