@@ -14,6 +14,7 @@ from recirq.qaoa.gates_and_compilation import (
     validate_well_structured,
     compile_problem_unitary_to_swap_network, compile_swap_network_to_zzswap,
     measure_with_final_permutation, compile_problem_unitary_to_arbitrary_zz)
+from recirq.qaoa.placement import place_on_device
 from recirq.qaoa.problems import HardwareGridProblem, SKProblem, ThreeRegularProblem
 
 
@@ -115,22 +116,26 @@ def get_compiled_hardware_grid_circuit(
     return mcircuit, final_qubits
 
 
-def old_sk_model_to_new_problem(graph: nx.Graph, qubit_map):
-    # note we sort only the graph with LineQubit nodes,
-    # not GridQubit nodes, to preserve node order after mapping
-    qubits = [qubit_map(v) for v in sorted(graph.nodes)]
-    problem = nx.relabel_nodes(graph, {q: q.x for q in graph.nodes})
-    assert sorted(problem.nodes) == list(range(len(qubits)))
-    return problem, qubits
-
-
 def get_routed_sk_model_circuit(
-        problem: nx.Graph,
+        problem_graph: nx.Graph,
         qubits: List[cirq.Qid],
-        gammas,
-        betas,
-):
-    circuit = get_generic_qaoa_circuit(problem, qubits, gammas, betas)
+        gammas: Sequence[float],
+        betas: Sequence[float],
+) -> cirq.Circuit:
+    """Get a QAOA circuit for a fully-connected problem using the linear swap
+    network.
+
+    See Also:
+        :py:func:`get_compiled_sk_model_circuit`
+
+    Args:
+        problem_graph: A graph with contiguous 0-indexed integer nodes and
+            edges with a 'weight' attribute.
+        qubits: The qubits to use in construction of the circuit.
+        gammas: Gamma angles to use as parameters for problem unitaries
+        betas: Beta angles to use as parameters for driver unitaries
+    """
+    circuit = get_generic_qaoa_circuit(problem_graph, qubits, gammas, betas)
     circuit = compile_problem_unitary_to_swap_network(circuit)
     circuit = compile_swap_network_to_zzswap(circuit)
     circuit = compile_driver_unitary_to_rx(circuit)
@@ -142,9 +147,27 @@ def get_compiled_sk_model_circuit(
         qubits: List[cirq.Qid],
         gammas: Sequence[float],
         betas: Sequence[float],
+        *,
         non_negligible=True
+) -> Tuple[cirq.Circuit, List[cirq.Qid]]:
+    """Get a fully-compiled SK model circuit.
 
-):
+    Args:
+        problem: A SKProblem
+        qubits: The qubits to use in construction of the circuit.
+        gammas: Gamma angles to use as parameters for problem unitaries
+        betas: Beta angles to use as parameters for driver unitaries
+        non_negligible: Whether to compile out negligible gates. This will
+            preserve the quality that the returned circuit has homogeneous
+            gate types in each moment but may make it so the predictable
+            pattern of PhX, (SYC, PhX)*n, PhX may be disrupted. Set this
+            argument to `False` if doing echo experiments.
+
+    Returns:
+        circuit: The final routed, gateset-targeted, and placed circuit with
+            measurements.
+        final_qubits: The qubits in their final logical order.
+    """
     circuit = get_routed_sk_model_circuit(problem.graph, qubits, gammas, betas)
     circuit = compile_to_syc(circuit)
     mcircuit, final_qubits = measure_with_final_permutation(circuit, qubits)
@@ -155,22 +178,30 @@ def get_compiled_sk_model_circuit(
     return mcircuit, final_qubits
 
 
-def old_3_regular_model_to_new_problem(graph: nx.Graph):
-    dummy_qubits = sorted(graph.nodes)
-    problem = nx.relabel_nodes(graph, {q: q.x for q in graph.nodes})
-    assert sorted(problem.nodes) == list(range(len(dummy_qubits)))
-    return problem, dummy_qubits
-
-
 def get_routed_3_regular_maxcut_circuit(
-        problem: nx.Graph,
-        device: cirq.Device,
+        problem_graph: nx.Graph,
+        device: cirq.google.XmonDevice,
         gammas: Sequence[float],
         betas: Sequence[float],
 ) -> Tuple[List[cirq.Qid], cirq.Circuit, List[cirq.Qid]]:
-    problem, dummy_qubits = old_3_regular_model_to_new_problem(problem)
+    """Get a routed QAOA circuit for a 3-regular problem.
+
+    See Also:
+        :py:func:`get_compiled_3_regular_maxcut_circuit`
+
+    Args:
+        problem_graph: A graph with contiguous 0-indexed integer nodes and
+            edges with a 'weight' attribute.
+        qubits: The qubits to use in construction of the circuit.
+        gammas: Gamma angles to use as parameters for problem unitaries
+        betas: Beta angles to use as parameters for driver unitaries
+    """
+    dummy_qubits = cirq.LineQubit.range(problem_graph.number_of_nodes())
     circuit = get_generic_qaoa_circuit(
-        problem_graph=problem, qubits=dummy_qubits, gammas=gammas, betas=betas)
+        problem_graph=problem_graph,
+        qubits=dummy_qubits,
+        gammas=gammas,
+        betas=betas)
     circuit = compile_problem_unitary_to_arbitrary_zz(circuit)
     circuit = compile_driver_unitary_to_rx(circuit)
     circuit, initial_qubit_map, final_qubit_map = place_on_device(circuit, device)
@@ -181,14 +212,31 @@ def get_routed_3_regular_maxcut_circuit(
 
 def get_compiled_3_regular_maxcut_circuit(
         problem: ThreeRegularProblem,
-        device: cirq.Device,
+        device: cirq.google.XmonDevice,
         gammas: Sequence[float],
         betas: Sequence[float],
 ) -> Tuple[List[cirq.Qid], cirq.Circuit, List[cirq.Qid]]:
+    """Get a fully-compiled SK model circuit.
+
+    Args:
+        problem: A ThreeRegularProblem
+        device: The device to target
+        gammas: Gamma angles to use as parameters for problem unitaries
+        betas: Beta angles to use as parameters for driver unitaries
+
+    Returns:
+        initial_qubits: The qubits in their initial order
+        circuit: The final routed, gateset-targeted, and placed circuit with
+            measurements.
+        final_qubits: The qubits in their final logical order.
+    """
     # TODO: explicitly compile gates, avoid optimized_for_sycamore, make structured circuits
     import cirq.google as cg
     initial_qubits, circuit, final_qubits = get_routed_3_regular_maxcut_circuit(
-        problem, device, gammas, betas)
+        problem_graph=problem.graph,
+        device=device,
+        gammas=gammas,
+        betas=betas)
     circuit.append(cirq.measure(*final_qubits, key='z'))
     circuit = cg.optimized_for_sycamore(circuit, optimizer_type='sycamore')
     return initial_qubits, circuit, final_qubits

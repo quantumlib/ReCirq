@@ -78,8 +78,8 @@ def test_get_routed_grid_model_circuit():
 
 
 def test_get_compiled_grid_model_circuit():
-    graph = _random_grid_model_old(2, 2, np.random.RandomState(0))
-    problem, qubits, coordinates = old_grid_model_to_new_problem(graph)
+    problem = _random_grid_model(2, 2, np.random.RandomState(0))
+    qubits = cirq.GridQubit.rect(2, 2)
     circuit, final_qubits = get_compiled_hardware_grid_circuit(
         problem, qubits,
         gammas=[np.pi / 2, np.pi / 4],
@@ -89,7 +89,7 @@ def test_get_compiled_grid_model_circuit():
     validate_well_structured(circuit)
 
     rc = get_routed_hardware_grid_circuit(
-        problem, qubits, coordinates,
+        problem.graph, qubits, problem.coordinates,
         gammas=[np.pi / 2, np.pi / 4],
         betas=[np.pi / 2, np.pi / 4],
     )
@@ -97,54 +97,54 @@ def test_get_compiled_grid_model_circuit():
         rc + cirq.measure(*qubits), circuit, atol=1e-5)
 
     cirq.testing.assert_has_diagram(circuit, """
-  (0, 0)            (0, 1)           (1, 0)            (1, 1)
-  │                 │                │                 │
-  PhX(0.023)^(3/7)  PhX(0.07)^0.48   PhX(0.023)^(3/7)  PhX(0.07)^0.48
-  │                 │                │                 │
-  SYC───────────────SYC              SYC───────────────SYC
-  │                 │                │                 │
-  │                 PhX(0.029)       │                 PhX(0.029)
-  │                 │                │                 │
-  SYC───────────────SYC              SYC───────────────SYC
-  │                 │                │                 │
-  PhX(0.54)^0.045   PhX(0.25)^0.9    PhX(0.39)^0.1     PhX(0.4)^(6/7)
-  │                 │                │                 │
-┌╴│                 │                │                 │              ╶┐
-│ SYC───────────────┼────────────────SYC               │               │
-│ │                 SYC──────────────┼─────────────────SYC             │
-└╴│                 │                │                 │              ╶┘
-  │                 │                │                 │
-  │                 │                PhX(0.051)        PhX(0.61)
-  │                 │                │                 │
-┌╴│                 │                │                 │              ╶┐
-│ SYC───────────────┼────────────────SYC               │               │
-│ │                 SYC──────────────┼─────────────────SYC             │
-└╴│                 │                │                 │              ╶┘
-  │                 │                │                 │
-  PhX(0.82)^(10/11) PhX(0.12)^0.48   PhX(0.077)^0.028  PhX(0.23)^(4/7)
-  │                 │                │                 │
-  SYC───────────────SYC              SYC───────────────SYC
-  │                 │                │                 │
-  │                 PhX(0.0072)^0.48 │                 PhX(0.3)^0.48
-  │                 │                │                 │
-  SYC───────────────SYC              SYC───────────────SYC
-  │                 │                │                 │
-  PhX(0.51)^0.48    PhX(0.38)^(7/12) PhX(-0.78)^(5/12) PhX(-0.7)
-  │                 │                │                 │
-┌╴│                 │                │                 │              ╶┐
-│ SYC───────────────┼────────────────SYC               │               │
-│ │                 SYC──────────────┼─────────────────SYC             │
-└╴│                 │                │                 │              ╶┘
-  │                 │                │                 │
-  │                 │                PhX(-0.99)^0.48   PhX(0.3)^0.48
-  │                 │                │                 │
-┌╴│                 │                │                 │              ╶┐
-│ SYC───────────────┼────────────────SYC               │               │
-│ │                 SYC──────────────┼─────────────────SYC             │
-└╴│                 │                │                 │              ╶┘
-  │                 │                │                 │
-  PhX(-0.58)^0.5    PhX(0.72)^0.5    PhX(0.049)^0.5    PhX(-0.62)^0.5
-  │                 │                │                 │
-  M('z')────────────M────────────────M─────────────────M
-  │                 │                │                 │
+  (0, 0)            (0, 1)             (1, 0)            (1, 1)
+  │                 │                  │                 │
+  PhX(-0.44)^(4/9)  PhX(-0.5)^(7/12)   PhX(-0.44)^(4/9)  PhX(-0.5)^(7/12)
+  │                 │                  │                 │
+  SYC───────────────SYC                SYC───────────────SYC
+  │                 │                  │                 │
+  │                 PhX(-0.59)         │                 PhX(-0.59)
+  │                 │                  │                 │
+  SYC───────────────SYC                SYC───────────────SYC
+  │                 │                  │                 │
+  PhX(0.52)^(11/13) PhX(0.73)^(1/16)   PhX(0.88)^(15/16) PhX(0.36)^(2/13)
+  │                 │                  │                 │
+┌╴│                 │                  │                 │                ╶┐
+│ SYC───────────────┼──────────────────SYC               │                 │
+│ │                 SYC────────────────┼─────────────────SYC               │
+└╴│                 │                  │                 │                ╶┘
+  │                 │                  │                 │
+  │                 │                  PhX(0.62)         PhX(0.2)
+  │                 │                  │                 │
+┌╴│                 │                  │                 │                ╶┐
+│ SYC───────────────┼──────────────────SYC               │                 │
+│ │                 SYC────────────────┼─────────────────SYC               │
+└╴│                 │                  │                 │                ╶┘
+  │                 │                  │                 │
+  PhX(0.97)^(7/15)  PhX(-0.69)^(12/13) PhX(0.33)^(2/3)   PhX(0.19)^(12/13)
+  │                 │                  │                 │
+  SYC───────────────SYC                SYC───────────────SYC
+  │                 │                  │                 │
+  │                 PhX(-0.058)^0.48   │                 PhX(0.24)^0.48
+  │                 │                  │                 │
+  SYC───────────────SYC                SYC───────────────SYC
+  │                 │                  │                 │
+  PhX(0.44)^0.48    PhX(0.89)^(7/12)   PhX(-0.84)^(5/12) PhX(-0.92)^(1)
+  │                 │                  │                 │
+┌╴│                 │                  │                 │                ╶┐
+│ SYC───────────────┼──────────────────SYC               │                 │
+│ │                 SYC────────────────┼─────────────────SYC               │
+└╴│                 │                  │                 │                ╶┘
+  │                 │                  │                 │
+  │                 │                  PhX(0.94)^0.48    PhX(0.81)^0.48
+  │                 │                  │                 │
+┌╴│                 │                  │                 │                ╶┐
+│ SYC───────────────┼──────────────────SYC               │                 │
+│ │                 SYC────────────────┼─────────────────SYC               │
+└╴│                 │                  │                 │                ╶┘
+  │                 │                  │                 │
+  PhX(-0.64)^0.5    PhX(0.73)^(1/12)   PhX(0.49)^0.5     PhX(-0.55)^0.5
+  │                 │                  │                 │
+  M('z')────────────M──────────────────M─────────────────M
+  │                 │                  │                 │
 """, transpose=True, precision=2)
