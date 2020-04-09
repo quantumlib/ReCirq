@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from functools import lru_cache
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Iterable
 
 import networkx as nx
 import numpy as np
@@ -17,6 +17,7 @@ cirq.devices.UnconstrainedDevice = cirq.devices.UNCONSTRAINED_DEVICE
 
 import pytket.cirq
 import pytket._routing
+import cirq.contrib.routing as ccr
 
 
 def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
@@ -74,17 +75,27 @@ def place_on_device(circuit: cirq.Circuit,
     return routed_circuit, initial_qubit_map, final_qubit_map
 
 
-def _device_to_tket_architecture(device: cirq.google.XmonDevice):
+def _device_to_tket_architecture(device: cirq.Device):
     return pytket._routing.DirectedGraph(
         list(_qubit_index_edges(device)),
         len(device.qubit_set())
     )
 
 
-def _qubit_index_edges(device: cirq.google.XmonDevice):
+def _neighbors_of(qubits: Iterable[cirq.GridQubit], qubit: cirq.GridQubit):
+    possibles = [
+        cirq.GridQubit(qubit.row + 1, qubit.col),
+        cirq.GridQubit(qubit.row - 1, qubit.col),
+        cirq.GridQubit(qubit.row, qubit.col + 1),
+        cirq.GridQubit(qubit.row, qubit.col - 1),
+    ]
+    return [e for e in possibles if e in qubits]
+
+
+def _qubit_index_edges(device: cirq.Device):
     qubit_to_index_dict = {q: i for i, q in enumerate(sorted(device.qubit_set()))}
     for q in sorted(device.qubit_set()):
-        for r in device.neighbors_of(q):
+        for r in _neighbors_of(device.qubit_set(), q):
             yield (qubit_to_index_dict[q], qubit_to_index_dict[r])
 
 
@@ -599,8 +610,15 @@ def _get_device_calibration(device_name: str):
 
     TODO: move to recirq.engine_utils.
     """
-    engine = cirq.google.Engine(project_id=os.environ['GOOGLE_CLOUD_PROJECT'])
     processor_id = recirq.get_processor_id_by_device_name(device_name)
+    if processor_id is None:
+        # TODO: https://github.com/quantumlib/ReCirq/issues/14
+        device_obj = recirq.get_device_obj_by_name(device_name)
+        dummy_graph = ccr.gridqubits_to_graph_device(device_obj.qubits)
+        nx.set_edge_attributes(dummy_graph, name='weight', values=0.01)
+        return dummy_graph
+
+    engine = cirq.google.Engine(project_id=os.environ['GOOGLE_CLOUD_PROJECT'])
     calibration = engine.get_latest_calibration(processor_id)
     err_graph = calibration_data_to_graph(calibration)
     return err_graph

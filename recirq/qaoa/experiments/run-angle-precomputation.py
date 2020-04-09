@@ -37,7 +37,7 @@ def main():
             instance_i=i,
             n_qubits=n
         )
-        for n in list(range(3, 18 + 1))
+        for n in list(range(3, 17 + 1))
         for i in range(10)
     ]
     three_regular_tasks = [

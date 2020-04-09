@@ -18,13 +18,15 @@ Has been used on a standard laptop up to system size N=24
 
 Based on arXiv:1812.01041 and https://github.com/leologist/GenQAOA
 """
-from typing import Tuple
+from typing import Tuple, Optional, Dict, List
 
 import itertools
 import multiprocessing
 
 import networkx as nx
 import numpy as np
+
+import cirq
 
 SIGMA_X_IND, SIGMA_Y_IND, SIGMA_Z_IND = (1, 2, 3)
 
@@ -308,3 +310,75 @@ def exact_qaoa_values_on_grid(
                             [(N, HamC, x, True, dtype)
                              for x in itertools.product(gammas, betas)])
     return np.reshape(np.array(vals), (x_grid_num, y_grid_num)).T
+
+
+def hamiltonian_objective(
+        bitstring: np.ndarray,
+        graph: nx.Graph,
+        node_to_index_map: Optional[Dict[cirq.Qid, int]] = None
+) -> float:
+    if node_to_index_map is None:
+        node_to_index_map = {q: i for i, q in enumerate(sorted(graph.nodes))}
+    return sum(graph[a][b]['weight'] * (-1) ** (
+            bool(bitstring[node_to_index_map[a]])
+            + bool(bitstring[node_to_index_map[b]]))
+               for a, b in graph.edges)
+
+
+def hamiltonian_objectives(
+        bitstrings: np.ndarray,
+        graph: nx.Graph,
+        nodelist: Optional[List[cirq.Qid]] = None,
+        readout_calibration:
+        Optional[cirq.experiments.SingleQubitReadoutCalibrationResult]
+        = None,
+        qubit_map: Optional[Dict[cirq.Qid, cirq.Qid]] = None
+) -> np.ndarray:
+    if nodelist is None:
+        nodelist = sorted(graph.nodes)
+    mat = nx.adjacency_matrix(graph, nodelist=nodelist)
+    if readout_calibration:
+        if qubit_map is None:
+            qubit_map = {q: q for q in nodelist}
+        correction_matrix = np.empty(mat.shape)
+        for i, j in itertools.product(range(len(graph)), repeat=2):
+            p0_i = 1 - readout_calibration.zero_state_errors[qubit_map[nodelist[i]]]
+            p1_i = 1 - readout_calibration.one_state_errors[qubit_map[nodelist[i]]]
+            p0_j = 1 - readout_calibration.zero_state_errors[qubit_map[nodelist[j]]]
+            p1_j = 1 - readout_calibration.one_state_errors[qubit_map[nodelist[j]]]
+            correction_matrix[i, j] = (
+                    1 / ((p0_i + p1_i - 1) * (p0_j + p1_j - 1)))
+        mat = mat.toarray() * correction_matrix
+    vecs = (-1) ** bitstrings
+    return 0.5 * np.sum(vecs * (mat @ vecs.T).T, axis=-1)
+
+
+def hamiltonian_objective_avg_and_err(
+        bitstrings: np.ndarray,
+        graph: nx.Graph,
+        nodelist: Optional[List[cirq.Qid]] = None,
+) -> Tuple[float, float]:
+    if nodelist is None:
+        nodelist = sorted(graph.nodes)
+
+    assert len(nodelist) == bitstrings.shape[1]
+    node_to_i = {n: i for i, n in enumerate(nodelist)}
+
+    vecs = (-1) ** bitstrings
+    coeffs = []
+    vars = []
+    for n1, n2, w in graph.edges.data('weight'):
+        coeffs += [w]
+        i1 = node_to_i[n1]
+        i2 = node_to_i[n2]
+        vars += [vecs[:, i1] * vecs[:, i2]]
+
+    vars = np.asarray(vars)
+    coeffs = np.asarray(coeffs)[np.newaxis, :]
+    f = coeffs @ np.mean(vars, axis=1)
+    f = f.item()  # to normal float
+    var = coeffs @ np.atleast_2d(np.cov(vars)) @ coeffs.T
+    var = var.item()  # to normal float
+
+    std_err = np.sqrt(var / len(bitstrings))
+    return f, std_err
