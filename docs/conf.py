@@ -71,6 +71,11 @@ html_favicon = 'favicon.ico'
 html_logo = '_static/recirq_logo_notext.png'
 
 
+def _rmtree_if_exists(dirname):
+    if os.path.exists(dirname):
+        shutil.rmtree(dirname)
+
+
 def env_before_read_docs(app, env, docnames):
     """Re-order `docnames` to respect the execution-order dependency
     of notebooks.
@@ -119,7 +124,7 @@ def env_before_read_docs(app, env, docnames):
 
     if 'Readout-Data-Collection' in docnames:
         from recirq.readout_scan import tasks as rs_tasks
-        shutil.rmtree(f'{rs_tasks.DEFAULT_BASE_DIR}/2020-02-tutorial')
+        _rmtree_if_exists(f'{rs_tasks.DEFAULT_BASE_DIR}/2020-02-tutorial')
 
     if 'qaoa/Tasks-Tutorial' in docnames and nbsphinx_execute == 'always':
         # Clear data that's already been collected, but only if we're actually
@@ -128,9 +133,9 @@ def env_before_read_docs(app, env, docnames):
         # prevent deleting the data and running from scratch (which can take
         # a long time).
         from recirq.qaoa.experiments import precomputed_execution_tasks as qaoa_tasks
-        shutil.rmtree(f'{qaoa_tasks.DEFAULT_PROBLEM_GENERATION_BASE_DIR}/2020-03-tutorial')
-        shutil.rmtree(f'{qaoa_tasks.DEFAULT_PRECOMPUTATION_BASE_DIR}/2020-03-tutorial')
-        shutil.rmtree(f'{qaoa_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
+        _rmtree_if_exists(f'{qaoa_tasks.DEFAULT_PROBLEM_GENERATION_BASE_DIR}/2020-03-tutorial')
+        _rmtree_if_exists(f'{qaoa_tasks.DEFAULT_PRECOMPUTATION_BASE_DIR}/2020-03-tutorial')
+        _rmtree_if_exists(f'{qaoa_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
 
 
 def setup(app):
