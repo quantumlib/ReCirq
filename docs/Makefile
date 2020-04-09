@@ -16,7 +16,6 @@ help:
 
 clean:
 	rm -rf "$(BUILDDIR)"
-	rm -rf "$(HOME)/cirq-results/readout-scan/2020-02-06-tutorial"
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

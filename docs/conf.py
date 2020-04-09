@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import shutil
 
 project = 'ReCirq'
 copyright = '2020, Google Quantum'
@@ -27,6 +29,13 @@ extensions = [
 nbsphinx_allow_errors = False
 nbsphinx_timeout = -1  # no timeout
 autosummary_generate = True
+
+# Certain notebooks are saved pre-executed. Set this environment variable
+# to "auto" to prevent re-executing (which takes time!). The CI will
+# not re-execute these notebooks.
+# https://github.com/quantumlib/ReCirq/issues/15
+nbsphinx_execute = os.environ.get(
+    'NBSPHINX_EXECUTE_NOTEBOOKS', 'always')  # can be "auto" or "never".
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
@@ -68,20 +77,60 @@ def env_before_read_docs(app, env, docnames):
 
     Dependencies:
         Readout-Data-Collection <-- Readout-Analysis
+        qaoa/Tasks-Tutorial <-- qaoa/Precomputed-Analysis
+
+    Data:
+        Readout-Data-Collection saves
+            cirq-results/readout-scan/2020-02-tutorial
+
+        qaoa/Tasks-Tutorial saves
+            cirq-results/qaoa-problems/2020-03-tutorial
+            cirq-results/qaoa-precomputation/2020-03-tutorial
+            cirq-results/qaoa-precomputed/2020-03-tutorial
+
     """
+    print(docnames)
 
     def _order(docname):
         if docname == 'Readout-Data-Collection':
+            # must come before others
+            return -1
+
+        if docname == 'qaoa/Tasks-Tutorial':
             # must come before others
             return -1
         return 0
 
     docnames.sort(key=_order)
 
+    print(docnames)
+
     if ('Readout-Data-Collection' in docnames
             and 'Readout-Analysis' not in docnames):
         # Mark the analysis notebook as changed
         docnames.append('Readout-Analysis')
+
+    if ('qaoa/Tasks-Tutorial' in docnames
+            and 'qaoa/Precomputed-Analysis' not in docnames):
+        # Mark the analysis notebook as changed
+        docnames.append('qaoa/Precomputed-Analysis')
+
+    print(docnames)
+
+    if 'Readout-Data-Collection' in docnames:
+        from recirq.readout_scan import tasks as rs_tasks
+        shutil.rmtree(f'{rs_tasks.DEFAULT_BASE_DIR}/2020-02-tutorial')
+
+    if 'qaoa/Tasks-Tutorial' in docnames and nbsphinx_execute == 'always':
+        # Clear data that's already been collected, but only if we're actually
+        # executing this notebook. This notebook is saved pre-executed, so
+        # set environment variable NBSPHINX_EXECUTE_NOTEBOOKS to 'auto' to
+        # prevent deleting the data and running from scratch (which can take
+        # a long time).
+        from recirq.qaoa.experiments import precomputed_execution_tasks as qaoa_tasks
+        shutil.rmtree(f'{qaoa_tasks.DEFAULT_PROBLEM_GENERATION_BASE_DIR}/2020-03-tutorial')
+        shutil.rmtree(f'{qaoa_tasks.DEFAULT_PRECOMPUTATION_BASE_DIR}/2020-03-tutorial')
+        shutil.rmtree(f'{qaoa_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
 
 
 def setup(app):
