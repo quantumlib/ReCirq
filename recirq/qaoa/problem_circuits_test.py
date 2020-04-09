@@ -10,7 +10,7 @@ from recirq.qaoa.problem_circuits import get_routed_hardware_grid_circuit, \
 
 
 def test_get_generic_qaoa_circuit():
-    problem_graph = nx.gnp_random_graph(n=6, p=0.5)
+    problem_graph = nx.gnp_random_graph(n=6, p=0.5, seed=52)
     nx.set_edge_attributes(problem_graph, 1, name='weight')
     qubits = cirq.GridQubit.rect(2, 3, 10, 10)
 
