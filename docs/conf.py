@@ -82,7 +82,8 @@ def env_before_read_docs(app, env, docnames):
 
     Dependencies:
         Readout-Data-Collection <-- Readout-Analysis
-        qaoa/Tasks-Tutorial <-- qaoa/Precomputed-Analysis
+        qaoa/Tasks-Tutorial <-+-- qaoa/Precomputed-Analysis
+                              +-- qaoa/Landscape-Analysis
 
     Data:
         Readout-Data-Collection saves
@@ -92,6 +93,7 @@ def env_before_read_docs(app, env, docnames):
             cirq-results/qaoa-problems/2020-03-tutorial
             cirq-results/qaoa-precomputation/2020-03-tutorial
             cirq-results/qaoa-precomputed/2020-03-tutorial
+            cirq-results/qaoa-p1-landscape/2020-03-tutorial
 
     """
     print(docnames)
@@ -115,10 +117,13 @@ def env_before_read_docs(app, env, docnames):
         # Mark the analysis notebook as changed
         docnames.append('Readout-Analysis')
 
-    if ('qaoa/Tasks-Tutorial' in docnames
-            and 'qaoa/Precomputed-Analysis' not in docnames):
-        # Mark the analysis notebook as changed
-        docnames.append('qaoa/Precomputed-Analysis')
+    if 'qaoa/Tasks-Tutorial' in docnames:
+        if 'qaoa/Precomputed-Analysis' not in docnames:
+            # Mark the analysis notebook as changed
+            docnames.append('qaoa/Precomputed-Analysis')
+        if 'qaoa/Landscape-Analysis' not in docnames:
+            # Mark the analysis notebook as changed
+            docnames.append('qaoa/Landscape-Analysis')
 
     print(docnames)
 
@@ -132,10 +137,13 @@ def env_before_read_docs(app, env, docnames):
         # set environment variable NBSPHINX_EXECUTE_NOTEBOOKS to 'auto' to
         # prevent deleting the data and running from scratch (which can take
         # a long time).
-        from recirq.qaoa.experiments import precomputed_execution_tasks as qaoa_tasks
-        _rmtree_if_exists(f'{qaoa_tasks.DEFAULT_PROBLEM_GENERATION_BASE_DIR}/2020-03-tutorial')
-        _rmtree_if_exists(f'{qaoa_tasks.DEFAULT_PRECOMPUTATION_BASE_DIR}/2020-03-tutorial')
-        _rmtree_if_exists(f'{qaoa_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
+        from recirq.qaoa.experiments import precomputed_execution_tasks as qaoa_pre_tasks
+        _rmtree_if_exists(f'{qaoa_pre_tasks.DEFAULT_PROBLEM_GENERATION_BASE_DIR}/2020-03-tutorial')
+        _rmtree_if_exists(f'{qaoa_pre_tasks.DEFAULT_PRECOMPUTATION_BASE_DIR}/2020-03-tutorial')
+        _rmtree_if_exists(f'{qaoa_pre_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
+
+        from recirq.qaoa.experiments import p1_landscape_tasks as qaoa_p1_tasks
+        _rmtree_if_exists(f'{qaoa_p1_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
 
 
 def setup(app):
