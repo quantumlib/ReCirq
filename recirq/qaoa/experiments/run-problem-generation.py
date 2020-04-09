@@ -36,7 +36,7 @@ def main():
             n_qubits=n
         )
         for i in range(100)
-        for n in range(3, 18 + 1)
+        for n in range(3, 17 + 1)
     ]
     three_regular_problem_tasks = [
         ThreeRegularProblemGenerationTask(

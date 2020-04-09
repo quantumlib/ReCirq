@@ -15,8 +15,11 @@
 import numpy as np
 import networkx as nx
 
+import cirq
+from recirq.qaoa.problems import random_plus_minus_1_weights
 from recirq.qaoa.simulation import multiply_single_spin, evolve_by_HamB, \
-    create_ZZ_HamC, ising_qaoa_grad
+    create_ZZ_HamC, ising_qaoa_grad, hamiltonian_objectives, hamiltonian_objective, \
+    hamiltonian_objective_avg_and_err
 
 
 def test_multiply_single_spin():
@@ -81,3 +84,52 @@ def test_ising_qaoa_grad():
 
     assert np.abs(F - 1.897011131463) <= 1e-10
     assert np.all(np.abs(Fgrad - [14.287009047096, -0.796709998210]) <= 1e-10)
+
+
+def test_hamiltonian_objectives_consistent():
+    n = 10
+    graph = nx.complete_graph(n=n)
+    graph = random_plus_minus_1_weights(graph)
+    bitstrings = np.random.choice([True, False], size=(100, n))
+    expected_energies = [hamiltonian_objective(bitstring, graph)
+                         for bitstring in bitstrings]
+    actual_energies = hamiltonian_objectives(bitstrings, graph)
+    np.testing.assert_allclose(expected_energies, actual_energies)
+
+
+def test_hamiltonian_objective_avg_and_var():
+    bitstrings = np.array([[1, 0, 1, 0, 1],
+                           [0, 1, 1, 1, 0],
+                           [0, 1, 1, 1, 0],
+                           [1, 1, 0, 0, 1],
+                           [0, 1, 1, 1, 1],
+                           [0, 1, 1, 0, 0],
+                           [0, 0, 0, 0, 0],
+                           [1, 0, 0, 1, 0],
+                           [1, 0, 0, 0, 1],
+                           [1, 1, 1, 1, 0],
+                           [0, 1, 1, 1, 0],
+                           [1, 0, 0, 0, 0],
+                           [1, 0, 0, 0, 1],
+                           [1, 0, 0, 0, 1],
+                           [1, 1, 0, 1, 0],
+                           [0, 0, 1, 1, 0],
+                           [1, 0, 0, 0, 1],
+                           [1, 1, 0, 0, 1],
+                           [0, 1, 1, 1, 1],
+                           [0, 1, 1, 1, 0]], dtype=np.uint8)
+    g = nx.Graph()
+    g.add_edge(cirq.GridQubit(5, 3), cirq.GridQubit(6, 3), weight=1.0)
+    g.add_edge(cirq.GridQubit(6, 3), cirq.GridQubit(7, 3), weight=1.0)
+    g.add_edge(cirq.GridQubit(6, 3), cirq.GridQubit(6, 2), weight=-1.0)
+    g.add_edge(cirq.GridQubit(6, 3), cirq.GridQubit(6, 4), weight=-1.0)
+    vals = hamiltonian_objectives(bitstrings, g)
+    val1 = np.mean(vals)
+    naive_var = np.var(vals)
+    val2, std_err = hamiltonian_objective_avg_and_err(bitstrings, g)
+    prop_var = std_err ** 2 * len(bitstrings)
+    print()
+    print(naive_var, prop_var)
+    print(std_err)
+    assert prop_var > naive_var
+    assert np.isclose(val1, val2)

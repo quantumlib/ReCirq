@@ -288,18 +288,17 @@ async def execute_in_queue(func, tasks, num_workers: int):
 
     async def worker():
         while True:
-            param = await queue.get()
-            print(f"Processing {param}. Current queue size: {queue.qsize()}")
-            await func(param)
-            print(f"{param.fn} completed")
+            task = await queue.get()
+            print(f"Processing {task.fn}. Current queue size: {queue.qsize()}")
+            await func(task)
+            print(f"{task.fn} completed")
             queue.task_done()
 
-    tasks = [asyncio.create_task(worker()) for _ in range(num_workers)]
-    for param in tasks:
-        await queue.put(param)
+    worker_jobs = [asyncio.create_task(worker()) for _ in range(num_workers)]
+    for task in tasks:
+        await queue.put(task)
     print("Added everything to the queue. Current queue size: {}"
           .format(queue.qsize()))
     await queue.join()
-    for task in tasks:
-        task.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)
+    for wjob in worker_jobs:
+        wjob.cancel()
