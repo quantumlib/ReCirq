@@ -19,9 +19,6 @@ on:
     branches:
     - master
 
-env:
-  PROJECT_ID: ${{ secrets.PROJECT_ID }}
-
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
@@ -32,7 +29,7 @@ jobs:
       uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
       with:
         version: '270.0.0'
-        service_account_email: ${{ secrets.SA_EMAIL }}
+        project_id: ${{ secrets.PROJECT_ID }}
         service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
     - name: Set up Python
@@ -58,4 +55,4 @@ jobs:
 
     - name: Deploy
       run: |
-        gcloud app deploy docs/appengine/app.yaml --project=$PROJECT_ID
+        gcloud app deploy docs/appengine/app.yaml
