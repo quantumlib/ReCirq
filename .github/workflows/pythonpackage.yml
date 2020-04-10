@@ -57,6 +57,8 @@ jobs:
         pytest -v
 
     - name: Build documentation
+      env:
+          NBSPHINX_EXECUTE_NOTEBOOKS: auto
       run: |
         pip install sphinx nbsphinx jupyter_client ipykernel
         sudo apt-get install pandoc

@@ -273,9 +273,16 @@ def flatten_dataclass_into_record(record, key):
     This is useful for flattening a JSON hierarchy for construction
     of a Pandas DataFrame.
     """
-    dc_dict = dataclasses.asdict(record[key])
-    record.update(**dc_dict)
-    if key not in dc_dict:
+    dc = record[key]
+    updated_keys = set()
+    for field in dataclasses.fields(dc):
+        k = field.name
+        v = getattr(dc, k)
+        if k in record:
+            k = f'{key}.{k}'
+        record[k] = v
+        updated_keys.add(k)
+    if key not in updated_keys:
         # Otherwise, we've already overwritten the original key
         del record[key]
 

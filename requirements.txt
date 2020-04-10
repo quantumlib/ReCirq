@@ -1,4 +1,7 @@
 cirq-unstable==0.8.0.dev20200318154950
+seaborn
+sphinx
+ipython
 
 # qaoa
 networkx
