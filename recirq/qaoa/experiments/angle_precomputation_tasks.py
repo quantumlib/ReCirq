@@ -14,21 +14,16 @@
 
 import os
 from functools import lru_cache
-from typing import Dict, Union
+from typing import Dict
 
 import numpy as np
 
 import recirq
 from recirq.qaoa.classical_angle_optimization import OptimizationResult, \
     optimize_instance_interp_heuristic
-from recirq.qaoa.experiments.problem_generation_tasks import HardwareGridProblemGenerationTask, \
-    SKProblemGenerationTask, ThreeRegularProblemGenerationTask, \
+from recirq.qaoa.experiments.problem_generation_tasks import ProblemGenerationTaskT, \
     DEFAULT_BASE_DIR as DEFAULT_PROBLEM_GENERATION_BASE_DIR
 from recirq.qaoa.problems import HardwareGridProblem, ThreeRegularProblem, SKProblem
-
-ProblemGenerationTask = Union[HardwareGridProblemGenerationTask,
-                              SKProblemGenerationTask,
-                              ThreeRegularProblemGenerationTask]
 
 EXPERIMENT_NAME = 'qaoa-precomputation'
 DEFAULT_BASE_DIR = os.path.expanduser(f'~/cirq-results/{EXPERIMENT_NAME}')
@@ -49,7 +44,7 @@ class AnglePrecomputationTask:
         p: QAOA depth hyperparameter p. The number of parameters is 2*p.
     """
     dataset_id: str
-    generation_task: ProblemGenerationTask
+    generation_task: ProblemGenerationTaskT
     p: int
 
     @property
@@ -61,7 +56,7 @@ class AnglePrecomputationTask:
 
 
 @lru_cache()
-def _get_optima(in_task: ProblemGenerationTask,
+def _get_optima(in_task: ProblemGenerationTaskT,
                 problem_generation_base_dir,
                 p_max: int = 5) \
         -> Dict[int, OptimizationResult]:

@@ -14,6 +14,7 @@
 
 import os
 from functools import lru_cache
+from typing import Union
 
 import networkx as nx
 import numpy as np
@@ -267,3 +268,8 @@ def generate_3_regular_problem(
         'problem': problem,
     }, base_dir=base_dir)
     print(f"{task.fn} complete.")
+
+
+ProblemGenerationTaskT = Union[HardwareGridProblemGenerationTask,
+                               SKProblemGenerationTask,
+                               ThreeRegularProblemGenerationTask]

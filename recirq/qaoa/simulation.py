@@ -328,11 +328,9 @@ def hamiltonian_objective(
 def hamiltonian_objectives(
         bitstrings: np.ndarray,
         graph: nx.Graph,
-        nodelist: Optional[List[cirq.Qid]] = None,
-        readout_calibration:
-        Optional[cirq.experiments.SingleQubitReadoutCalibrationResult]
-        = None,
-        qubit_map: Optional[Dict[cirq.Qid, cirq.Qid]] = None
+        nodelist: Optional[List[int]] = None,
+        readout_calibration: Optional[cirq.experiments.SingleQubitReadoutCalibrationResult] = None,
+        qubit_map: Optional[Dict[int, cirq.Qid]] = None
 ) -> np.ndarray:
     if nodelist is None:
         nodelist = sorted(graph.nodes)
@@ -346,8 +344,7 @@ def hamiltonian_objectives(
             p1_i = 1 - readout_calibration.one_state_errors[qubit_map[nodelist[i]]]
             p0_j = 1 - readout_calibration.zero_state_errors[qubit_map[nodelist[j]]]
             p1_j = 1 - readout_calibration.one_state_errors[qubit_map[nodelist[j]]]
-            correction_matrix[i, j] = (
-                    1 / ((p0_i + p1_i - 1) * (p0_j + p1_j - 1)))
+            correction_matrix[i, j] = (1 / ((p0_i + p1_i - 1) * (p0_j + p1_j - 1)))
         mat = mat.toarray() * correction_matrix
     vecs = (-1) ** bitstrings
     return 0.5 * np.sum(vecs * (mat @ vecs.T).T, axis=-1)
@@ -356,7 +353,7 @@ def hamiltonian_objectives(
 def hamiltonian_objective_avg_and_err(
         bitstrings: np.ndarray,
         graph: nx.Graph,
-        nodelist: Optional[List[cirq.Qid]] = None,
+        nodelist: Optional[List[int]] = None,
 ) -> Tuple[float, float]:
     if nodelist is None:
         nodelist = sorted(graph.nodes)
@@ -382,3 +379,8 @@ def hamiltonian_objective_avg_and_err(
 
     std_err = np.sqrt(var / len(bitstrings))
     return f, std_err
+
+
+def lowest_and_highest_energy(graph: nx.Graph):
+    hamiltonian = create_ZZ_HamC(graph, dtype=np.float64)
+    return np.min(hamiltonian), np.max(hamiltonian)
