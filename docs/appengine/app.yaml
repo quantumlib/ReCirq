@@ -3,3 +3,4 @@ handlers:
  - url: /recirq/(.*)
    static_files: built-docs/\1
    upload: built-docs/(.*)
+   secure: always
