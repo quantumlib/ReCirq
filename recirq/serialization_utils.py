@@ -25,6 +25,7 @@ import numpy as np
 
 import cirq
 from cirq import protocols
+from cirq.protocols.json_serialization import DEFAULT_RESOLVERS
 
 if sys.version_info > (3, 8):
     from typing import Protocol
@@ -222,8 +223,8 @@ def _recirq_class_resolver(cirq_type: str) -> Union[None, Type]:
     }.get(cirq_type)
 
 
-DEFAULT_RESOLVERS = [_recirq_class_resolver, Registry.get] \
-                    + protocols.DEFAULT_RESOLVERS
+DEFAULT_RESOLVERS_ = [_recirq_class_resolver, Registry.get] \
+                    + DEFAULT_RESOLVERS
 
 
 def read_json(file_or_fn=None, *, json_text=None, resolvers=None):
@@ -234,7 +235,7 @@ def read_json(file_or_fn=None, *, json_text=None, resolvers=None):
     recirq objects.
     """
     if resolvers is None:
-        resolvers = DEFAULT_RESOLVERS
+        resolvers = DEFAULT_RESOLVERS_
 
     return protocols.read_json(file_or_fn=file_or_fn,
                                json_text=json_text,
