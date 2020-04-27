@@ -117,9 +117,13 @@ def run_quantum_volume(task: QuantumVolumeTask, base_dir=None):
             optimizer_type='sycamore',
             tabulation_resolution=0.008),
         add_readout_error_correction=task.readout_error_correction)
-    # Save the results CODE REVIEW QUESTION: This attempts to serialize a QuantumVolumeResult, which contains a
-    # Circuit, which contains a SerializableDevice, which is not JSON serializable. What's the best way to resolve
-    # this?
+    # Save the results. NB: The circuits in the results have Circuits that contain a SerializableDevice, which at the
+    # time of this writing is not JSON serializable. Because we don't actually need the device to be in the circuits,
+    # we simply set them to None for now.
+    for result in results:
+        # We can't actually set the device property to None, so set _device directly.
+        result.compiled_circuit._device = None
+        result.model_circuit._device = None
     recirq.save(task=task, data={
         'results': results,
     }, base_dir=base_dir)
