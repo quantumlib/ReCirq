@@ -12,32 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from recirq import optimize
-
-from recirq.serialization_utils import (
-    exists,
-    save,
-    load,
-    roundrobin,
-    read_json,
-    iterload_records,
-    load_records,
-    flatten_dataclass_into_record,
-    Registry,
-    BitArray,
-    NumpyArray,
-    json_serializable_dataclass,
-)
-
-from recirq.engine_utils import (
-    EngineSampler,
-    ZerosSampler,
-    get_device_obj_by_name,
-    get_processor_id_by_device_name,
-    get_sampler_by_name,
-    execute_in_queue,
-)
-
-from recirq.documentation_utils import (
-    display_markdown_docstring,
-)
+from recirq.optimize.minimize import minimize
