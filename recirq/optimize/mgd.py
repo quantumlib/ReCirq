@@ -23,13 +23,31 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
 
 
-def _get_least_squares_model_gradient(xs: List[np.ndarray],
-                                      ys: List[np.ndarray], xopt: np.ndarray,
-                                      linear_model: LinearRegression
-                                     ) -> np.ndarray:
+def _get_least_squares_model_gradient(
+        xs: List[np.ndarray],
+        ys: List[float],
+        xopt: np.ndarray,
+) -> Tuple[np.ndarray, Pipeline]:
+    """Fit a least squares quadratic model and return its gradient.
+
+    Given a list of points and their function values, fits a least squares
+    quadratic model to the function using polynomial features. Then,
+    return the gradient of the model at a given point, and the model itself.
+    This function is used by `model_gradient_descent` to estimate the gradient
+    of the objective function.
+
+    Args:
+        xs: The points at which function values are given.
+        ys: The function values at the points given by `xs`.
+        xopt: The point at which to evaluate the gradient.
+
+    Returns:
+        A tuple whose first element is the gradient and second element is the
+        regression model.
+    """
     model = Pipeline([
         ('poly', PolynomialFeatures(degree=2)),
-        ('linear_model', linear_model),
+        ('linear_model', LinearRegression(fit_intercept=False)),
     ])
     shifted_xs = [x - xopt for x in xs]
     model = model.fit(shifted_xs, ys)
@@ -40,6 +58,15 @@ def _get_least_squares_model_gradient(xs: List[np.ndarray],
 
 
 def _random_point_in_ball(n: int, radius: float) -> np.ndarray:
+    """Return a point uniformly at random from a ball centered at the origin.
+
+    Args:
+        n: The dimension of the point to return.
+        radius: The radius of the ball to sample from.
+
+    Returns:
+        The randomly sampled point.
+    """
     point_on_sphere = np.random.randn(n)
     point_on_sphere /= np.linalg.norm(point_on_sphere)
     length = np.random.uniform()
@@ -60,8 +87,7 @@ def model_gradient_descent(
         stability_constant: float = 0.0,
         sample_radius_decay_exponent: float = 0.0,
         tol: float = 1e-8,
-        known_values: Optional[
-            Tuple[List[np.ndarray], List[np.ndarray]]] = None,
+        known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
         max_iterations: Optional[int] = None,
         max_evaluations: Optional[int] = None) -> scipy.optimize.OptimizeResult:
     """Model gradient descent algorithm for black-box optimization.
@@ -101,6 +127,9 @@ def model_gradient_descent(
             termination.
         max_evaluations: The maximum number of function evaluations to allow
             before termination.
+
+    Returns:
+        Scipy OptimizeResult
     """
 
     if known_values is not None:
@@ -170,9 +199,8 @@ def model_gradient_descent(
                 model_xs.append(x)
                 model_ys.append(y)
         # Build and solve model
-        linear_model = LinearRegression(fit_intercept=False)
         model_gradient, model = _get_least_squares_model_gradient(
-            model_xs, model_ys, current_x, linear_model)
+            model_xs, model_ys, current_x)
 
         # calculate the gradient and update the current point
         gradient_norm = np.linalg.norm(model_gradient)
