@@ -18,7 +18,7 @@ import recirq
 
 
 def sum_of_squares(x):
-    return np.sum(x**2)
+    return np.sum(x**2).item()
 
 
 def test_minimize():

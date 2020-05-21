@@ -45,7 +45,7 @@ class P1LandscapeDataCollectionTask:
 
     Attributes:
         dataset_id: A unique identifier for this dataset.
-        generation_Task: The task specifying the problem to collect data for
+        generation_task: The task specifying the problem to collect data for
         device_name: The device to run on
         n_shots: The number of shots to take
         gamma: The problem unitary parameter gamma
