@@ -82,7 +82,7 @@ def model_gradient_descent(
         rate: float = 1e-1,
         sample_radius: float = 1e-1,
         n_sample_points: int = 100,
-        n_sample_points_coeff: Optional[float] = None,
+        n_sample_points_ratio: Optional[float] = None,
         rate_decay_exponent: float = 0.0,
         stability_constant: float = 0.0,
         sample_radius_decay_exponent: float = 0.0,
@@ -108,7 +108,7 @@ def model_gradient_descent(
         sample_radius: The radius around the current iterate to sample
             points from to build the quadratic model.
         n_sample_points: The number of points to sample in each iteration.
-        n_sample_points_coeff: This specifies the number of points to sample
+        n_sample_points_ratio: This specifies the number of points to sample
             in each iteration as a coefficient of the number of points
             required to exactly determine a quadratic model. The number
             of sample points will be this coefficient times (n+1)(n+2)/2,
@@ -145,9 +145,9 @@ def model_gradient_descent(
         max_evaluations = np.inf
 
     n = len(x0)
-    if n_sample_points_coeff is not None:
+    if n_sample_points_ratio is not None:
         n_sample_points = int(
-            np.ceil(n_sample_points_coeff * (n + 1) * (n + 2) / 2))
+            np.ceil(n_sample_points_ratio * (n + 1) * (n + 2) / 2))
 
     _, f = wrap_function(f, args)
     res = OptimizeResult()
