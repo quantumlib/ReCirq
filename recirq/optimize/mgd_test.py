@@ -18,7 +18,7 @@ from recirq.optimize.mgd import model_gradient_descent
 
 
 def sum_of_squares(x):
-    return np.sum(x**2)
+    return np.sum(x**2).item()
 
 
 def test_model_gradient_descent():

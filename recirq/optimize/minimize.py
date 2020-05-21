@@ -1,7 +1,7 @@
 from typing import Callable, Optional, Tuple
 
 import numpy as np
-import scipy
+import scipy.optimize
 from recirq.optimize.mgd import model_gradient_descent
 
 OPTIMIZERS = {'mgd': model_gradient_descent}
