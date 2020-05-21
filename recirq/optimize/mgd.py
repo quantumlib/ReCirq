@@ -115,7 +115,15 @@ def model_gradient_descent(
             rounded up, where n is the number of parameters.
             Setting this overrides n_sample_points.
         rate_decay_exponent: Controls decay of learning rate.
+            In each iteration, the learning rate is changed to the
+            base learning rate divided by (i + 1 + S)**a, where S
+            is the stability constant and a is the rate decay exponent
+            (this parameter).
         stability_constant: Affects decay of learning rate.
+            In each iteration, the learning rate is changed to the
+            base learning rate divided by (i + 1 + S)**a, where S
+            is the stability constant (this parameter) and a is the rate decay
+            exponent.
         sample_radius_decay_exponent: Controls decay of sample radius.
         tol: The algorithm terminates when the difference between the current
             iterate and the next suggested iterate is smaller than this value.
