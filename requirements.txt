@@ -3,6 +3,9 @@ seaborn
 sphinx
 ipython
 
+# optimize
+scikit-learn
+
 # qaoa
 networkx
 pytket==0.1.6 # does not work with anything later
