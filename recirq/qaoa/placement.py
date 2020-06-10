@@ -14,35 +14,34 @@ import cirq.devices
 
 cirq.devices.UnconstrainedDevice = cirq.devices.UNCONSTRAINED_DEVICE
 # End major shim.
-
-import pytket.cirq
-import pytket._routing
+try:
+    import pytket.cirq
+    import pytket._routing
+except ImportError:
+    print("PyTket problems")
 import cirq.contrib.routing as ccr
+import cirq.google as cg
 
 
-def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
+def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
     """Take the calibration data in dictionary form and return a graph
     representing the errors.
-
-    The edge weights are two_qubit_sycamore_gate_xeb_cycle_total_error.
-    The node weights are single_qubit_readout_p0_error
-                       + single_qubit_readout_p1_error.
     """
     err_graph = nx.Graph()
-    for (q1, q2), err in calib_dict['two_qubit_sycamore_gate_xeb_cycle_total_error'].items():
+    for (q1, q2), err in calib_dict['two_qubit_sycamore_gate_xeb_average_error_per_cycle'].items():
         err_graph.add_edge(q1, q2, weight=err[0])
 
-    for (q,), err in calib_dict['single_qubit_readout_p0_error'].items():
+    for (q,), err in calib_dict['single_qubit_p00_error'].items():
         err_graph.nodes[q]['weight'] = err[0]
 
-    for (q,), err in calib_dict['single_qubit_readout_p1_error'].items():
+    for (q,), err in calib_dict['single_qubit_p11_error'].items():
         err_graph.nodes[q]['weight'] += err[0]
 
     return err_graph
 
 
 def place_on_device(circuit: cirq.Circuit,
-                    device: cirq.google.XmonDevice,
+                    device: cg.XmonDevice,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
@@ -618,8 +617,9 @@ def _get_device_calibration(device_name: str):
         nx.set_edge_attributes(dummy_graph, name='weight', values=0.01)
         return dummy_graph
 
-    engine = cirq.google.Engine(project_id=os.environ['GOOGLE_CLOUD_PROJECT'])
-    calibration = engine.get_latest_calibration(processor_id)
+    engine = cg.Engine(project_id=os.environ['GOOGLE_CLOUD_PROJECT'])
+    processor = engine.get_processor(processor_id)
+    calibration = processor.get_current_calibration()
     err_graph = calibration_data_to_graph(calibration)
     return err_graph
 

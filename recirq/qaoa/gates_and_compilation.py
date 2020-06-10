@@ -95,6 +95,11 @@ class ProblemUnitary(cirq.Gate):
             q1 = qubits[i2]
             yield cirq.ZZPowGate(
                 exponent=2 * self.gamma * weight / np.pi, global_shift=-0.5).on(q0, q1)
+        for i, weight in self.problem_graph.nodes.data('weight'):
+            if weight is None:
+                continue
+            q = qubits[i]
+            yield cirq.ZPowGate(exponent=2 * self.gamma * weight / np.pi, global_shift=-0.5).on(q)
 
     def _circuit_diagram_info_(
             self,

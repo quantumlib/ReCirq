@@ -19,7 +19,7 @@ import numpy as np
 import scipy.optimize
 
 import recirq
-from recirq.qaoa.simulation import create_ZZ_HamC, ising_qaoa_grad
+from recirq.qaoa.simulation import create_ZZ_HamC, ising_qaoa_grad, ising_qaoa_pzstar
 
 EVEN_DEGREE_ONLY, ODD_DEGREE_ONLY = 0, 1
 
@@ -46,13 +46,18 @@ class OptimizationResult:
     betas: np.ndarray
     min_c: float
     max_c: float
+    pzstar: float
 
 
 def optimize_instance_interp_heuristic(graph: nx.Graph,
                                        p_max: int = 10,
                                        param_guess_at_p1=None,
                                        node_to_index_map=None,
+                                       *,
+                                       flag_z2_sym=True,
                                        dtype=np.complex128,
+                                       ansatz_modifier_graph: nx.Graph = None,
+                                       ansatz_modification_factor: float = 0,
                                        verbose=False):
     r"""
     Given a graph, find QAOA parameters that minimizes C=\sum_{<ij>} w_{ij} Z_i Z_j
@@ -77,14 +82,28 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
     # TODO: remove node_to_index_map; mandate 0-indexing.
 
     # construct function to be passed to scipy.optimize.minimize
-    HamC = create_ZZ_HamC(graph, True, node_to_index_map, dtype=dtype)
     N = graph.number_of_nodes()
+    if ansatz_modification_factor < 0:
+        raise ValueError("`ansatz_modification_factor` must be non-negative")
+
+    if ansatz_modifier_graph is not None and ansatz_modification_factor > 0:
+        HamC_objective = create_ZZ_HamC(graph, flag_z2_sym=flag_z2_sym,
+                                        node_to_index_map=node_to_index_map, dtype=dtype)
+        HamC_perturb = create_ZZ_HamC(ansatz_modifier_graph, flag_z2_sym=flag_z2_sym,
+                                      node_to_index_map=node_to_index_map, dtype=dtype)
+        HamC = ansatz_modification_factor * HamC_perturb \
+               + (1 - ansatz_modification_factor) * HamC_objective
+    else:
+        HamC = create_ZZ_HamC(graph, flag_z2_sym=flag_z2_sym,
+                              node_to_index_map=node_to_index_map, dtype=dtype)
+        HamC_objective = HamC
 
     def qaoa_fun(param):
-        return ising_qaoa_grad(N, HamC, param, flag_z2_sym=True, dtype=dtype)
+        return ising_qaoa_grad(N, HamC, param, flag_z2_sym=flag_z2_sym, dtype=dtype,
+                               HamC_objective=HamC_objective)
 
-    min_c = np.real_if_close(np.min(HamC))
-    max_c = np.real_if_close(np.max(HamC))
+    min_c = np.real_if_close(np.min(HamC_objective))
+    max_c = np.real_if_close(np.max(HamC_objective))
 
     # check if the node degrees are always odd or even
     # TODO: Why do we mod 2 twice?
@@ -100,6 +119,7 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
     # start the optimization process incrementally from p = 1 to p_max
     Fvals = p_max * [0]
     params = p_max * [None]
+    pzstars = p_max * [0]
 
     for p in range(p_max):  # note here, p goes from 0 to p_max - 1
 
@@ -148,6 +168,9 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
 
         Fvals[p] = results.fun
         params[p] = fix_param_gauge(results.x, degree_parity=parity)
+        pzstars[p] = ising_qaoa_pzstar(N=N, HamC=HamC, param=params[p],
+                                       flag_z2_sym=flag_z2_sym, dtype=dtype,
+                                       HamC_objective=HamC_objective)
 
     return [
         OptimizationResult(
@@ -156,8 +179,9 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
             gammas=param[:p],
             betas=param[p:],
             min_c=min_c,
-            max_c=max_c
-        ) for p, f_val, param in zip(range(1, p_max + 1), Fvals, params)
+            max_c=max_c,
+            pzstar=pzstar,
+        ) for p, f_val, param, pzstar in zip(range(1, p_max + 1), Fvals, params, pzstars)
     ]
 
 

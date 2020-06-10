@@ -27,6 +27,7 @@ import networkx as nx
 import numpy as np
 
 import cirq
+from recirq.qaoa.problem_circuits import get_generic_qaoa_circuit
 
 SIGMA_X_IND, SIGMA_Y_IND, SIGMA_Z_IND = (1, 2, 3)
 
@@ -61,6 +62,11 @@ def create_ZZ_HamC(graph: nx.Graph, flag_z2_sym=True, node_to_index_map=None, dt
     symmetric sector which reduces the Hilbert space dimension by a factor of 2,
     saving memory.
     """
+    for k, v in graph.nodes.data('weight'):
+        if v is not None and flag_z2_sym:
+            raise ValueError("`problem_graph` has node weights, "
+                             "but you specified flag_z2_sym=True.")
+
     n_nodes = graph.number_of_nodes()
     HamC = np.zeros((2 ** n_nodes, 1), dtype=dtype)
 
@@ -68,15 +74,36 @@ def create_ZZ_HamC(graph: nx.Graph, flag_z2_sym=True, node_to_index_map=None, dt
     if node_to_index_map is None:
         node_to_index_map = {q: i for i, q in enumerate(graph.nodes)}
 
-    for a, b in graph.edges:
-        HamC += graph[a][b]['weight'] * ham_two_local_term(
-            sigma_z, sigma_z, node_to_index_map[a], node_to_index_map[b], n_nodes, dtype=dtype)
+    for a, b, w in graph.edges.data('weight'):
+        HamC += w * ham_two_local_term(sigma_z, sigma_z,
+                                       node_to_index_map[a], node_to_index_map[b],
+                                       n_nodes, dtype=dtype)
+
+    for a, w in graph.nodes.data('weight'):
+        if w is None:
+            continue
+        HamC += w * ham_one_body_term(sigma_z, node_to_index_map[a], n_nodes, dtype=dtype)
 
     if flag_z2_sym:
         # restrict to first half of Hilbert space
         return HamC[range(2 ** (n_nodes - 1)), 0]
     else:
         return HamC[:, 0]
+
+
+def ham_one_body_term(op1, ind1, N, dtype=np.complex128):
+    if op1.ndim != 2:
+        raise ValueError('Invalid operator.')
+
+    if ind1 < 0 or ind1 > N - 1:
+        raise ValueError('Invalid input indices')
+
+    if op1.shape[0] == 1 or op1.shape[1] == 1:
+        myeye = lambda n: np.ones(np.asarray(op1.shape) ** n, dtype=dtype)
+    else:
+        myeye = lambda n: np.eye(np.asarray(op1.shape) ** n, dtype=dtype)
+
+    return np.kron(myeye(ind1), np.kron(op1, myeye(N - ind1 - 1)))
 
 
 def ham_two_local_term(op1, op2, ind1, ind2, N, dtype=np.complex128):
@@ -147,18 +174,23 @@ def evolve_by_HamB(N, beta, psi_in, flag_z2_sym=False, copy=True, dtype=np.compl
     return psi
 
 
-def ising_qaoa_grad(N, HamC, param, flag_z2_sym=False, dtype=np.complex128):
+def ising_qaoa_grad(N, HamC, param, flag_z2_sym=False, dtype=np.complex128,
+                    *,
+                    HamC_objective=None):
     """For QAOA on Ising problems, calculate the objective function F and its
         gradient exactly
 
     Args:
         N: number of spins
-        HamC: a vector of diagonal of objective Hamiltonian in Z basis
+        HamC: a Hamiltonian to evolve under. If HamC_objective is `None`, this
+            is also the objective cost function.
         param: parameters of QAOA. Should be 2*p in length
         flag_z2_sym: if True, we're only working in the Z2-symmetric sector
             (saves Hilbert space dimension by a factor of 2)
             default set to False because we can take more general HamC
             that is not Z2-symmetric.
+        HamC_objective: If not None, use this alternate Hamiltonian as the
+            objective cost function.
 
     Returns:
         F: <HamC> for minimization
@@ -167,6 +199,9 @@ def ising_qaoa_grad(N, HamC, param, flag_z2_sym=False, dtype=np.complex128):
     p = len(param) // 2
     gammas = param[:p]
     betas = param[p:]
+
+    if HamC_objective is None:
+        HamC_objective = HamC
 
     def evolve_by_ham_b_local(beta, psi):
         return evolve_by_HamB(N, beta, psi, flag_z2_sym, copy=False, dtype=dtype)
@@ -186,7 +221,7 @@ def ising_qaoa_grad(N, HamC, param, flag_z2_sym=False, dtype=np.complex128):
             betas[q], np.exp(-1j * gammas[q] * HamC) * psi_p[:, q])
 
     # multiply by HamC
-    psi_p[:, p + 1] = HamC * psi_p[:, p]
+    psi_p[:, p + 1] = HamC_objective * psi_p[:, p]
 
     # evolving backwards
     for q in range(p):
@@ -251,6 +286,18 @@ def ising_qaoa_expectation_and_variance(N, HamC, param, flag_z2_sym=False, dtype
     variance = np.real(np.vdot(psi, HamC ** 2 * psi) - expectation ** 2)
 
     return expectation, variance, psi
+
+
+def ising_qaoa_pzstar(N, HamC, param, *, flag_z2_sym=False, dtype=np.complex128,
+                      HamC_objective=None):
+    if HamC_objective is None:
+        HamC_objective = HamC
+
+    _, _, psi = ising_qaoa_expectation_and_variance(N, HamC, param, flag_z2_sym=flag_z2_sym,
+                                                    dtype=dtype)
+    answer_inds = np.where(HamC_objective == np.min(HamC_objective))
+    probs = np.abs(psi) ** 2
+    return np.sum(probs[answer_inds])
 
 
 def qaoa_expectation_and_variance_fun(
@@ -384,3 +431,25 @@ def hamiltonian_objective_avg_and_err(
 def lowest_and_highest_energy(graph: nx.Graph):
     hamiltonian = create_ZZ_HamC(graph, dtype=np.float64)
     return np.min(hamiltonian), np.max(hamiltonian)
+
+
+def get_calc_pzstar(graph):
+    sim = cirq.Simulator()
+    dense_ham = create_ZZ_HamC(graph, flag_z2_sym=False,
+                               node_to_index_map={i: i for i in range(graph.number_of_nodes())})
+    answer_inds = np.where(dense_ham == np.min(dense_ham))
+
+    def calc_pzstar(gammas, betas):
+        circuit = get_generic_qaoa_circuit(
+            problem_graph=graph,
+            qubits=cirq.LineQubit.range(graph.number_of_nodes()),
+            gammas=gammas,
+            betas=betas,
+        )
+        psi = sim.simulate(circuit)
+        probs = np.abs(psi.final_state) ** 2
+        np.testing.assert_allclose(np.sum(probs), 1, atol=1e-5)
+        probs /= 1.0
+        return np.sum(probs[answer_inds])
+
+    return calc_pzstar

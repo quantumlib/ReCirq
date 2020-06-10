@@ -22,6 +22,8 @@ import numpy as np
 import cirq
 import recirq
 
+import scipy.stats
+
 
 def _validate_problem_graph(graph: nx.Graph):
     """Validation logic for `GraphProblem`s.
@@ -29,19 +31,21 @@ def _validate_problem_graph(graph: nx.Graph):
     Checks that there are no orphan nodes and all edges have a "weight"
     attribute.
     """
-    if min(graph.degree[node] for node in graph.nodes) == 0:
-        raise ValueError("Can't serialize graphs with orphan nodes")
+    # TODO: while fixing nodes, this may happen as an intermediate.
+    # if min(graph.degree[node] for node in graph.nodes) == 0:
+    #     raise ValueError("Can't serialize graphs with orphan nodes")
 
     all_attrs = set()
     for u, v in graph.edges:
         all_attrs |= graph.edges[u, v].keys()
-    if not all_attrs == {'weight'}:
+    if graph.number_of_edges() > 0 and not all_attrs == {'weight'}:
         raise ValueError(
             "Problem graph must have `weight` edge attributes")
 
     if sorted(graph.nodes) != list(range(graph.number_of_nodes())):
         raise ValueError(
-            "Problem graph must have contiguous, 0-indexed integer nodes, not {}".format(graph.nodes))
+            "Problem graph must have contiguous, 0-indexed integer nodes, not {}".format(
+                graph.nodes))
 
 
 def _graph_to_serializable_edgelist(graph: nx.Graph):
@@ -263,3 +267,93 @@ def get_all_3_regular_problems(
 
 
 ProblemT = Union[HardwareGridProblem, SKProblem, ThreeRegularProblem]
+
+
+def asymmetric_coupling_ferromagnet_chain(n: int, rs: Union[np.random.RandomState],
+                                          other_coupling: float = 0.5, *, shuffle=True):
+    g = nx.Graph()
+    n_edges = n - 1
+    couplings = [-1] * (n_edges // 2) + [-other_coupling] * (n_edges - n_edges // 2)
+    if shuffle:
+        rs.shuffle(couplings)
+    for i1, i2, J in zip(range(n), range(1, n), couplings):
+        g.add_edge(i1, i2, weight=J)
+    return g
+
+
+def asymmetric_coupling_ferromagnet_grid(n: int, rs: Union[np.random.RandomState],
+                                         other_coupling: float = 0.5, *, shuffle=True):
+    width = int(np.ceil(np.sqrt(n)).item())
+    height = n // width
+    assert width * height == n, (width, height)
+
+    g = nx.grid_2d_graph(height, width)
+    n_edges = g.number_of_edges()
+    couplings = [-1] * (n_edges // 2) + [-other_coupling] * (n_edges - n_edges // 2)
+    if shuffle:
+        rs.shuffle(couplings)
+
+    def colindex(edge):
+        n1, n2 = edge
+        r1, c1 = n1
+        r2, c2 = n2
+        return (c1, c2)
+
+    nx.set_edge_attributes(g, {
+        e: coupling
+        for e, coupling in zip(sorted(g.edges, key=colindex), couplings)
+    }, name='weight')
+    g = nx.convert_node_labels_to_integers(g)
+    return g
+
+
+def asymmetric_coupling_3reg(n: int, rs: np.random.RandomState,
+                             other_coupling: float = 0.5):
+    graph = nx.random_regular_graph(d=3, n=n, seed=rs)
+    n_edges = graph.number_of_edges()
+    couplings = [1] * (n_edges // 2) + [other_coupling] * (n_edges - n_edges // 2)
+    rs.shuffle(couplings)
+    nx.set_edge_attributes(graph, values={
+        (i1, i2): c
+        for (i1, i2), c in zip(graph.edges, couplings)
+    }, name='weight')
+    return graph
+
+
+def beta_distributed_sk(n: int, rs: np.random.RandomState, shape_param):
+    graph = nx.complete_graph(n)
+    bdist = scipy.stats.beta(a=shape_param, b=shape_param, loc=-1, scale=2)
+    couplings = bdist.rvs(graph.number_of_edges(), random_state=rs)
+
+    nx.set_edge_attributes(graph, values={
+        (i1, i2): c
+        for (i1, i2), c in zip(graph.edges, couplings)
+    }, name='weight')
+    return graph
+
+
+def gaussian_sk(n: int, rs: np.random.RandomState):
+    graph = nx.complete_graph(n)
+    n_edges = graph.number_of_edges()
+
+    couplings = rs.normal(size=n_edges)
+    nx.set_edge_attributes(graph, values={
+        (i1, i2): c
+        for (i1, i2), c in zip(sorted(graph.edges), couplings)
+    }, name='weight')
+    return graph
+
+
+def partially_rounded_sk(n: int, rs: np.random.RandomState,
+                         round_factor: float = 0.5):
+    graph = nx.complete_graph(n)
+    n_edges = graph.number_of_edges()
+
+    normal_couplings = rs.normal(size=n_edges)
+    coupling_signs = np.sign(normal_couplings)
+    couplings = round_factor * coupling_signs + (1 - round_factor) * normal_couplings
+    nx.set_edge_attributes(graph, values={
+        (i1, i2): c
+        for (i1, i2), c in zip(sorted(graph.edges), couplings)
+    }, name='weight')
+    return graph
