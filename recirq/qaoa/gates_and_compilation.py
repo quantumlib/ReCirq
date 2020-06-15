@@ -654,7 +654,7 @@ def measure_with_final_permutation(
     mapping = {}
     if stats.has_permutation:
         for op in c2.moments[-1].operations:
-            if cirq.op_gate_of_type(op, QuirkQubitPermutationGate):
+            if isinstance(op.gate, QuirkQubitPermutationGate):
                 # do something with it
                 permuted_qs = op.qubits
                 gate = op.gate  # type: QuirkQubitPermutationGate

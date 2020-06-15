@@ -259,8 +259,8 @@ def test_compile_single_qubit_gates():
     c2 = compile_single_qubit_gates(c1)
     assert c1 != c2
     assert len(c2) == 2
-    assert cirq.op_gate_of_type(c2[0].operations[0], cirq.PhasedXPowGate)
-    assert cirq.op_gate_of_type(c2[1].operations[0], cirq.ZPowGate)
+    assert isinstance(c2[0].operations[0].gate, cirq.PhasedXPowGate)
+    assert isinstance(c2[1].operations[0].gate, cirq.ZPowGate)
 
     u1 = c1.unitary()
     u2 = c2.unitary()
