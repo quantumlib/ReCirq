@@ -30,12 +30,13 @@ nbsphinx_allow_errors = False
 nbsphinx_timeout = -1  # no timeout
 autosummary_generate = True
 
-# Certain notebooks are saved pre-executed. Set this environment variable
-# to "auto" to prevent re-executing (which takes time!). The CI will
+# Certain notebooks are saved pre-executed. Keeping this environment variable
+# as "auto" prevents re-executing (which takes time!). The CI will
 # not re-execute these notebooks.
+# Set this to "always" to execute all notebooks.
 # https://github.com/quantumlib/ReCirq/issues/15
 nbsphinx_execute = os.environ.get(
-    'NBSPHINX_EXECUTE_NOTEBOOKS', 'always')  # can be "auto" or "never".
+    'NBSPHINX_EXECUTE_NOTEBOOKS', 'auto')  # can also be "always" or "never".
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
