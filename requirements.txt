@@ -1,4 +1,4 @@
-cirq-unstable==0.8.0.dev20200318154950
+cirq==0.8.1
 seaborn
 sphinx
 ipython
@@ -8,4 +8,5 @@ scikit-learn
 
 # qaoa
 networkx
-pytket==0.1.6 # does not work with anything later
+pytket
+pytket-cirq

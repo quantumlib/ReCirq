@@ -1,23 +1,19 @@
 import os
 from collections import defaultdict
 from functools import lru_cache
-from typing import Callable, Dict, List, Optional, Tuple, Iterable
+from typing import Callable, Dict, List, Optional, Tuple
 
 import networkx as nx
 import numpy as np
+import pytket
+import pytket.cirq
+from pytket.passes import SequencePass, RoutingPass, PlacementPass
+from pytket.predicates import CompilationUnit, ConnectivityPredicate
+from pytket.routing import GraphPlacement
 
 import cirq
-import recirq
-
-# TODO: Major shim. pytket expects cirq.devices.UnconstrainedDevice which was renamed
-import cirq.devices
-
-cirq.devices.UnconstrainedDevice = cirq.devices.UNCONSTRAINED_DEVICE
-# End major shim.
-
-import pytket.cirq
-import pytket._routing
 import cirq.contrib.routing as ccr
+import recirq
 
 
 def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
@@ -41,6 +37,35 @@ def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
     return err_graph
 
 
+def _qubit_index_edges(device, qubit_to_index):
+    """Helper function in `_device_to_tket_device`"""
+    dev_graph = ccr.xmon_device_to_graph(device)
+    for n1, n2 in dev_graph.edges:
+        yield qubit_to_index[n1], qubit_to_index[n2]
+
+
+def _device_to_tket_device(device, qubit_to_index):
+    """Custom function to turn a device into a pytket device.
+
+    Note: there's a problem if you try to use tket's 2D grid-qubit-like
+    Node objects, so we use the `qubit_to_index` mapping to use contiguous
+    integer Node ids.
+
+    This supports any device that supports `ccr.xmon_device_to_graph`.
+    """
+    arc = pytket.routing.Architecture(
+        list(_qubit_index_edges(device, qubit_to_index))
+    )
+    return pytket.device.Device({}, {}, arc)
+
+
+def _tk_to_i(tk):
+    """Extract an integer from pytket nodes."""
+    i = tk.index
+    assert len(i) == 1, i
+    return i[0]
+
+
 def place_on_device(circuit: cirq.Circuit,
                     device: cirq.google.XmonDevice,
                     ) -> Tuple[cirq.Circuit,
@@ -57,46 +82,31 @@ def place_on_device(circuit: cirq.Circuit,
 
     Returns:
         routed_circuit: The new circuit
-        initial_qubit_map: Initial placement of qubits
-        final_qubit_map: The final placement of qubits after action of the circuit
+        initial_map: Initial placement of qubits
+        final_map: The final placement of qubits after action of the circuit
     """
+    index_to_qubit = sorted(device.qubit_set())
+    qubit_to_index = {q: i for i, q in enumerate(index_to_qubit)}
     tk_circuit = pytket.cirq.cirq_to_tk(circuit)
-    architecture = _device_to_tket_architecture(device)
-    routed_tk_circuit, (initial_qubit_permutation, final_qubit_permutation) = \
-        pytket._routing.route(tk_circuit, architecture, decompose_swaps=False)
-    device_qubits = sorted(device.qubit_set())
-    circuit_qubits = sorted(circuit.all_qubits())
-    indexed_qubits = [device_qubits[i] for i in initial_qubit_permutation]
-    routed_circuit = pytket.cirq.tk_to_cirq(routed_tk_circuit, indexed_qubits)
-    initial_qubit_map = {q: device_qubits[i]
-                         for i, q in zip(initial_qubit_permutation, circuit_qubits)}
-    final_qubit_map = {q: device_qubits[i]
-                       for i, q in zip(final_qubit_permutation, circuit_qubits)}
-    return routed_circuit, initial_qubit_map, final_qubit_map
+    tk_device = _device_to_tket_device(device, qubit_to_index)
 
+    unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
+    passes = SequencePass([
+        PlacementPass(GraphPlacement(tk_device)),
+        RoutingPass(tk_device)])
+    passes.apply(unit)
+    valid = unit.check_all_predicates()
+    if not valid:
+        raise RuntimeError("Routing failed")
 
-def _device_to_tket_architecture(device: cirq.Device):
-    return pytket._routing.DirectedGraph(
-        list(_qubit_index_edges(device)),
-        len(device.qubit_set())
-    )
+    initial_map = {cirq.LineQubit(_tk_to_i(n1)): index_to_qubit[_tk_to_i(n2)] for n1, n2 in
+                   unit.initial_map.items()}
+    final_map = {cirq.LineQubit(_tk_to_i(n1)): index_to_qubit[_tk_to_i(n2)]
+                 for n1, n2 in unit.final_map.items()}
+    routed_circuit = pytket.cirq.tk_to_cirq(unit.circuit)
+    routed_circuit = routed_circuit.transform_qubits(lambda q: index_to_qubit[q.x])
 
-
-def _neighbors_of(qubits: Iterable[cirq.GridQubit], qubit: cirq.GridQubit):
-    possibles = [
-        cirq.GridQubit(qubit.row + 1, qubit.col),
-        cirq.GridQubit(qubit.row - 1, qubit.col),
-        cirq.GridQubit(qubit.row, qubit.col + 1),
-        cirq.GridQubit(qubit.row, qubit.col - 1),
-    ]
-    return [e for e in possibles if e in qubits]
-
-
-def _qubit_index_edges(device: cirq.Device):
-    qubit_to_index_dict = {q: i for i, q in enumerate(sorted(device.qubit_set()))}
-    for q in sorted(device.qubit_set()):
-        for r in _neighbors_of(device.qubit_set(), q):
-            yield (qubit_to_index_dict[q], qubit_to_index_dict[r])
+    return routed_circuit, initial_map, final_map
 
 
 def path_weight(graph: nx.Graph, path,
