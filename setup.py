@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pathlib
 from setuptools import find_packages, setup
 
 __version__ = ''
 exec(open('recirq/_version.py').read())
 assert __version__, 'Version string cannot be empty'
+
+required_packages = pathlib.Path('requirements.txt').read_text().split('\n')
+INSTALL_PACKAGES = [pkg for pkg in required_packages if pkg and not pkg.startswith('#')]
 
 setup(name='recirq',
       version=__version__,
@@ -24,9 +28,7 @@ setup(name='recirq',
       author='The Cirq Developers',
       author_email='cirq@googlegroups.com',
       python_requires='>=3.6.0',
-      install_requires=[
-          'cirq',
-      ],
+      install_requires=INSTALL_PACKAGES,
       license='Apache 2',
       description="",
       long_description=open('README.md', encoding='utf-8').read(),
