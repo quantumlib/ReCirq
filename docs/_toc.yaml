@@ -2,26 +2,26 @@ toc:
 - title: "Research using Cirq"
   path: /quark/cirq/research
 - title: "Data collection idioms"
-  path: /quark/cirq/research/data-collection-idioms
+  path: /quark/cirq/research/data_collection_idioms
 - title: "Best practices"
-  path: /quark/cirq/research/best-practices
+  path: /quark/cirq/research/best_practices
 
 - heading: "Tutorials"
 - title: "Data collection"
-  path: /quark/cirq/research/tutorials/data-collection
+  path: /quark/cirq/research/tutorials/data_collection
 - title: "Data analysis"
-  path: /quark/cirq/research/tutorials/data-analysis
+  path: /quark/cirq/research/tutorials/data_analysis
 
 - heading: "QAOA"
 - title: "Example problems"
-  path: /quark/cirq/research/qaoa/example-problems
+  path: /quark/cirq/research/qaoa/example_problems
 - title: "Tasks"
   path: /quark/cirq/research/qaoa/tasks
 - title: "Precomputed analysis"
-  path: /quark/cirq/research/qaoa/precomputed-analysis
+  path: /quark/cirq/research/qaoa/precomputed_analysis
 - title: "Landscape analysis"
-  path: /quark/cirq/research/qaoa/landscape-analysis
+  path: /quark/cirq/research/qaoa/landscape_analysis
 - title: "Hardware grid circuits"
-  path: /quark/cirq/research/qaoa/hardware-grid-circuits
+  path: /quark/cirq/research/qaoa/hardware_grid_circuits
 - title: "Routing with tket"
-  path: /quark/cirq/research/qaoa/routing-with-tket
+  path: /quark/cirq/research/qaoa/routing_with_tket
