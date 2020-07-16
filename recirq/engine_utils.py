@@ -138,15 +138,18 @@ class EngineSampler(work.Sampler):
         )
         job = engine_job._refresh_job()
         while True:
-            if job['executionStatus']['state'] in TERMINAL_STATES:
+            if job.execution_status.state in TERMINAL_STATES:
                 break
             await asyncio.sleep(1.0)
             job = engine_job._refresh_job()
         print(f"Done: {program_id}")
         engine_job._raise_on_failure(job)
-        results = engine_job._engine.get_job_results(
-            engine_job.job_resource_name)
-        return results[0]
+        response = engine_job.context.client.get_job_results(
+            engine_job.project_id, engine_job.program_id, engine_job.job_id)
+        result = response.result
+        v2_parsed_result = cirq.google.api.v2.result_pb2.Result()
+        v2_parsed_result.ParseFromString(result.value)
+        return engine_job._get_job_results_v2(v2_parsed_result)[0]
 
 
 class ZerosSampler(work.Sampler):
@@ -224,6 +227,38 @@ class QuantumProcessor:
             sampler = self._get_sampler_func(self, gateset)
             self._cached_samplers[gateset] = sampler
         return self._cached_samplers[gateset]
+
+
+class EngineQuantumProcessor:
+    def __init__(self, processor_id: str):
+        self.name = processor_id
+        self.processor_id = processor_id
+        self.is_simulator = False
+        self._engine = None
+
+    @property
+    def engine(self):
+        if self._engine is None:
+            project_id = os.environ['GOOGLE_CLOUD_PROJECT']
+            engine = cg_engine.Engine(project_id=project_id,
+                                      proto_version=cg_engine.ProtoVersion.V2)
+            self._engine = engine
+        return self._engine
+
+    def get_sampler(self, gateset: str = None):
+        if gateset == 'sycamore':
+            gateset = gate_sets.SYC_GATESET
+        elif gateset == 'sqrt-iswap':
+            gateset = gate_sets.SQRT_ISWAP_GATESET
+        else:
+            raise ValueError("Unknown gateset {}".format(gateset))
+        return self.engine.sampler(processor_id=self.processor_id, gate_set=gateset)
+
+    @property
+    def device_obj(self):
+        dspec = self.engine.get_processor(self.processor_id).get_device_specification()
+        device = cg_devices.SerializableDevice.from_proto(proto=dspec, gate_sets=[])
+        return device
 
 
 QUANTUM_PROCESSORS = {
