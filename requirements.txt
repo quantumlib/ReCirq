@@ -1,4 +1,4 @@
-cirq==0.8.1
+cirq==0.8.2
 seaborn
 sphinx
 ipython
