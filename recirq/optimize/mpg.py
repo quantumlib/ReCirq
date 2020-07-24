@@ -16,11 +16,11 @@ from typing import Callable, List, Optional
 
 import numpy as np
 import scipy
-from scipy.optimize.optimize import wrap_function
 from scipy.optimize import OptimizeResult
+from scipy.optimize.optimize import wrap_function
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures
 
 
 def _get_quadratic_model(
@@ -49,7 +49,8 @@ def _get_quadratic_model(
     shifted_xs = [(x - xopt) for x in xs]
     model = model.fit(shifted_xs, ys)
     return model
-    
+
+
 def clip_by_norm(t, clip_norm):
     """Clips tensor values to a maximum L2-norm.
     returns a tensor of the same type and shape as `t` with its values set to:
@@ -62,10 +63,9 @@ def clip_by_norm(t, clip_norm):
     Returns:
         the tensor with the same shape of the input, but with norm clipped.
     """
-
-
     l2_norm = np.linalg.norm(t, 2)
     return t * clip_norm / np.maximum(l2_norm, clip_norm)
+
 
 class ConstantSchedule(object):
     def __init__(self, value):
@@ -134,7 +134,6 @@ class ExponentialSchedule(object):
         return self.learning_rate * self.decay_rate ** m
 
 
-
 class Adam:
     def __init__(
         self, lr_schedule=ConstantSchedule(0.001), b1=0.9, b2=0.999, eps=10 ** -8
@@ -150,7 +149,7 @@ class Adam:
                 running averages of gradient. Defaults to 0.9.
             b2 (float, optional): coefficients used for computing
                 running averages of gradient's square. Defaults to 0.999.
-            eps ([type], optional): term added to the denominator to improve
+            eps (float, optional): term added to the denominator to improve
                 numerical stability. Defaults to 10**-8.
         """
         self.b1 = b1
@@ -177,13 +176,11 @@ class Adam:
 
         # First  moment estimate.
         self.m = (1 - self.b1) * grad + self.b1 * self.m
-         # Second moment estimate.
-        self.v = (1 - self.b2) * (
-            grad ** 2
-        ) + self.b2 * self.v 
+        # Second moment estimate.
+        self.v = (1 - self.b2) * (grad ** 2) + self.b2 * self.v
 
         # Bias correction.
-        mhat = self.m / (1 - self.b1 ** (self.step + 1))  
+        mhat = self.m / (1 - self.b1 ** (self.step + 1))
         vhat = self.v / (1 - self.b2 ** (self.step + 1))
         x = x + self.lr * mhat / (np.sqrt(vhat) + self.eps)
         self.step += 1
@@ -191,27 +188,28 @@ class Adam:
         return x
 
 
-
 def model_policy_gradient(
-        f: Callable[..., float],
-        x0: np.ndarray,
-        *,
-        args=(),
-        learning_rate: float = 1e-2,
-        decay_rate: float = 0.96,
-        decay_steps: int = 5,
-        log_sigma_init: float = -5.0,
-        max_iterations: int = 1000,
-        batch_size: int = 10,
-        radius_coeff: float = 3.0,
-        warmup_steps: int = 10,
-        known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
-        max_evaluations: Optional[int] = None) -> scipy.optimize.OptimizeResult:
+    f: Callable[..., float],
+    x0: np.ndarray,
+    *,
+    args=(),
+    learning_rate: float = 1e-2,
+    decay_rate: float = 0.96,
+    decay_steps: int = 5,
+    log_sigma_init: float = -5.0,
+    max_iterations: int = 1000,
+    batch_size: int = 10,
+    radius_coeff: float = 3.0,
+    warmup_steps: int = 10,
+    batch_size_model: int = 65536,
+    known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
+    max_evaluations: Optional[int] = None
+) -> scipy.optimize.OptimizeResult:
 
     """Model policy gradient algorithm for black-box optimization.
 
     The idea of this algorithm is to perform policy gradient, but estimate
-    the function values using a surrogate model.
+    the function values using a surrogate model. 
     The surrogate model is a least-squared quadratic
     fit to points sampled from the vicinity of the current iterate.
 
@@ -222,35 +220,26 @@ def model_policy_gradient(
         learning_rate: The learning rate for the policy gradient.
         decay_rate: the learning decay rate for the Adam optimizer.
         decay_steps: the learning decay steps for the Adam optimizer.
-        log_sigma_init: 
-        sample_radius: The radius around the current iterate to sample
-            points from to build the quadratic model.
-        n_sample_points: The number of points to sample in each iteration.
-        n_sample_points_ratio: This specifies the number of points to sample
-            in each iteration as a coefficient of the number of points
-            required to exactly determine a quadratic model. The number
-            of sample points will be this coefficient times (n+1)(n+2)/2,
-            rounded up, where n is the number of parameters.
-            Setting this overrides n_sample_points.
-        rate_decay_exponent: Controls decay of learning rate.
-            In each iteration, the learning rate is changed to the
-            base learning rate divided by (i + 1 + S)**a, where S
-            is the stability constant and a is the rate decay exponent
-            (this parameter).
-        stability_constant: Affects decay of learning rate.
-            In each iteration, the learning rate is changed to the
-            base learning rate divided by (i + 1 + S)**a, where S
-            is the stability constant (this parameter) and a is the rate decay
-            exponent.
-        sample_radius_decay_exponent: Controls decay of sample radius.
-        tol: The algorithm terminates when the difference between the current
-            iterate and the next suggested iterate is smaller than this value.
+        log_sigma_init: the intial value for the sigma of the policy
+            in the log scale. 
+        max_iterations: The maximum number of iterations to allow before
+            termination.
+        batch_size: The number of points to sample in each iteration. The cost 
+            of evaluation of these samples are computed through the 
+            quantum computer cost model.
+        radius_coeff: The ratio determining the size of the radius around 
+            the current iterate to sample points from to build the quadratic model.
+            The ratio is with respect to the maximal ratio of the samples 
+            from the current policy. 
+        warmup_steps: The number of steps before the model policy gradient is performed. 
+            before these steps, we use the policy gradient without the model. 
+        batch_size_model: The model sample batch size. 
+            After we fit the quadratic model, we use the model to evaluate 
+            on big enough batch of samples.
         known_values: Any prior known values of the objective function.
             This is given as a tuple where the first element is a list
             of points and the second element is a list of the function values
             at those points.
-        max_iterations: The maximum number of iterations to allow before
-            termination.
         max_evaluations: The maximum number of function evaluations to allow
             before termination.
 
@@ -271,7 +260,6 @@ def model_policy_gradient(
     n = len(x0)
     log_sigma = np.ones(n) * log_sigma_init
     sigma = np.exp(log_sigma)
-    batch_size_model = 65536
 
     # set up lr schedule and optimizer
     lr_schedule1 = ExponentialSchedule(
@@ -290,23 +278,21 @@ def model_policy_gradient(
     res.xs_iters = []
     res.ys_iters = []
     res.func_vals = []
-    res.model_vals = [None]
     res.fun = 0
     total_evals = 0
     num_iter = 0
-    converged = False
     message = None
 
     # stats
-    history_max = - np.inf
+    history_max = -np.inf
 
     while num_iter < max_iterations:
-        # get samples from the current policy to evaluate 
+        # get samples from the current policy to evaluate
         z = np.random.randn(batch_size, n)
         new_xs = sigma * z + current_x
 
         if total_evals + batch_size > max_evaluations:
-            message = 'Reached maximum number of evaluations.'
+            message = "Reached maximum number of evaluations."
             break
 
         # Evaluate points
@@ -318,7 +304,7 @@ def model_policy_gradient(
         known_ys.extend(new_ys)
 
         # Save function value
-        res.func_vals.append( f(current_x) )
+        res.func_vals.append(f(current_x))
         res.x_iters.append(np.copy(current_x))
         total_evals += 1
         res.fun = res.func_vals[-1]
@@ -330,14 +316,14 @@ def model_policy_gradient(
                 max_radius = np.linalg.norm(x - current_x)
 
         reward = [-y for y in new_ys]
-        
+
         # warmup steps control whether to use the model to estimate the f
-        if num_iter >= warmup_steps: 
+        if num_iter >= warmup_steps:
             # Determine points to use to build model
             model_xs = []
             model_ys = []
             # safer way without the `SVD` not converging
-            try: 
+            try:
                 for x, y in zip(known_xs, known_ys):
                     if np.linalg.norm(x - x_current) < radius_coeff * max_radius:
                         model_xs.append(x)
@@ -351,19 +337,17 @@ def model_policy_gradient(
                 # use the model for prediction
                 new_ys = model.predict(new_xs - current_x)
                 reward = [-y for y in new_ys]
-            except: 
+            except:
                 pass
-
 
         reward = np.array(reward)
 
         # stats
-        reward_mean = np.mean(reward)
+        np.mean(reward)
         reward_max = np.max(reward)
 
         if reward_max > history_max:
             history_max = reward_max
-
 
         # subtract baseline
         reward = reward - np.mean(reward)
@@ -378,7 +362,7 @@ def model_policy_gradient(
         delta_mean = delta_mean / delta_mean_norm
         delta_log_sigma = delta_log_sigma / delta_log_sigma_norm
 
-        # gradient ascend to update the parameters 
+        # gradient ascend to update the parameters
         current_x = optimizer1.ascend(delta_mean, current_x)
         log_sigma = optimizer2.ascend(delta_log_sigma, log_sigma)
 
@@ -391,7 +375,7 @@ def model_policy_gradient(
     res.func_vals.append(final_val)
 
     if message is None:
-        message = 'Reached maximum number of iterations.'
+        message = "Reached maximum number of iterations."
 
     res.x_iters.append(current_x)
     total_evals += 1
