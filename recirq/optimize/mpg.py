@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import scipy
@@ -325,7 +325,7 @@ def model_policy_gradient(
             # safer way without the `SVD` not converging
             try:
                 for x, y in zip(known_xs, known_ys):
-                    if np.linalg.norm(x - x_current) < radius_coeff * max_radius:
+                    if np.linalg.norm(x - current_x) < radius_coeff * max_radius:
                         model_xs.append(x)
                         model_ys.append(y)
                 model = _get_quadratic_model(model_xs, model_ys, x)
@@ -343,7 +343,7 @@ def model_policy_gradient(
         reward = np.array(reward)
 
         # stats
-        np.mean(reward)
+        reward_mean = np.mean(reward)
         reward_max = np.max(reward)
 
         if reward_max > history_max:
