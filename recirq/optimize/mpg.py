@@ -202,6 +202,7 @@ def model_policy_gradient(
     radius_coeff: float = 3.0,
     warmup_steps: int = 10,
     batch_size_model: int = 65536,
+    save_func_vals: bool = False, 
     known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
     max_evaluations: Optional[int] = None
 ) -> scipy.optimize.OptimizeResult:
@@ -236,6 +237,8 @@ def model_policy_gradient(
         batch_size_model: The model sample batch size. 
             After we fit the quadratic model, we use the model to evaluate 
             on big enough batch of samples.
+        save_func_vals: whether to compute and save the function values for 
+            the current value of parameter.   
         known_values: Any prior known values of the objective function.
             This is given as a tuple where the first element is a list
             of points and the second element is a list of the function values
@@ -304,10 +307,10 @@ def model_policy_gradient(
         known_ys.extend(new_ys)
 
         # Save function value
-        res.func_vals.append(f(current_x))
-        res.x_iters.append(np.copy(current_x))
-        total_evals += 1
-        res.fun = res.func_vals[-1]
+        if save_func_vals:
+            res.func_vals.append(f(current_x))
+            res.x_iters.append(np.copy(current_x))
+            res.fun = res.func_vals[-1]
 
         # current sampling radius (maximal)
         max_radius = 0
