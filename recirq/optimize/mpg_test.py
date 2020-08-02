@@ -20,6 +20,7 @@ from recirq.optimize.mpg import model_policy_gradient
 def sum_of_squares(x):
     return np.sum(x ** 4).item()
 
+
 def test_model_policy_gradient():
     x0 = np.random.randn(5)
     result = model_policy_gradient(
@@ -119,7 +120,7 @@ def test_model_policy_gradient_with_random_seed():
         batch_size=30,
         radius_coeff=3.0,
         warmup_steps=10,
-        random_state=65536
+        random_state=65536,
     )
     result2 = model_policy_gradient(
         sum_of_squares,
@@ -132,7 +133,7 @@ def test_model_policy_gradient_with_random_seed():
         batch_size=30,
         radius_coeff=3.0,
         warmup_steps=10,
-        random_state=65536
+        random_state=65536,
     )
 
     np.testing.assert_equal(result1, result2)

@@ -28,6 +28,7 @@ from cirq import value
 if TYPE_CHECKING:
     import cirq
 
+
 def _get_quadratic_model(
     xs: List[np.ndarray], ys: List[float], xopt: np.ndarray
 ) -> Pipeline:
@@ -321,8 +322,8 @@ def model_policy_gradient(
                 use_model = True
             except:
                 use_model = False
-            
-            if use_model: 
+
+            if use_model:
                 # get samples (from model)
                 z = random_state.randn(batch_size_model, n)
                 new_xs = sigma * z + current_x
