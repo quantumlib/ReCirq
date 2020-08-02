@@ -1,4 +1,4 @@
-# Copyright 2018 The Cirq Developers
+# Copyright 2020 The Cirq Developers
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 
 import numpy as np
 import scipy
@@ -22,6 +23,10 @@ from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
+from cirq import value
+
+if TYPE_CHECKING:
+    import cirq
 
 def _get_quadratic_model(
     xs: List[np.ndarray], ys: List[float], xopt: np.ndarray
@@ -53,6 +58,7 @@ def _get_quadratic_model(
 
 def clip_by_norm(t, clip_norm):
     """Clips tensor values to a maximum L2-norm.
+
     returns a tensor of the same type and shape as `t` with its values set to:
     `t * clip_norm / l2norm(t)`
 
@@ -67,56 +73,31 @@ def clip_by_norm(t, clip_norm):
     return t * clip_norm / np.maximum(l2_norm, clip_norm)
 
 
-class ConstantSchedule(object):
-    def __init__(self, value):
-        """The constant schedule for some hyperparameter (e.g. learning_rate)
-        
-        Value remains constant over time.
+@dataclass(frozen=True)
+class ExponentialSchedule:
+    """The Exponential schedule for some hyperparameter (e.g. learning_rate)
+    
+    Exponential decay for the `learning rate`. For each `decay_steps`, the learning 
+    rate is scheduled to decay at the `decay_rate`. The `staircase` controls whether 
+    to decay smoothly or discontinuously. After this many timesteps pass, the final
+    learning rate is returned.
 
-        Args: 
-            value: Constant value of the schedule
-        
-        Returns: 
-            a class of the schedule
-        """
-        self._v = value
+    Args: 
+        learning rate: the initial learning rate 
+        decay_steps: the learning rate is scheduled to decay every such number of steps 
+        decay_rate: the learning rate is scheduled to decay at the such rate
+        staircase: if True, the learning rate keeps the same before every decay steps; 
+                    otherwise, the learning rate decays smoothly according 
+                    to exponential interpolation.
+    
+    Returns: 
+        a class of the schedule
+    """
 
-    def value(self, t):
-        """Return the value of the schedule at time step t 
-
-        Args: 
-            t: the time step for the schedule 
-
-        Returns: 
-            the schedule value
-        """
-        return self._v
-
-
-class ExponentialSchedule(object):
-    def __init__(self, learning_rate, decay_steps, decay_rate, staircase=False):
-        """The Exponential schedule for some hyperparameter (e.g. learning_rate)
-        
-        Exponential decay for the `learning rate`. For each `decay_steps`, the learning 
-        rate is scheduled to decay at the `decay_rate`. The `staircase` controls whether 
-        to decay smoothly or discontinuously. After this many timesteps pass, the final
-        learning rate is returned.
-
-        Args: 
-            learning rate: the initial learning rate 
-            decay_steps: the learning rate is scheduled to decay every such number of steps 
-            decay_rate: the learning rate is scheduled to decay at the such rate
-            staircase: if True, the learning rate keeps the same before every decay steps; 
-                       otherwise, the learning rate decays smoothly according 
-                       to exponential interpolation.
-        
-        Returns: 
-            a class of the schedule
-        """
-        self.learning_rate = learning_rate
-        self.decay_steps = decay_steps
-        self.decay_rate = decay_rate
-        self.staircase = staircase
+    learning_rate: float
+    decay_steps: int
+    decay_rate: float
+    staircase: bool = False
 
     def value(self, t):
         """Return the value of the schedule at time step t 
@@ -128,64 +109,60 @@ class ExponentialSchedule(object):
             the schedule value
         """
         m = t / self.decay_steps
-        if self.staircase == True:
+        if self.staircase:
             m = np.floor(m)
 
         return self.learning_rate * self.decay_rate ** m
 
 
-class Adam:
-    def __init__(
-        self, lr_schedule=ConstantSchedule(0.001), b1=0.9, b2=0.999, eps=10 ** -8
-    ):
-        """The optimizer Adam: a method for stochastic gradient descent  
+def Adam_update(
+    grad,
+    x,
+    step,
+    m,
+    v,
+    lr_schedule=ExponentialSchedule(0.001, 10, 0.93),
+    b1=0.9,
+    b2=0.999,
+    eps=10 ** -8,
+):
+    """Performs a single optimization step of the optimizer Adam: a method for stochastic gradient descent  
 
         Adam as described in http://arxiv.org/pdf/1412.6980.pdf.
         adapted from https://github.com/HIPS/autograd/blob/master/autograd/misc/optimizers.py#L57-L71
 
         Args:
-            lr_schedule: the class of learning rate decay schedule. Defaults to ConstantSchedule(0.001).
+            grad: the gradient computed at the current update.  
+            x: the current value of the parameters. 
+            step: current iteration step. 
+            m: first moment estimate for Adam.
+            v: second moment estimate for Adam.
+            lr_schedule: the class of learning rate decay schedule. Defaults to ExponentialSchedule(0.001, 10, 0.93).
             b1 (float, optional): coefficients used for computing
                 running averages of gradient. Defaults to 0.9.
             b2 (float, optional): coefficients used for computing
                 running averages of gradient's square. Defaults to 0.999.
             eps (float, optional): term added to the denominator to improve
                 numerical stability. Defaults to 10**-8.
-        """
-        self.b1 = b1
-        self.b2 = b2
-        self.eps = eps
-        self.step = 0
-        self.lr_schedule = lr_schedule
-
-    def ascend(self, grad, x):
-        """Performs a single optimization step.
-
-
-        Args:
-            grad: the gradient computed at the current update.  
-            x: the current value of the parameters. 
 
         Returns:
-            the updated parameter values. 
+            x: the updated parameter values. 
+            m: the updated first moment estimate.
+            v: the updated secnd moment estimate.
         """
-        if self.step == 0:
-            self.m = np.zeros(len(x))
-            self.v = np.zeros(len(x))
-        self.lr = self.lr_schedule.value(self.step)
+    lr = lr_schedule.value(step)
 
-        # First  moment estimate.
-        self.m = (1 - self.b1) * grad + self.b1 * self.m
-        # Second moment estimate.
-        self.v = (1 - self.b2) * (grad ** 2) + self.b2 * self.v
+    # First moment estimate.
+    m = (1 - b1) * grad + b1 * m
+    # Second moment estimate.
+    v = (1 - b2) * (grad ** 2) + b2 * v
 
-        # Bias correction.
-        mhat = self.m / (1 - self.b1 ** (self.step + 1))
-        vhat = self.v / (1 - self.b2 ** (self.step + 1))
-        x = x + self.lr * mhat / (np.sqrt(vhat) + self.eps)
-        self.step += 1
+    # Bias correction.
+    mhat = m / (1 - b1 ** (step + 1))
+    vhat = v / (1 - b2 ** (step + 1))
+    x = x + lr * mhat / (np.sqrt(vhat) + eps)
 
-        return x
+    return x, m, v
 
 
 def model_policy_gradient(
@@ -202,7 +179,8 @@ def model_policy_gradient(
     radius_coeff: float = 3.0,
     warmup_steps: int = 10,
     batch_size_model: int = 65536,
-    save_func_vals: bool = False, 
+    save_func_vals: bool = False,
+    random_state: "cirq.RANDOM_STATE_OR_SEED_LIKE" = None,
     known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
     max_evaluations: Optional[int] = None
 ) -> scipy.optimize.OptimizeResult:
@@ -239,6 +217,9 @@ def model_policy_gradient(
             on big enough batch of samples.
         save_func_vals: whether to compute and save the function values for 
             the current value of parameter.   
+        random_state: A seed (int) or `np.random.RandomState` class to use when
+            generating random values. If not set, defaults to using the module
+            methods in `np.random`.
         known_values: Any prior known values of the objective function.
             This is given as a tuple where the first element is a list
             of points and the second element is a list of the function values
@@ -249,6 +230,7 @@ def model_policy_gradient(
     Returns:
         Scipy OptimizeResult
     """
+    random_state = value.parse_random_state(random_state)
 
     if known_values is not None:
         known_xs, known_ys = known_values
@@ -264,6 +246,12 @@ def model_policy_gradient(
     log_sigma = np.ones(n) * log_sigma_init
     sigma = np.exp(log_sigma)
 
+    # set up the first and second moment estimate
+    m_mean = np.zeros(n)
+    v_mean = np.zeros(n)
+    m_log_sigma = np.zeros(n)
+    v_log_sigma = np.zeros(n)
+
     # set up lr schedule and optimizer
     lr_schedule1 = ExponentialSchedule(
         learning_rate, decay_steps=decay_steps, decay_rate=decay_rate, staircase=True
@@ -271,8 +259,6 @@ def model_policy_gradient(
     lr_schedule2 = ExponentialSchedule(
         learning_rate, decay_steps=decay_steps, decay_rate=decay_rate, staircase=True
     )
-    optimizer1 = Adam(lr_schedule1)
-    optimizer2 = Adam(lr_schedule2)
 
     _, f = wrap_function(f, args)
     res = OptimizeResult()
@@ -291,7 +277,7 @@ def model_policy_gradient(
 
     while num_iter < max_iterations:
         # get samples from the current policy to evaluate
-        z = np.random.randn(batch_size, n)
+        z = random_state.randn(batch_size, n)
         new_xs = sigma * z + current_x
 
         if total_evals + batch_size > max_evaluations:
@@ -334,7 +320,7 @@ def model_policy_gradient(
                 model = _get_quadratic_model(model_xs, model_ys, x)
 
                 # get samples (from model)
-                z = np.random.randn(batch_size_model, n)
+                z = random_state.randn(batch_size_model, n)
                 new_xs = sigma * z + current_x
 
                 # use the model for prediction
@@ -353,7 +339,7 @@ def model_policy_gradient(
             history_max = reward_max
 
         # subtract baseline
-        reward = reward - np.mean(reward)
+        reward = reward - reward_mean
 
         # analytic derivatives (natural gradient policy gradient)
         delta_mean = np.dot(z.T, reward) * sigma
@@ -366,8 +352,17 @@ def model_policy_gradient(
         delta_log_sigma = delta_log_sigma / delta_log_sigma_norm
 
         # gradient ascend to update the parameters
-        current_x = optimizer1.ascend(delta_mean, current_x)
-        log_sigma = optimizer2.ascend(delta_log_sigma, log_sigma)
+        current_x, m_mean, v_mean = Adam_update(
+            delta_mean, current_x, num_iter, m_mean, v_mean, lr_schedule=lr_schedule1
+        )
+        log_sigma, m_log_sigma, v_log_sigma = Adam_update(
+            delta_log_sigma,
+            log_sigma,
+            num_iter,
+            m_log_sigma,
+            v_log_sigma,
+            lr_schedule=lr_schedule2,
+        )
 
         log_sigma = np.clip(log_sigma, -20.0, 2.0)
         sigma = np.exp(log_sigma)
