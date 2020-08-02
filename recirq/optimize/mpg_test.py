@@ -104,4 +104,4 @@ def test_model_policy_gradient_limited_evaluations():
 
     assert isinstance(result.x, np.ndarray)
     assert isinstance(result.fun, float)
-    assert result.nfev == 89
+    assert result.nfev == 91
