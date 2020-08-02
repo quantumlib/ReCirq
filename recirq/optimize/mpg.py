@@ -311,14 +311,18 @@ def model_policy_gradient(
             # Determine points to use to build model
             model_xs = []
             model_ys = []
+            for x, y in zip(known_xs, known_ys):
+                if np.linalg.norm(x - current_x) < radius_coeff * max_radius:
+                    model_xs.append(x)
+                    model_ys.append(y)
             # safer way without the `SVD` not converging
             try:
-                for x, y in zip(known_xs, known_ys):
-                    if np.linalg.norm(x - current_x) < radius_coeff * max_radius:
-                        model_xs.append(x)
-                        model_ys.append(y)
                 model = _get_quadratic_model(model_xs, model_ys, x)
-
+                use_model = True
+            except:
+                use_model = False
+            
+            if use_model: 
                 # get samples (from model)
                 z = random_state.randn(batch_size_model, n)
                 new_xs = sigma * z + current_x
@@ -326,8 +330,6 @@ def model_policy_gradient(
                 # use the model for prediction
                 new_ys = model.predict(new_xs - current_x)
                 reward = [-y for y in new_ys]
-            except:
-                pass
 
         reward = np.array(reward)
 
