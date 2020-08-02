@@ -18,8 +18,7 @@ from recirq.optimize.mpg import model_policy_gradient
 
 
 def sum_of_squares(x):
-    return np.sum(x ** 2).item()
-
+    return np.sum(x ** 4).item()
 
 def test_model_policy_gradient():
     x0 = np.random.randn(5)
@@ -30,14 +29,14 @@ def test_model_policy_gradient():
         decay_rate=0.96,
         decay_steps=10,
         log_sigma_init=-6.0,
-        max_iterations=500,
+        max_iterations=100,
         batch_size=30,
         radius_coeff=3.0,
         warmup_steps=10,
         known_values=None,
     )
 
-    np.testing.assert_allclose(result.x, np.zeros(len(result.x)), atol=1e-7)
+    np.testing.assert_allclose(result.x, np.zeros(len(result.x)), atol=1e-2)
     np.testing.assert_allclose(result.fun, 0, atol=1e-7)
     assert isinstance(result.nfev, int)
 
@@ -53,7 +52,7 @@ def test_model_policy_gradient_with_known_values():
         decay_rate=0.96,
         decay_steps=10,
         log_sigma_init=-6.0,
-        max_iterations=500,
+        max_iterations=50,
         batch_size=30,
         radius_coeff=3.0,
         warmup_steps=10,
@@ -105,3 +104,35 @@ def test_model_policy_gradient_limited_evaluations():
     assert isinstance(result.x, np.ndarray)
     assert isinstance(result.fun, float)
     assert result.nfev == 91
+
+
+def test_model_policy_gradient_with_random_seed():
+    x0 = np.random.randn(5)
+    result1 = model_policy_gradient(
+        sum_of_squares,
+        x0,
+        learning_rate=1e-1,
+        decay_rate=0.96,
+        decay_steps=10,
+        log_sigma_init=-6.0,
+        max_iterations=50,
+        batch_size=30,
+        radius_coeff=3.0,
+        warmup_steps=10,
+        random_state=65536
+    )
+    result2 = model_policy_gradient(
+        sum_of_squares,
+        x0,
+        learning_rate=1e-1,
+        decay_rate=0.96,
+        decay_steps=10,
+        log_sigma_init=-6.0,
+        max_iterations=50,
+        batch_size=30,
+        radius_coeff=3.0,
+        warmup_steps=10,
+        random_state=65536
+    )
+
+    np.testing.assert_equal(result1, result2)
