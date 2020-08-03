@@ -28,7 +28,7 @@ from recirq.quantum_chess.test_utils import (
 )
 
 NOISY_SAMPLER = cirq.DensityMatrixSimulator(noise=ccn.DepolarizingNoiseModel(
-    depol_prob=0.003))
+    depol_prob=0.002))
 
 BIG_CIRQ_BOARDS = (
     qb.CirqBoard(0, error_mitigation=enums.ErrorMitigation.Error),
@@ -45,7 +45,7 @@ ALL_CIRQ_BOARDS = BIG_CIRQ_BOARDS + (
                  sampler=NOISY_SAMPLER,
                  device=cirq.google.Sycamore,
                  error_mitigation=enums.ErrorMitigation.Correct,
-                 noise_mitigation=0.05),
+                 noise_mitigation=0.08),
 )
 
 
