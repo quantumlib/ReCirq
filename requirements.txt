@@ -10,3 +10,6 @@ scikit-learn
 networkx
 pytket
 pytket-cirq
+
+# quantum chess, only needed for tests
+scipy
