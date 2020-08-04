@@ -302,7 +302,7 @@ def model_policy_gradient(
             try:
                 model = _get_quadratic_model(model_xs, model_ys, x)
                 use_model = True
-            except:
+            except ValueError:
                 use_model = False
 
             if use_model:
