@@ -57,25 +57,8 @@ def _get_quadratic_model(
     return model
 
 
-def clip_by_norm(t, clip_norm):
-    """Clips tensor values to a maximum L2-norm.
-
-    returns a tensor of the same type and shape as `t` with its values set to:
-    `t * clip_norm / l2norm(t)`
-
-    Args:
-        t: The tensor values at which we want to clip the norm.
-        clip_norm: The scalar to give a maximal upper bound for the L2-norm of the tensor.
-
-    Returns:
-        the tensor with the same shape of the input, but with norm clipped.
-    """
-    l2_norm = np.linalg.norm(t, 2)
-    return t * clip_norm / np.maximum(l2_norm, clip_norm)
-
-
 @dataclass(frozen=True)
-class ExponentialSchedule:
+class _ExponentialSchedule:
     """The Exponential schedule for some hyperparameter (e.g. learning_rate)
     
     Exponential decay for the `learning rate`. For each `decay_steps`, the learning 
@@ -115,17 +98,16 @@ class ExponentialSchedule:
 
         return self.learning_rate * self.decay_rate ** m
 
-
-def Adam_update(
-    grad,
-    x,
-    step,
-    m,
-    v,
-    lr_schedule=ExponentialSchedule(0.001, 10, 0.93),
-    b1=0.9,
-    b2=0.999,
-    eps=10 ** -8,
+def _adam_update(
+    grad: np.ndarray,
+    x: np.ndarray,
+    step: int,
+    m: np.ndarray,
+    v: np.ndarray,
+    lr_schedule=_ExponentialSchedule(0.001, 10, 0.93),
+    b1: float = 0.9,
+    b2: float = 0.999,
+    eps: float = 10 ** -8,
 ):
     """Performs a single optimization step of the optimizer Adam: a method for stochastic gradient descent  
 
@@ -254,10 +236,10 @@ def model_policy_gradient(
     v_log_sigma = np.zeros(n)
 
     # set up lr schedule and optimizer
-    lr_schedule1 = ExponentialSchedule(
+    lr_schedule1 = _ExponentialSchedule(
         learning_rate, decay_steps=decay_steps, decay_rate=decay_rate, staircase=True
     )
-    lr_schedule2 = ExponentialSchedule(
+    lr_schedule2 = _ExponentialSchedule(
         learning_rate, decay_steps=decay_steps, decay_rate=decay_rate, staircase=True
     )
 
@@ -355,10 +337,10 @@ def model_policy_gradient(
         delta_log_sigma = delta_log_sigma / delta_log_sigma_norm
 
         # gradient ascend to update the parameters
-        current_x, m_mean, v_mean = Adam_update(
+        current_x, m_mean, v_mean = _adam_update(
             delta_mean, current_x, num_iter, m_mean, v_mean, lr_schedule=lr_schedule1
         )
-        log_sigma, m_log_sigma, v_log_sigma = Adam_update(
+        log_sigma, m_log_sigma, v_log_sigma = _adam_update(
             delta_log_sigma,
             log_sigma,
             num_iter,
