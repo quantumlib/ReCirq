@@ -14,7 +14,7 @@
 
 # coverage: ignore
 """
-Implement the H2-experiment with OpenFermion and OpenFermion-Cirq
+Implement the H2-experiment with OpenFermion
 """
 import os
 import numpy
