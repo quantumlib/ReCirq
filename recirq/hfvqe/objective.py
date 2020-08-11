@@ -19,7 +19,6 @@ from openfermion.ops import InteractionOperator, InteractionRDM
 from openfermion.utils import wedge
 from openfermion.transforms import get_fermion_operator
 from recirq.hfvqe.circuits import rhf_params_to_matrix
-# pylint: disable=C
 
 
 def get_matrix_of_eigs(w: np.ndarray) -> np.ndarray:
@@ -27,7 +26,8 @@ def get_matrix_of_eigs(w: np.ndarray) -> np.ndarray:
     Transform the eigenvalues for getting the gradient
 
     .. math:
-        f(w) \rightarrow \frac{e^{i (\lambda_{i} - \lambda_{j})}{i (\lambda_{i} - \lambda_{j})}
+        f(w) \rightarrow
+        \frac{e^{i (\lambda_{i} - \lambda_{j})}}{i (\lambda_{i} - \lambda_{j})}
 
     :param w: eigenvalues of C-matrix
     :return: new array of transformed eigenvalues
@@ -114,9 +114,10 @@ class RestrictedHartreeFockObjective():
                                      self.virt)
             Y_full = np.kron(Y, np.eye(2))
 
-            # Now rotate Y int othe basis that diagonalizes Z
+            # Now rotate Y into the basis that diagonalizes Z
             Y_kl_full = v_full.conj().T @ Y_full @ v_full
-            # now rotate Y_{kl} * (exp(i(l_{k} - l_{l})) - 1) / (i(l_{k} - l_{l}))
+            # now rotate
+            # Y_{kl} * (exp(i(l_{k} - l_{l})) - 1) / (i(l_{k} - l_{l}))
             # into the original basis
             pre_matrix_full = v_full @ (eigs_scaled_full *
                                         Y_kl_full) @ v_full.conj().T

@@ -20,7 +20,6 @@ from openfermion.ops import InteractionRDM
 
 import recirq.hfvqe.util as ccu
 from recirq.hfvqe.objective import generate_hamiltonian
-# pylint: disable=C
 
 
 def kdelta(i: int, j: int):
@@ -84,8 +83,9 @@ def compute_opdm(
                         for qid_b, coeff_b in [(q0_b, -0.5), (q1_b, 0.5)]:
                             # get Cov(qid_a, qid_b)
                             # Cov-mat is symmetric so only need upper right val
-                            even_cov_mat[ridx, cidx] += coeff_a * coeff_b * \
-                                        data[[qid_a, qid_b]].cov().to_numpy()[0, 1]
+                            even_cov_mat[ridx, cidx] += (
+                                coeff_a * coeff_b *
+                                data[[qid_a, qid_b]].cov().to_numpy()[0, 1])
                     # divide covariance by number of samples
                     # because CLT converges to N(mu, sigma**2 / n_samples)
                     even_cov_mat[ridx, cidx] /= len(data[q0_a])
@@ -104,8 +104,9 @@ def compute_opdm(
                 for cidx, (q0_b, q1_b) in enumerate(odd_pairs):
                     for qid_a, coeff_a in [(q0_a, -0.5), (q1_a, 0.5)]:
                         for qid_b, coeff_b in [(q0_b, -0.5), (q1_b, 0.5)]:
-                            odd_cov_mat[ridx, cidx] += coeff_a * coeff_b * \
-                                        data[[qid_a, qid_b]].cov().to_numpy()[0, 1]
+                            odd_cov_mat[ridx, cidx] += (
+                                coeff_a * coeff_b *
+                                data[[qid_a, qid_b]].cov().to_numpy()[0, 1])
                     odd_cov_mat[ridx, cidx] /= len(data[q0_a])
 
             variance_dict['xy_odd'][circuit_idx] = odd_cov_mat

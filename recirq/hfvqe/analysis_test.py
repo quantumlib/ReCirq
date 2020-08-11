@@ -22,7 +22,6 @@ from recirq.hfvqe.analysis import (trace_distance, kdelta, energy_from_opdm,
 from recirq.hfvqe.molecular_example import make_h6_1_3
 from recirq.hfvqe.molecular_example_odd_qubits import (make_h3_2_5)
 from recirq.hfvqe.gradient_hf import rhf_func_generator
-# pylint: disable=C
 
 
 def test_kdelta():

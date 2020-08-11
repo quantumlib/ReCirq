@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=C
 # coverage: ignore
 import pytest
-from recirq.hfvqe.molecular_data.molecular_data_construction import h_n_linear_molecule
+from recirq.hfvqe.molecular_data.molecular_data_construction import (
+        h_n_linear_molecule)
 
 
 def test_negative_n_hydrogen_chain():

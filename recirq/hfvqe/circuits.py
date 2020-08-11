@@ -23,7 +23,6 @@ from openfermion import slater_determinant_preparation_circuit
 import cirq
 
 from recirq.hfvqe import util
-# pylint: disable=C
 
 
 def rhf_params_to_matrix(parameters: np.ndarray,
@@ -31,15 +30,17 @@ def rhf_params_to_matrix(parameters: np.ndarray,
                          occ: Optional[Union[None, List[int]]] = None,
                          virt: Optional[Union[None, List[int]]] = None):
     """
-    For restricted Hartree-Fock we have nocc * nvirt parameters.  These are provided
-    as a list that is ordered by (virtuals) \times (occupied) where
-    occupied is a set of indices corresponding to the occupied oribitals w.r.t the
-    Lowdin basis and virtuals is a set of indices of the virutal orbitals w.r.t the
-    Lowdin basis.  For example, for H4 we have 2 orbitals occupied and 2 virtuals
+    For restricted Hartree-Fock we have nocc * nvirt parameters. These are
+    provided as a list that is ordered by (virtuals) \times (occupied) where
+    occupied is a set of indices corresponding to the occupied oribitals w.r.t
+    the Lowdin basis and virtuals is a set of indices of the virutal orbitals
+    w.r.t the Lowdin basis.  For example, for H4 we have 2 orbitals occupied and
+    2 virtuals:
 
     occupied = [0, 1]  virtuals = [2, 3]
 
-    parameters = [(v_{0}, o_{0}), (v_{0}, o_{1}), (v_{1}, o_{0}), (v_{1}, o_{1})]
+    parameters = [(v_{0}, o_{0}), (v_{0}, o_{1}), (v_{1}, o_{0}),
+                  (v_{1}, o_{1})]
                = [(2, 0), (2, 1), (3, 0), (3, 1)]
 
     You can think of the tuples of elements of the upper right triangle of the
@@ -149,7 +150,8 @@ def xxyy_basis_rotation(pairs, clean_xxyy=False):
 
 def circuits_with_measurements(qubits, circuits,
                                clean_xxyy=False):  # testpragma: no cover
-    """Append the appropriate measurements to each of the permutation circuits"""
+    """Append the appropriate measurements to each of the permutation circuits.
+    """
     num_qubits = len(qubits)
     even_pairs = [
         qubits[idx:idx + 2] for idx in np.arange(0, num_qubits - 1, 2)

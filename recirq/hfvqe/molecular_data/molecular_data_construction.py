@@ -12,14 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=C
 # coverage: ignore
 """
 Construct MolecularData objects for various molecules
 """
 from typing import Optional
 
+import numpy as np
+import scipy as sp
 import openfermion as of
+
+from openfermion.hamiltonians import MolecularData
+
+from recirq.hfvqe.objective import generate_hamiltonian, \
+    RestrictedHartreeFockObjective
 
 NO_PSI4 = False
 try:
@@ -27,9 +33,6 @@ try:
 except ImportError:
     NO_PSI4 = True
 
-import numpy as np
-
-import scipy as sp
 
 NO_OFPSI4 = False
 try:
@@ -37,11 +40,6 @@ try:
     from openfermionpsi4._run_psi4 import create_geometry_string  # type: ignore
 except ImportError:
     NO_OFPSI4 = True
-
-from openfermion.hamiltonians import MolecularData
-
-from recirq.hfvqe.objective import generate_hamiltonian, \
-    RestrictedHartreeFockObjective
 
 
 class NOOFPsi4Error(Exception):
@@ -122,7 +120,8 @@ def get_ao_integrals(molecule: MolecularData,
     """
     Use psi4numpy to grab the atomic orbital integrals
 
-    Modified from https://github.com/psi4/psi4numpy/blob/master/Tutorials/01_Psi4NumPy-Basics/1e_mints-helper.ipynb
+    Modified from
+    https://github.com/psi4/psi4numpy/blob/master/Tutorials/01_Psi4NumPy-Basics/1e_mints-helper.ipynb
 
     :param molecule:
     :return:

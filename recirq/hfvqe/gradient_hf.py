@@ -18,7 +18,6 @@ An implementation of gradient based Restricted-Hartree-Fock
 This uses a bunch of the infrastructure already used in the experiment
 should only need an RHF_object.
 """
-# pylint: disable=C
 from typing import Optional, Union
 import numpy as np
 import scipy as sp
@@ -34,9 +33,12 @@ def rhf_func_generator(
     """
     Generate the energy, gradient, and unitary functions
 
-    :param rhf_objective: objective function object
-    :param initial_occ_vec: (optional) vector for occupation numbers of the alpha-opdm
-    :return: functions for unitary, energy, gradient (in that order)
+    Args:
+        rhf_objective: objective function object
+        initial_occ_vec: (optional) vector for occupation numbers of the
+            alpha-opdm
+    Returns:
+        functions for unitary, energy, gradient (in that order)
     """
     if initial_occ_vec is None:
         initial_opdm = np.diag([1] * rhf_objective.nocc +

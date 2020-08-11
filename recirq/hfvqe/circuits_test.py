@@ -20,7 +20,6 @@ import cirq
 from recirq.hfvqe.circuits import (rhf_params_to_matrix, ryxxy, ryxxy2, ryxxy3,
                                    ryxxy4, xxyy_basis_rotation,
                                    prepare_slater_determinant)
-# pylint: disable=C
 
 
 def test_rhf_params_to_matrix():
