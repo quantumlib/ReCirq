@@ -4,7 +4,7 @@ import numpy as np
 from openfermion.ops import InteractionOperator, InteractionRDM
 from openfermion.utils import wedge
 from openfermion.transforms import get_fermion_operator
-from openfermioncirq.experiments.hfvqe.circuits import rhf_params_to_matrix
+from recirq.hfvqe.circuits import rhf_params_to_matrix
 # pylint: disable=C
 
 

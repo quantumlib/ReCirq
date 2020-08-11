@@ -2,10 +2,10 @@ from typing import List, Optional
 import cirq
 import numpy as np
 import scipy as sp
-import openfermioncirq.experiments.hfvqe.circuits as ccc
-import openfermioncirq.experiments.hfvqe.analysis as cca
-import openfermioncirq.experiments.hfvqe.util as ccu
-from openfermioncirq.experiments.hfvqe.objective import rhf_params_to_matrix
+import recirq.hfvqe.circuits as ccc
+import recirq.hfvqe.analysis as cca
+import recirq.hfvqe.util as ccu
+from recirq.hfvqe.objective import rhf_params_to_matrix
 
 
 class RDMGenerator():  # testpragma: no cover

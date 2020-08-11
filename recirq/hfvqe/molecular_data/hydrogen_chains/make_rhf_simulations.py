@@ -11,15 +11,15 @@ import os
 
 from openfermion.ops import general_basis_change
 
-from openfermioncirq.experiments.hfvqe.molecular_data.molecular_data_construction import (h6_linear_molecule,
+from recirq.hfvqe.molecular_data.molecular_data_construction import (h6_linear_molecule,
                                                                                           h8_linear_molecule,
                                                                                           h10_linear_molecule,
                                                                                           h12_linear_molecule,
                                                                                           get_ao_integrals
                                                                                           )
 
-from openfermioncirq.experiments.hfvqe.gradient_hf import rhf_minimization, rhf_func_generator
-from openfermioncirq.experiments.hfvqe.objective import \
+from recirq.hfvqe.gradient_hf import rhf_minimization, rhf_func_generator
+from recirq.hfvqe.objective import \
     RestrictedHartreeFockObjective, generate_hamiltonian
 
 

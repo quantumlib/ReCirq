@@ -31,7 +31,7 @@
 from itertools import product
 import numpy as np
 import pytest
-from openfermioncirq.experiments.hfvqe.third_party.higham import (heaviside,
+from recirq.hfvqe.third_party.higham import (heaviside,
                                                                   higham_polynomial,
                                                                   higham_root,
                                                                   map_to_tensor,

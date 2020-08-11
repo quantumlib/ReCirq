@@ -4,8 +4,8 @@ import numpy as np
 from openfermion.utils import wedge
 from openfermion.ops import InteractionRDM
 
-import openfermioncirq.experiments.hfvqe.util as ccu
-from openfermioncirq.experiments.hfvqe.objective import generate_hamiltonian
+import recirq.hfvqe.util as ccu
+from recirq.hfvqe.objective import generate_hamiltonian
 # pylint: disable=C
 
 

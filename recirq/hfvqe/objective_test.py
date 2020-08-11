@@ -20,11 +20,11 @@ import scipy as sp
 
 import openfermion as of
 
-from openfermioncirq.experiments.hfvqe.circuits import \
+from recirq.hfvqe.circuits import \
     prepare_slater_determinant
-from openfermioncirq.experiments.hfvqe.objective import get_matrix_of_eigs
-from openfermioncirq.experiments.hfvqe.circuits import rhf_params_to_matrix
-from openfermioncirq.experiments.hfvqe.molecular_example import make_h6_1_3
+from recirq.hfvqe.objective import get_matrix_of_eigs
+from recirq.hfvqe.circuits import rhf_params_to_matrix
+from recirq.hfvqe.molecular_example import make_h6_1_3
 
 
 

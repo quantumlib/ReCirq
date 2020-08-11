@@ -1,7 +1,7 @@
 import numpy as np
-from openfermioncirq.experiments.hfvqe.gradient_hf import (rhf_func_generator,
+from recirq.hfvqe.gradient_hf import (rhf_func_generator,
                                rhf_minimization)
-from openfermioncirq.experiments.hfvqe.molecular_example import make_h6_1_3
+from recirq.hfvqe.molecular_example import make_h6_1_3
 
 
 def test_rhf_func_gen():

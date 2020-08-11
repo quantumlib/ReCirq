@@ -4,10 +4,10 @@ import numpy as np
 
 import pytest
 
-from openfermioncirq.experiments.hfvqe.opdm_functionals import (RDMGenerator,
+from recirq.hfvqe.opdm_functionals import (RDMGenerator,
                                                                 OpdmFunctional)
-from openfermioncirq.experiments.hfvqe.analysis import compute_opdm
-from openfermioncirq.experiments.hfvqe.molecular_example import make_h6_1_3
+from recirq.hfvqe.analysis import compute_opdm
+from recirq.hfvqe.molecular_example import make_h6_1_3
 
 
 @pytest.mark.skip(reason='long-running systems test')

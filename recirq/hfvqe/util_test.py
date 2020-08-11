@@ -1,6 +1,6 @@
 import numpy as np
 import scipy as sp
-from openfermioncirq.experiments.hfvqe.util import (generate_permutations,
+from recirq.hfvqe.util import (generate_permutations,
                         swap_forward,
                         generate_fswap_pairs,
                         generate_fswap_unitaries)

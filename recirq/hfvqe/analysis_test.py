@@ -1,8 +1,8 @@
 from itertools import product
 import numpy as np
 import scipy as sp
-from openfermioncirq.experiments.hfvqe.circuits import rhf_params_to_matrix
-from openfermioncirq.experiments.hfvqe.analysis import (
+from recirq.hfvqe.circuits import rhf_params_to_matrix
+from recirq.hfvqe.analysis import (
     trace_distance,
     kdelta,
     energy_from_opdm,
@@ -10,10 +10,10 @@ from openfermioncirq.experiments.hfvqe.analysis import (
     fidelity,
     mcweeny_purification
     )
-from openfermioncirq.experiments.hfvqe.molecular_example import make_h6_1_3
-from openfermioncirq.experiments.hfvqe.molecular_example_odd_qubits import (
+from recirq.hfvqe.molecular_example import make_h6_1_3
+from recirq.hfvqe.molecular_example_odd_qubits import (
     make_h3_2_5)
-from openfermioncirq.experiments.hfvqe.gradient_hf import rhf_func_generator
+from recirq.hfvqe.gradient_hf import rhf_func_generator
 # pylint: disable=C
 
 

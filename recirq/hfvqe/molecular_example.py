@@ -5,8 +5,8 @@ import numpy as np
 import openfermion as of
 import scipy as sp
 
-from openfermioncirq.experiments.hfvqe.gradient_hf import rhf_minimization
-from openfermioncirq.experiments.hfvqe.objective import (
+from recirq.hfvqe.gradient_hf import rhf_minimization
+from recirq.hfvqe.objective import (
     RestrictedHartreeFockObjective, generate_hamiltonian)
 
 
@@ -16,7 +16,7 @@ def make_h6_1_3() -> Tuple[RestrictedHartreeFockObjective,
                            np.ndarray,
                            np.ndarray]:
     # load the molecule from moelcular data
-    import openfermioncirq.experiments.hfvqe as hfvqe
+    import recirq.hfvqe as hfvqe
     h6_1_3_path = os.path.join(
         hfvqe.__path__[0],
         'molecular_data/hydrogen_chains/h_6_sto-3g/bond_distance_1.3')

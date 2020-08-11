@@ -9,8 +9,8 @@ from typing import Optional, Union
 import numpy as np
 import scipy as sp
 
-from openfermioncirq.experiments.hfvqe.circuits import rhf_params_to_matrix
-from openfermioncirq.experiments.hfvqe.objective import RestrictedHartreeFockObjective
+from recirq.hfvqe.circuits import rhf_params_to_matrix
+from recirq.hfvqe.objective import RestrictedHartreeFockObjective
 
 
 def rhf_func_generator(rhf_objective: RestrictedHartreeFockObjective,

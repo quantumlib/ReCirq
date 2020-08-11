@@ -12,9 +12,9 @@ from openfermion.ops import FermionOperator, InteractionRDM
 
 from joblib import Parallel, delayed  # type: ignore
 
-from openfermioncirq.experiments.hfvqe.objective import \
+from recirq.hfvqe.objective import \
     RestrictedHartreeFockObjective
-from openfermioncirq.experiments.hfvqe.circuits import rhf_params_to_matrix
+from recirq.hfvqe.circuits import rhf_params_to_matrix
 
 
 def get_one_body_fermion_operator(coeff_matrix):  # testpragma: no cover
@@ -59,7 +59,7 @@ def non_redundant_rotation_generators(
     Generate the fermionic representation of all non-redundant rotation
     generators for restricted Hartree-fock
 
-    :param rhf_objective: openfermioncirq.experiments.hfvqe.RestrictedHartreeFock object
+    :param rhf_objective: recirq.hfvqe.RestrictedHartreeFock object
     :return: list of fermionic generators.
     """
     rotation_generators = []
@@ -87,7 +87,7 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
 
     :param rotation_generators: List FermionOperators corresponding to
                                 non-redundant rotation generators
-    :param rhf_objective: openfermioncirq.experiments.hfvqe.RestrictedHartreeFockObject
+    :param rhf_objective: recirq.hfvqe.RestrictedHartreeFockObject
     :param rdms: openfermion.InteractionRDMs where the 2-RDM is generated
                  from the 1-RDM as of.wedge(opdm, opdm)
     :param diagonal_hessian: Boolean indicator for what type of Hessian
@@ -328,7 +328,7 @@ def moving_frame_augmented_hessian_optimizer(rhf_objective: RestrictedHartreeFoc
     Determine an optimal basis rotation by continuously updating the
     coordinate system and asking if stationarity is achieved.
 
-    :param rhf_objective: openfermioncirq.experiments.hfvqe.RestrictedHartreeFockObjective
+    :param rhf_objective: recirq.hfvqe.RestrictedHartreeFockObjective
     :param initial_parameters: parameters to start the optimization
     :param opdm_aa_measurement_func: callable functioon that takes the parameter
                                      vector and returns the opdm

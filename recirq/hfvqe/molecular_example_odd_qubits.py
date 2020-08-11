@@ -4,10 +4,10 @@ from typing import Tuple
 import numpy as np
 import openfermion as of
 import scipy as sp
-import openfermioncirq.experiments.hfvqe as hfvqe
+import recirq.hfvqe as hfvqe
 
-from openfermioncirq.experiments.hfvqe.gradient_hf import rhf_minimization
-from openfermioncirq.experiments.hfvqe.objective import (
+from recirq.hfvqe.gradient_hf import rhf_minimization
+from recirq.hfvqe.objective import (
     RestrictedHartreeFockObjective, generate_hamiltonian)
 
 

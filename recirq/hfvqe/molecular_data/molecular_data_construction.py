@@ -26,7 +26,7 @@ except ImportError:
 
 from openfermion.hamiltonians import MolecularData
 
-from openfermioncirq.experiments.hfvqe.objective import generate_hamiltonian, \
+from recirq.hfvqe.objective import generate_hamiltonian, \
     RestrictedHartreeFockObjective
 
 
