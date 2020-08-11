@@ -1,8 +1,6 @@
-import cirq
-
 import numpy as np
-
 import pytest
+import cirq
 
 from recirq.hfvqe.opdm_functionals import (RDMGenerator, OpdmFunctional)
 from recirq.hfvqe.analysis import compute_opdm

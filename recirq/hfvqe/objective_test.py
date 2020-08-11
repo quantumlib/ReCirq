@@ -12,13 +12,11 @@ $kappa$.
 """
 from itertools import product
 
-import cirq
-
 import numpy as np
-
 import scipy as sp
 
 import openfermion as of
+import cirq
 
 from recirq.hfvqe.circuits import \
     prepare_slater_determinant

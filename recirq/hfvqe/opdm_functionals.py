@@ -1,7 +1,7 @@
 from typing import List, Optional
-import cirq
 import numpy as np
 import scipy as sp
+import cirq
 import recirq.hfvqe.circuits as ccc
 import recirq.hfvqe.analysis as cca
 import recirq.hfvqe.util as ccu

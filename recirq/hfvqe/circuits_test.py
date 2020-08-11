@@ -1,7 +1,7 @@
-import cirq
 import numpy as np
-import scipy as sp
 import pytest
+import scipy as sp
+import cirq
 
 from recirq.hfvqe.circuits import (rhf_params_to_matrix, ryxxy, ryxxy2, ryxxy3,
                                    ryxxy4, xxyy_basis_rotation,
@@ -113,50 +113,50 @@ def test_prepare_slater():
 
     test_circuit = cirq.Circuit(prepare_slater_determinant(qubits, u[:, :2].T))
     true_moments = [
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.X.on(cirq.LineQubit(0)),
             cirq.X.on(cirq.LineQubit(1)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             (cirq.ISWAP**0.5).on(cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.1676697243144354).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.1676697243144355).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             (cirq.ISWAP**0.5).on(cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(1)),
             (cirq.ISWAP**0.5).on(cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             (cirq.ISWAP**0.5).on(cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.3947664179536838).on(cirq.LineQubit(2)),
             cirq.rz(np.pi * -0.3947664179536837).on(cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 0.795779308536894).on(cirq.LineQubit(0)),
             cirq.rz(np.pi * 0.20422069146310598).on(cirq.LineQubit(1)),
             (cirq.ISWAP**0.5).on(cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             (cirq.ISWAP**0.5).on(cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(0)),
             (cirq.ISWAP**0.5).on(cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0212853739870422).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.02128537398704223).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             (cirq.ISWAP**0.5).on(cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(1)),
         ])
     ]
@@ -165,58 +165,58 @@ def test_prepare_slater():
     test_circuit = cirq.Circuit(
         prepare_slater_determinant(qubits, u[:, :2].T, clean_ryxxy=2))
     true_circuit = [
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.X.on(cirq.LineQubit(0)),
             cirq.X.on(cirq.LineQubit(1)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.1676697243144354).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.1676697243144355).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(1)),
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.3947664179536838).on(cirq.LineQubit(2)),
             cirq.rz(np.pi * -0.3947664179536837).on(cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 0.795779308536894).on(cirq.LineQubit(0)),
             cirq.rz(np.pi * 0.20422069146310598).on(cirq.LineQubit(1)),
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(0)),
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0212853739870422).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.02128537398704223).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0).on(cirq.LineQubit(1)),
         ])
     ]
@@ -225,63 +225,63 @@ def test_prepare_slater():
     test_circuit = cirq.Circuit(
         prepare_slater_determinant(qubits, u[:, :2].T, clean_ryxxy=3))
     true_circuit = [
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.X.on(cirq.LineQubit(0)),
             cirq.X.on(cirq.LineQubit(1)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.1885030576477686).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.14683639098110218).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 0.8166126418702274).on(cirq.LineQubit(0)),
             cirq.rz(np.pi * 0.22505402479643932).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.4155997512870173).on(cirq.LineQubit(2)),
             cirq.rz(np.pi * -0.3739330846203504).on(cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(0)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(2)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0421187073203755).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.000452040653708897).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(2)),
         ])
@@ -291,63 +291,63 @@ def test_prepare_slater():
     test_circuit = cirq.Circuit(
         prepare_slater_determinant(qubits, u[:, :2].T, clean_ryxxy=4))
     true_circuit = [
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.X.on(cirq.LineQubit(0)),
             cirq.X.on(cirq.LineQubit(1)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.1885030576477686).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.14683639098110218).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 0.8166126418702274).on(cirq.LineQubit(0)),
             cirq.rz(np.pi * 0.22505402479643932).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.4155997512870173).on(cirq.LineQubit(2)),
             cirq.rz(np.pi * -0.3739330846203504).on(cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(0), cirq.LineQubit(1)),
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(2), cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(0)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(2)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(3)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0421187073203755).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * -0.000452040653708897).on(cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.FSimGate(theta=-0.7853981633974483, phi=0.1308996938995747).on(
                 cirq.LineQubit(1), cirq.LineQubit(2)),
         ]),
-        cirq.Moment(operations=[
+        cirq.Moment([
             cirq.rz(np.pi * 1.0208333333333333).on(cirq.LineQubit(1)),
             cirq.rz(np.pi * 0.020833333333333332).on(cirq.LineQubit(2)),
         ])

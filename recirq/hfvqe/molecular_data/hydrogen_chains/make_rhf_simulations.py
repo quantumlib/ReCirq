@@ -2,19 +2,15 @@
 """
 Implement the H2-experiment with OpenFermion and OpenFermion-Cirq
 """
-# Numerical Imports
-import numpy
-
-import scipy
-
 import os
+import numpy
+import scipy
 
 from openfermion.ops import general_basis_change
 
 from recirq.hfvqe.molecular_data.molecular_data_construction import (
     h6_linear_molecule, h8_linear_molecule, h10_linear_molecule,
     h12_linear_molecule, get_ao_integrals)
-
 from recirq.hfvqe.gradient_hf import rhf_minimization, rhf_func_generator
 from recirq.hfvqe.objective import \
     RestrictedHartreeFockObjective, generate_hamiltonian
@@ -23,7 +19,7 @@ from recirq.hfvqe.objective import \
 def make_rhf_objective(molecule):
     # coverage: ignore
     S, Hcore, TEI = get_ao_integrals(molecule)
-    evals, X = scipy.linalg.eigh(Hcore, S)
+    _, X = scipy.linalg.eigh(Hcore, S)
 
     molecular_hamiltonian = generate_hamiltonian(
         general_basis_change(Hcore, X, (1, 0)),

@@ -9,7 +9,7 @@ from recirq.hfvqe.circuits import rhf_params_to_matrix
 
 
 def get_matrix_of_eigs(w: np.ndarray) -> np.ndarray:
-    """
+    r"""
     Transform the eigenvalues for getting the gradient
 
     .. math:

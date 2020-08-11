@@ -2,11 +2,11 @@ from typing import List, Optional, Union
 from copy import deepcopy
 from itertools import product
 
-import cirq
 import numpy as np
 from scipy.linalg import expm
 
 from openfermion import slater_determinant_preparation_circuit
+import cirq
 
 from recirq.hfvqe import util
 # pylint: disable=C
