@@ -33,7 +33,6 @@ try:
 except ImportError:
     NO_PSI4 = True
 
-
 NO_OFPSI4 = False
 try:
     from openfermionpsi4 import run_psi4  # type: ignore
