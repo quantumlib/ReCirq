@@ -98,7 +98,8 @@ def higham_root(eigenvalues, target_trace, epsilon=1.0E-15):
 
 def map_to_matrix(mat):
     if mat.ndim != 4:
-        raise TypeError("I only map rank-4 tensors to matices with symmetric support")
+        raise TypeError(
+            "I only map rank-4 tensors to matices with symmetric support")
     dim = mat.shape[0]
     matform = np.zeros((dim**2, dim**2))
     for p, q, r, s in product(range(dim), repeat=4):
@@ -109,7 +110,8 @@ def map_to_matrix(mat):
 
 def map_to_tensor(mat):
     if mat.ndim != 2:
-        raise TypeError("I only map matrices to rank-4 tensors with symmetric support")
+        raise TypeError(
+            "I only map matrices to rank-4 tensors with symmetric support")
     dim = int(np.sqrt(mat.shape[0]))
     tensor_form = np.zeros((dim, dim, dim, dim))
     for p, q, r, s in product(range(dim), repeat=4):
@@ -136,14 +138,16 @@ def fixed_trace_positive_projection(bmat, target_trace):
         bmat = 0.5 * (bmat + bmat.conj().T)
 
     w, v = np.linalg.eigh(bmat)
-    if np.all(w >= -1.0*float(1.0E-14)) and np.isclose(np.sum(w), target_trace):
+    if np.all(w >= -1.0 * float(1.0E-14)) and np.isclose(
+            np.sum(w), target_trace):
         purified_matrix = bmat
     else:
         sigma = higham_root(w, target_trace)
         shifted_eigs = np.multiply(heaviside(w - sigma), (w - sigma))
         purified_matrix = np.zeros_like(bmat)
         for i in range(w.shape[0]):
-            purified_matrix += shifted_eigs[i] * v[:, [i]].dot(v[:, [i]].conj().T)
+            purified_matrix += shifted_eigs[i] * v[:, [i]].dot(
+                v[:, [i]].conj().T)
 
     if map_to_four_tensor:
         purified_matrix = map_to_tensor(purified_matrix)

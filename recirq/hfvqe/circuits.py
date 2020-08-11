@@ -12,9 +12,10 @@ from recirq.hfvqe import util
 # pylint: disable=C
 
 
-def rhf_params_to_matrix(parameters: np.ndarray, num_qubits: int,
-                         occ: Optional[Union[None, List[int]]]=None,
-                         virt: Optional[Union[None, List[int]]]=None):
+def rhf_params_to_matrix(parameters: np.ndarray,
+                         num_qubits: int,
+                         occ: Optional[Union[None, List[int]]] = None,
+                         virt: Optional[Union[None, List[int]]] = None):
     """
     For restricted Hartree-Fock we have nocc * nvirt parameters.  These are provided
     as a list that is ordered by (virtuals) \times (occupied) where
@@ -40,7 +41,7 @@ def rhf_params_to_matrix(parameters: np.ndarray, num_qubits: int,
     and any c_{i, j} where i and j are both in occupied or both in virtual = 0.
     """
     if occ is None:
-        occ = range(num_qubits//2)
+        occ = range(num_qubits // 2)
     if virt is None:
         virt = range(num_qubits // 2, num_qubits)
 
@@ -55,13 +56,14 @@ def rhf_params_to_matrix(parameters: np.ndarray, num_qubits: int,
     return kappa
 
 
-def generate_circuits_from_params_or_u(qubits: List[cirq.Qid],
-                                       parameters: np.ndarray,
-                                       nocc: int,
-                                       return_unitaries: Optional[bool] = False,
-                                       occ: Optional[Union[None, List[int]]] = None,
-                                       virt: Optional[Union[None, List[int]]] = None,
-                                       clean_ryxxy: Optional[bool] = False):  # testpragma: no cover
+def generate_circuits_from_params_or_u(
+        qubits: List[cirq.Qid],
+        parameters: np.ndarray,
+        nocc: int,
+        return_unitaries: Optional[bool] = False,
+        occ: Optional[Union[None, List[int]]] = None,
+        virt: Optional[Union[None, List[int]]] = None,
+        clean_ryxxy: Optional[bool] = False):  # testpragma: no cover
     """
     Make the circuits required for the estimation of the 1-RDM
 
@@ -111,23 +113,28 @@ def generate_circuits_from_params_or_u(qubits: List[cirq.Qid],
     return circuits
 
 
-def xxyy_basis_rotation(pairs, clean_xxyy = False):
+def xxyy_basis_rotation(pairs, clean_xxyy=False):
     """Generate the measurement circuits"""
     all_ops = []
 
     for a, b in pairs:
         if clean_xxyy:
-            all_ops += [cirq.rz(-np.pi*0.25).on(a),
-                        cirq.rz(np.pi * 0.25).on(b),
-                        cirq.ISWAP.on(a, b) ** 0.5]
+            all_ops += [
+                cirq.rz(-np.pi * 0.25).on(a),
+                cirq.rz(np.pi * 0.25).on(b),
+                cirq.ISWAP.on(a, b)**0.5
+            ]
         else:
-            all_ops += [cirq.rz(-np.pi*0.25).on(a),
-                        cirq.rz(np.pi * 0.25).on(b),
-                        cirq.FSimGate(-np.pi/4, np.pi/24).on(a, b)]
+            all_ops += [
+                cirq.rz(-np.pi * 0.25).on(a),
+                cirq.rz(np.pi * 0.25).on(b),
+                cirq.FSimGate(-np.pi / 4, np.pi / 24).on(a, b)
+            ]
     return all_ops
 
 
-def circuits_with_measurements(qubits, circuits, clean_xxyy = False):  # testpragma: no cover
+def circuits_with_measurements(qubits, circuits,
+                               clean_xxyy=False):  # testpragma: no cover
     """Append the appropriate measurements to each of the permutation circuits"""
     num_qubits = len(qubits)
     even_pairs = [
@@ -164,7 +171,8 @@ def prepare_slater_determinant(qubits: List[cirq.Qid],
                         model of the Givens rotation.
     :return: generator for circuit
     """
-    circuit_description = slater_determinant_preparation_circuit(slater_determinant_matrix)
+    circuit_description = slater_determinant_preparation_circuit(
+        slater_determinant_matrix)
     yield (cirq.X(qubits[j]) for j in range(slater_determinant_matrix.shape[0]))
     for parallel_ops in circuit_description:
         for op in parallel_ops:
@@ -186,10 +194,10 @@ def prepare_slater_determinant(qubits: List[cirq.Qid],
 def ryxxy(a, b, theta):
     """Implements the givens rotation with sqrt(iswap).
     The inverse(sqrt(iswap)) is made with z before and after"""
-    yield cirq.ISWAP.on(a, b) ** 0.5
+    yield cirq.ISWAP.on(a, b)**0.5
     yield cirq.rz(-theta + np.pi).on(a)
     yield cirq.rz(theta).on(b)
-    yield cirq.ISWAP.on(a, b) ** 0.5
+    yield cirq.ISWAP.on(a, b)**0.5
     yield cirq.rz(np.pi).on(a)
 
 
@@ -198,10 +206,10 @@ def ryxxy2(a, b, theta):
     Implement realistic Givens rotation considering the always on parasitic
     cphase
     """
-    yield cirq.FSimGate(-np.pi/4, np.pi/24).on(a, b)
+    yield cirq.FSimGate(-np.pi / 4, np.pi / 24).on(a, b)
     yield cirq.rz(-theta + np.pi).on(a)
     yield cirq.rz(theta).on(b)
-    yield cirq.FSimGate(-np.pi/4, np.pi/24).on(a, b)
+    yield cirq.FSimGate(-np.pi / 4, np.pi / 24).on(a, b)
     yield cirq.rz(np.pi).on(a)
 
 
@@ -210,12 +218,12 @@ def ryxxy3(a, b, theta):
     Implement realistic Givens rotation considering the always on parasitic
     cphase and attempt to reduce the error by 1/3
     """
-    yield cirq.FSimGate(-np.pi/4, np.pi/24).on(a, b)
-    yield cirq.rz(-theta + np.pi + np.pi/48).on(a)
-    yield cirq.rz(theta + np.pi/48).on(b)
-    yield cirq.FSimGate(-np.pi/4, np.pi/24).on(a, b)
-    yield cirq.rz(np.pi + np.pi/48).on(a)
-    yield cirq.rz(+np.pi/48).on(b)
+    yield cirq.FSimGate(-np.pi / 4, np.pi / 24).on(a, b)
+    yield cirq.rz(-theta + np.pi + np.pi / 48).on(a)
+    yield cirq.rz(theta + np.pi / 48).on(b)
+    yield cirq.FSimGate(-np.pi / 4, np.pi / 24).on(a, b)
+    yield cirq.rz(np.pi + np.pi / 48).on(a)
+    yield cirq.rz(+np.pi / 48).on(b)
 
 
 def ryxxy4(a, b, theta):
@@ -223,9 +231,9 @@ def ryxxy4(a, b, theta):
     Implement realistic Givens rotation considering the always on parasitic
     cphase and attempt to reduce the error by 1/3 for running on hardware
     """
-    yield cirq.FSimGate(-np.pi/4, 0).on(a, b)
-    yield cirq.rz(-theta + np.pi + np.pi/48).on(a)
-    yield cirq.rz(theta + np.pi/48).on(b)
-    yield cirq.FSimGate(-np.pi/4, 0).on(a, b)
-    yield cirq.rz(np.pi + np.pi/48).on(a)
-    yield cirq.rz(+np.pi/48).on(b)
+    yield cirq.FSimGate(-np.pi / 4, 0).on(a, b)
+    yield cirq.rz(-theta + np.pi + np.pi / 48).on(a)
+    yield cirq.rz(theta + np.pi / 48).on(b)
+    yield cirq.FSimGate(-np.pi / 4, 0).on(a, b)
+    yield cirq.rz(np.pi + np.pi / 48).on(a)
+    yield cirq.rz(+np.pi / 48).on(b)

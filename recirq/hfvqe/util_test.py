@@ -1,9 +1,7 @@
 import numpy as np
 import scipy as sp
-from recirq.hfvqe.util import (generate_permutations,
-                        swap_forward,
-                        generate_fswap_pairs,
-                        generate_fswap_unitaries)
+from recirq.hfvqe.util import (generate_permutations, swap_forward,
+                               generate_fswap_pairs, generate_fswap_unitaries)
 
 
 def test_swap_forward():

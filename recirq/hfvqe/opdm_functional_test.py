@@ -4,8 +4,7 @@ import numpy as np
 
 import pytest
 
-from recirq.hfvqe.opdm_functionals import (RDMGenerator,
-                                                                OpdmFunctional)
+from recirq.hfvqe.opdm_functionals import (RDMGenerator, OpdmFunctional)
 from recirq.hfvqe.analysis import compute_opdm
 from recirq.hfvqe.molecular_example import make_h6_1_3
 
@@ -28,9 +27,10 @@ def test_opdm_func_vals():
 
     data = opdm_func.calculate_data(parameters)
     assert isinstance(data, dict)
-    assert list(data.keys()) == ['z', 'xy_even', 'xy_odd', 'qubits',
-                           'qubit_permutations', 'circuits',
-                           'circuits_with_measurement']
+    assert list(data.keys()) == [
+        'z', 'xy_even', 'xy_odd', 'qubits', 'qubit_permutations', 'circuits',
+        'circuits_with_measurement'
+    ]
 
     opdm_from_data = compute_opdm(data, return_variance=False)
 

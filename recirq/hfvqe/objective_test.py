@@ -27,11 +27,8 @@ from recirq.hfvqe.circuits import rhf_params_to_matrix
 from recirq.hfvqe.molecular_example import make_h6_1_3
 
 
-
-
 def get_opdm(wf, num_orbitals, transform=of.jordan_wigner):
-    opdm_hw = np.zeros((num_orbitals, num_orbitals),
-                       dtype=np.complex128)
+    opdm_hw = np.zeros((num_orbitals, num_orbitals), dtype=np.complex128)
     creation_ops = [
         of.get_sparse_operator(transform(of.FermionOperator(((p, 1)))),
                                n_qubits=num_orbitals)
@@ -57,10 +54,8 @@ def test_global_gradient_h4():
     virt = list(range(nocc, molecule.n_orbitals))
 
     qubits = cirq.LineQubit.range(molecule.n_orbitals)
-    u = sp.linalg.expm(rhf_params_to_matrix(params,
-                                            len(qubits),
-                                            occ=occ,
-                                            virt=virt))
+    u = sp.linalg.expm(
+        rhf_params_to_matrix(params, len(qubits), occ=occ, virt=virt))
     circuit = cirq.Circuit(prepare_slater_determinant(qubits, u[:, :nocc].T))
 
     simulator = cirq.Simulator(dtype=np.complex128)
@@ -78,22 +73,25 @@ def test_global_gradient_h4():
     for i in range(9):
         params_epsilon = params.copy()
         params_epsilon[i] += epsilon
-        u = sp.linalg.expm(rhf_params_to_matrix(params_epsilon, len(qubits),
-                                                occ=occ,
-                                                virt=virt))
-        circuit = cirq.Circuit(
-            prepare_slater_determinant(qubits, u[:, :nocc].T))
+        u = sp.linalg.expm(
+            rhf_params_to_matrix(params_epsilon,
+                                 len(qubits),
+                                 occ=occ,
+                                 virt=virt))
+        circuit = cirq.Circuit(prepare_slater_determinant(
+            qubits, u[:, :nocc].T))
         wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_plus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
 
         params_epsilon[i] -= 2 * epsilon
-        u = sp.linalg.expm(rhf_params_to_matrix(params_epsilon,
-                                                len(qubits),
-                                                occ=occ,
-                                                virt=virt))
-        circuit = cirq.Circuit(
-            prepare_slater_determinant(qubits, u[:, :nocc].T))
+        u = sp.linalg.expm(
+            rhf_params_to_matrix(params_epsilon,
+                                 len(qubits),
+                                 occ=occ,
+                                 virt=virt))
+        circuit = cirq.Circuit(prepare_slater_determinant(
+            qubits, u[:, :nocc].T))
         wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_minus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
@@ -105,10 +103,8 @@ def test_global_gradient_h4():
 
     # random parameters now
     params = np.random.randn(9)
-    u = sp.linalg.expm(rhf_params_to_matrix(params,
-                                            len(qubits),
-                                            occ=occ,
-                                            virt=virt))
+    u = sp.linalg.expm(
+        rhf_params_to_matrix(params, len(qubits), occ=occ, virt=virt))
     circuit = cirq.Circuit(prepare_slater_determinant(qubits, u[:, :nocc].T))
 
     simulator = cirq.Simulator(dtype=np.complex128)
@@ -125,22 +121,25 @@ def test_global_gradient_h4():
     for i in range(9):
         params_epsilon = params.copy()
         params_epsilon[i] += epsilon
-        u = sp.linalg.expm(rhf_params_to_matrix(params_epsilon, len(qubits),
-                                                occ=occ,
-                                                virt=virt))
-        circuit = cirq.Circuit(
-            prepare_slater_determinant(qubits, u[:, :nocc].T))
+        u = sp.linalg.expm(
+            rhf_params_to_matrix(params_epsilon,
+                                 len(qubits),
+                                 occ=occ,
+                                 virt=virt))
+        circuit = cirq.Circuit(prepare_slater_determinant(
+            qubits, u[:, :nocc].T))
         wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_plus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
 
         params_epsilon[i] -= 2 * epsilon
-        u = sp.linalg.expm(rhf_params_to_matrix(params_epsilon,
-                                                len(qubits),
-                                                occ=occ,
-                                                virt=virt))
-        circuit = cirq.Circuit(
-            prepare_slater_determinant(qubits, u[:, :nocc].T))
+        u = sp.linalg.expm(
+            rhf_params_to_matrix(params_epsilon,
+                                 len(qubits),
+                                 occ=occ,
+                                 virt=virt))
+        circuit = cirq.Circuit(prepare_slater_determinant(
+            qubits, u[:, :nocc].T))
         wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_minus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
@@ -157,15 +156,14 @@ def test_get_matrix_of_eigs():
     :return:
     """
     lam_vals = np.random.randn(4) + 1j * np.random.randn(4)
-    mat_eigs = np.zeros((lam_vals.shape[0],
-                         lam_vals.shape[0]),
-                         dtype=np.complex128)
+    mat_eigs = np.zeros((lam_vals.shape[0], lam_vals.shape[0]),
+                        dtype=np.complex128)
     for i, j in product(range(lam_vals.shape[0]), repeat=2):
         if np.isclose(abs(lam_vals[i] - lam_vals[j]), 0):
             mat_eigs[i, j] = 1
         else:
-            mat_eigs[i, j] = (np.exp(1j * (lam_vals[i] - lam_vals[j])) - 1) / (
-                        1j * (lam_vals[i] - lam_vals[j]))
+            mat_eigs[i, j] = (np.exp(1j * (lam_vals[i] - lam_vals[j])) -
+                              1) / (1j * (lam_vals[i] - lam_vals[j]))
 
     test_mat_eigs = get_matrix_of_eigs(lam_vals)
     assert np.allclose(test_mat_eigs, mat_eigs)

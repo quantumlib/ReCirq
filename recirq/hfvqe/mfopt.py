@@ -31,8 +31,7 @@ def kdelta(i: int, j: int) -> float:  # testpragma: no cover
     return 1.0 if i == j else 0.0
 
 
-def group_action(old_unitary: np.ndarray,
-                 new_parameters: np.ndarray,
+def group_action(old_unitary: np.ndarray, new_parameters: np.ndarray,
                  occ: List[int],
                  virt: List[int]) -> np.ndarray:  # testpragma: no cover
     # coverage: ignore
@@ -46,14 +45,14 @@ def group_action(old_unitary: np.ndarray,
     :return: updated unitary
     """
     kappa_new = rhf_params_to_matrix(new_parameters,
-                                     len(occ) + len(virt),
-                                     occ, virt)
+                                     len(occ) + len(virt), occ, virt)
     assert kappa_new.shape == (len(occ) + len(virt), len(occ) + len(virt))
     return sp.linalg.expm(kappa_new) @ old_unitary
 
 
 def non_redundant_rotation_generators(
-        rhf_objective: RestrictedHartreeFockObjective) -> List[FermionOperator]:  # testpragma: no cover
+        rhf_objective: RestrictedHartreeFockObjective
+) -> List[FermionOperator]:  # testpragma: no cover
     # coverage: ignore
     """
     Generate the fermionic representation of all non-redundant rotation
@@ -66,10 +65,10 @@ def non_redundant_rotation_generators(
     for p in range(rhf_objective.nocc * rhf_objective.nvirt):
         grad_params = np.zeros(rhf_objective.nocc * rhf_objective.nvirt)
         grad_params[p] = 1
-        kappa_spatial_orbital = rhf_params_to_matrix(grad_params,
-                                                     len(rhf_objective.occ) + len(rhf_objective.virt),
-                                                     rhf_objective.occ,
-                                                     rhf_objective.virt)
+        kappa_spatial_orbital = rhf_params_to_matrix(
+            grad_params,
+            len(rhf_objective.occ) + len(rhf_objective.virt), rhf_objective.occ,
+            rhf_objective.virt)
         p0 = np.array([[1, 0], [0, 1]])
         kappa_spin_orbital = np.kron(kappa_spatial_orbital, p0)
         fermion_op = get_one_body_fermion_operator(kappa_spin_orbital)
@@ -80,7 +79,8 @@ def non_redundant_rotation_generators(
 def get_dvec_hmat(rotation_generators: List[FermionOperator],
                   rhf_objective: RestrictedHartreeFockObjective,
                   rdms: InteractionRDM,
-                  diagonal_hessian=False) -> (np.ndarray, np.ndarray):  # testpragma: no cover
+                  diagonal_hessian=False
+                 ) -> (np.ndarray, np.ndarray):  # testpragma: no cover
     # coverage: ignore
     """
     Generate first and second terms of the BCH expansion
@@ -100,8 +100,8 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
     num_qubits = rhf_objective.num_qubits
     kdelta_mat = np.eye(rhf_objective.hamiltonian.one_body_tensor.shape[0])
 
-    def single_commutator_einsum(idx: int,
-                                 rot_gen: FermionOperator) -> Tuple[int, float]:  # testpragma: no cover
+    def single_commutator_einsum(idx: int, rot_gen: FermionOperator
+                                ) -> Tuple[int, float]:  # testpragma: no cover
         # coverage: ignore
         """
         Evaluate <psi|[H, p^q - q^p]|psi>
@@ -110,46 +110,65 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
         :param rot_gen: Rotation generator p^q - q^p as a FermionOperator
         :return: index and value for the commutator
         """
-        rot_gen_tensor = get_interaction_operator(rot_gen,
-                                                  n_qubits=num_qubits).one_body_tensor
+        rot_gen_tensor = get_interaction_operator(
+            rot_gen, n_qubits=num_qubits).one_body_tensor
         opdm = rdms.n_body_tensors[(1, 0)].copy()
         tpdm = rdms.n_body_tensors[(1, 1, 0, 0)].copy()
         commutator_expectation = 0
         #   (  -1.00000) kdelta(i,q) cre(p) des(j)
-        commutator_expectation += -1.0 * np.einsum('ij,pq,iq,pj',
-                                                   rhf_objective.hamiltonian.one_body_tensor,
-                                                   rot_gen_tensor, kdelta_mat,
-                                                   opdm, optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ij,pq,iq,pj',
+            rhf_objective.hamiltonian.one_body_tensor,
+            rot_gen_tensor,
+            kdelta_mat,
+            opdm,
+            optimize=True)
         #   (   1.00000) kdelta(j,p) cre(i) des(q)
-        commutator_expectation += 1.0 * np.einsum('ij,pq,jp,iq',
-                                                  rhf_objective.hamiltonian.one_body_tensor,
-                                                  rot_gen_tensor, kdelta_mat,
-                                                  opdm, optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ij,pq,jp,iq',
+            rhf_objective.hamiltonian.one_body_tensor,
+            rot_gen_tensor,
+            kdelta_mat,
+            opdm,
+            optimize=True)
         #   (   1.00000) kdelta(i,q) cre(j) cre(p) des(k) des(l)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,iq,jpkl',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rot_gen_tensor, kdelta_mat,
-                                                  tpdm, optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,iq,jpkl',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rot_gen_tensor,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(j,q) cre(i) cre(p) des(k) des(l)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,jq,ipkl',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rot_gen_tensor, kdelta_mat,
-                                                   tpdm, optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,jq,ipkl',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rot_gen_tensor,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(k,p) cre(i) cre(j) des(l) des(q)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,kp,ijlq',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rot_gen_tensor, kdelta_mat,
-                                                   tpdm, optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,kp,ijlq',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rot_gen_tensor,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(l,p) cre(i) cre(j) des(k) des(q)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,lp,ijkq',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rot_gen_tensor, kdelta_mat,
-                                                  tpdm, optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,lp,ijkq',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rot_gen_tensor,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
 
         return idx, commutator_expectation
 
-    def double_commutator_einsum(ridx: int, rgen: FermionOperator,
-                                 sidx: int, sgen: FermionOperator) -> Tuple[int, int, float]:  # testpragma: no cover
+    def double_commutator_einsum(
+            ridx: int, rgen: FermionOperator, sidx: int, sgen: FermionOperator
+    ) -> Tuple[int, int, float]:  # testpragma: no cover
         # coverage: ignore
         """
         Evaluate <psi|[[H, p^q - q^p], r^s - s^r]|psi>
@@ -160,139 +179,220 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
         :param sgen: FermionOperator of r^s - s^r
         :return: index of p^q-q^p, index of r^s - s^r, and the commutator value
         """
-        rgen_tensor = get_interaction_operator(rgen,
-                                               n_qubits=num_qubits).one_body_tensor
-        sgen_tensor = get_interaction_operator(sgen,
-                                               n_qubits=num_qubits).one_body_tensor
+        rgen_tensor = get_interaction_operator(
+            rgen, n_qubits=num_qubits).one_body_tensor
+        sgen_tensor = get_interaction_operator(
+            sgen, n_qubits=num_qubits).one_body_tensor
         opdm = rdms.n_body_tensors[(1, 0)].copy()
         tpdm = rdms.n_body_tensors[(1, 1, 0, 0)].copy()
         commutator_expectation = 0
         #   (  -1.00000) kdelta(i,q) kdelta(j,r) cre(p) des(s)
-        commutator_expectation += -1.0 * np.einsum('ij,pq,rs,iq,jr,ps',
-                                                   rhf_objective.hamiltonian.one_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, opdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ij,pq,rs,iq,jr,ps',
+            rhf_objective.hamiltonian.one_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            opdm,
+            optimize=True)
         #   (   1.00000) kdelta(i,q) kdelta(p,s) cre(r) des(j)
-        commutator_expectation += 1.0 * np.einsum('ij,pq,rs,iq,ps,rj',
-                                                  rhf_objective.hamiltonian.one_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, opdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ij,pq,rs,iq,ps,rj',
+            rhf_objective.hamiltonian.one_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            opdm,
+            optimize=True)
         #   (  -1.00000) kdelta(i,s) kdelta(j,p) cre(r) des(q)
-        commutator_expectation += -1.0 * np.einsum('ij,pq,rs,is,jp,rq',
-                                                   rhf_objective.hamiltonian.one_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, opdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ij,pq,rs,is,jp,rq',
+            rhf_objective.hamiltonian.one_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            opdm,
+            optimize=True)
         #   (   1.00000) kdelta(j,p) kdelta(q,r) cre(i) des(s)
-        commutator_expectation += 1.0 * np.einsum('ij,pq,rs,jp,qr,is',
-                                                  rhf_objective.hamiltonian.one_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, opdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ij,pq,rs,jp,qr,is',
+            rhf_objective.hamiltonian.one_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            opdm,
+            optimize=True)
 
         #   (   1.00000) kdelta(i,q) kdelta(j,s) cre(p) cre(r) des(k) des(l)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,iq,js,prkl',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,iq,js,prkl',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(i,q) kdelta(k,r) cre(j) cre(p) des(l) des(s)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,iq,kr,jpls',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,iq,kr,jpls',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(i,q) kdelta(l,r) cre(j) cre(p) des(k) des(s)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,iq,lr,jpks',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,iq,lr,jpks',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(i,q) kdelta(p,s) cre(j) cre(r) des(k) des(l)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,iq,ps,jrkl',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,iq,ps,jrkl',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(i,s) kdelta(j,q) cre(p) cre(r) des(k) des(l)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,is,jq,prkl',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,is,jq,prkl',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(i,s) kdelta(k,p) cre(j) cre(r) des(l) des(q)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,is,kp,jrlq',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,is,kp,jrlq',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(i,s) kdelta(l,p) cre(j) cre(r) des(k) des(q)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,is,lp,jrkq',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,is,lp,jrkq',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(j,q) kdelta(k,r) cre(i) cre(p) des(l) des(s)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,jq,kr,ipls',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,jq,kr,ipls',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(j,q) kdelta(l,r) cre(i) cre(p) des(k) des(s)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,jq,lr,ipks',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,jq,lr,ipks',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(j,q) kdelta(p,s) cre(i) cre(r) des(k) des(l)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,jq,ps,irkl',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,jq,ps,irkl',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(j,s) kdelta(k,p) cre(i) cre(r) des(l) des(q)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,js,kp,irlq',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,js,kp,irlq',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(j,s) kdelta(l,p) cre(i) cre(r) des(k) des(q)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,js,lp,irkq',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,js,lp,irkq',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(k,p) kdelta(l,r) cre(i) cre(j) des(q) des(s)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,kp,lr,ijqs',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,kp,lr,ijqs',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(k,p) kdelta(q,r) cre(i) cre(j) des(l) des(s)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,kp,qr,ijls',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,kp,qr,ijls',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (  -1.00000) kdelta(k,r) kdelta(l,p) cre(i) cre(j) des(q) des(s)
-        commutator_expectation += -1.0 * np.einsum('ijkl,pq,rs,kr,lp,ijqs',
-                                                   rhf_objective.hamiltonian.two_body_tensor,
-                                                   rgen_tensor, sgen_tensor,
-                                                   kdelta_mat, kdelta_mat, tpdm,
-                                                   optimize=True)
+        commutator_expectation += -1.0 * np.einsum(
+            'ijkl,pq,rs,kr,lp,ijqs',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         #   (   1.00000) kdelta(l,p) kdelta(q,r) cre(i) cre(j) des(k) des(s)
-        commutator_expectation += 1.0 * np.einsum('ijkl,pq,rs,lp,qr,ijks',
-                                                  rhf_objective.hamiltonian.two_body_tensor,
-                                                  rgen_tensor, sgen_tensor,
-                                                  kdelta_mat, kdelta_mat, tpdm,
-                                                  optimize=True)
+        commutator_expectation += 1.0 * np.einsum(
+            'ijkl,pq,rs,lp,qr,ijks',
+            rhf_objective.hamiltonian.two_body_tensor,
+            rgen_tensor,
+            sgen_tensor,
+            kdelta_mat,
+            kdelta_mat,
+            tpdm,
+            optimize=True)
         return ridx, sidx, commutator_expectation
 
     with Parallel(n_jobs=-1, backend='threading') as parallel:
-        dk_res = parallel(delayed(single_commutator_einsum)(*x) for x in
-                          enumerate(rotation_generators))
+        dk_res = parallel(
+            delayed(single_commutator_einsum)(*x)
+            for x in enumerate(rotation_generators))
 
     if diagonal_hessian:
         doubles_generator = zip(enumerate(rotation_generators),
@@ -300,10 +400,9 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
     else:
         doubles_generator = product(enumerate(rotation_generators), repeat=2)
     with Parallel(n_jobs=-1, backend='threading') as parallel:
-        hrs_res = parallel(delayed(double_commutator_einsum)(*x) for x in
-                           [(z[0][0], z[0][1], z[1][0], z[1][1])
-                            for z in doubles_generator]
-                           )
+        hrs_res = parallel(
+            delayed(double_commutator_einsum)(*x) for x in [(
+                z[0][0], z[0][1], z[1][0], z[1][1]) for z in doubles_generator])
     for idx, val in dk_res:
         dvec[idx] = val
 
@@ -313,14 +412,15 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
     return dvec, hmat
 
 
-def moving_frame_augmented_hessian_optimizer(rhf_objective: RestrictedHartreeFockObjective,
-                                             initial_parameters: np.ndarray,
-                                             opdm_aa_measurement_func: Callable,
-                                             max_iter: Optional[int]=15,
-                                             rtol: Optional[float]=0.2E-2,
-                                             delta: Optional[float]=0.03,
-                                             verbose: Optional[bool]=True,
-                                             hessian_update: Optional[bool]='diagonal'):  # testpragma: no cover
+def moving_frame_augmented_hessian_optimizer(
+        rhf_objective: RestrictedHartreeFockObjective,
+        initial_parameters: np.ndarray,
+        opdm_aa_measurement_func: Callable,
+        max_iter: Optional[int] = 15,
+        rtol: Optional[float] = 0.2E-2,
+        delta: Optional[float] = 0.03,
+        verbose: Optional[bool] = True,
+        hessian_update: Optional[bool] = 'diagonal'):  # testpragma: no cover
     # coverage: ignore
     """
     The moving frame optimizer
@@ -385,10 +485,11 @@ def moving_frame_augmented_hessian_optimizer(rhf_objective: RestrictedHartreeFoc
         res.iter_times.append(time.time() - start_time)
 
         rot_gens = non_redundant_rotation_generators(rhf_objective)
-        dvec, hmat = get_dvec_hmat(rotation_generators=rot_gens,
-                                   rhf_objective=rhf_objective,
-                                   rdms=rdms,
-                                   diagonal_hessian=True if hessian_update == 'diagonal' else False)
+        dvec, hmat = get_dvec_hmat(
+            rotation_generators=rot_gens,
+            rhf_objective=rhf_objective,
+            rdms=rdms,
+            diagonal_hessian=True if hessian_update == 'diagonal' else False)
         # talk if talking is allowed
         if verbose:
             print("\nITERATION NUMBER : ", current_count)
@@ -404,8 +505,7 @@ def moving_frame_augmented_hessian_optimizer(rhf_objective: RestrictedHartreeFoc
         # build augmented Hessian
         dvec = dvec.reshape((-1, 1))
         aug_hess = np.hstack((np.array([[0]]), dvec.conj().T))
-        aug_hess = np.vstack(
-            (aug_hess, np.hstack((dvec, hmat))))
+        aug_hess = np.vstack((aug_hess, np.hstack((dvec, hmat))))
 
         w, v = np.linalg.eig(aug_hess)
         sort_idx = np.argsort(w)

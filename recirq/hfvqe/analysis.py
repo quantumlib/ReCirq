@@ -27,7 +27,9 @@ def trace_distance(rho: np.ndarray, sigma: np.ndarray) -> float:
     return 0.5 * np.linalg.norm(rho - sigma, 1)
 
 
-def compute_opdm(results_dict: Dict, return_variance: Optional[bool] = False):  # testpragma: no cover
+def compute_opdm(
+        results_dict: Dict,
+        return_variance: Optional[bool] = False):  # testpragma: no cover
     """
     Take experimental results and compute the 1-RDM
 
@@ -56,8 +58,9 @@ def compute_opdm(results_dict: Dict, return_variance: Optional[bool] = False):  
             even_pairs = [
                 qubits[idx:idx + 2] for idx in np.arange(0, num_qubits - 1, 2)
             ]
-            odd_pairs = [qubits[idx:idx + 2] for idx in
-                         np.arange(1, num_qubits - 1, 2)]
+            odd_pairs = [
+                qubits[idx:idx + 2] for idx in np.arange(1, num_qubits - 1, 2)
+            ]
             data = results_dict['xy_even'][circuit_idx]
             even_cov_mat = np.zeros((len(even_pairs), len(even_pairs)),
                                     dtype=float)
@@ -77,8 +80,8 @@ def compute_opdm(results_dict: Dict, return_variance: Optional[bool] = False):  
             w, _ = np.linalg.eigh(even_cov_mat * len(data[q0_a]))
             if not np.alltrue(w >= 0):
                 raise ValueError(
-                    "covariance matrix for xy_even:{} not postiive semidefinite".format(
-                        circuit_idx))
+                    "covariance matrix for xy_even:{} not postiive semidefinite"
+                    .format(circuit_idx))
 
             data = results_dict['xy_odd'][circuit_idx]
             odd_cov_mat = np.zeros((len(odd_pairs), len(odd_pairs)),
@@ -95,8 +98,8 @@ def compute_opdm(results_dict: Dict, return_variance: Optional[bool] = False):  
             w, _ = np.linalg.eigh(odd_cov_mat * len(data[q0_a]))
             if not np.alltrue(w >= 0):
                 raise ValueError(
-                    "covariance matrix for xy_odd:{} not postiive semidefinite".format(
-                        circuit_idx))
+                    "covariance matrix for xy_odd:{} not postiive semidefinite".
+                    format(circuit_idx))
             assert np.alltrue(w >= 0)
 
         if circuit_idx == 0:  # No re-ordering
@@ -143,53 +146,51 @@ def covariance_construction_from_opdm(opdm: np.ndarray,
         for ridx, (i, j) in enumerate(e_real_pairs):
             for cidx, (p, q) in enumerate(e_real_pairs):
                 # 0.25 comes from the fact that we estimate 0.5 (i^ j + j^ i)
-                even_cov_mat[ridx, cidx] = 0.25 * (cov_func(i, j, p, q) +
-                                                   cov_func(i, j, q, p) +
-                                                   cov_func(j, i, p, q) +
-                                                   cov_func(j, i, q, p))
+                even_cov_mat[ridx, cidx] = 0.25 * (
+                    cov_func(i, j, p, q) + cov_func(i, j, q, p) +
+                    cov_func(j, i, p, q) + cov_func(j, i, q, p))
 
         w, _ = np.linalg.eigh(even_cov_mat)
         if not np.alltrue(w >= 0):
             raise ValueError(
-                "covariance matrix for xy_even:{} not postiive semidefinite".format(
-                    circuit_idx))
+                "covariance matrix for xy_even:{} not postiive semidefinite".
+                format(circuit_idx))
 
         variance_dict['xy_even'][circuit_idx] = even_cov_mat / num_samples
 
         odd_cov_mat = np.zeros((len(o_real_pairs), len(o_real_pairs)),
-                                dtype=float)
+                               dtype=float)
         for ridx, (i, j) in enumerate(o_real_pairs):
             for cidx, (p, q) in enumerate(o_real_pairs):
-                odd_cov_mat[ridx, cidx] = 0.25 * (cov_func(i, j, p, q) +
-                                                  cov_func(i, j, q, p) +
-                                                  cov_func(j, i, p, q) +
-                                                  cov_func(j, i, q, p))
+                odd_cov_mat[ridx, cidx] = 0.25 * (
+                    cov_func(i, j, p, q) + cov_func(i, j, q, p) +
+                    cov_func(j, i, p, q) + cov_func(j, i, q, p))
         w, _ = np.linalg.eigh(odd_cov_mat)
         if not np.alltrue(w >= 0):
             raise ValueError(
-                "covariance matrix for xy_odd:{} not postiive semidefinite".format(
-                    circuit_idx))
+                "covariance matrix for xy_odd:{} not postiive semidefinite".
+                format(circuit_idx))
 
         variance_dict['xy_odd'][circuit_idx] = odd_cov_mat / num_samples
 
         if circuit_idx == 0:
-            z_cov_mat = np.zeros((num_qubits, num_qubits),
-                                 dtype=float)
+            z_cov_mat = np.zeros((num_qubits, num_qubits), dtype=float)
             for ridx, i in enumerate(range(num_qubits)):
                 for cidx, p in enumerate(range(num_qubits)):
                     z_cov_mat[ridx, cidx] = cov_func(i, i, p, p)
             w, _ = np.linalg.eigh(z_cov_mat)
             if not np.alltrue(w >= -1.0E-15):
                 raise ValueError(
-                    "covariance matrix for z:{} not postiive semidefinite".format(
-                        circuit_idx))
+                    "covariance matrix for z:{} not postiive semidefinite".
+                    format(circuit_idx))
 
             variance_dict['z'][circuit_idx] = z_cov_mat / num_samples
 
     return variance_dict
 
 
-def resample_opdm(opdm: np.ndarray, var_dict: Dict) -> np.ndarray:  # testpragma: no cover
+def resample_opdm(opdm: np.ndarray,
+                  var_dict: Dict) -> np.ndarray:  # testpragma: no cover
     """
     Resample an 1-RDM assuming Gaussian statistics
 
@@ -207,19 +208,21 @@ def resample_opdm(opdm: np.ndarray, var_dict: Dict) -> np.ndarray:  # testpragma
         e_real_pairs = [
             permutation[idx:idx + 2] for idx in np.arange(0, num_qubits - 1, 2)
         ]
-        o_real_pairs = [permutation[idx:idx + 2] for idx in np.arange(1, num_qubits - 1, 2)]
+        o_real_pairs = [
+            permutation[idx:idx + 2] for idx in np.arange(1, num_qubits - 1, 2)
+        ]
 
         # get all the even and odd pairs
         even_means = [opdm[pp[0], pp[1]] for pp in e_real_pairs]
-        opdm_terms = np.random.multivariate_normal(mean=even_means,
-                                                   cov=var_dict['xy_even'][circuit_idx])
+        opdm_terms = np.random.multivariate_normal(
+            mean=even_means, cov=var_dict['xy_even'][circuit_idx])
         for idx, (pp0, pp1) in enumerate(e_real_pairs):
             new_opdm[pp0, pp1] = opdm_terms[idx]
             new_opdm[pp1, pp0] = opdm_terms[idx]
 
         odd_means = [opdm[pp[0], pp[1]] for pp in o_real_pairs]
-        opdm_terms = np.random.multivariate_normal(mean=odd_means,
-                                                   cov=var_dict['xy_odd'][circuit_idx])
+        opdm_terms = np.random.multivariate_normal(
+            mean=odd_means, cov=var_dict['xy_odd'][circuit_idx])
         for idx, (pp0, pp1) in enumerate(o_real_pairs):
             new_opdm[pp0, pp1] = opdm_terms[idx]
             new_opdm[pp1, pp0] = opdm_terms[idx]
@@ -248,9 +251,10 @@ def energy_from_opdm(opdm, constant, one_body_tensor, two_body_tensor):
     """
     spin_opdm = np.kron(opdm, np.eye(2))
     spin_tpdm = 2 * wedge(spin_opdm, spin_opdm, (1, 1), (1, 1))
-    molecular_hamiltonian = generate_hamiltonian(constant=constant,
-                                                 one_body_integrals=one_body_tensor,
-                                                 two_body_integrals=two_body_tensor)
+    molecular_hamiltonian = generate_hamiltonian(
+        constant=constant,
+        one_body_integrals=one_body_tensor,
+        two_body_integrals=two_body_tensor)
     rdms = InteractionRDM(spin_opdm, spin_tpdm)
     return rdms.expectation(molecular_hamiltonian).real
 
@@ -272,8 +276,8 @@ def mcweeny_purification(rho: np.ndarray,
     return new_rho
 
 
-def fidelity_witness(target_unitary: np.ndarray,
-                     omega: List[int], measured_opdm: np.ndarray) -> float:
+def fidelity_witness(target_unitary: np.ndarray, omega: List[int],
+                     measured_opdm: np.ndarray) -> float:
     """
     Calculate the fidelity witness. This is a lower bound to the true fidelity
 
@@ -301,5 +305,6 @@ def fidelity(target_unitary: np.ndarray, measured_opdm: np.ndarray) -> float:
     w, v = np.linalg.eigh(measured_opdm)
     eig_of_one_idx = np.where(np.isclose(w, 1))[0]
     occupied_eigvects = v[:, eig_of_one_idx]
-    return abs(np.linalg.det(target_unitary[:, :len(
-        eig_of_one_idx)].conj().T @ occupied_eigvects)) ** 2
+    return abs(
+        np.linalg.det(target_unitary[:, :len(eig_of_one_idx)].conj().T
+                      @ occupied_eigvects))**2

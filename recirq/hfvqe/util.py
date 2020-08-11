@@ -12,18 +12,17 @@ def generate_permutations(n_orbitals: int,
     else:
         perm_order = n_orbitals // 2 + 1
     for _ in range(perm_order):
-        qubit_orderings.append(swap_forward(qubit_orderings[-1],
-                                            starting_index=0))
-        qubit_orderings.append(swap_forward(qubit_orderings[-1],
-                                            starting_index=1))
+        qubit_orderings.append(
+            swap_forward(qubit_orderings[-1], starting_index=0))
+        qubit_orderings.append(
+            swap_forward(qubit_orderings[-1], starting_index=1))
     if no_truncation:
         return qubit_orderings
     else:
         return qubit_orderings[::2][:-1]
 
 
-def swap_forward(iterable_item: Iterable,
-                 starting_index: Optional[int] = 0):
+def swap_forward(iterable_item: Iterable, starting_index: Optional[int] = 0):
     new_sequence = copy.deepcopy(iterable_item)
     for i in range(starting_index, len(iterable_item) - 1, 2):
         new_sequence[i + 1], new_sequence[i] = \

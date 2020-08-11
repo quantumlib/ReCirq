@@ -13,9 +13,10 @@ from recirq.hfvqe.circuits import rhf_params_to_matrix
 from recirq.hfvqe.objective import RestrictedHartreeFockObjective
 
 
-def rhf_func_generator(rhf_objective: RestrictedHartreeFockObjective,
-                       initial_occ_vec: Optional[Union[None, np.ndarray]] = None,
-                       get_opdm_func: Optional[bool] = False):
+def rhf_func_generator(
+        rhf_objective: RestrictedHartreeFockObjective,
+        initial_occ_vec: Optional[Union[None, np.ndarray]] = None,
+        get_opdm_func: Optional[bool] = False):
     """
     Generate the energy, gradient, and unitary functions
 
@@ -24,7 +25,8 @@ def rhf_func_generator(rhf_objective: RestrictedHartreeFockObjective,
     :return: functions for unitary, energy, gradient (in that order)
     """
     if initial_occ_vec is None:
-        initial_opdm = np.diag([1] * rhf_objective.nocc + [0] * rhf_objective.nvirt)
+        initial_opdm = np.diag([1] * rhf_objective.nocc +
+                               [0] * rhf_objective.nvirt)
     else:
         initial_opdm = np.diag(initial_occ_vec)
 
@@ -40,9 +42,10 @@ def rhf_func_generator(rhf_objective: RestrictedHartreeFockObjective,
         return rhf_objective.global_gradient_opdm(params, final_opdm_aa).real
 
     def unitary(params):
-        kappa = rhf_params_to_matrix(params,
-                                     len(rhf_objective.occ) + len(rhf_objective.virt),
-                                     rhf_objective.occ, rhf_objective.virt)
+        kappa = rhf_params_to_matrix(
+            params,
+            len(rhf_objective.occ) + len(rhf_objective.virt), rhf_objective.occ,
+            rhf_objective.virt)
         return sp.linalg.expm(kappa)
 
     def get_opdm(params):
@@ -68,5 +71,8 @@ def rhf_minimization(rhf_object, method='CG', initial_guess=None, verbose=True):
     else:
         init_guess = initial_guess.flatten()
 
-    return sp.optimize.minimize(energy, init_guess, jac=gradient, method=method,
-                                   options={'disp': verbose})
+    return sp.optimize.minimize(energy,
+                                init_guess,
+                                jac=gradient,
+                                method=method,
+                                options={'disp': verbose})

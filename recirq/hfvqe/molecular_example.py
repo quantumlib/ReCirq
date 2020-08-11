@@ -6,15 +6,12 @@ import openfermion as of
 import scipy as sp
 
 from recirq.hfvqe.gradient_hf import rhf_minimization
-from recirq.hfvqe.objective import (
-    RestrictedHartreeFockObjective, generate_hamiltonian)
+from recirq.hfvqe.objective import (RestrictedHartreeFockObjective,
+                                    generate_hamiltonian)
 
 
-def make_h6_1_3() -> Tuple[RestrictedHartreeFockObjective,
-                           of.MolecularData,
-                           np.ndarray,
-                           np.ndarray,
-                           np.ndarray]:
+def make_h6_1_3() -> Tuple[RestrictedHartreeFockObjective, of.MolecularData, np.
+                           ndarray, np.ndarray, np.ndarray]:
     # load the molecule from moelcular data
     import recirq.hfvqe as hfvqe
     h6_1_3_path = os.path.join(

@@ -7,8 +7,8 @@ import scipy as sp
 import recirq.hfvqe as hfvqe
 
 from recirq.hfvqe.gradient_hf import rhf_minimization
-from recirq.hfvqe.objective import (
-    RestrictedHartreeFockObjective, generate_hamiltonian)
+from recirq.hfvqe.objective import (RestrictedHartreeFockObjective,
+                                    generate_hamiltonian)
 
 
 def make_h3_2_5() -> Tuple[RestrictedHartreeFockObjective, of.MolecularData, np.

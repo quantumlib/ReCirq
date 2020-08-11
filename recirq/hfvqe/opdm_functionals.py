@@ -9,7 +9,8 @@ from recirq.hfvqe.objective import rhf_params_to_matrix
 
 
 class RDMGenerator():  # testpragma: no cover
-    def __init__(self, blackbox, purification: Optional[bool]=True):
+
+    def __init__(self, blackbox, purification: Optional[bool] = True):
         self.blackbox = blackbox
         self.noisy_opdms = []
         self.variance_dicts = []
@@ -25,7 +26,9 @@ class RDMGenerator():  # testpragma: no cover
 
 
 class OpdmFunctional():  # testpragma: no cover
-    def __init__(self, qubits: List[cirq.Qid],
+
+    def __init__(self,
+                 qubits: List[cirq.Qid],
                  sampler: cirq.Sampler,
                  constant: float,
                  one_body_integrals: np.ndarray,
@@ -62,32 +65,32 @@ class OpdmFunctional():  # testpragma: no cover
         if len(parameters.shape) == 2:  # testpragma: no cover
             u = parameters
         else:
-            u = sp.linalg.expm(rhf_params_to_matrix(parameters,
-                                                    len(self.qubits),
-                                                    occ=self.occ,
-                                                    virt=self.virt
-                                                    )
-                               )
+            u = sp.linalg.expm(
+                rhf_params_to_matrix(parameters,
+                                     len(self.qubits),
+                                     occ=self.occ,
+                                     virt=self.virt))
 
         circuits = ccc.generate_circuits_from_params_or_u(
-            self.qubits, u, self.num_electrons,
+            self.qubits,
+            u,
+            self.num_electrons,
             occ=self.occ,
             virt=self.virt,
-            clean_ryxxy=self.clean_xxyy
-        )
+            clean_ryxxy=self.clean_xxyy)
         circuits_dict = ccc.circuits_with_measurements(
-            self.qubits, circuits, clean_xxyy=self.clean_xxyy
-        )
+            self.qubits, circuits, clean_xxyy=self.clean_xxyy)
 
         # Take data
-        data_dict = {'z': {},
-                     'xy_even': {},
-                     'xy_odd': {},
-                     'qubits': [f'({q.row}, {q.col})' for q in self.qubits],
-                     'qubit_permutations': ccu.generate_permutations(
-                         len(self.qubits)),
-                     'circuits': circuits,
-                     'circuits_with_measurement': circuits_dict}
+        data_dict = {
+            'z': {},
+            'xy_even': {},
+            'xy_odd': {},
+            'qubits': [f'({q.row}, {q.col})' for q in self.qubits],
+            'qubit_permutations': ccu.generate_permutations(len(self.qubits)),
+            'circuits': circuits,
+            'circuits_with_measurement': circuits_dict
+        }
         for measure_type in circuits_dict.keys():
             circuits = circuits_dict[measure_type]
             for circuit_index in circuits.keys():

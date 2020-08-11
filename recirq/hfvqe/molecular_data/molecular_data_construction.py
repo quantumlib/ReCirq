@@ -45,7 +45,8 @@ def _h_n_linear_geometry(bond_distance: float, n_hydrogens: int):
     return [('H', (0, 0, i * bond_distance)) for i in range(n_hydrogens)]
 
 
-def h_n_linear_molecule(bond_distance: float, n_hydrogens: int,
+def h_n_linear_molecule(bond_distance: float,
+                        n_hydrogens: int,
                         basis: str = 'sto-3g'):
     # coverage: ignore
     if n_hydrogens < 1 or n_hydrogens % 2 != 0:
@@ -60,45 +61,50 @@ def h_n_linear_molecule(bond_distance: float, n_hydrogens: int,
     if NO_OFPSI4:
         raise NOOFPsi4Error("openfermion-psi4 is not installed")
 
-    molecule = run_psi4(molecule, run_fci=False, run_mp2=False, run_cisd=False,
-                        run_ccsd=False, delete_input=False, delete_output=False)
+    molecule = run_psi4(molecule,
+                        run_fci=False,
+                        run_mp2=False,
+                        run_cisd=False,
+                        run_ccsd=False,
+                        delete_input=False,
+                        delete_output=False)
 
     return molecule
 
 
-def h2_molecule(bond_distance: float,
-                basis: Optional[str]='sto-3g'):
+def h2_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
     # coverage: ignore
-    return h_n_linear_molecule(bond_distance, n_hydrogens=2, basis=basis)  # testpragma: no cover
+    return h_n_linear_molecule(bond_distance, n_hydrogens=2,
+                               basis=basis)  # testpragma: no cover
 
 
-def h4_linear_molecule(bond_distance: float,
-                       basis: Optional[str]='sto-3g'):
-    return h_n_linear_molecule(bond_distance, n_hydrogens=4, basis=basis)  # testpragma: no cover
+def h4_linear_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
+    return h_n_linear_molecule(bond_distance, n_hydrogens=4,
+                               basis=basis)  # testpragma: no cover
 
 
-def h6_linear_molecule(bond_distance: float,
-                       basis: Optional[str]='sto-3g'):
-    return h_n_linear_molecule(bond_distance, n_hydrogens=6, basis=basis)  # testpragma: no cover
+def h6_linear_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
+    return h_n_linear_molecule(bond_distance, n_hydrogens=6,
+                               basis=basis)  # testpragma: no cover
 
 
-def h8_linear_molecule(bond_distance: float,
-                       basis: Optional[str]='sto-3g'):
-    return h_n_linear_molecule(bond_distance, n_hydrogens=8, basis=basis)  # testpragma: no cover
+def h8_linear_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
+    return h_n_linear_molecule(bond_distance, n_hydrogens=8,
+                               basis=basis)  # testpragma: no cover
 
 
-def h10_linear_molecule(bond_distance: float,
-                        basis: Optional[str]='sto-3g'):
-    return h_n_linear_molecule(bond_distance, n_hydrogens=10, basis=basis)  # testpragma: no cover
+def h10_linear_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
+    return h_n_linear_molecule(bond_distance, n_hydrogens=10,
+                               basis=basis)  # testpragma: no cover
 
 
-def h12_linear_molecule(bond_distance: float,
-                        basis: Optional[str]='sto-3g'):
-    return h_n_linear_molecule(bond_distance, n_hydrogens=12, basis=basis)  # testpragma: no cover
+def h12_linear_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
+    return h_n_linear_molecule(bond_distance, n_hydrogens=12,
+                               basis=basis)  # testpragma: no cover
 
 
 def get_ao_integrals(molecule: MolecularData,
-                     e_convergence: Optional[float]=1e-8):
+                     e_convergence: Optional[float] = 1e-8):
     """
     Use psi4numpy to grab the atomic orbital integrals
 
@@ -122,14 +128,18 @@ def get_ao_integrals(molecule: MolecularData,
     """.format(molecule.charge, molecule.multiplicity,
                create_geometry_string(molecule.geometry)))
 
-    psi4.set_options({'basis': molecule.basis,
-                      'scf_type': 'pk',
-                      'e_convergence': e_convergence})
-    wfn = psi4.core.Wavefunction.build(mol, psi4.core.get_global_option('basis'))
+    psi4.set_options({
+        'basis': molecule.basis,
+        'scf_type': 'pk',
+        'e_convergence': e_convergence
+    })
+    wfn = psi4.core.Wavefunction.build(mol,
+                                       psi4.core.get_global_option('basis'))
     mints = psi4.core.MintsHelper(wfn.basisset())
 
     ao_overlap = np.asarray(mints.ao_overlap())
-    ao_eri = np.asarray(mints.ao_eri())  # [Gives integrals in Chemist form [(𝜇𝜈∣𝜆𝜎)]
+    ao_eri = np.asarray(
+        mints.ao_eri())  # [Gives integrals in Chemist form [(𝜇𝜈∣𝜆𝜎)]
     ao_kinetic = np.asarray(mints.ao_kinetic())
     ao_potential = np.asarray(mints.ao_potential())
     ao_core_hamiltonian = ao_kinetic + ao_potential
