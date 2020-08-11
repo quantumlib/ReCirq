@@ -29,7 +29,8 @@ def rhf_params_to_matrix(parameters: np.ndarray,
                          num_qubits: int,
                          occ: Optional[Union[None, List[int]]] = None,
                          virt: Optional[Union[None, List[int]]] = None):
-    """
+    """Assemble variational parameters into a matrix.
+
     For restricted Hartree-Fock we have nocc * nvirt parameters. These are
     provided as a list that is ordered by (virtuals) \times (occupied) where
     occupied is a set of indices corresponding to the occupied oribitals w.r.t
@@ -79,18 +80,17 @@ def generate_circuits_from_params_or_u(
         occ: Optional[Union[None, List[int]]] = None,
         virt: Optional[Union[None, List[int]]] = None,
         clean_ryxxy: Optional[bool] = False):  # testpragma: no cover
-    """
-    Make the circuits required for the estimation of the 1-RDM
+    """Make the circuits required for the estimation of the 1-RDM
 
-    :param qubits: define the qubits in the memory
-    :param parameters: parameters of the kappa matrix
-    :param nocc: number of occupied orbitals
-    :param return_unitaries:  Check if the user wants unitaries returned
-    :param occ: List of occupied indices
-    :param virt: List of virtual orbitals
-    :param clean_ryxxy: Determine the type of Givens rotation synthesis to use
-                        Options are 1, 2, 3, 4.
-    :return: List[cirq.OP_TREEE]
+    Args:
+        qubits: define the qubits in the memory
+        parameters: parameters of the kappa matrix
+        nocc: number of occupied orbitals
+        return_unitaries:  Check if the user wants unitaries returned
+        occ: List of occupied indices
+        virt: List of virtual orbitals
+        clean_ryxxy: Determine the type of Givens rotation synthesis to use
+            Options are 1, 2, 3, 4.
     """
 
     num_qubits = len(qubits)
@@ -129,7 +129,7 @@ def generate_circuits_from_params_or_u(
 
 
 def xxyy_basis_rotation(pairs, clean_xxyy=False):
-    """Generate the measurement circuits"""
+    """Generate the measurement circuits."""
     all_ops = []
 
     for a, b in pairs:
@@ -178,14 +178,16 @@ def circuits_with_measurements(qubits, circuits,
 def prepare_slater_determinant(qubits: List[cirq.Qid],
                                slater_determinant_matrix: np.ndarray,
                                clean_ryxxy: Optional[Union[bool, int]] = True):
-    """
-    High level interface to the real basis rotation circuit generator
+    """High level interface to the real basis rotation circuit generator.
 
-    :param qubits: List of cirq.Qids denoting logical qubits
-    :param slater_determinant_matrix: basis rotation matrix
-    :param clean_ryxxy: Optional[True, 1, 2, 3, 4] for indicating an error
-                        model of the Givens rotation.
-    :return: generator for circuit
+    Args:
+        qubits: List of cirq.Qids denoting logical qubits
+        slater_determinant_matrix: basis rotation matrix
+        clean_ryxxy: Optional[True, 1, 2, 3, 4] for indicating an error model
+            of the Givens rotation.
+
+    Returns:
+        Generator for circuit
     """
     circuit_description = slater_determinant_preparation_circuit(
         slater_determinant_matrix)

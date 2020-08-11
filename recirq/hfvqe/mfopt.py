@@ -40,7 +40,7 @@ def get_one_body_fermion_operator(coeff_matrix):  # testpragma: no cover
 
 def kdelta(i: int, j: int) -> float:  # testpragma: no cover
     # coverage: ignore
-    """Delta function function"""
+    """Delta function."""
     return 1.0 if i == j else 0.0
 
 
@@ -48,14 +48,16 @@ def group_action(old_unitary: np.ndarray, new_parameters: np.ndarray,
                  occ: List[int],
                  virt: List[int]) -> np.ndarray:  # testpragma: no cover
     # coverage: ignore
-    """
-    U(e^{kappa}) . U(e^{kappa'}) = U(e^{kappa}.e^{kappa'})
+    """U(e^{kappa}) * U(e^{kappa'}) = U(e^{kappa} * e^{kappa'})
 
-    :param old_unitary: unitary that we update--left multiply
-    :param new_parameters: parameters fornew unitary
-    :param occ: list of occupied indices
-    :param virt: list of virtual indices
-    :return: updated unitary
+    Args:
+        old_unitary: unitary that we update--left multiply
+        new_parameters: parameters fornew unitary
+        occ: list of occupied indices
+        virt: list of virtual indices
+
+    Returns:
+        Updated unitary
     """
     kappa_new = rhf_params_to_matrix(new_parameters,
                                      len(occ) + len(virt), occ, virt)
@@ -67,12 +69,16 @@ def non_redundant_rotation_generators(
         rhf_objective: RestrictedHartreeFockObjective
 ) -> List[FermionOperator]:  # testpragma: no cover
     # coverage: ignore
-    """
-    Generate the fermionic representation of all non-redundant rotation
-    generators for restricted Hartree-fock
+    """Produce rotation generators for restricted Hartree-Fock.
 
-    :param rhf_objective: recirq.hfvqe.RestrictedHartreeFock object
-    :return: list of fermionic generators.
+    Generates the fermionic representation of all non-redundant rotation
+    generators for restricted Hartree-Fock.
+
+    Args:
+        rhf_objective: recirq.hfvqe.RestrictedHartreeFock object
+
+    Returns:
+        List of fermionic generators.
     """
     rotation_generators = []
     for p in range(rhf_objective.nocc * rhf_objective.nvirt):
@@ -95,17 +101,16 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
                   diagonal_hessian=False
                  ) -> (np.ndarray, np.ndarray):  # testpragma: no cover
     # coverage: ignore
-    """
-    Generate first and second terms of the BCH expansion
+    """Generate first and second terms of the BCH expansion.
 
-    :param rotation_generators: List FermionOperators corresponding to
-                                non-redundant rotation generators
-    :param rhf_objective: recirq.hfvqe.RestrictedHartreeFockObject
-    :param rdms: openfermion.InteractionRDMs where the 2-RDM is generated
-                 from the 1-RDM as of.wedge(opdm, opdm)
-    :param diagonal_hessian: Boolean indicator for what type of Hessian
-                             construction should be used.
-    :return:
+    Args:
+        rotation_generators: List FermionOperators corresponding to
+            non-redundant rotation generators
+        rhf_objective: recirq.hfvqe.RestrictedHartreeFockObject
+        rdms: openfermion.InteractionRDMs where the 2-RDM is generated
+            from the 1-RDM as of.wedge(opdm, opdm)
+        diagonal_hessian: Boolean indicator for what type of Hessian
+            construction should be used.
     """
     dvec = np.zeros(len(rotation_generators), dtype=np.complex128)
     hmat = np.zeros((len(rotation_generators), len(rotation_generators)),
@@ -116,12 +121,14 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
     def single_commutator_einsum(idx: int, rot_gen: FermionOperator
                                 ) -> Tuple[int, float]:  # testpragma: no cover
         # coverage: ignore
-        """
-        Evaluate <psi|[H, p^q - q^p]|psi>
+        """Evaluate <psi|[H, p^q - q^p]|psi>.
 
-        :param idx: integer index of p^q - q^p in the ordered set
-        :param rot_gen: Rotation generator p^q - q^p as a FermionOperator
-        :return: index and value for the commutator
+        Args:
+            idx: integer index of p^q - q^p in the ordered set
+            rot_gen: Rotation generator p^q - q^p as a FermionOperator
+
+        Returns:
+            Index and value for the commutator
         """
         rot_gen_tensor = get_interaction_operator(
             rot_gen, n_qubits=num_qubits).one_body_tensor
@@ -183,14 +190,16 @@ def get_dvec_hmat(rotation_generators: List[FermionOperator],
             ridx: int, rgen: FermionOperator, sidx: int, sgen: FermionOperator
     ) -> Tuple[int, int, float]:  # testpragma: no cover
         # coverage: ignore
-        """
-        Evaluate <psi|[[H, p^q - q^p], r^s - s^r]|psi>
+        """Evaluate <psi|[[H, p^q - q^p], r^s - s^r]|psi>
 
-        :param ridx: index of p^q - q^p operator in ordered list of operators
-        :param rgen: FermionOperator of p^q - q^p
-        :param sidx: ndex of r^s - s^r operator in ordered list of operators
-        :param sgen: FermionOperator of r^s - s^r
-        :return: index of p^q-q^p, index of r^s - s^r, and the commutator value
+        Args:
+            ridx: index of p^q - q^p operator in ordered list of operators
+            rgen: FermionOperator of p^q - q^p
+            sidx: ndex of r^s - s^r operator in ordered list of operators
+            sgen: FermionOperator of r^s - s^r
+
+        Returns:
+            Index of p^q-q^p, index of r^s - s^r, and the commutator value
         """
         rgen_tensor = get_interaction_operator(
             rgen, n_qubits=num_qubits).one_body_tensor
@@ -435,22 +444,21 @@ def moving_frame_augmented_hessian_optimizer(
         verbose: Optional[bool] = True,
         hessian_update: Optional[bool] = 'diagonal'):  # testpragma: no cover
     # coverage: ignore
-    """
-    The moving frame optimizer
+    """The moving frame optimizer.
 
     Determine an optimal basis rotation by continuously updating the
     coordinate system and asking if stationarity is achieved.
 
-    :param rhf_objective: recirq.hfvqe.RestrictedHartreeFockObjective
-    :param initial_parameters: parameters to start the optimization
-    :param opdm_aa_measurement_func: callable functioon that takes the parameter
-                                     vector and returns the opdm
-    :param max_iter: maximum number of iterations to take
-    :param rtol: Terminate the optimization with the norm of the update angles
-                 falls below this threshold
-    :param verbose: Allow printing of intermediate optimization information
-    :param hessian_update: Optional argument if diagonal or full Hessian is used
-    :return:
+    Args:
+        rhf_objective: recirq.hfvqe.RestrictedHartreeFockObjective
+        initial_parameters: parameters to start the optimization
+        opdm_aa_measurement_func: callable functioon that takes the parameter
+            vector and returns the opdm
+        max_iter: maximum number of iterations to take
+        rtol: Terminate the optimization with the norm of the update angles
+            falls below this threshold
+        verbose: Allow printing of intermediate optimization information
+        hessian_update: Optional argument if diagonal or full Hessian is used
     """
     if delta > 1 or delta < 0:
         raise ValueError("Delta must be in the domain [0, 1]")

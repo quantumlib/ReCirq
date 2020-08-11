@@ -23,19 +23,19 @@ from recirq.hfvqe.objective import generate_hamiltonian
 
 
 def kdelta(i: int, j: int):
-    """
-    kronecker delta function
-    """
-    return 1. if i == j else 0.
+    """Kronecker delta function."""
+    return 1.0 if i == j else 0.0
 
 
 def trace_distance(rho: np.ndarray, sigma: np.ndarray) -> float:
-    """
-    Compute the trace distance between two matrices
+    """Compute the trace distance between two matrices.
 
-    :param rho: matrix 1
-    :param sigma: matrix 2
-    :return: a floating point number greater than 0.
+    Args:
+        rho: matrix 1
+        sigma: matrix 2
+
+    Returns:
+        The trace distance.
     """
     return 0.5 * np.linalg.norm(rho - sigma, 1)
 
@@ -43,12 +43,12 @@ def trace_distance(rho: np.ndarray, sigma: np.ndarray) -> float:
 def compute_opdm(
         results_dict: Dict,
         return_variance: Optional[bool] = False):  # testpragma: no cover
-    """
-    Take experimental results and compute the 1-RDM
+    """Take experimental results and compute the 1-RDM.
 
-    :param results_dict: Results dictionary generated from
-                         OpdmFunctional._calculate_data
-    :param return_variance: Optional return covariances of the opdm
+    Args:
+        results_dict: Results dictionary generated from
+            OpdmFunctional._calculate_data
+        return_variance: Optional return covariances of the opdm
     """
     qubits = results_dict['qubits']
     num_qubits = len(qubits)
@@ -135,12 +135,14 @@ def compute_opdm(
 
 def covariance_construction_from_opdm(opdm: np.ndarray,
                                       num_samples: int):  # testpragma: no cover
-    """
-    Covariance generation from the opdm is from a Gaussian state
+    """Covariance generation from the opdm is from a Gaussian state.
 
-    :param opdm: 1-RDM
-    :param num_samples:  number of samples to estimate the 1-RDM
-    :return: dictionary of covariances
+    Args:
+        opdm: 1-RDM
+        num_samples: Number of samples to estimate the 1-RDM
+
+    Returns:
+        Dictionary of covariances
     """
     num_qubits = opdm.shape[0]
     qubit_permutations = ccu.generate_permutations(num_qubits)
@@ -206,15 +208,13 @@ def covariance_construction_from_opdm(opdm: np.ndarray,
 
 def resample_opdm(opdm: np.ndarray,
                   var_dict: Dict) -> np.ndarray:  # testpragma: no cover
-    """
-    Resample an 1-RDM assuming Gaussian statistics
+    """Resample an 1-RDM assuming Gaussian statistics.
 
-    :param opdm: mean-values
-    :param var_dict: dictionary of covariances indexed by circuit and
-                     permutation
-    :param fixed_trace_psd_projection: Boolean for if fixed trace positive
-                                       projection should be applied
-    :return:
+    Args:
+        opdm: mean-values
+        var_dict: dictionary of covariances indexed by circuit and permutation
+        fixed_trace_psd_projection: Boolean for if fixed trace positive
+            projection should be applied
     """
     num_qubits = opdm.shape[0]
     qubit_permutations = ccu.generate_permutations(num_qubits)
@@ -254,15 +254,14 @@ def resample_opdm(opdm: np.ndarray,
 
 
 def energy_from_opdm(opdm, constant, one_body_tensor, two_body_tensor):
-    """
-    Evaluate the energy of an opdm assuming the 2-RDM is opdm ^ opdm
+    """Evaluate the energy of an opdm assuming the 2-RDM is opdm ^ opdm.
 
-    :param opdm: single spin-component of the full spin-orbital opdm.
-    :param constant: constant shift to the Hamiltonian. Commonly this is the
-                     nuclear repulsion energy.
-    :param one_body_tensor: spatial one-body integrals
-    :param two_body_tensor: spatial two-body integrals
-    :return:
+    Args:
+        opdm: single spin-component of the full spin-orbital opdm.
+        constant: constant shift to the Hamiltonian. Commonly this is the
+            nuclear repulsion energy.
+        one_body_tensor: spatial one-body integrals
+        two_body_tensor: spatial two-body integrals
     """
     spin_opdm = np.kron(opdm, np.eye(2))
     spin_tpdm = 2 * wedge(spin_opdm, spin_opdm, (1, 1), (1, 1))
@@ -276,12 +275,14 @@ def energy_from_opdm(opdm, constant, one_body_tensor, two_body_tensor):
 
 def mcweeny_purification(rho: np.ndarray,
                          threshold: Optional[float] = 1e-8) -> np.ndarray:
-    """
-    Implementation of McWeeny purification
+    """Implementation of McWeeny purification
 
-    :param rho: density to purifiy.
-    :param threshold: stop when ||P**2 - P|| falls below this value.
-    :return: purified density matrix.
+    Args:
+        rho: density matrix to purify.
+        threshold: stop when ||P**2 - P|| falls below this value.
+
+    Returns:
+        Purified density matrix.
     """
     error = np.infty
     new_rho = rho.copy()
@@ -293,14 +294,19 @@ def mcweeny_purification(rho: np.ndarray,
 
 def fidelity_witness(target_unitary: np.ndarray, omega: List[int],
                      measured_opdm: np.ndarray) -> float:
-    """
-    Calculate the fidelity witness. This is a lower bound to the true fidelity
+    """Calculate the fidelity witness.
 
-    :param target_unitary: unitary representing the intended basis change.
-    :param omega: List of integers corresponding to the initial computational
-                  basis state.
-    :param measured_opdm: opdm to build the witness from.
-    :return: floating point number less than 1.  This can be negative!
+    The fidelity witness is a lower bound to the true fidelity.
+
+    Args:
+        target_unitary: unitary representing the intended basis change.
+        omega: List of integers corresponding to the initial computational
+            basis state.
+        measured_opdm: opdm to build the witness from.
+
+    Returns:
+        Fidelity witness, a floating point number less than 1. This can be
+            negative!
     """
     undone_opdm = target_unitary.conj().T @ measured_opdm @ target_unitary
     fidelity_witness_val = 1
@@ -311,11 +317,11 @@ def fidelity_witness(target_unitary: np.ndarray, omega: List[int],
 
 
 def fidelity(target_unitary: np.ndarray, measured_opdm: np.ndarray) -> float:
-    """
-    Computes the fidelity between an idempotent 1-RDM and the target unitary
+    """Computes the fidelity between an idempotent 1-RDM and the target unitary.
 
-    :param target_unitary: unitary representing basis transformation.
-    :param measured_opdm: purified opdm.
+    Args:
+        target_unitary: unitary representing basis transformation.
+        measured_opdm: purified opdm.
     """
     w, v = np.linalg.eigh(measured_opdm)
     eig_of_one_idx = np.where(np.isclose(w, 1))[0]

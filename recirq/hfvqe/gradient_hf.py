@@ -30,8 +30,7 @@ def rhf_func_generator(
         rhf_objective: RestrictedHartreeFockObjective,
         initial_occ_vec: Optional[Union[None, np.ndarray]] = None,
         get_opdm_func: Optional[bool] = False):
-    """
-    Generate the energy, gradient, and unitary functions
+    """Generate the energy, gradient, and unitary functions.
 
     Args:
         rhf_objective: objective function object
@@ -74,12 +73,14 @@ def rhf_func_generator(
 
 
 def rhf_minimization(rhf_object, method='CG', initial_guess=None, verbose=True):
-    """
-    Perform Hartree-Fock energy minimization
+    """Perform Hartree-Fock energy minimization.
 
-    :param rhf_object: RestrictedHartreeFockObject
-    :param method: (optional sp opt method)
-    :return: sp result object
+    Args:
+        rhf_object: RestrictedHartreeFockObject
+        method: scipy.optimize.minimize method
+
+    Returns:
+        Scipy optimize result
     """
     _, energy, gradient = rhf_func_generator(rhf_object)
     if initial_guess is None:

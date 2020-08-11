@@ -22,15 +22,17 @@ from recirq.hfvqe.circuits import rhf_params_to_matrix
 
 
 def get_matrix_of_eigs(w: np.ndarray) -> np.ndarray:
-    r"""
-    Transform the eigenvalues for getting the gradient
+    r"""Transform the eigenvalues for getting the gradient.
 
     .. math:
         f(w) \rightarrow
         \frac{e^{i (\lambda_{i} - \lambda_{j})}}{i (\lambda_{i} - \lambda_{j})}
 
-    :param w: eigenvalues of C-matrix
-    :return: new array of transformed eigenvalues
+    Args:
+        w: eigenvalues of C-matrix
+
+    Returns:
+        New array of transformed eigenvalues
     """
     transform_eigs = np.zeros((w.shape[0], w.shape[0]), dtype=np.complex128)
     for i, j in product(range(w.shape[0]), repeat=2):
@@ -44,8 +46,7 @@ def get_matrix_of_eigs(w: np.ndarray) -> np.ndarray:
 
 
 class RestrictedHartreeFockObjective():
-    """
-    Implementation of the objective function code for Restricted Hartree-Fock
+    """Objective function for Restricted Hartree-Fock.
 
     The object transforms a variety of input types into the appropriate output.
     It does this by analyzing the type and size of the input based on its
@@ -63,12 +64,14 @@ class RestrictedHartreeFockObjective():
         self.occ = list(range(self.nocc))
         self.virt = list(range(self.nocc, self.nocc + self.nvirt))
 
-    def rdms_from_opdm_aa(self, opdm_aa):
-        """
-        Generate InteractionRDM for the problem from opdm_aa
+    def rdms_from_opdm_aa(self, opdm_aa) -> InteractionRDM:
+        """Generate the RDM from just the alpha-alpha block.
 
-        :param opdm_aa:
-        :return:
+        Due to symmetry, the beta-beta block is the same, and the other
+        blocks are zero.
+
+        Args:
+            opdm_aa: The alpha-alpha block of the RDM
         """
         opdm = np.zeros((self.num_qubits, self.num_qubits), dtype=complex)
         opdm[::2, ::2] = opdm_aa
@@ -78,11 +81,10 @@ class RestrictedHartreeFockObjective():
         return rdms
 
     def energy_from_opdm(self, opdm_aa: np.ndarray) -> float:
-        """
-        Return the energy
+        """Return the energy.
 
-        :param opdm:
-        :return:
+        Args:
+            opdm: The alpha-alpha block of the RDM
         """
         rdms = self.rdms_from_opdm_aa(opdm_aa)
         return rdms.expectation(self.hamiltonian).real

@@ -117,14 +117,13 @@ def h12_linear_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
 
 def get_ao_integrals(molecule: MolecularData,
                      e_convergence: Optional[float] = 1e-8):
-    """
-    Use psi4numpy to grab the atomic orbital integrals
+    """Use psi4numpy to grab the atomic orbital integrals
 
     Modified from
     https://github.com/psi4/psi4numpy/blob/master/Tutorials/01_Psi4NumPy-Basics/1e_mints-helper.ipynb
 
-    :param molecule:
-    :return:
+    Args:
+        molecule: The molecule for which to get the integrals.
     """
     if NO_PSI4:
         raise NOPsi4Error("Psi4 is not installed")
