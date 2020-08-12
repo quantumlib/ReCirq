@@ -63,7 +63,7 @@ class OptimizationAlgorithm:
                                     registry=recirq.Registry,
                                     frozen=True)
 class OptimizationTask:
-    """Perform an optimization of the QAOA objective function.
+    """An optimization task for the QAOA objective function.
 
     See Also:
         :py:func:`collect_optimization_data`
@@ -87,31 +87,15 @@ class OptimizationTask:
     line_placement_strategy: Optional[str] = None
 
     @property
-    def dirname(self):
+    def fn(self):
         fn = os.path.join(self.dataset_id, self.device_name,
                           f'from-{self.generation_task.fn}', f'p-{self.p}',
                           self.algorithm.description, f'x0-{self.x0}')
         if isinstance(self.generation_task, SKProblemGenerationTask):
             line_placement_strategy = self.line_placement_strategy or 'mixed'
             fn = os.path.join(fn, f'line_placement-{line_placement_strategy}')
+        fn = os.path.join(fn, 'result')
         return fn
-
-    @property
-    def fn(self):
-        return os.path.join(self.dirname, 'result')
-
-
-@recirq.json_serializable_dataclass(namespace='recirq.qaoa',
-                                    registry=recirq.Registry,
-                                    frozen=True)
-class OptimizationIterationParameters:
-    optimization_task: OptimizationTask
-    iteration_i: int
-
-    @property
-    def fn(self):
-        return os.path.join(self.optimization_task.dirname,
-                            f'iteration-{self.iteration_i}')
 
 
 def collect_optimization_data(
@@ -129,10 +113,6 @@ def collect_optimization_data(
     if recirq.exists(task, base_dir=base_dir):
         print(f'{task.fn} already exists. Skipping.')
         return
-    dirname = os.path.join(base_dir, task.dirname)
-    if os.path.exists(dirname):
-        print('Old partial results exist; deleting.')
-        shutil.rmtree(dirname)
 
     sampler = recirq.get_sampler_by_name(device_name=task.device_name)
     problem = recirq.load(
@@ -141,7 +121,10 @@ def collect_optimization_data(
 
     lowest_energy_found = np.inf
     best_bitstring_found = None
-    iteration = 0
+    evaluated_points = []
+    bitstring_lists = []
+    energy_lists = []
+    mean_energies = []
 
     def f(x):
         print('Evaluating objective ...')
@@ -169,20 +152,13 @@ def collect_optimization_data(
             lowest_energy_found = lowest_energy
             best_bitstring_found = bitstrings[lowest_energy_index]
         mean = np.mean(energies)
-        # Save bitstrings
-        nonlocal iteration
-        iteration_params = OptimizationIterationParameters(task, iteration)
-        recirq.save(task=iteration_params,
-                    data={
-                        'x': recirq.NumpyArray(x),
-                        'bitstrings': recirq.BitArray(bitstrings),
-                        'energies': recirq.NumpyArray(np.array(energies)),
-                        'mean_energy': mean
-                    },
-                    base_dir=base_dir)
+        # Save bitstrings and other data
+        evaluated_points.append(recirq.NumpyArray(x))
+        bitstring_lists.append(recirq.BitArray(bitstrings))
+        energy_lists.append(recirq.NumpyArray(np.array(energies)))
+        mean_energies.append(mean)
         print('Objective function: {}'.format(mean))
         print()
-        iteration += 1
         return mean
 
     result = recirq.optimize.minimize(f,
@@ -196,7 +172,11 @@ def collect_optimization_data(
         'nit': result.nit,
         'nfev': result.nfev,
         'lowest_energy_found': lowest_energy_found,
-        'best_bitstring_found': best_bitstring_found
+        'best_bitstring_found': best_bitstring_found,
+        'evaluated_points': evaluated_points,
+        'bitstring_lists': bitstring_lists,
+        'energy_lists': energy_lists,
+        'mean_energies': mean_energies
     }
     if hasattr(result, 'x_iters'):
         result_data['x_iters'] = result['x_iters']
