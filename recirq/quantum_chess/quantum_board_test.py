@@ -15,6 +15,7 @@ import pytest
 import cirq
 import cirq.contrib.noise_models as ccn
 
+import recirq.engine_utils as utils
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_board as qb
@@ -27,25 +28,22 @@ from recirq.quantum_chess.test_utils import (
     assert_fifty_fifty,
 )
 
-NOISY_SAMPLER = cirq.DensityMatrixSimulator(noise=ccn.DepolarizingNoiseModel(
-    depol_prob=0.002))
-
 BIG_CIRQ_BOARDS = (
     qb.CirqBoard(0, error_mitigation=enums.ErrorMitigation.Error),
     qb.CirqBoard(0,
-                 device=cirq.google.Sycamore,
+                 device=utils.get_device_obj_by_name('Syc54-noiseless'),
                  error_mitigation=enums.ErrorMitigation.Error),
 )
 
 ALL_CIRQ_BOARDS = BIG_CIRQ_BOARDS + (
     qb.CirqBoard(0,
-                 device=cirq.google.Sycamore23,
+                 device=utils.get_device_obj_by_name('Syc23-noiseless'),
                  error_mitigation=enums.ErrorMitigation.Error),
     qb.CirqBoard(0,
-                 sampler=NOISY_SAMPLER,
-                 device=cirq.google.Sycamore,
+                 sampler=utils.get_sampler_by_name('Syc23-simulator'),
+                 device=utils.get_device_obj_by_name('Syc23-simulator'),
                  error_mitigation=enums.ErrorMitigation.Correct,
-                 noise_mitigation=0.08),
+                 noise_mitigation=0.10),
 )
 
 
