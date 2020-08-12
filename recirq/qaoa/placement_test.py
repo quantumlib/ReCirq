@@ -38,7 +38,7 @@ def test_place_on_device():
     circuit = compile_problem_unitary_to_arbitrary_zz(circuit)
     circuit = compile_driver_unitary_to_rx(circuit)
 
-    device = cirq.google.Bristlecone
+    device = cirq.google.Sycamore23
     routed_circuit, initial_qubit_map, final_qubit_map = place_on_device(circuit, device)
 
     # Check that constraints are not violated
