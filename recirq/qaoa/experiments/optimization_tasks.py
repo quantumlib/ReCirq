@@ -88,13 +88,16 @@ class OptimizationTask:
 
     @property
     def fn(self):
-        fn = os.path.join(self.dataset_id, self.device_name,
-                          f'from-{self.generation_task.fn}', f'p-{self.p}',
-                          self.algorithm.description, f'x0-{self.x0}')
+        fn = (f'{self.dataset_id}/'
+              f'{self.device_name}/'
+              f'from-{self.generation_task.fn}/'
+              f'p-{self.p}/'
+              f'{self.algorithm.description}/'
+              f'x0-{self.x0}')
         if isinstance(self.generation_task, SKProblemGenerationTask):
             line_placement_strategy = self.line_placement_strategy or 'mixed'
-            fn = os.path.join(fn, f'line_placement-{line_placement_strategy}')
-        fn = os.path.join(fn, 'result')
+            fn += f'/line_placement-{line_placement_strategy}'
+        fn += '/result'
         return fn
 
 
