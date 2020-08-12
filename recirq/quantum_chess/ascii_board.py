@@ -5,7 +5,7 @@ import cirq
 
 import recirq.quantum_chess.constants as c
 import recirq.quantum_chess.bit_utils as bu
-import recirq.quantum_chess.enums
+import recirq.quantum_chess.enums as enums
 from recirq.quantum_chess.move import to_rank, to_square, x_of, y_of, Move
 import recirq.quantum_chess.quantum_board as qb
 
@@ -106,7 +106,7 @@ class AsciiBoard:
 
     def piece(self, x: int, y: int):
         """Returns the type of the piece at square (x,y)."""
-        return self._pieces[y * size + x]
+        return self._pieces[y * self.size + x]
 
     def _ep_flag(self, move: 'Move', piece_type: int):
         if abs(piece_type) != c.PAWN:
