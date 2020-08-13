@@ -13,3 +13,6 @@ pytket-cirq
 
 # quantum chess, only needed for tests
 scipy
+
+# hfvqe
+openfermion==0.11.0
