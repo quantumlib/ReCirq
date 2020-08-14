@@ -56,7 +56,7 @@ def main_loop(args):
                          noise_mitigation=0.1)
     b = ab.AsciiBoard(board=board)
     if args.position:
-        b.load_fen(fen_position)
+        b.load_fen(args.position)
     else:
         b.reset()
     print(f'Applying moves to board...')
