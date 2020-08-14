@@ -3,7 +3,8 @@ Interactive ascii-based quantum chess game.
 
 Run with:
 
-python python -m recirq.quantum_chess.experiments.interactive_board <FEN>
+python python -m recirq.quantum_chess.experiments.interactive_board \
+    --position <FEN>
 
 The FEN argument denotes the starting position using FEN
 notation (see https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation).
@@ -35,26 +36,22 @@ Examples:
 
 The interactive board uses a simulator with an unconstrained device.
 """
+import argparse
 import sys
 
 import recirq.quantum_chess.ascii_board as ab
 import recirq.quantum_chess.move as m
 
 
-def main_loop(board=None, fen_position=None):
-    b = ab.AsciiBoard(board=board)
-    if fen_position:
-        b.load_fen(fen_position)
+def main_loop(args):
+    b = ab.AsciiBoard()
+    if args.position:
+        b.load_fen(args.position)
     else:
         b.reset()
-    while True:
-        print('')
-        print(b)
-        print('')
-        try:
-            in_str = next(sys.stdin).strip()
-        except StopIteration:
-            return
+    print(b)
+    for in_str in sys.stdin:
+        in_str = in_str.strip()
         if in_str == 'exit':
             return
         if not in_str:
@@ -63,11 +60,21 @@ def main_loop(board=None, fen_position=None):
             in_str = in_str + ':JUMP:BASIC'
         in_move = m.Move.from_string(in_str)
         meas = b.apply(in_move)
-        print('')
-        print(f'Measurement outcome = {meas}')
         b.board.print_debug_log()
+        print(f'Measurement outcome = {meas}')
+        print('')
+        print(b)
+        print('')
+
+
+def parse():
+    parser = argparse.ArgumentParser(
+        description='Interactive quantum chess board.')
+    parser.add_argument('--position',
+                        type=str,
+                        help='FEN representation of the initial position')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
-    position = sys.argv[1] if len(sys.argv) > 1 else None
-    main_loop(fen_position=position)
+    main_loop(parse())

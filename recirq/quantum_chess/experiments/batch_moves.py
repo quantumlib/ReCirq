@@ -4,7 +4,8 @@ result.
 
 Run with:
   python -m recirq.quantum_chess.experiments.batch_moves \
-      FILENAME PROCESSOR_NAME FEN
+      FILENAME --processor_name=PROCESSOR_NAME \
+      --position=FEN
 
 FILENAME is a filename with moves in the move format described
 by recirq.quantum_chess.move (see also interactive_board for
@@ -16,6 +17,7 @@ Defaults to a 54 qubit sycamore noiseless simulator.
 FEN is a initial position in chess FEN notation. Optional.
 Default is the normal classical chess starting position.
 """
+import argparse
 from typing import List
 import sys
 
@@ -47,16 +49,13 @@ def apply_moves(b: ab.AsciiBoard, moves: List[str]) -> bool:
     return meas
 
 
-def main_loop(filename: str,
-              processor_name: str,
-              fen_position=None,
-              noise_mitigation=0.1):
-    f = open(filename, 'r')
+def main_loop(args):
+    f = open(args.filename, 'r')
     moves = [line.strip() for line in f]
-    board = create_board(processor_name=processor_name,
-                         noise_mitigation=noise_mitigation)
+    board = create_board(processor_name=args.processor_name,
+                         noise_mitigation=0.1)
     b = ab.AsciiBoard(board=board)
-    if fen_position:
+    if args.position:
         b.load_fen(fen_position)
     else:
         b.reset()
@@ -65,10 +64,21 @@ def main_loop(filename: str,
     print(b)
 
 
+def parse():
+    parser = argparse.ArgumentParser(
+        description='Interactive quantum chess board.')
+    parser.add_argument('filename',
+                        type=str,
+                        help='path to fil that contains one move per line')
+    parser.add_argument('--processor_name',
+                        type=str,
+                        default='Syc54-noiseless',
+                        help='name of the QuantumProcessor object to use')
+    parser.add_argument('--position',
+                        type=str,
+                        help='FEN representation of the initial position')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    filename = sys.argv[1] if len(sys.argv) > 1 else None
-    processor_name = sys.argv[2] if len(sys.argv) > 2 else 'Syc54-noiseless'
-    position = sys.argv[3] if len(sys.argv) > 3 else None
-    main_loop(filename=filename,
-              processor_name=processor_name,
-              fen_position=position)
+    main_loop(parse())
