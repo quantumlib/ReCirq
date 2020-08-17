@@ -82,8 +82,8 @@ class Move:
 
         Examples:
            'a1a2:JUMP:BASIC'
-           'b1a3c3:SPLIT_MOVE:BASIC'
-           'a3b1--c3:MERGE_MOVE:BASIC'
+           'b1a3c3:SPLIT_JUMP:BASIC'
+           'a3b1--c3:MERGE_JUMP:BASIC'
         """
         fields = str_to_parse.split(':')
         if len(fields) != 3:
