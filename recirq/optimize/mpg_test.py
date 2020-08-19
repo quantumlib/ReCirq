@@ -30,7 +30,7 @@ def test_model_policy_gradient():
         decay_rate=0.96,
         decay_steps=10,
         log_sigma_init=-6.0,
-        max_iterations=100,
+        max_iterations=120,
         batch_size=30,
         radius_coeff=3.0,
         warmup_steps=10,
