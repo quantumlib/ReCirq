@@ -1,4 +1,4 @@
-cirq==0.8.1
+cirq==0.8.2
 seaborn
 sphinx
 ipython
@@ -10,3 +10,9 @@ scikit-learn
 networkx
 pytket
 pytket-cirq
+
+# quantum chess, only needed for tests
+scipy
+
+# hfvqe
+openfermion==0.11.0
