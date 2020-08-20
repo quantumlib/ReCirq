@@ -302,7 +302,7 @@ QUANTUM_PROCESSORS = {
         _get_sampler_func=lambda x, gs: cirq.Simulator(),
     ),
     'Syc54-simulator': QuantumProcessor(
-        name='Syc23-simulator',
+        name='Syc54-simulator',
         device_obj=cg_devices.Sycamore,
         processor_id=None,
         is_simulator=True,

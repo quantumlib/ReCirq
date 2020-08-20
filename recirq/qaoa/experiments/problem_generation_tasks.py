@@ -35,7 +35,7 @@ DEFAULT_BASE_DIR = os.path.expanduser(f'~/cirq-results/{EXPERIMENT_NAME}')
 class HardwareGridProblemGenerationTask:
     """Generate 'Hardware Grid' problems for a named device.
 
-    This is a subgraph of the device's harware topology with random
+    This is a subgraph of the device's hardware topology with random
     +-1 weights on edges.
 
     See Also:

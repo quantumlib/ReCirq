@@ -131,7 +131,7 @@ def _adam_update(
         Returns:
             x: the updated parameter values. 
             m: the updated first moment estimate.
-            v: the updated secnd moment estimate.
+            v: the updated second moment estimate.
         """
     lr = lr_schedule.value(step)
 
@@ -182,7 +182,7 @@ def model_policy_gradient(
         learning_rate: The learning rate for the policy gradient.
         decay_rate: the learning decay rate for the Adam optimizer.
         decay_steps: the learning decay steps for the Adam optimizer.
-        log_sigma_init: the intial value for the sigma of the policy
+        log_sigma_init: the initial value for the sigma of the policy
             in the log scale. 
         max_iterations: The maximum number of iterations to allow before
             termination.
