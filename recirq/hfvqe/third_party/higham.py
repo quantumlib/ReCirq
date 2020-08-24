@@ -44,7 +44,7 @@ def heaviside(x, bias=0) -> int:
 
     returns 1 if x >= bias else 0
 
-    :param x: floating point number as input to heavisde
+    :param x: floating point number as input to heaviside
     :param bias: shift on the heaviside function
     :return: 1 or 0 int
     """

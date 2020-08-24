@@ -52,7 +52,7 @@ def group_action(old_unitary: np.ndarray, new_parameters: np.ndarray,
 
     Args:
         old_unitary: unitary that we update--left multiply
-        new_parameters: parameters fornew unitary
+        new_parameters: parameters for new unitary
         occ: list of occupied indices
         virt: list of virtual indices
 
@@ -452,7 +452,7 @@ def moving_frame_augmented_hessian_optimizer(
     Args:
         rhf_objective: recirq.hfvqe.RestrictedHartreeFockObjective
         initial_parameters: parameters to start the optimization
-        opdm_aa_measurement_func: callable functioon that takes the parameter
+        opdm_aa_measurement_func: callable function that takes the parameter
             vector and returns the opdm
         max_iter: maximum number of iterations to take
         rtol: Terminate the optimization with the norm of the update angles

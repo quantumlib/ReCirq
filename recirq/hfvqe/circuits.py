@@ -33,8 +33,8 @@ def rhf_params_to_matrix(parameters: np.ndarray,
 
     For restricted Hartree-Fock we have nocc * nvirt parameters. These are
     provided as a list that is ordered by (virtuals) \times (occupied) where
-    occupied is a set of indices corresponding to the occupied oribitals w.r.t
-    the Lowdin basis and virtuals is a set of indices of the virutal orbitals
+    occupied is a set of indices corresponding to the occupied orbitals w.r.t
+    the Lowdin basis and virtuals is a set of indices of the virtual orbitals
     w.r.t the Lowdin basis.  For example, for H4 we have 2 orbitals occupied and
     2 virtuals:
 
