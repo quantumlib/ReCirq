@@ -26,8 +26,8 @@ navigation.
     :hidden:
 
     data_collection_idioms
-    Readout-Data-Collection
-    Readout-Analysis
+    tutorials/data_collection
+    tutorials/data_analysis
     best_practices
 
 .. toctree::

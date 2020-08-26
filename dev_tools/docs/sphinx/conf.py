@@ -147,5 +147,18 @@ def env_before_read_docs(app, env, docnames):
         _rmtree_if_exists(f'{qaoa_p1_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
 
 
+import subprocess
+
+REPO_DIR = subprocess.Popen(['git', 'rev-parse', '--show-toplevel'],
+                            stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
+
+
 def setup(app):
+    FROM = f'{REPO_DIR}/docs'
+    TO = f'{REPO_DIR}/dev_tools/docs/sphinx'
+    from distutils.dir_util import copy_tree  # allows overwriting
+    copy_tree(f'{FROM}/tutorials', f'{TO}/tutorials')
+    shutil.copy(f'{FROM}/images/g3618.png', f'{TO}/_static/')
+    shutil.copy(f'{FROM}/images/recirq_logo_notext.png', f'{TO}/_static/')
+
     app.connect('env-before-read-docs', env_before_read_docs)
