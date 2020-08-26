@@ -97,10 +97,11 @@ def env_before_read_docs(app, env, docnames):
             cirq-results/qaoa-p1-landscape/2020-03-tutorial
 
     """
+    print("The following documents will be built:")
     print(docnames)
 
     def _order(docname):
-        if docname == 'Readout-Data-Collection':
+        if docname == 'tutorials/data_collection':
             # must come before others
             return -1
 
@@ -111,12 +112,14 @@ def env_before_read_docs(app, env, docnames):
 
     docnames.sort(key=_order)
 
+    print("Since there are dependencies between them, they will be built in this order:")
     print(docnames)
 
-    if ('Readout-Data-Collection' in docnames
-            and 'Readout-Analysis' not in docnames):
-        # Mark the analysis notebook as changed
-        docnames.append('Readout-Analysis')
+    if ('tutorials/data_collection' in docnames
+            and 'tutorials/data_analysis' not in docnames):
+        print("Since tutorials/data_collection has changed, "
+              "also re-running tutorials/data_analysis")
+        docnames.append('tutorials/data_analysis')
 
     if 'qaoa/Tasks-Tutorial' in docnames:
         if 'qaoa/Precomputed-Analysis' not in docnames:
@@ -128,7 +131,9 @@ def env_before_read_docs(app, env, docnames):
 
     print(docnames)
 
-    if 'Readout-Data-Collection' in docnames:
+    if 'tutorials/data_collection' in docnames:
+        print("Since tutorials/data_collection has changed, "
+              "deleting existing tutorial data.")
         from recirq.readout_scan import tasks as rs_tasks
         _rmtree_if_exists(f'{rs_tasks.DEFAULT_BASE_DIR}/2020-02-tutorial')
 
