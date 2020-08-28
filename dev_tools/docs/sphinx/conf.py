@@ -158,6 +158,11 @@ REPO_DIR = subprocess.Popen(['git', 'rev-parse', '--show-toplevel'],
                             stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
 
 
+def source_read(app, docname, source):
+    import re
+    source[0] = re.sub(r'"##### (Copyright 20\d\d Google)"', r'"**\1**"', source[0])
+
+
 def setup(app):
     FROM = f'{REPO_DIR}/docs'
     TO = f'{REPO_DIR}/dev_tools/docs/sphinx'
@@ -167,3 +172,4 @@ def setup(app):
     shutil.copy(f'{FROM}/images/recirq_logo_notext.png', f'{TO}/_static/')
 
     app.connect('env-before-read-docs', env_before_read_docs)
+    app.connect('source-read', source_read)
