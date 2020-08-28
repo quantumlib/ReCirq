@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import re
 import shutil
+import subprocess
 
 project = 'ReCirq'
 copyright = '2020, Google Quantum'
@@ -152,14 +154,12 @@ def env_before_read_docs(app, env, docnames):
         _rmtree_if_exists(f'{qaoa_p1_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
 
 
-import subprocess
 
 REPO_DIR = subprocess.Popen(['git', 'rev-parse', '--show-toplevel'],
                             stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
 
 
 def source_read(app, docname, source):
-    import re
     source[0] = re.sub(r'"##### (Copyright 20\d\d Google)"', r'"**\1**"', source[0])
 
 
