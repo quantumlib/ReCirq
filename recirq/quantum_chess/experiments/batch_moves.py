@@ -69,7 +69,7 @@ def parse():
         description='Interactive quantum chess board.')
     parser.add_argument('filename',
                         type=str,
-                        help='path to fil that contains one move per line')
+                        help='path to file that contains one move per line')
     parser.add_argument('--processor_name',
                         type=str,
                         default='Syc54-noiseless',

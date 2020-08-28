@@ -26,8 +26,8 @@ navigation.
     :hidden:
 
     data_collection_idioms
-    Readout-Data-Collection
-    Readout-Analysis
+    tutorials/data_collection
+    tutorials/data_analysis
     best_practices
 
 .. toctree::
@@ -42,11 +42,11 @@ navigation.
     :caption: QAOA
     :hidden:
 
-    qaoa/Example-Problems
-    qaoa/Tasks-Tutorial
-    qaoa/Precomputed-Analysis
-    qaoa/Landscape-Analysis
-    qaoa/hardware-grid-qaoa-circuits
+    qaoa/example_problems
+    qaoa/tasks
+    qaoa/precomputed_analysis
+    qaoa/landscape_analysis
+    qaoa/hardware_grid_circuits
     qaoa/problem_generation_tasks
     qaoa/angle_precomputation_tasks
-    qaoa/Routing-with-Tket
+    qaoa/routing_with_tket

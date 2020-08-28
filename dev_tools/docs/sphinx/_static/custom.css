@@ -11,3 +11,9 @@ div.body {
 div.document {
     width: 1220px;
 }
+
+/* nbsphinx strips the HTML from these cells
+   so they look bad */
+.tfo-notebook-buttons {
+    display: none;
+}
