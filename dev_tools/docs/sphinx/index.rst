@@ -46,6 +46,7 @@ navigation.
     qaoa/tasks
     qaoa/precomputed_analysis
     qaoa/landscape_analysis
+    qaoa/optimization_analysis
     qaoa/hardware_grid_circuits
     qaoa/problem_generation_tasks
     qaoa/angle_precomputation_tasks

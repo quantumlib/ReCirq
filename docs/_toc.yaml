@@ -21,6 +21,8 @@ toc:
   path: /cirq/research/qaoa/precomputed_analysis
 - title: "Landscape analysis"
   path: /cirq/research/qaoa/landscape_analysis
+- title: "Optimization analysis"
+  path: /cirq/research/qaoa/optimization_analysis
 - title: "Hardware grid circuits"
   path: /cirq/research/qaoa/hardware_grid_circuits
 - title: "Routing with tket"
