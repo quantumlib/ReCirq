@@ -13,7 +13,6 @@
 # limitations under the License.
 
 name: Python package
-
 on:
   push:
     branches: [ master ]
@@ -53,11 +52,3 @@ jobs:
       run: |
         pip install pytest
         pytest -v
-
-    - name: Build documentation
-      env:
-          NBSPHINX_EXECUTE_NOTEBOOKS: auto
-      run: |
-        pip install sphinx nbsphinx jupyter_client ipykernel
-        sudo apt-get install pandoc
-        cd docs && make clean && make html

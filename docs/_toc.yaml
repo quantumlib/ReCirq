@@ -1,0 +1,27 @@
+toc:
+- title: "Research using Cirq"
+  path: /cirq/research
+- title: "Data collection idioms"
+  path: /cirq/research/data_collection_idioms
+- title: "Best practices"
+  path: /cirq/research/best_practices
+
+- heading: "Tutorials"
+- title: "Data collection"
+  path: /cirq/research/tutorials/data_collection
+- title: "Data analysis"
+  path: /cirq/research/tutorials/data_analysis
+
+- heading: "QAOA"
+- title: "Example problems"
+  path: /cirq/research/qaoa/example_problems
+- title: "Tasks"
+  path: /cirq/research/qaoa/tasks
+- title: "Precomputed analysis"
+  path: /cirq/research/qaoa/precomputed_analysis
+- title: "Landscape analysis"
+  path: /cirq/research/qaoa/landscape_analysis
+- title: "Hardware grid circuits"
+  path: /cirq/research/qaoa/hardware_grid_circuits
+- title: "Routing with tket"
+  path: /cirq/research/qaoa/routing_with_tket

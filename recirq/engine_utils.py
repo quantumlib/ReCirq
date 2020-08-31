@@ -293,6 +293,30 @@ QUANTUM_PROCESSORS = {
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: ZerosSampler()
+    ),
+    'Syc54-noiseless': QuantumProcessor(
+        name='Syc54-noiseless',
+        device_obj=cg_devices.Sycamore,
+        processor_id=None,
+        is_simulator=True,
+        _get_sampler_func=lambda x, gs: cirq.Simulator(),
+    ),
+    'Syc54-simulator': QuantumProcessor(
+        name='Syc54-simulator',
+        device_obj=cg_devices.Sycamore,
+        processor_id=None,
+        is_simulator=True,
+        _get_sampler_func=lambda x, gs: cirq.DensityMatrixSimulator(
+            noise=cirq.ConstantQubitNoiseModel(
+                qubit_noise_gate=cirq.DepolarizingChannel(0.005)
+            ))
+    ),
+    'Syc54-zeros': QuantumProcessor(
+        name='Syc54-zeros',
+        device_obj=cg_devices.Sycamore,
+        processor_id=None,
+        is_simulator=True,
+        _get_sampler_func=lambda x, gs: ZerosSampler()
     )
 }
 
