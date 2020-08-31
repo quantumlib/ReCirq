@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import re
 import shutil
+import subprocess
 
 project = 'ReCirq'
 copyright = '2020, Google Quantum'
@@ -97,10 +99,11 @@ def env_before_read_docs(app, env, docnames):
             cirq-results/qaoa-p1-landscape/2020-03-tutorial
 
     """
+    print("The following documents will be built:")
     print(docnames)
 
     def _order(docname):
-        if docname == 'Readout-Data-Collection':
+        if docname == 'tutorials/data_collection':
             # must come before others
             return -1
 
@@ -111,12 +114,14 @@ def env_before_read_docs(app, env, docnames):
 
     docnames.sort(key=_order)
 
+    print("Since there are dependencies between them, they will be built in this order:")
     print(docnames)
 
-    if ('Readout-Data-Collection' in docnames
-            and 'Readout-Analysis' not in docnames):
-        # Mark the analysis notebook as changed
-        docnames.append('Readout-Analysis')
+    if ('tutorials/data_collection' in docnames
+            and 'tutorials/data_analysis' not in docnames):
+        print("Since tutorials/data_collection has changed, "
+              "also re-running tutorials/data_analysis")
+        docnames.append('tutorials/data_analysis')
 
     if 'qaoa/Tasks-Tutorial' in docnames:
         if 'qaoa/Precomputed-Analysis' not in docnames:
@@ -128,7 +133,9 @@ def env_before_read_docs(app, env, docnames):
 
     print(docnames)
 
-    if 'Readout-Data-Collection' in docnames:
+    if 'tutorials/data_collection' in docnames:
+        print("Since tutorials/data_collection has changed, "
+              "deleting existing tutorial data.")
         from recirq.readout_scan import tasks as rs_tasks
         _rmtree_if_exists(f'{rs_tasks.DEFAULT_BASE_DIR}/2020-02-tutorial')
 
@@ -147,5 +154,22 @@ def env_before_read_docs(app, env, docnames):
         _rmtree_if_exists(f'{qaoa_p1_tasks.DEFAULT_BASE_DIR}/2020-03-tutorial')
 
 
+
+REPO_DIR = subprocess.Popen(['git', 'rev-parse', '--show-toplevel'],
+                            stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
+
+
+def source_read(app, docname, source):
+    source[0] = re.sub(r'"##### (Copyright 20\d\d Google)"', r'"**\1**"', source[0])
+
+
 def setup(app):
+    FROM = f'{REPO_DIR}/docs'
+    TO = f'{REPO_DIR}/dev_tools/docs/sphinx'
+    from distutils.dir_util import copy_tree  # allows overwriting
+    copy_tree(f'{FROM}/tutorials', f'{TO}/tutorials')
+    shutil.copy(f'{FROM}/images/g3618.png', f'{TO}/_static/')
+    shutil.copy(f'{FROM}/images/recirq_logo_notext.png', f'{TO}/_static/')
+
     app.connect('env-before-read-docs', env_before_read_docs)
+    app.connect('source-read', source_read)
