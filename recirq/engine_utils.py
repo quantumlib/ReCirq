@@ -287,6 +287,17 @@ QUANTUM_PROCESSORS = {
                 qubit_noise_gate=cirq.DepolarizingChannel(0.005)
             ))
     ),
+    'Syc23-simulator-tester': QuantumProcessor(
+        # This simulator has a constant seed for consistent testing
+        name='Syc23-simulator-tester',
+        device_obj=cg_devices.Sycamore23,
+        processor_id=None,
+        is_simulator=True,
+        _get_sampler_func=lambda x, gs: cirq.DensityMatrixSimulator(
+            noise=cirq.ConstantQubitNoiseModel(
+                qubit_noise_gate=cirq.DepolarizingChannel(0.005)
+            ), seed=1234)
+    ),
     'Syc23-zeros': QuantumProcessor(
         name='Syc23-zeros',
         device_obj=cg_devices.Sycamore23,

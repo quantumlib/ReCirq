@@ -40,8 +40,8 @@ ALL_CIRQ_BOARDS = BIG_CIRQ_BOARDS + (
                  device=utils.get_device_obj_by_name('Syc23-noiseless'),
                  error_mitigation=enums.ErrorMitigation.Error),
     qb.CirqBoard(0,
-                 sampler=utils.get_sampler_by_name('Syc23-simulator'),
-                 device=utils.get_device_obj_by_name('Syc23-simulator'),
+                 sampler=utils.get_sampler_by_name('Syc23-simulator-tester'),
+                 device=utils.get_device_obj_by_name('Syc23-simulator-tester'),
                  error_mitigation=enums.ErrorMitigation.Correct,
                  noise_mitigation=0.10),
 )
