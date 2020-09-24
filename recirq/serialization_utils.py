@@ -259,9 +259,18 @@ def read_json(file_or_fn=None, *, json_text=None, resolvers=None):
                                resolvers=resolvers)
 
 
-def load(task, base_dir):
-    fn = f'{base_dir}/{task.fn}.json'
-    return read_json(fn)
+def load(task, base_dir, *, compress=None):
+    fn = _get_fn(task, base_dir=base_dir, compress=compress)
+
+    if compress is None:
+        open_fn = open
+    elif compress == 'gzip':
+        open_fn = gzip.open
+    else:
+        raise ValueError("Unknown `compress` option: {}".format(compress))
+
+    with open_fn(fn) as f:
+        return read_json(f)
 
 
 def iterload_records(dataset_id: str, base_dir: str):

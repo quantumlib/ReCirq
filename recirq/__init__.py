@@ -41,3 +41,7 @@ from recirq.engine_utils import (
 from recirq.documentation_utils import (
     display_markdown_docstring,
 )
+
+from recirq.named_topologies import (
+    get_named_topology
+)
