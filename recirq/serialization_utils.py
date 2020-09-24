@@ -15,6 +15,7 @@
 import dataclasses
 import datetime
 import glob
+import gzip
 import io
 import itertools
 import os
@@ -36,22 +37,39 @@ class Task(Protocol):
     fn: str
 
 
-def exists(task: Task, base_dir: str):
-    fn = f'{base_dir}/{task.fn}.json'
-    return os.path.exists(fn)
+def _get_fn(task: Task, base_dir: str, *, compress=None):
+    if compress is None:
+        return f'{base_dir}/{task.fn}.json'
+    if compress == 'gzip':
+        return f'{base_dir}/{task.fn}.json.gz'
+    raise ValueError("Unknown `compress` option: {}".format(compress))
 
 
-def save(task: Task, data: Dict[str, Any], base_dir: str, mode='x'):
+def exists(task: Task, base_dir: str, *, compress=None):
+    return os.path.exists(_get_fn(task, base_dir, compress=compress))
+
+
+def save(task: Task, data: Dict[str, Any], base_dir: str, *,
+         mode='xt', compress=None):
     with_meta = {
         'timestamp': datetime.datetime.now().isoformat(),
         'task': task,
     }
     with_meta.update(data)
 
-    fn = f'{base_dir}/{task.fn}.json'
+    fn = _get_fn(task, base_dir, compress=compress)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
-    with open(fn, mode) as f:
+
+    if compress is None:
+        open_fn = open
+    elif compress == 'gzip':
+        open_fn = gzip.open
+    else:
+        raise ValueError("Unknown `compress` option: {}".format(compress))
+
+    with open_fn(fn, mode) as f:
         protocols.to_json(with_meta, f)
+
     return fn
 
 
