@@ -1,4 +1,4 @@
-cirq==0.8.2
+cirq==0.9.0
 seaborn
 sphinx
 ipython
@@ -16,3 +16,6 @@ scipy
 
 # hfvqe
 openfermion==0.11.0
+
+# fermi_hubbard
+openfermioncirq
