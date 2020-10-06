@@ -1,4 +1,4 @@
-# Copyright 2020 The Cirq Developers
+# Copyright 2020 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,13 +43,14 @@ from cirq.experiments.random_quantum_circuit_generation import (
     GridInteractionLayer,
     random_rotations_between_grid_interaction_layers_circuit)
 
-DEFAULT_BASE_DIR = os.path.expanduser(
-    os.path.join('~', 'cirq-results', 'grid-parallel-two-qubit-xeb'))
+DEFAULT_BASE_DIR = os.path.expanduser('~/cirq-results/grid-parallel-two-qubit-xeb')
 
+# TODO: https://github.com/quantumlib/Cirq/issues/3340
 LAYER_A = GridInteractionLayer(col_offset=0, vertical=True, stagger=True)
 LAYER_B = GridInteractionLayer(col_offset=1, vertical=True, stagger=True)
 LAYER_C = GridInteractionLayer(col_offset=1, vertical=False, stagger=True)
 LAYER_D = GridInteractionLayer(col_offset=0, vertical=False, stagger=True)
+HALF_GRID_STAGGERED_PATTERN = [LAYER_A, LAYER_B, LAYER_C, LAYER_D]
 
 SINGLE_QUBIT_GATES = [
     cirq.PhasedXZGate(x_exponent=0.5, z_exponent=z, axis_phase_exponent=a)
@@ -57,7 +58,6 @@ SINGLE_QUBIT_GATES = [
 ]
 
 GridQubitPair = Tuple['cirq.GridQubit', 'cirq.GridQubit']
-
 
 
 @recirq.json_serializable_dataclass(
@@ -68,8 +68,6 @@ GridQubitPair = Tuple['cirq.GridQubit', 'cirq.GridQubit']
 class GridParallelXEBMetadata:
     """Metadata for a grid parallel XEB experiment.
 
-    Attributes:
-        data_collection_id: The data collection ID of the experiment.
     """
     qubits: List['cirq.Qid']
     two_qubit_gate: 'cirq.Gate'
@@ -182,6 +180,104 @@ class GridParallelXEBResultsParameters:
         return os.path.join(self.data_collection_id, 'results.json')
 
 
+_NAMED_TWO_QUBIT_GATES = {
+    'fsim_pi4': cirq.FSimGate(theta=np.pi / 4, phi=0),
+}
+
+
+@recirq.json_serializable_dataclass(
+    namespace='recirq.characterization.xeb',
+    registry=recirq.Registry,
+    frozen=True)
+class CircuitGenerationTask:
+    """A task to generate random parallel XEB circuits.
+
+    For each grid interaction layer (see `HALF_GRID_STAGGERED_PATTERN` in this
+    file and  https://github.com/quantumlib/Cirq/issues/3340) we generate
+    a number of random circuits. The circuits are generated using the function
+    `cirq.experiments.random_rotations_between_grid_interaction_layers_circuit`
+    with a depth of `max_cycles`. The single-qubit gates used are those of the
+    form `cirq.PhasedXZGate(x_exponent=0.5, z_exponent=z, axis_phase_exponent=a)`
+    with `z` and `a` each ranging through the set of 8 values
+    [0, 1/4, ..., 7/4]. The final single-qubit gate layer is omitted.
+
+    Each circuit is generated with *one* `layer` at a time. Since the same set
+    of interactions is applied in each two-qubit gate layer, a circuit does not
+    entangle pairs of qubits other than the pairs present in the given
+    grid interaction layer.
+
+    During circuit execution, the `max_cylce`-length circuits are truncated
+    to the desired length.
+
+    Attributes:
+        dataset_id: A unique identifier for this set of generated circuits.
+        topology_name: A ReCirq named topology to generate circuits with
+            respect to.
+        two_qubit_gate_name: The name of the two-qubit gate to use. Currently
+            'fsim_pi4' is supported.
+        n_circuits: The number of circuits to generate.
+        max_cycles: The maximum number of cycles, which sets the length of
+            generated circuits.
+        seed: The random seed for this task used to deterministicly generate
+            random cicuits.
+    """
+    dataset_id: str
+    topology_name: str
+    two_qubit_gate_name: str
+    n_circuits: int
+    max_cycles: int
+    seed: int
+
+    @property
+    def fn(self):
+        return (f'{self.dataset_id}/'
+                f'{self.topology_name}/'
+                f'{self.two_qubit_gate_name}/'
+                f'circuits-{self.n_circuits}_{self.max_cycles}_{self.seed}')
+
+
+def generate_grid_parallel_two_qubit_circuits(
+        task: CircuitGenerationTask,
+        base_dir: str = DEFAULT_BASE_DIR):
+    """Execute a :py:class:`CircuitGenerationTask`.
+
+    See the task's documentation for details.
+    """
+    if recirq.exists(task, base_dir=base_dir, compress='gzip'):
+        print(f"{task} already exists. Skipping!")
+        return
+
+    qubits = [cirq.GridQubit(r, c) for r, c in
+              recirq.get_named_topology(task.topology_name).graph.nodes]
+    prng = cirq.value.parse_random_state(task.seed)
+    two_qubit_gate = _NAMED_TWO_QUBIT_GATES[task.two_qubit_gate_name]
+
+    layer_records = []
+    for layer in HALF_GRID_STAGGERED_PATTERN:
+        circuits = []
+        for circuit_i in range(task.n_circuits):
+            circuit = random_rotations_between_grid_interaction_layers_circuit(
+                qubits=qubits,
+                depth=task.max_cycles,
+                two_qubit_op_factory=lambda a, b, _: two_qubit_gate(a, b),
+                pattern=[layer],
+                single_qubit_gates=SINGLE_QUBIT_GATES,
+                add_final_single_qubit_layer=False,
+                seed=prng)
+            circuits += [{
+                'circuit_i': circuit_i,
+                'circuit': circuit
+            }]
+        layer_records += [{
+            'layer': layer,
+            'circuits': circuits
+        }]
+
+    recirq.save(task, {
+        'layers': layer_records
+    }, base_dir=base_dir, compress='gzip')
+
+
 def collect_grid_parallel_two_qubit_xeb_data(
         sampler: 'cirq.Sampler',
         qubits: Iterable['cirq.GridQubit'],
@@ -288,26 +384,14 @@ def collect_grid_parallel_two_qubit_xeb_data(
         seed=seed if isinstance(seed, int) else None)
     recirq.save(metadata_params, {'metadata': metadata}, base_dir=base_dir)
 
-    # Generate and save all circuits
+    # TODO: refactor the rest of this function to use new circuit generation task outputs.
     max_cycles = max(cycles)
-    circuits_ = collections.defaultdict(
-        list)  # type: Dict[GridInteractionLayer, List[cirq.Circuit]]
-    for layer in layers:
-        for i in range(num_circuits):
-            circuit = random_rotations_between_grid_interaction_layers_circuit(
-                qubits=qubits,
-                depth=max_cycles,
-                two_qubit_op_factory=lambda a, b, _: two_qubit_gate(a, b),
-                pattern=[layer],
-                single_qubit_gates=SINGLE_QUBIT_GATES,
-                add_final_single_qubit_layer=False,
-                seed=prng)
-            circuits_[layer].append(circuit)
-            circuit_params = GridParallelXEBCircuitParameters(
-                data_collection_id=data_collection_id,
-                layer=layer,
-                circuit_index=i)
-            recirq.save(circuit_params, {'circuit': circuit}, base_dir=base_dir)
+    circuits_ = {
+        LAYER_A: [],
+        LAYER_B: [],
+        LAYER_C: [],
+        LAYER_D: [],
+    }
 
     # Collect data
     def run_truncated_circuit(truncated_circuit: 'cirq.Circuit',
