@@ -1,0 +1,13 @@
+{
+    "description": "This project contains modules for running quantum computing applications and experiments through Cirq and Google&#39;s Quantum Computing Service.",
+    "license": "Apache-2.0",
+    "title": "ReCirq",
+    "upload_type": "software",
+    "creators": [
+        {
+            "affiliation": "Google Inc",
+            "name": "Quantum AI team and collaborators"
+        }
+    ],
+    "access_right": "open"
+}
