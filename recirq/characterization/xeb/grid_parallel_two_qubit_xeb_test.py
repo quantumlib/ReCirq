@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pytest
 
 import cirq
 from recirq.characterization.xeb.grid_parallel_two_qubit_xeb import (
@@ -109,7 +108,6 @@ def test_estimate_parallel_two_qubit_xeb_fidelity_on_grid_concurrent(tmpdir):
     assert len(results) == 4
 
 
-@pytest.mark.xfail(reason="`recirq` vs `cirq` in repr.")
 def test_grid_parallel_xeb_metadata_repr():
     metadata = GridParallelXEBMetadata(qubits=cirq.GridQubit.square(2),
                                        two_qubit_gate=cirq.ISWAP,
@@ -118,4 +116,4 @@ def test_grid_parallel_xeb_metadata_repr():
                                        cycles=[2, 4, 6, 8, 10],
                                        layers=[LAYER_A, LAYER_B],
                                        seed=1234)
-    cirq.testing.assert_equivalent_repr(metadata)
+    cirq.testing.assert_equivalent_repr(metadata, setup_code='import cirq\nimport recirq\n')
