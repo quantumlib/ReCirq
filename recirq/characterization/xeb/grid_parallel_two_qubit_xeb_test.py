@@ -3,9 +3,12 @@ import numpy as np
 import pytest
 
 import cirq
-from recirq.characterization.xeb.grid_parallel_two_qubit_xeb import GridParallelXEBMetadata, \
-    LAYER_A, LAYER_B, collect_grid_parallel_two_qubit_xeb_data, \
+from recirq.characterization.xeb.grid_parallel_two_qubit_xeb import (
+    GridParallelXEBMetadata,
+    LAYER_A, LAYER_B,
+    collect_grid_parallel_two_qubit_xeb_data,
     compute_grid_parallel_two_qubit_xeb_results
+)
 
 ALIGNED_HORIZONTAL = cirq.experiments.GridInteractionLayer(col_offset=0,
                                                            vertical=False,
