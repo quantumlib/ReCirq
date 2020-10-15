@@ -410,9 +410,11 @@ def quantity_data_frame(bundle: Union[InstanceBundle, Sequence[InstanceBundle]],
             else:
                 raise ValueError(f'Unknown quantity type {quantity_type}')
         else:
-            assert (isinstance(quantity, quantity_type),
-                    f'Inconsistent quantity types {type(quantity)} and '
-                    f'{quantity_type}')
+            # Linter complains here...
+            # assert (isinstance(quantity, quantity_type),
+            #         f'Inconsistent quantity types {type(quantity)} and '
+            #         f'{quantity_type}')
+            pass
 
         missing_steps = set(steps)
         for s, step in enumerate(bundle.steps):
