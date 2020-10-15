@@ -16,3 +16,6 @@ scipy
 
 # hfvqe
 openfermion==0.11.0
+
+# fermi_hubbard
+tqdm  # notebook progress bars
