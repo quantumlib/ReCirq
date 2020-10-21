@@ -10,7 +10,7 @@ over time.
 
 Quickstart
 ----------
-An [ipython notebook](quickstart.ipynb) provided with this module describes how
+An [ipython notebook](../../docs/hfvqe/quickstart.ipynb) provided with this module describes how
 to initialize and run a Hartree-Fock VQE calculation. It steps through
 estimating the 1-RDM given a set of parameters for the basis transformation
 unitary and then provides an example of variational relaxation of the
