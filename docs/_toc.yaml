@@ -2,15 +2,15 @@ toc:
 - title: "Research using Cirq"
   path: /cirq/research
 
-- heading: "Concepts"
+- heading: "Guide"
 - title: "Data collection idioms"
-  path: /cirq/research/concepts/data_collection_idioms
+  path: /cirq/research/guide/data_collection_idioms
 - title: "Best practices"
-  path: /cirq/research/concepts/best_practices
+  path: /cirq/research/guide/best_practices
 - title: "Data collection"
-  path: /cirq/research/concepts/data_collection
+  path: /cirq/research/guide/data_collection
 - title: "Data analysis"
-  path: /cirq/research/concepts/data_analysis
+  path: /cirq/research/guide/data_analysis
 
 - heading: "QAOA"
 - title: "Example problems"
