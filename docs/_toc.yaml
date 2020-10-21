@@ -1,16 +1,16 @@
 toc:
 - title: "Research using Cirq"
   path: /cirq/research
-- title: "Data collection idioms"
-  path: /cirq/research/data_collection_idioms
-- title: "Best practices"
-  path: /cirq/research/best_practices
 
-- heading: "Tutorials"
+- heading: "Guide"
+- title: "Data collection idioms"
+  path: /cirq/research/guide/data_collection_idioms
+- title: "Best practices"
+  path: /cirq/research/guide/best_practices
 - title: "Data collection"
-  path: /cirq/research/tutorials/data_collection
+  path: /cirq/research/guide/data_collection
 - title: "Data analysis"
-  path: /cirq/research/tutorials/data_analysis
+  path: /cirq/research/guide/data_analysis
 
 - heading: "QAOA"
 - title: "Example problems"
@@ -27,3 +27,15 @@ toc:
   path: /cirq/research/qaoa/hardware_grid_circuits
 - title: "Routing with tket"
   path: /cirq/research/qaoa/routing_with_tket
+
+- heading: "Hartree-Fock VQE"
+- title: "Quickstart"
+  path: /cirq/research/hfvqe/quickstart
+- title: "Odd Qubit Example"
+  path: /cirq/research/hfvqe/H3_plus_odd_qubit_example
+
+- heading: "Fermi-Hubbard"
+- title: "Experiment Example"
+  path: /cirq/research/fermi_hubbard/experiment_example
+- title: "Spin-Charge Separation Results"
+  path: /cirq/research/fermi_hubbard/publication_results
