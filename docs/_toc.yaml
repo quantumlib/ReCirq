@@ -31,11 +31,11 @@ toc:
 - heading: "Hartree-Fock VQE"
 - title: "Quickstart"
   path: /cirq/experiments/hfvqe/quickstart
-- title: "Odd Qubit Example"
-  path: /cirq/experiments/hfvqe/H3_plus_odd_qubit_example
+- title: "Odd qubit example"
+  path: /cirq/experiments/hfvqe/odd_qubit
 
 - heading: "Fermi-Hubbard"
-- title: "Experiment Example"
+- title: "Experiment example"
   path: /cirq/experiments/fermi_hubbard/experiment_example
-- title: "Spin-Charge Separation Results"
+- title: "Spin-charge separation results"
   path: /cirq/experiments/fermi_hubbard/publication_results
