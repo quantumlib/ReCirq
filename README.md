@@ -35,18 +35,18 @@ ReCirq is not an official Google product. Copyright 2020 Google.
 
 # How to cite ReCirq
 
-ReCirq is uploaded to Zenodo automatically. Click on this badge [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3992331.svg)](https://doi.org/10.5281/zenodo.3992331) to see all the citation formats for all versions.
+ReCirq is uploaded to Zenodo automatically. Click on this badge [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4091470.svg)](https://doi.org/10.5281/zenodo.4091470) to see all the citation formats for all versions.
 
 An equivalent BibTex format reference is below for all the versions:
 
 ```
-@software{quantum_ai_team_and_collaborators_2020_3992331,
+@software{quantum_ai_team_and_collaborators_2020_4091470,
   author       = {Quantum AI team and collaborators},
   title        = {ReCirq},
-  month        = Aug,
+  month        = Oct,
   year         = 2020,
   publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.3992331},
-  url          = {https://doi.org/10.5281/zenodo.3992331}
+  doi          = {10.5281/zenodo.4091470},
+  url          = {https://doi.org/10.5281/zenodo.4091470}
 }
 ```
