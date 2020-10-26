@@ -1,8 +1,7 @@
 # Simulation of spin and charge dynamics in the Fermi-Hubbard model
 
 This module contains code necessary to run and analyse results of the 
-publication *Observation of separated dynamics of charge and spin in the 
-Fermi-Hubbard model* by Google AI Quantum and Collaborators.
+publication [arXiv:2010.07965](https://arxiv.org/abs/2010.07965) **[quant-ph]**.
 
 ## Installation
 
