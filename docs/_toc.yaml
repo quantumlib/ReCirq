@@ -28,6 +28,10 @@ toc:
 - title: "Routing with tket"
   path: /cirq/experiments/qaoa/routing_with_tket
 
+- heading: "Quantum Chess"
+- title: "Concepts"
+  path: /cirq/experiments/quantum_chess/concepts
+
 - heading: "Hartree-Fock VQE"
 - title: "Quickstart"
   path: /cirq/experiments/hfvqe/quickstart
