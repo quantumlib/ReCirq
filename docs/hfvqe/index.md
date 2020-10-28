@@ -23,7 +23,7 @@ fidelity witness values, absolute errors, and error bars are also provided.
 
 All software for running the experiment is in the `recirq.hfvqe` submodule.
 The  molecular data used in the experiment can be found in the 
-`recirq.hfvqe.molecular_data` directory.  
+`recirq.hfvqe.molecular_data` directory.
 
 ## Molecular Data
 The paper describes the performance of VQE-HF for four hydrogen chain systems
@@ -31,4 +31,4 @@ and diazene. We provide molecular data files and utilities for generating the
 hydrogen chain inputs using OpenFermion, Psi4, and OpenFermion-Psi4.
 The Diazene data can be found in the 
 [openfermion-cloud](https://github.com/quantumlib/OpenFermion/tree/master/cloud_library)
-repository.  A tutorial on how the data is generated can be found in this [ipython notebook](making_moleculardata.ipynb).
+repository.  A tutorial on how the data is generated can be found in this [ipython notebook](molecular_data.ipynb).
