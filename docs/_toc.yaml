@@ -1,29 +1,45 @@
 toc:
 - title: "Research using Cirq"
-  path: /cirq/research
-- title: "Data collection idioms"
-  path: /cirq/research/data_collection_idioms
-- title: "Best practices"
-  path: /cirq/research/best_practices
+  path: /cirq/experiments
 
-- heading: "Tutorials"
+- heading: "Guide"
+- title: "Data collection idioms"
+  path: /cirq/experiments/guide/data_collection_idioms
+- title: "Best practices"
+  path: /cirq/experiments/guide/best_practices
 - title: "Data collection"
-  path: /cirq/research/tutorials/data_collection
+  path: /cirq/experiments/guide/data_collection
 - title: "Data analysis"
-  path: /cirq/research/tutorials/data_analysis
+  path: /cirq/experiments/guide/data_analysis
 
 - heading: "QAOA"
 - title: "Example problems"
-  path: /cirq/research/qaoa/example_problems
+  path: /cirq/experiments/qaoa/example_problems
 - title: "Tasks"
-  path: /cirq/research/qaoa/tasks
+  path: /cirq/experiments/qaoa/tasks
 - title: "Precomputed analysis"
-  path: /cirq/research/qaoa/precomputed_analysis
+  path: /cirq/experiments/qaoa/precomputed_analysis
 - title: "Landscape analysis"
-  path: /cirq/research/qaoa/landscape_analysis
+  path: /cirq/experiments/qaoa/landscape_analysis
 - title: "Optimization analysis"
-  path: /cirq/research/qaoa/optimization_analysis
+  path: /cirq/experiments/qaoa/optimization_analysis
 - title: "Hardware grid circuits"
-  path: /cirq/research/qaoa/hardware_grid_circuits
+  path: /cirq/experiments/qaoa/hardware_grid_circuits
 - title: "Routing with tket"
-  path: /cirq/research/qaoa/routing_with_tket
+  path: /cirq/experiments/qaoa/routing_with_tket
+
+- heading: "Quantum Chess"
+- title: "Concepts"
+  path: /cirq/experiments/quantum_chess/concepts
+
+- heading: "Hartree-Fock VQE"
+- title: "Quickstart"
+  path: /cirq/experiments/hfvqe/quickstart
+- title: "Odd qubit example"
+  path: /cirq/experiments/hfvqe/odd_qubit
+
+- heading: "Fermi-Hubbard"
+- title: "Experiment example"
+  path: /cirq/experiments/fermi_hubbard/experiment_example
+- title: "Spin-charge separation results"
+  path: /cirq/experiments/fermi_hubbard/publication_results
