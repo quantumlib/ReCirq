@@ -122,8 +122,6 @@ class CirqBoard:
         the board to the initial state and replays the move history
 
         """
-        self.accumulations_valid = False
-
         # Store current move history...
         current_move_history = self.move_history.copy()
         # ...because we'll be resetting it here
