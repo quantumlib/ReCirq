@@ -1,8 +1,21 @@
-import enums
-import cirq
+# Copyright 2020 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from typing import Dict, List, Optional, Tuple
 
-from bit_utils import (
+import cirq
+
+from recirq.quantum_chess.bit_utils import (
     bit_to_qubit,
     nth_bit_of,
     num_ones,
@@ -11,9 +24,11 @@ from bit_utils import (
     square_to_bit,
     xy_to_bit,
 )
-import circuit_transformer
-import move
-import quantum_moves as qm
+import recirq.quantum_chess.circuit_transformer as circuit_transformer
+import recirq.quantum_chess.enums as enums
+import recirq.quantum_chess.move as move
+import recirq.quantum_chess.quantum_moves as qm
+
 
 class CirqBoard:
     """Implementation of Quantum Board API using cirq sampler.
@@ -63,7 +78,7 @@ class CirqBoard:
         self.noise_mitigation = noise_mitigation
         self.accumulations_valid = False
 
-    def with_state(self, basis_state: int):
+    def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
         self.accumulations_valid = False
         self.state = basis_state
@@ -80,21 +95,21 @@ class CirqBoard:
         self.clear_debug_log()
         return self
 
-    def clear_debug_log(self):
+    def clear_debug_log(self) -> None:
         self.debug_log = ''
 
-    def print_debug_log(self, clear_log: bool = True):
+    def print_debug_log(self, clear_log: bool = True) -> None:
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
 
-    def perform_moves(self, *moves):
+    def perform_moves(self, *moves) -> bool:
         """Performs a list of moves, specified as strings.
 
-      Useful for short-hand versions of tests.
+        Useful for short-hand versions of tests.
 
-      Returns the measurement for the final move
-      """
+        Returns the measurement for the final move
+        """
         did_it_move = False
         for m in moves:
             did_it_move = self.do_move(move.Move.from_string(m))
@@ -108,17 +123,17 @@ class CirqBoard:
 
         """
         self.accumulations_valid = False
-        
+
         # Store current move history...
         current_move_history = self.move_history.copy()
         # ...because we'll be resetting it here
         self.with_state(self.init_basis_state)
 
         # Repeat history up to last move
-        undid_move = False
         for m in range(len(current_move_history)-1):
-            undid_move = self.do_move(current_move_history[m])
-        return undid_move
+            if not self.do_move(current_move_history[m]):
+                return False
+        return True
 
     def sample_with_ancilla(self, num_samples: int
                            ) -> Tuple[List[int], List[Dict[str, int]]]:
@@ -143,8 +158,10 @@ class CirqBoard:
                 cirq.measure(q, key=q.name) for q in qubits)
             measure_circuit.append(measure_moment)
 
-            # Try to guess the appropriate number of reps
+            # Try to guess the appropriate number of repetitions needed
             # Assume that each post_selection is about 50/50
+            # Noise and error mitigation will discard reps, so increase
+            # the total number of repetitions to compensate
             if len(self.post_selection) > 1:
                 num_reps = num_samples * (2**(len(self.post_selection) + 1))
             else:
@@ -167,18 +184,25 @@ class CirqBoard:
                 circuit_transformer.SycamoreDecomposer().optimize_circuit(
                     measure_circuit)
                 # Create NamedQubit to GridQubit mapping and transform
-                self.transformer.qubit_mapping(measure_circuit)
-                self.transformer.optimize_circuit(measure_circuit)
-                #debug
+                measure_circuit = self.transformer.optimize_circuit(
+                    measure_circuit)
+
+                # For debug, ensure that the circuit correctly validates
                 self.device.validate_circuit(measure_circuit)
 
+            # Run the circuit using the provided sampler (simulator or hardware)
             results = self.sampler.run(measure_circuit, repetitions=num_reps)
+
+            # Parse the results
             rtn = []
             noise_buffer = {}
             data = results.data
             for rep in range(num_reps):
                 new_sample = self.state
                 new_ancilla = {}
+
+                # Go through the results and discard any results
+                # that disagree with our pre-defined post-selection criteria
                 post_selected = True
                 for qubit in self.post_selection.keys():
                     key = qubit.name
@@ -189,15 +213,21 @@ class CirqBoard:
                 if not post_selected:
                     post_count += 1
                     continue
+
+                # Translate qubit results into a 64-bit chess board
                 for qubit in qubits:
                     key = qubit.name
                     result = data.at[rep, key]
+                    # Ancilla bits should not be part of the chess board
                     if 'anc' not in key:
                         bit = qubit_to_bit(qubit)
                         new_sample = set_nth_bit(bit, new_sample, result)
                     else:
                         new_ancilla[key] = result
+
+                # Perform Error Mitigation
                 if self.error_mitigation != enums.ErrorMitigation.Nothing:
+                    # Discard boards that have the wrong number of pieces
                     if num_ones(new_sample) not in self.allowed_pieces:
                         if self.error_mitigation == enums.ErrorMitigation.Error:
                             raise ValueError(
@@ -207,6 +237,8 @@ class CirqBoard:
                         if self.error_mitigation == enums.ErrorMitigation.Correct:
                             error_count += 1
                             continue
+
+                # Noise mitigation
                 if self.noise_mitigation > 0.0:
                     # Ignore samples up to a threshold
                     if new_sample not in noise_buffer:
@@ -215,6 +247,9 @@ class CirqBoard:
                     if noise_buffer[new_sample] < noise_threshold:
                         noise_count += 1
                         continue
+
+                # This sample has passed noise and error mitigation
+                # Record it as a proper sample
                 rtn.append(new_sample)
                 ancilla.append(new_ancilla)
                 if len(rtn) >= num_samples:
@@ -244,7 +279,7 @@ class CirqBoard:
             rtn = rtn + samples
         return rtn[:num_samples]
 
-    def generate_accumulations(self, repetitions: int = 1000):
+    def __generate_accumulations(self, repetitions: int = 1000) -> None:
         """ Samples the state and generates the accumulated 
         probabilities, empty_squares, and full_squares
         """
@@ -274,7 +309,7 @@ class CirqBoard:
         bitboard.
         """
         if not self.accumulations_valid:
-            self.generate_accumulations(repetitions)
+            self.__generate_accumulations(repetitions)
         
         return self.probabilities
 
@@ -288,7 +323,7 @@ class CirqBoard:
         Returns a bitboard.
         """
         if not self.accumulations_valid:
-            self.generate_accumulations(repetitions)
+            self.__generate_accumulations(repetitions)
 
         return self.full_squares
 
@@ -302,7 +337,7 @@ class CirqBoard:
         Returns a bitboard.
         """
         if not self.accumulations_valid:
-            self.generate_accumulations(repetitions)
+            self.__generate_accumulations(repetitions)
 
         return self.empty_squares
 
@@ -326,7 +361,7 @@ class CirqBoard:
         self.ancilla_count += 1
         return new_qubit
 
-    def unhook(self, qubit) -> cirq.Qid:
+    def unhook(self, qubit: cirq.Qid) -> cirq.Qid:
         """Removes a qubit from the quantum portion of the board.
 
         This exchanges all mentions of the qubit in the circuit
@@ -335,26 +370,20 @@ class CirqBoard:
         """
         if qubit not in self.entangled_squares:
             return
+
+        # Create a new ancilla qubit to replace the qubit with
         new_qubit = self.new_ancilla()
-        new_circuit = cirq.Circuit()
-        for moment in self.circuit:
-            for op in moment:
-                if qubit in op.qubits:
-                    new_op_qubits = []
-                    for q in op.qubits:
-                        if q == qubit:
-                            new_op_qubits.append(new_qubit)
-                        else:
-                            new_op_qubits.append(q)
-                    new_circuit.append(op.with_qubits(*new_op_qubits))
-                else:
-                    new_circuit.append(op)
-        self.circuit = new_circuit
+
+        # Replace operations using the qubit with the ancilla instead
+        self.circuit = self.circuit.transform_qubits(lambda q: new_qubit
+                                                     if q == qubit else q)
+
+        # Remove the qubit from the list of active qubits
         self.entangled_squares.remove(qubit)
         self.entangled_squares.add(new_qubit)
         return new_qubit
 
-    def path_qubits(self, source, target) -> List[cirq.Qid]:
+    def path_qubits(self, source: str, target: str) -> List[cirq.Qid]:
         """Returns all entangled qubits (or classical pieces)
         between source and target.
 
@@ -388,7 +417,7 @@ class CirqBoard:
                     rtn.append(path_qubit)
         return rtn
 
-    def create_path_ancilla(self, path_qubits):
+    def create_path_ancilla(self, path_qubits: List[cirq.Qid]) -> cirq.Qid:
         """Creates an ancilla that is anti-controlled by the qubits
         in the path."""
         path_ancilla = self.new_ancilla()
@@ -396,22 +425,23 @@ class CirqBoard:
             qm.controlled_operation(cirq.X, [path_ancilla], [], path_qubits))
         return path_ancilla
 
-    def set_castle(self, sbit, rook_sbit, tbit, rook_tbit):
+    def set_castle(self, sbit: int, rook_sbit: int, tbit: int,
+                   rook_tbit: int) -> None:
         """Adjusts classical bits for a castling operation."""
         self.state = set_nth_bit(sbit, self.state, 0)
         self.state = set_nth_bit(rook_sbit, self.state, 0)
         self.state = set_nth_bit(tbit, self.state, 1)
         self.state = set_nth_bit(rook_tbit, self.state, 1)
 
-    def queenside_castle(self, squbit, rook_squbit, tqubit, rook_tqubit,
-                         b_qubit):
+    def queenside_castle(self, squbit: int, rook_squbit: int, tqubit: int,
+                         rook_tqubit: int, b_qubit: int) -> None:
         """Performs a queenside castling operation."""
         self.add_entangled(squbit, tqubit, rook_squbit, rook_tqubit)
         self.circuit.append(
             qm.queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit,
                                 b_qubit))
 
-    def post_select_on(self, qubit):
+    def post_select_on(self, qubit: cirq.Qid) -> int:
         """Adds a post-selection requirement to the circuit,
 
         Performs a single sample of the qubit to get a value.
@@ -446,18 +476,12 @@ class CirqBoard:
         Returns:  The measurement that was performed, or 1 if
             no measurement was required.
         """
-        self.accumulations_valid = False
-
         if not m.move_type:
             raise ValueError('No Move defined')
         if m.move_type == enums.MoveType.NULL_TYPE:
             raise ValueError('Move has null type')
         if m.move_type == enums.MoveType.UNSPECIFIED_STANDARD:
             raise ValueError('Move type is unspecified')
-
-        # Add move to the move move_history
-        self.move_history.append(m)
-
         sbit = square_to_bit(m.source)
         tbit = square_to_bit(m.target)
         squbit = bit_to_qubit(sbit)
@@ -709,7 +733,7 @@ class CirqBoard:
             squbit2 = bit_to_qubit(sbit2)
             self.add_entangled(squbit, squbit2, tqubit)
             self.circuit.append(qm.merge_move(squbit, squbit2, tqubit))
-            # TODO: unhook source qubit?
+            # TODO: should the source qubit be 'unhooked'?
             return 1
 
         if m.move_type == enums.MoveType.KS_CASTLE:
@@ -849,3 +873,28 @@ class CirqBoard:
             return 1
 
         raise ValueError(f'Move type {m.move_type} not supported')
+
+    def __str__(self):
+        probs = self.get_probability_distribution()
+        """Renders a ASCII diagram showing the board probabilities."""
+        s = ''
+        s += ' +----------------------------------+\n'
+        for y in reversed(range(8)):
+            s += str(y + 1) + '| '
+            for x in range(8):
+                bit = xy_to_bit(x, y)
+                prob = str(int(100 * probs[bit]))
+                if len(prob) <= 2:
+                    s += ' '
+                if prob == '0':
+                    s += '.'
+                else:
+                    s += prob
+                if len(prob) < 2:
+                    s += ' '
+                s += ' '
+            s += ' |\n'
+        s += ' +----------------------------------+\n    '
+        for x in range(8):
+           s += to_rank(x) + '   '
+        return s
