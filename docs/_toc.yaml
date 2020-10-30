@@ -13,6 +13,8 @@ toc:
   path: /cirq/experiments/guide/data_analysis
 
 - heading: "QAOA"
+- title: "Overview"
+  path: /cirq/experiments/qaoa
 - title: "Example problems"
   path: /cirq/experiments/qaoa/example_problems
 - title: "Tasks"
@@ -29,16 +31,22 @@ toc:
   path: /cirq/experiments/qaoa/routing_with_tket
 
 - heading: "Quantum Chess"
+- title: "Overview"
+  path: /cirq/experiments/quantum_chess
 - title: "Concepts"
   path: /cirq/experiments/quantum_chess/concepts
 
 - heading: "Hartree-Fock VQE"
+- title: "Overview"
+  path: /cirq/experiments/hfvqe
 - title: "Quickstart"
   path: /cirq/experiments/hfvqe/quickstart
-- title: "Odd qubit example"
-  path: /cirq/experiments/hfvqe/odd_qubit
+- title: "Molecular data"
+  path: /cirq/experiments/hfvqe/making_moleculardata
 
 - heading: "Fermi-Hubbard"
+- title: "Overview"
+  path: /cirq/experiments/fermi_hubbard
 - title: "Experiment example"
   path: /cirq/experiments/fermi_hubbard/experiment_example
 - title: "Spin-charge separation results"
