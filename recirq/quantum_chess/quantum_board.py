@@ -482,6 +482,7 @@ class CirqBoard:
         if m.move_type == enums.MoveType.UNSPECIFIED_STANDARD:
             raise ValueError('Move type is unspecified')
 
+        # Reset accumulations here because function has conditional return branches
         self.accumulations_valid = False
 
         sbit = square_to_bit(m.source)
