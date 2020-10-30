@@ -41,7 +41,7 @@ toc:
   path: /cirq/experiments/hfvqe
 - title: "Quickstart"
   path: /cirq/experiments/hfvqe/quickstart
-- title: "Molecular Data"
+- title: "Molecular data"
   path: /cirq/experiments/hfvqe/making_moleculardata
 
 - heading: "Fermi-Hubbard"
