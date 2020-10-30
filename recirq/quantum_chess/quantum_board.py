@@ -27,6 +27,7 @@ from recirq.quantum_chess.bit_utils import (
 import recirq.quantum_chess.circuit_transformer as circuit_transformer
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
+from recirq.quantum_chess.move import to_rank
 import recirq.quantum_chess.quantum_moves as qm
 
 
