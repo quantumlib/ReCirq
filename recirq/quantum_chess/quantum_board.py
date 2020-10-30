@@ -27,7 +27,6 @@ from recirq.quantum_chess.bit_utils import (
 import recirq.quantum_chess.circuit_transformer as circuit_transformer
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
-from recirq.quantum_chess.move import to_rank
 import recirq.quantum_chess.quantum_moves as qm
 
 
@@ -878,8 +877,8 @@ class CirqBoard:
         raise ValueError(f'Move type {m.move_type} not supported')
 
     def __str__(self):
-        probs = self.get_probability_distribution()
         """Renders a ASCII diagram showing the board probabilities."""
+        probs = self.get_probability_distribution()
         s = ''
         s += ' +----------------------------------+\n'
         for y in reversed(range(8)):
@@ -899,5 +898,5 @@ class CirqBoard:
             s += ' |\n'
         s += ' +----------------------------------+\n    '
         for x in range(8):
-           s += to_rank(x) + '   '
+           s += move.to_rank(x) + '   '
         return s

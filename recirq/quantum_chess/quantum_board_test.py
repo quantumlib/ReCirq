@@ -859,6 +859,7 @@ def test_basic_ep():
     assert_samples_in(b, possibilities)
 
 def test_undo_last_move():
+    # TODO  (cantwellc) more comprehensive tests
     b = qb.CirqBoard(u.squares_to_bitboard(['a2']))
     assert b.perform_moves(
         'a2a4:PAWN_TWO_STEP:BASIC'
