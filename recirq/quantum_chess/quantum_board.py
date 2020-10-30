@@ -484,6 +484,9 @@ class CirqBoard:
         # Reset accumulations here because function has conditional return branches
         self.accumulations_valid = False
 
+        # Add move to the move move_history
+        self.move_history.append(m)
+
         sbit = square_to_bit(m.source)
         tbit = square_to_bit(m.target)
         squbit = bit_to_qubit(sbit)
