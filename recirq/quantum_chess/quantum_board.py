@@ -277,7 +277,7 @@ class CirqBoard:
             rtn = rtn + samples
         return rtn[:num_samples]
 
-    def __generate_accumulations(self, repetitions: int = 1000) -> None:
+    def _generate_accumulations(self, repetitions: int = 1000) -> None:
         """ Samples the state and generates the accumulated 
         probabilities, empty_squares, and full_squares
         """
@@ -307,7 +307,7 @@ class CirqBoard:
         bitboard.
         """
         if not self.accumulations_valid:
-            self.__generate_accumulations(repetitions)
+            self._generate_accumulations(repetitions)
         
         return self.probabilities
 
@@ -321,7 +321,7 @@ class CirqBoard:
         Returns a bitboard.
         """
         if not self.accumulations_valid:
-            self.__generate_accumulations(repetitions)
+            self._generate_accumulations(repetitions)
 
         return self.full_squares
 
@@ -335,7 +335,7 @@ class CirqBoard:
         Returns a bitboard.
         """
         if not self.accumulations_valid:
-            self.__generate_accumulations(repetitions)
+            self._generate_accumulations(repetitions)
 
         return self.empty_squares
 
