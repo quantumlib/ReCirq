@@ -9,7 +9,7 @@ bed for near term quantum devices because they can be tailored to support
 varying amounts of quantum behavior through simple rule changes, 
 which can be useful when dealing with limited resources. 
 
-Quantum Chess is a variant of Chess, which is built on top of unitary 
+Quantum Chess<sup>&reg;</sup> is a variant of Chess, which is built on top of unitary 
 dynamics and includes non-trivial quantum effects such as superposition, 
 entanglement, and interference. With the introduction of the split move, players
 can place their pieces in superposition on multiple squares at once. For a full
