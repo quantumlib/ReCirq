@@ -869,3 +869,23 @@ def test_undo_last_move():
     assert b.undo_last_move()
     probs = b.get_probability_distribution(1000)
     assert_prob_about(probs, qb.square_to_bit('a2'), 1.0)
+
+def test_undo_entangled_measurement():
+    b = qb.CirqBoard(u.squares_to_bitboard(['a2','b1','c2','d1']))
+    assert b.perform_moves(
+        'b1a3c3:SPLIT_JUMP:BASIC',
+        'c2c4:PAWN_TWO_STEP:BASIC'
+    )
+    probs = b.get_probability_distribution(1000)
+    assert_prob_about(probs, qb.square_to_bit('a3'), 0.5)
+    assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
+    assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
+    assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
+    b.perform_moves( 'd1c2:JUMP:EXCLUDED')
+    assert b.undo_last_move()
+    print(b)
+    probs = b.get_probability_distribution(1000)
+    assert_prob_about(probs, qb.square_to_bit('a3'), 0.5)
+    assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
+    assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
+    assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
