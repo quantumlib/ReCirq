@@ -31,4 +31,4 @@ and diazene. We provide molecular data files and utilities for generating the
 hydrogen chain inputs using OpenFermion, Psi4, and OpenFermion-Psi4.
 The Diazene data can be found in the 
 [openfermion-cloud](https://github.com/quantumlib/OpenFermion/tree/master/cloud_library)
-repository.  A tutorial on how the data is generated can be found in this [ipython notebook](making_moleculardata.ipynb).
+repository.  A tutorial on how the data is generated can be found in this [ipython notebook](molecular_data.ipynb).
