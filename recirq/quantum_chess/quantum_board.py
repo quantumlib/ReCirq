@@ -481,6 +481,9 @@ class CirqBoard:
             raise ValueError('Move has null type')
         if m.move_type == enums.MoveType.UNSPECIFIED_STANDARD:
             raise ValueError('Move type is unspecified')
+
+        self.accumulations_valid = False
+
         sbit = square_to_bit(m.source)
         tbit = square_to_bit(m.target)
         squbit = bit_to_qubit(sbit)
