@@ -76,9 +76,11 @@ class CirqBoard:
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
+        self.accumulations_valid = False
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
+        self.accumulations_valid = False
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -86,6 +88,10 @@ class CirqBoard:
         self.post_selection = {}
         self.circuit = cirq.Circuit()
         self.ancilla_count = 0
+        self.move_history = []
+        # Store the initial basis state so that we can use it for replaying
+        # the move-history when undoing moves
+        self.init_basis_state = basis_state
         self.clear_debug_log()
         return self
 
@@ -100,18 +106,32 @@ class CirqBoard:
     def perform_moves(self, *moves) -> bool:
         """Performs a list of moves, specified as strings.
 
-      Useful for short-hand versions of tests.
+        Useful for short-hand versions of tests.
 
-      Returns the measurement for the final move
-      """
+        Returns the measurement for the final move
+        """
         did_it_move = False
         for m in moves:
             did_it_move = self.do_move(move.Move.from_string(m))
         return did_it_move
 
     def undo_last_move(self) -> bool:
-        """Undo is not yet implemented."""
-        return False
+        """Undoes the last move.
+
+        Instead of undoing the last move, this function resets
+        the board to the initial state and replays the move history
+
+        """
+        # Store current move history...
+        current_move_history = self.move_history.copy()
+        # ...because we'll be resetting it here
+        self.with_state(self.init_basis_state)
+
+        # Repeat history up to last move
+        for m in range(len(current_move_history)-1):
+            if not self.do_move(current_move_history[m]):
+                return False
+        return True
 
     def sample_with_ancilla(self, num_samples: int
                            ) -> Tuple[List[int], List[Dict[str, int]]]:
@@ -257,6 +277,28 @@ class CirqBoard:
             rtn = rtn + samples
         return rtn[:num_samples]
 
+    def _generate_accumulations(self, repetitions: int = 1000) -> None:
+        """ Samples the state and generates the accumulated 
+        probabilities, empty_squares, and full_squares
+        """
+        self.probabilities = [0] * 64
+        self.full_squares = (1 << 64) - 1
+        self.empty_squares = (1 << 64) - 1
+
+        samples = self.sample(repetitions)
+        for sample in samples:
+            for bit in range(64):
+                if nth_bit_of(bit, sample):
+                    self.probabilities[bit] += 1
+                    self.empty_squares = set_nth_bit(bit,self.empty_squares,0)
+                else:
+                    self.full_squares = set_nth_bit(bit,self.full_squares,0)
+
+        for bit in range(64):
+            self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
+        
+        self.accumulations_valid = True
+
     def get_probability_distribution(self,
                                      repetitions: int = 1000) -> List[float]:
         """Returns the probability of a piece being in each square.
@@ -264,33 +306,24 @@ class CirqBoard:
         The values are returned as a list in the same ordering as a
         bitboard.
         """
-        samples = self.sample(repetitions)
-        counts = [0] * 64
-        for sample in samples:
-            for bit in range(64):
-                if nth_bit_of(bit, sample):
-                    counts[bit] += 1
-        for bit in range(64):
-            counts[bit] = float(counts[bit]) / float(repetitions)
-        return counts
+        if not self.accumulations_valid:
+            self._generate_accumulations(repetitions)
+        
+        return self.probabilities
 
     def get_full_squares_bitboard(self, repetitions: int = 1000) -> int:
         """Retrieves which squares are marked as full.
 
         This information is created using a representative set of
         samples (defined by the repetitions argument) to determine
-        which squares are occupied on at least one board.
+        which squares are occupied on all boards.
 
         Returns a bitboard.
         """
-        samples = self.sample(repetitions)
-        full_squares = 0
-        for bit in range(64):
-            for sample in samples:
-                if nth_bit_of(bit, sample):
-                    full_squares = set_nth_bit(bit, full_squares, 1)
-                    break
-        return full_squares
+        if not self.accumulations_valid:
+            self._generate_accumulations(repetitions)
+
+        return self.full_squares
 
     def get_empty_squares_bitboard(self, repetitions: int = 1000) -> int:
         """Retrieves which squares are marked as full.
@@ -301,14 +334,10 @@ class CirqBoard:
 
         Returns a bitboard.
         """
-        samples = self.sample(repetitions)
-        empty_squares = (1 << 64) - 1
-        for bit in range(64):
-            for sample in samples:
-                if nth_bit_of(bit, sample):
-                    empty_squares = set_nth_bit(bit, empty_squares, 0)
-                    break
-        return empty_squares
+        if not self.accumulations_valid:
+            self._generate_accumulations(repetitions)
+
+        return self.empty_squares
 
     def add_entangled(self, *qubits):
         """Adds squares as entangled.
@@ -451,6 +480,10 @@ class CirqBoard:
             raise ValueError('Move has null type')
         if m.move_type == enums.MoveType.UNSPECIFIED_STANDARD:
             raise ValueError('Move type is unspecified')
+
+        # Reset accumulations here because function has conditional return branches
+        self.accumulations_valid = False
+
         sbit = square_to_bit(m.source)
         tbit = square_to_bit(m.target)
         squbit = bit_to_qubit(sbit)
@@ -842,3 +875,28 @@ class CirqBoard:
             return 1
 
         raise ValueError(f'Move type {m.move_type} not supported')
+
+    def __str__(self):
+        """Renders a ASCII diagram showing the board probabilities."""
+        probs = self.get_probability_distribution()
+        s = ''
+        s += ' +----------------------------------+\n'
+        for y in reversed(range(8)):
+            s += str(y + 1) + '| '
+            for x in range(8):
+                bit = xy_to_bit(x, y)
+                prob = str(int(100 * probs[bit]))
+                if len(prob) <= 2:
+                    s += ' '
+                if prob == '0':
+                    s += '.'
+                else:
+                    s += prob
+                if len(prob) < 2:
+                    s += ' '
+                s += ' '
+            s += ' |\n'
+        s += ' +----------------------------------+\n    '
+        for x in range(8):
+           s += move.to_rank(x) + '   '
+        return s

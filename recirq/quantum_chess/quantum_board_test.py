@@ -857,3 +857,15 @@ def test_basic_ep():
         u.squares_to_bitboard(['a6', 'c5']),
     ]
     assert_samples_in(b, possibilities)
+
+def test_undo_last_move():
+    # TODO  (cantwellc) more comprehensive tests
+    b = qb.CirqBoard(u.squares_to_bitboard(['a2']))
+    assert b.perform_moves(
+        'a2a4:PAWN_TWO_STEP:BASIC'
+    )
+    probs = b.get_probability_distribution(1000)
+    assert_prob_about(probs, qb.square_to_bit('a4'), 1.0)
+    assert b.undo_last_move()
+    probs = b.get_probability_distribution(1000)
+    assert_prob_about(probs, qb.square_to_bit('a2'), 1.0)
