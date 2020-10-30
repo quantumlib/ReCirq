@@ -14,13 +14,14 @@ dynamics and includes non-trivial quantum effects such as superposition,
 entanglement, and interference. With the introduction of the split move, players
 can place their pieces in superposition on multiple squares at once. For a full
 description of the rules, and to learn more about the game, check out the 
-[Quantum Chess website](https://www.quantumchess.net). And you can see this [paper on arxiv](https://arxiv.org/abs/1906.05836) 
-to learn more about the math behind the game.
+[Quantum Chess website](https://www.quantumchess.net). To learn more about the math behind
+the game, see this [paper on arxiv](https://arxiv.org/abs/1906.05836) 
+.
 
 This module explores an implementation of Quantum Chess that runs using Cirq. In
-[Concepts](./concepts) we explore various quantum computing concepts, such as error
+[Concepts](./concepts) you will explore various quantum computing concepts, such as error
 mitigation, post-selection, and qubit mapping, without requiring specific domain
-knowledge, like quantum chemistry. And in [Quantum Chess REST API] we will implement
+knowledge, like quantum chemistry. And in [Quantum Chess REST API] you will implement
 a fully functional server, that defines the specific REST endpoints required by the
 Quantum Chess Engine to offload its quantum state handling to an external resource.
 A similar server was used in [this presentation](https://youtu.be/ec-Mb8OJuRg) to run Quantum Chess on Google's 
