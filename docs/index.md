@@ -6,17 +6,16 @@ we have a library of research experiments using Cirq -- [ReCirq](https://github.
 This repository contains code for our flagship experiments, enabling
 you to reproduce and extend cutting edge quantum computing research.
 
-## Audience
+## Quantum researchers
 
-If you are a quantum researcher looking to develop world class NISQ experiments,
-this library can provide you the template for your future experiments.
-Experiments such as QAOA and HFVQE provide a template for performing variational
+For quantum researcher developing world class NISQ experiments, ReCirq provides the template for your future experiments.
+Experiments such as [QAOA](./qaoa/index.md) and [HFVQE](./hfvqe/index.md) provide a template for performing variational
 algorithms demonstrating the iteration between data collection and circuit 
 parameter adjustment. Other experiments such as the Fermi-Hubbard experiment 
 can be used as a template for exploring dynamics of condensed matter physics
 with sophisticated calibration techniques.
 
-If you are learning quantum computing, we also encourage you to try out the
+If you are learning quantum computing, try out the
 tutorials and familiarize yourself with the experiments. While these
 experiments are more complicated than some example introductory algorithms
 found in a quantum computing textbook, if you put in the effort to understand
@@ -31,7 +30,7 @@ There are many ways you can use ReCirq. One path is as follows:
  1. Pick an experiment that closest match your interest
  2. Read the paper
       - Pay careful attention to the error mitigation and calibration
-        techniques used in the experiment to maximize performance
+        techniques used in the experiment to maximize performance.
  3. Go through the tutorial of each experiment. It will give you an overview 
     of how the experiment actually works. Try out the tutorial either on your
     simulators or actual quantum computers.
