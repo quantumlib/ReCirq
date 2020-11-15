@@ -22,6 +22,48 @@ _fsim_angle_labels = ['theta', 'delta_plus', 'delta_minus_off_diag',
 def default_interaction_sequence(
         qubits: Sequence[cirq.GridQubit]
 ) -> List[Set[Tuple[cirq.GridQubit, cirq.GridQubit]]]:
+    """Group qubits on a grid into sets of pairs.
+
+    The qubits are restricted to be physically on a square grid with distinct
+    row and column indices (not every node of the grid needs to have a
+    qubit). They are grouped into a maximum of 4 sets, each containing pairs
+    of qubits that do not intersect with each other. The method for grouping
+    is as follows:
+
+    The first set groups qubits (i, j) and (i, j + 1) where i is any integer
+    and j is an even integer. The second set groups qubits (i, j) and
+    (i + 1, j) where i is an even integer and j is any integer. The third
+    set groups qubits (i, j) and (i, j + 1) where i is any integer and j is
+    an odd integer. The last set groups qubits (i, j) and (i + 1, j) where i
+    is an odd integer and j is any integer.
+
+    After the sets are built as above, any empty set is ejected.:
+
+                 Cycle 1:                            Cycle 2:
+        q00 ── q01    q02 ── q03            q00    q01    q02    q03
+                                             |      |      |      |
+        q10 ── q11    q12 ── q13            q10    q11    q12    q13
+
+        q20 ── q21    q22 ── q23            q20    q21    q22    q23
+                                             |      |      |      |
+        q30 ── q31    q32 ── q33            q30    q31    q32    q33
+
+                  Cycle 3:                           Cycle 4:
+        q00    q01 ── q02    q03            q00    q01    q02    q03
+
+        q10    q11 ── q12    q13            q10    q11    q12    q13
+                                             |      |      |      |
+        q20    q21 ── q22    q23            q20    q21    q22    q23
+
+        q30    q31 ── q32    q33            q30    q31    q32    q33
+
+    Args:
+        qubits: A sequence of cirq.GridQubit objects representing the qubits
+            to be grouped.
+
+    Returns:
+        A list of at most 4 sets of GridQubit tuples.
+    """
     qubit_dict = {(qubit.row, qubit.col): qubit for qubit in qubits}
     qubit_locs = set(qubit_dict)
     num_rows = max([q.row for q in qubits]) + 1
@@ -53,7 +95,7 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
                        benchmark_ops: Sequence[Union[
                            cirq.Moment, Sequence[cirq.Moment]]] = None,
                        random_seed: int = None,
-                       rand_nums: numpy.ndarray = None,
+                       sq_rand_nums: numpy.ndarray = None,
                        reverse: bool = False,
                        z_only: bool = False,
                        ancilla: cirq.GridQubit = None,
@@ -61,6 +103,59 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
                        light_cones: List[List[Set[cirq.GridQubit]]] = None,
                        echo_indices: numpy.ndarray = None,
                        ) -> Tuple[List[cirq.Circuit], numpy.ndarray]:
+    """Builds random circuits for cross entropy benchmarking (XEB).
+
+    A list of cirq.Circuits of varying lengths are generated, which are made
+    of random single-qubit gates and optional two-qubit gates.
+
+    Args:
+        qubits: The qubits to be involved in XEB.
+        cycles: The different numbers of cycles the random circuits will have.
+        benchmark_ops: The operations to be inserted between random
+            single-qubit gates. They can be one or more cirq.Moment objects,
+            or None (in which case no operation will be inserted between the
+            random single-qubit gates).
+        random_seed: The random seed for the single-qubit gates. If
+            unspecified, no random seed will be used.
+        sq_rand_nums: The random numbers representing the single-qubit gates.
+            They must be integers from 0 to 7 if the z_only is False,
+            and floats between -1 and 1 if z_only is True. The dimension of
+            sq_rand_nums should be len(qubits) by max(cycles). If
+            unspecified, the gates will be generated in-situ at random.
+        reverse: If True, benchmark_ops will be applied before the random
+            single-qubit gates in each cycle. Otherwise, it will be applied
+            after the random single-qubit gates.
+        z_only: Whether the single-qubit gates are to be random \pi/2
+            rotations around axes on the equatorial plane of the Bloch sphere
+            (z_only = False), or random rotations around the z-axis (z_only =
+            True). In the former case, the axes of rotations will be chosen
+            randomly from 8 evenly spaced axes (\pi/4, \pi/2 ... 7\pi/4
+            radians from the x-axis). In the latter case, the angles of
+            rotation will be any random value between -\pi and \pi.
+        ancilla: If specified, an additional qubit will be included in the
+            circuit which does not interact with the other qubits and only
+            has spin-echo pulses applied to itself.
+        cycles_per_echo: How often a spin-echo (Y gate) gate is to be applied
+            to the ancilla qubit. For example, if the value is 2, a Y gate
+            will be applied every other cycle.
+        light_cones: A list of length 1 or 2, each specifying a lightcone
+            correponding to a list of sets of qubits with the same length as
+            max(cycles). For each cycle, single-qubit gates outside the first
+            lightcone are either removed or replaced with a spin-echo pulse.
+            Single-qubit gates outside the second lightcone, if specified,
+            are always removed.
+        echo_indices: An array with the same dimension as sq_rand_nums and
+            random integer values of 1, 2, 3 or 4. They specify the spin-echo
+            pulses applied to qubits outside the first lightcone, which can
+            be +/-X or +/-Y gates.
+
+    Returns:
+        A list of random circuits, each containing a specified number of cycles.
+    """
+    if light_cones is not None:
+        if len(light_cones) > 2:
+            raise ValueError('light_cones may only have length 1 or 2')
+
     if benchmark_ops is not None:
         num_d = len(benchmark_ops)
     else:
@@ -68,7 +163,7 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
     max_cycles = max(cycles)
 
     single_rots, indices = _random_rotations(
-        qubits, max_cycles, random_seed, rand_nums, light_cones,
+        qubits, max_cycles, random_seed, sq_rand_nums, light_cones,
         echo_indices, z_rotations_only=z_only)
 
     all_circuits = []  # type: List[cirq.Circuit]
