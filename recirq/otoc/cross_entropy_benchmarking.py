@@ -206,11 +206,71 @@ def parallel_xeb_fidelities(
         plot_individual_traces: bool = False,
         plot_histograms: bool = False,
         save_directory: str = None
-) -> Tuple[Dict[Tuple[cirq.GridQubit, cirq.GridQubit], cirq.Circuit],
-           Dict[Tuple[cirq.GridQubit, cirq.GridQubit], cirq.Circuit],
+) -> Tuple[Dict[Tuple[Tuple[int, int], Tuple[int, int]], cirq.Circuit],
+           Dict[Tuple[Tuple[int, int], Tuple[int, int]], cirq.Circuit],
            Dict[Tuple[Tuple[int, int], Tuple[int, int]], Dict[str, float]],
            Dict[Tuple[Tuple[int, int], Tuple[int, int]], float],
            Dict[Tuple[Tuple[int, int], Tuple[int, int]], float]]:
+    """Computes and optimizes cycle fidelities from parallel XEB data.
+
+    Args:
+        all_qubits: List of qubits involved in a parallel XEB experiment,
+            specified using their (row, col) locations.
+        num_cycle_range: The different numbers of cycles in the random circuits.
+        measured_bits: The experimental bit-strings stored in a nested list.
+            The first dimension of the nested list represents different
+            configurations (e.g. how the two-qubit gates are applied) used in
+            parallel XEB. The second dimension represents different trials (
+            i.e. random circuit instances) used in XEB. The third dimension
+            represents the different numbers of cycles and must be the same
+            as len(num_cycle_range). Each np.ndarray has dimension M x N,
+            where M is the number of repetitions (stats) for each circuit and N
+            is the number of qubits involved.
+        scrambling_gates: The random circuit indices specified as integers
+            between 0 and 7. See the documentation of build_xeb_circuits for
+            details. The first dimension of the nested list represents the
+            different configurations and must be the same as the first
+            dimension of measured_bits. The second dimension represents
+            the different trials and must be the same as the second dimension
+            of measured_bits.
+        fsim_angles: An initial guess for the five FSIM angles for each qubit
+            pair.
+        interaction_sequence: The pairs of qubits with FSIM applied for each
+            configuration. Must be the same as len(measured_bits).
+        gate_to_fit: Can be either 'iswap', 'sqrt-iswap', 'cz' or any other
+            string. Determines the FSIM angles that will be changed from their
+            initial guess values to optimize the XEB fidelity of each qubit
+            pair. For 'iswap', only 'delta_plus' and 'delta_minus_off_diag'
+            are changed. For 'sqrt-iswap', 'delta_plus',
+            'delta_minus_off_diag' and 'delta_minus_diag' are changed. For
+            'cz', only 'delta_plus' and 'delta_minus_diag' are changed. For
+            any other string, all five angles are changed.
+        num_restarts: Number of restarts with different random initial guesses.
+        num_points: The total number of XEB fidelities to be used in the
+            cost function for optimization. Default is 8, such that the cost
+            function is the sum of the XEB fidelities for the first 8 numbers
+            of cycles in num_cycle_range.
+        plot_individual_traces: Whether to plot the XEB fidelities along with
+            the fitting results for each qubit pair.
+        plot_histograms: Whether to plot the histograms of cycle fidelities
+            and changes in FSIM angles after fitting for all qubit pairs.
+        save_directory: Directory to which the plots are to be saved. If
+            unspecified, the plots will not be saved.
+
+    Returns:
+        fitted_gates: A dictionary with qubit pairs as keys and optimized
+            FSIM unitaries, represented by cirq.Circuit objects, as values.
+        correction_gates: Same as fitted_gates, but with all Z rotations
+            reversed in signs.
+        fitted_angles: A dictionary with qubit pairs as keys and optimized
+            FSIM unitaries as values. Here the FSIM unitaries are represented
+            as a dictionaries with the names of the FSIM phases as keys and
+            their fitted values as values.
+        final_errors_optimized: A dictionary with qubit pairs as keys and
+            their cycle errors after fitting as values.
+        final_errors_unoptimized: A dictionary with qubit pairs as keys and
+            their cycle errors before fitting as values.
+    """
     num_trials = len(measured_bits[0])
     p_data_all, sq_gates = _pairwise_xeb_probabilities(
         all_qubits, num_cycle_range, measured_bits, scrambling_gates,
@@ -224,7 +284,7 @@ def parallel_xeb_fidelities(
     correction_gates = {}
 
     for (q0, q1), p_data in p_data_all.items():
-        print((q0, q1))
+        print('Fitting qubits {} and {}'.format(q0, q1))
 
         def xeb_fidelity(angle_shifts: numpy.ndarray, num_p: int
                          ) -> Tuple[float, List[float], numpy.ndarray,
@@ -282,12 +342,10 @@ def parallel_xeb_fidelities(
             numpy.asarray(num_cycle_range), numpy.asarray(sqrt_purities),
             add_offset=True)
         purity_errors[(q0, q1)] = err_p
-        print(err_p)
 
         err_0, f_vals_0, x_fitted_0, y_fitted_0, _ = xeb_fidelity(
             numpy.zeros(5), num_p=len(num_cycle_range))
         final_errors_unoptimized[(q0, q1)] = err_0
-        print(err_0)
 
         err_min = 1.0
         soln_vec = numpy.zeros(5)
@@ -341,7 +399,6 @@ def parallel_xeb_fidelities(
         for k, v in new_angles.items():
             new_angles[k] += delta_angles[(q0, q1)][k]
 
-        print(new_angles)
         fitted_angles[(q0, q1)] = new_angles
 
         q_0 = cirq.GridQubit(*q0)
@@ -349,7 +406,7 @@ def parallel_xeb_fidelities(
 
         gate_list = generic_fsim_gate(new_angles, (q_0, q_1))
         circuit_fitted = cirq.Circuit(gate_list)
-        fitted_gates[(q_0, q_1)] = circuit_fitted
+        fitted_gates[(q0, q1)] = circuit_fitted
 
         corrected_angles = new_angles.copy()
         corrected_angles['delta_plus'] *= -1.0
@@ -359,7 +416,7 @@ def parallel_xeb_fidelities(
         corrected_angles['phi'] = fsim_angles['phi']
         gate_list_corrected = generic_fsim_gate(corrected_angles, (q_0, q_1))
         circuit_corrected = cirq.Circuit(gate_list_corrected)
-        correction_gates[(q_0, q_1)] = circuit_corrected
+        correction_gates[(q0, q1)] = circuit_corrected
 
         fig = pyplot.figure()
         pyplot.plot(
@@ -392,25 +449,32 @@ def parallel_xeb_fidelities(
     num_pairs = len(final_errors_optimized)
     pair_pos = numpy.linspace(0, 1, num_pairs)
 
-    if plot_histograms:
-        fig_0 = pyplot.figure()
-        pyplot.plot(sorted(final_errors_unoptimized.values()), pair_pos,
-                    figure=fig_0, label='Unoptimized Unitaries')
-        pyplot.plot(sorted(final_errors_optimized.values()), pair_pos,
-                    figure=fig_0, label='Optimized Unitaries')
-        pyplot.plot(sorted(purity_errors.values()), pair_pos,
-                    figure=fig_0, label='Purity Errors')
-        pyplot.xlabel(r'Pauli Error Rate, $r_p$')
-        pyplot.ylabel(r'Integrated Histogram')
-        pyplot.legend()
+    fig_0 = pyplot.figure()
+    pyplot.plot(sorted(final_errors_unoptimized.values()), pair_pos,
+                figure=fig_0, label='Unoptimized Unitaries')
+    pyplot.plot(sorted(final_errors_optimized.values()), pair_pos,
+                figure=fig_0, label='Optimized Unitaries')
+    pyplot.plot(sorted(purity_errors.values()), pair_pos,
+                figure=fig_0, label='Purity Errors')
+    pyplot.xlabel(r'Pauli Error Rate, $r_p$')
+    pyplot.ylabel(r'Integrated Histogram')
+    pyplot.legend()
 
-        fig_1 = pyplot.figure()
-        for label in _fsim_angle_labels:
-            shifts = [a[label] for a in delta_angles.values()]
-            pyplot.plot(sorted(shifts), pair_pos, figure=fig_1, label=label)
-        pyplot.xlabel(r'FSIM Angle Error (Radian)')
-        pyplot.ylabel(r'Integrated Histogram')
-        pyplot.legend()
+    fig_1 = pyplot.figure()
+    for label in _fsim_angle_labels:
+        shifts = [a[label] for a in delta_angles.values()]
+        pyplot.plot(sorted(shifts), pair_pos, figure=fig_1, label=label)
+    pyplot.xlabel(r'FSIM Angle Error (Radian)')
+    pyplot.ylabel(r'Integrated Histogram')
+    pyplot.legend()
+
+    if not plot_histograms:
+        pyplot.close(fig_0)
+        pyplot.close(fig_1)
+
+    if save_directory is not None:
+        fig_0.savefig(save_directory + 'pauli_error_histogram')
+        fig_1.savefig(save_directory + 'angle_shift_histogram')
 
     return (fitted_gates, correction_gates, fitted_angles,
             final_errors_optimized, final_errors_unoptimized)
