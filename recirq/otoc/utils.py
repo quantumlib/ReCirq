@@ -1,6 +1,6 @@
 """Utility functions used for the OTOC experiment."""
 
-import json
+import pickle
 from typing import Any, Optional, Tuple, Dict, List, Sequence
 
 import cirq
@@ -9,18 +9,18 @@ from scipy.optimize import curve_fit
 
 
 def save_data(data: Any, file_name: str) -> None:
-    """Function for saving data to a json file.
+    """Function for saving data to a pickle file.
 
     Args:
-        data: Data to save to a json file.
+        data: Data to save to a pickle file.
         file_name: Path to save the file.
     """
     with open(file_name, 'wb') as output:
-        json.dump(data, output)
+        pickle.dump(data, output)
 
 
 def load_data(file_name: str) -> Optional[Any]:
-    """Function for reading data from a json file.
+    """Function for reading data from a pickle file.
 
     Args:
         file_name: Path for the file to be read.
@@ -29,7 +29,7 @@ def load_data(file_name: str) -> Optional[Any]:
         Data that the file contains.
     """
     with open(file_name, 'rb') as input_data:
-        data = json.load(input_data)
+        data = pickle.load(input_data)
     return data
 
 

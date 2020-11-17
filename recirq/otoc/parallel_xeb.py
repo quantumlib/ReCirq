@@ -1,12 +1,12 @@
 from typing import Sequence, List, Set, Tuple, Dict, Union
 
 import cirq
-import numpy
+import numpy as np
 import pybobyqa
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
 
-from recirq.otoc.utils import bits_to_probabilities, angles_to_fsim, \
-    pauli_error_fit, generic_fsim_gate
+from recirq.otoc.utils import (bits_to_probabilities, angles_to_fsim,
+                               pauli_error_fit, generic_fsim_gate)
 
 _rot_ops = [
     cirq.X ** 0.5, cirq.PhasedXPowGate(phase_exponent=0.25, exponent=0.5),
@@ -95,14 +95,14 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
                        benchmark_ops: Sequence[Union[
                            cirq.Moment, Sequence[cirq.Moment]]] = None,
                        random_seed: int = None,
-                       sq_rand_nums: numpy.ndarray = None,
+                       sq_rand_nums: np.ndarray = None,
                        reverse: bool = False,
                        z_only: bool = False,
                        ancilla: cirq.GridQubit = None,
                        cycles_per_echo: int = None,
                        light_cones: List[List[Set[cirq.GridQubit]]] = None,
-                       echo_indices: numpy.ndarray = None,
-                       ) -> Tuple[List[cirq.Circuit], numpy.ndarray]:
+                       echo_indices: np.ndarray = None,
+                       ) -> Tuple[List[cirq.Circuit], np.ndarray]:
     """Builds random circuits for cross entropy benchmarking (XEB).
 
     A list of cirq.Circuits of varying lengths are generated, which are made
@@ -195,8 +195,8 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
 def parallel_xeb_fidelities(
         all_qubits: List[Tuple[int, int]],
         num_cycle_range: Sequence[int],
-        measured_bits: List[List[List[numpy.ndarray]]],
-        scrambling_gates: List[List[numpy.ndarray]],
+        measured_bits: List[List[List[np.ndarray]]],
+        scrambling_gates: List[List[np.ndarray]],
         fsim_angles: Dict[str, float],
         interaction_sequence: List[
             Set[Tuple[Tuple[float, float], Tuple[float, float]]]] = None,
@@ -286,9 +286,9 @@ def parallel_xeb_fidelities(
     for (q0, q1), p_data in p_data_all.items():
         print('Fitting qubits {} and {}'.format(q0, q1))
 
-        def xeb_fidelity(angle_shifts: numpy.ndarray, num_p: int
-                         ) -> Tuple[float, List[float], numpy.ndarray,
-                                    numpy.ndarray, float]:
+        def xeb_fidelity(angle_shifts: np.ndarray, num_p: int
+                         ) -> Tuple[float, List[float], np.ndarray,
+                                    np.ndarray, float]:
             new_angles = fsim_angles.copy()
             for i, angle_name in enumerate(_fsim_angle_labels):
                 new_angles[angle_name] += angle_shifts[i]
@@ -296,39 +296,39 @@ def parallel_xeb_fidelities(
 
             max_cycles = num_cycle_range[num_p - 1]
 
-            p_sim = [numpy.zeros((num_trials, 4)) for _ in
+            p_sim = [np.zeros((num_trials, 4)) for _ in
                      range(max_cycles)]
             for i in range(num_trials):
-                unitary = numpy.identity(4, dtype=complex)
+                unitary = np.identity(4, dtype=complex)
                 for j in range(max_cycles):
                     mat_0 = _rot_mats[sq_gates[(q0, q1)][i][0, j]]
                     mat_1 = _rot_mats[sq_gates[(q0, q1)][i][1, j]]
-                    unitary = numpy.kron(mat_0, mat_1).dot(unitary)
+                    unitary = np.kron(mat_0, mat_1).dot(unitary)
                     unitary = fsim_mat.dot(unitary)
                     if j + 1 in num_cycle_range:
                         idx = num_cycle_range.index(j + 1)
-                        p_sim[idx][i, :] = numpy.abs(unitary[:, 0]) ** 2
+                        p_sim[idx][i, :] = np.abs(unitary[:, 0]) ** 2
 
             fidelities = [_alpha_least_square(p_sim[i], p_data[i]) for i in
                           range(num_p)]
 
-            cost = -numpy.sum(fidelities)
+            cost = -np.sum(fidelities)
 
             err, x_vals, y_vals = pauli_error_fit(
-                numpy.asarray(num_cycle_range)[0:num_p],
-                numpy.asarray(fidelities), add_offset=False)
+                np.asarray(num_cycle_range)[0:num_p],
+                np.asarray(fidelities), add_offset=False)
 
             return err, fidelities, x_vals, y_vals, cost
 
-        def cost_function(angle_shifts: numpy.ndarray) -> float:
+        def cost_function(angle_shifts: np.ndarray) -> float:
             if gate_to_fit == 'sqrt-iswap':
-                full_shifts = numpy.zeros(5, dtype=float)
+                full_shifts = np.zeros(5, dtype=float)
                 full_shifts[1:4] = angle_shifts
             elif gate_to_fit == 'iswap':
-                full_shifts = numpy.zeros(5, dtype=float)
+                full_shifts = np.zeros(5, dtype=float)
                 full_shifts[1:3] = angle_shifts
             elif gate_to_fit == 'cz':
-                full_shifts = numpy.zeros(5, dtype=float)
+                full_shifts = np.zeros(5, dtype=float)
                 full_shifts[1] = angle_shifts[0]
                 full_shifts[3] = angle_shifts[1]
             else:
@@ -339,25 +339,25 @@ def parallel_xeb_fidelities(
         sqrt_purities = [_speckle_purity(p_data[i]) ** 0.5 for i in
                          range(len(num_cycle_range))]
         err_p, x_vals_p, y_vals_p = pauli_error_fit(
-            numpy.asarray(num_cycle_range), numpy.asarray(sqrt_purities),
+            np.asarray(num_cycle_range), np.asarray(sqrt_purities),
             add_offset=True)
         purity_errors[(q0, q1)] = err_p
 
         err_0, f_vals_0, x_fitted_0, y_fitted_0, _ = xeb_fidelity(
-            numpy.zeros(5), num_p=len(num_cycle_range))
+            np.zeros(5), num_p=len(num_cycle_range))
         final_errors_unoptimized[(q0, q1)] = err_0
 
         err_min = 1.0
-        soln_vec = numpy.zeros(5)
+        soln_vec = np.zeros(5)
         if gate_to_fit == 'sqrt-iswap':
-            init_guess = numpy.zeros(3)
-            bounds = (numpy.ones(3) * -1.0, numpy.ones(3) * 1.0)
+            init_guess = np.zeros(3)
+            bounds = (np.ones(3) * -1.0, np.ones(3) * 1.0)
         elif gate_to_fit == 'iswap' or gate_to_fit == 'cz':
-            init_guess = numpy.zeros(2)
-            bounds = (numpy.ones(2) * -1.0, numpy.ones(2) * 1.0)
+            init_guess = np.zeros(2)
+            bounds = (np.ones(2) * -1.0, np.ones(2) * 1.0)
         else:
-            init_guess = numpy.array([0.0, 0.0, 0.0, 0.0, 0.1])
-            bounds = (numpy.ones(5) * -0.6, numpy.ones(5) * 0.6)
+            init_guess = np.array([0.0, 0.0, 0.0, 0.0, 0.1])
+            bounds = (np.ones(5) * -0.6, np.ones(5) * 0.6)
 
         for _ in range(num_restarts):
             res = pybobyqa.solve(
@@ -365,28 +365,28 @@ def parallel_xeb_fidelities(
                 rhoend=1e-11)
 
             if gate_to_fit == 'sqrt-iswap':
-                init_guess = numpy.random.uniform(-0.3, 0.3, 3)
+                init_guess = np.random.uniform(-0.3, 0.3, 3)
             elif gate_to_fit == 'iswap' or gate_to_fit == 'cz':
-                init_guess = numpy.random.uniform(-0.3, 0.3, 2)
+                init_guess = np.random.uniform(-0.3, 0.3, 2)
             else:
-                init_guess = numpy.random.uniform(-0.2, 0.2, 5)
+                init_guess = np.random.uniform(-0.2, 0.2, 5)
                 init_guess[0] = 0.0
                 init_guess[4] = 0.1
 
             if res.f < err_min:
                 err_min = res.f
                 if gate_to_fit == 'sqrt-iswap':
-                    soln_vec = numpy.zeros(5)
-                    soln_vec[1:4] = numpy.asarray(res.x)
+                    soln_vec = np.zeros(5)
+                    soln_vec[1:4] = np.asarray(res.x)
                 elif gate_to_fit == 'iswap':
-                    soln_vec = numpy.zeros(5)
-                    soln_vec[1:3] = numpy.asarray(res.x)
+                    soln_vec = np.zeros(5)
+                    soln_vec[1:3] = np.asarray(res.x)
                 elif gate_to_fit == 'cz':
-                    soln_vec = numpy.zeros(5)
-                    soln_vec[1] = numpy.asarray(res.x)[0]
-                    soln_vec[3] = numpy.asarray(res.x)[1]
+                    soln_vec = np.zeros(5)
+                    soln_vec[1] = np.asarray(res.x)[0]
+                    soln_vec[3] = np.asarray(res.x)[1]
                 else:
-                    soln_vec = numpy.asarray(res.x)
+                    soln_vec = np.asarray(res.x)
 
         err_1, f_vals_1, x_fitted_1, y_fitted_1, _ = xeb_fidelity(
             soln_vec, num_p=len(num_cycle_range))
@@ -418,25 +418,25 @@ def parallel_xeb_fidelities(
         circuit_corrected = cirq.Circuit(gate_list_corrected)
         correction_gates[(q0, q1)] = circuit_corrected
 
-        fig = pyplot.figure()
-        pyplot.plot(
+        fig = plt.figure()
+        plt.plot(
             num_cycle_range, f_vals_0, 'ro', figure=fig,
             label=r'{} and {}, unoptimized [$r_p$ = {}]'.format(
                 q0, q1, err_0.__round__(5)))
-        pyplot.plot(
+        plt.plot(
             num_cycle_range, f_vals_1, 'bo', figure=fig,
             label=r'{} and {}, optimized [$r_p$ = {}]'.format(
                 q0, q1, err_1.__round__(5)))
-        pyplot.plot(
+        plt.plot(
             num_cycle_range, sqrt_purities, 'go', figure=fig,
             label=r'{} and {}, purity error = {}'.format(
                 q0, q1, err_p.__round__(5)))
-        pyplot.plot(x_fitted_0, y_fitted_0, 'r--')
-        pyplot.plot(x_fitted_1, y_fitted_1, 'b--')
-        pyplot.plot(x_vals_p, y_vals_p, 'g--')
-        pyplot.legend()
-        pyplot.xlabel('Number of Cycles')
-        pyplot.ylabel(r'XEB Fidelity')
+        plt.plot(x_fitted_0, y_fitted_0, 'r--')
+        plt.plot(x_fitted_1, y_fitted_1, 'b--')
+        plt.plot(x_vals_p, y_vals_p, 'g--')
+        plt.legend()
+        plt.xlabel('Number of Cycles')
+        plt.ylabel(r'XEB Fidelity')
 
         if save_directory is not None:
             fig.savefig(save_directory +
@@ -444,33 +444,33 @@ def parallel_xeb_fidelities(
                             q0[0], q0[1], q1[0], q1[1]))
 
         if not plot_individual_traces:
-            pyplot.close(fig)
+            plt.close(fig)
 
     num_pairs = len(final_errors_optimized)
-    pair_pos = numpy.linspace(0, 1, num_pairs)
+    pair_pos = np.linspace(0, 1, num_pairs)
 
-    fig_0 = pyplot.figure()
-    pyplot.plot(sorted(final_errors_unoptimized.values()), pair_pos,
-                figure=fig_0, label='Unoptimized Unitaries')
-    pyplot.plot(sorted(final_errors_optimized.values()), pair_pos,
-                figure=fig_0, label='Optimized Unitaries')
-    pyplot.plot(sorted(purity_errors.values()), pair_pos,
-                figure=fig_0, label='Purity Errors')
-    pyplot.xlabel(r'Pauli Error Rate, $r_p$')
-    pyplot.ylabel(r'Integrated Histogram')
-    pyplot.legend()
+    fig_0 = plt.figure()
+    plt.plot(sorted(final_errors_unoptimized.values()), pair_pos,
+             figure=fig_0, label='Unoptimized Unitaries')
+    plt.plot(sorted(final_errors_optimized.values()), pair_pos,
+             figure=fig_0, label='Optimized Unitaries')
+    plt.plot(sorted(purity_errors.values()), pair_pos,
+             figure=fig_0, label='Purity Errors')
+    plt.xlabel(r'Pauli Error Rate, $r_p$')
+    plt.ylabel(r'Integrated Histogram')
+    plt.legend()
 
-    fig_1 = pyplot.figure()
+    fig_1 = plt.figure()
     for label in _fsim_angle_labels:
         shifts = [a[label] for a in delta_angles.values()]
-        pyplot.plot(sorted(shifts), pair_pos, figure=fig_1, label=label)
-    pyplot.xlabel(r'FSIM Angle Error (Radian)')
-    pyplot.ylabel(r'Integrated Histogram')
-    pyplot.legend()
+        plt.plot(sorted(shifts), pair_pos, figure=fig_1, label=label)
+    plt.xlabel(r'FSIM Angle Error (Radian)')
+    plt.ylabel(r'Integrated Histogram')
+    plt.legend()
 
     if not plot_histograms:
-        pyplot.close(fig_0)
-        pyplot.close(fig_1)
+        plt.close(fig_0)
+        plt.close(fig_1)
 
     if save_directory is not None:
         fig_0.savefig(save_directory + 'pauli_error_histogram')
@@ -483,21 +483,21 @@ def parallel_xeb_fidelities(
 def _random_rotations(qubits: Sequence[cirq.GridQubit],
                       num_layers: int,
                       rand_seed: int = None,
-                      rand_nums: numpy.ndarray = None,
+                      rand_nums: np.ndarray = None,
                       light_cones: List[List[Set[cirq.GridQubit]]] = None,
-                      echo_indices: numpy.ndarray = None,
+                      echo_indices: np.ndarray = None,
                       z_rotations_only: bool = False
-                      ) -> Tuple[List[List[cirq.OP_TREE]], numpy.ndarray]:
+                      ) -> Tuple[List[List[cirq.OP_TREE]], np.ndarray]:
     num_qubits = len(qubits)
 
     if rand_seed is not None:
-        numpy.random.seed(rand_seed)
+        np.random.seed(rand_seed)
 
     if rand_nums is None:
         if z_rotations_only:
-            rand_nums = numpy.random.uniform(-1, 1, (num_qubits, num_layers))
+            rand_nums = np.random.uniform(-1, 1, (num_qubits, num_layers))
         else:
-            rand_nums = numpy.random.choice(8, (num_qubits, num_layers))
+            rand_nums = np.random.choice(8, (num_qubits, num_layers))
 
     single_q_layers = []  # type: List[List[cirq.OP_TREE]]
 
@@ -533,20 +533,20 @@ def _random_rotations(qubits: Sequence[cirq.GridQubit],
     return single_q_layers, rand_nums
 
 
-def _alpha_least_square(probs_exp: numpy.ndarray, probs_data: numpy.ndarray
+def _alpha_least_square(probs_exp: np.ndarray, probs_data: np.ndarray
                         ) -> float:
     if probs_exp.shape != probs_data.shape:
         raise ValueError('probs_exp and probs_data must have the same shape')
     num_trials, num_states = probs_exp.shape
-    p_exp = (numpy.maximum(probs_exp, numpy.zeros_like(probs_exp) + 1e-22))
-    p_data = (numpy.maximum(probs_data, numpy.zeros_like(probs_data)))
+    p_exp = (np.maximum(probs_exp, np.zeros_like(probs_exp) + 1e-22))
+    p_data = (np.maximum(probs_data, np.zeros_like(probs_data)))
     nominator = 0.0
     denominator = 0.0
     p_uni = 1.0 / num_states
     for i in range(num_trials):
-        s_incoherent = -numpy.sum(p_uni * numpy.log(p_exp[i, :]))
-        s_expected = -numpy.sum(p_exp[i, :] * numpy.log(p_exp[i, :]))
-        s_meas = -numpy.sum(p_data[i, :] * numpy.log(p_exp[i, :]))
+        s_incoherent = -np.sum(p_uni * np.log(p_exp[i, :]))
+        s_expected = -np.sum(p_exp[i, :] * np.log(p_exp[i, :]))
+        s_meas = -np.sum(p_data[i, :] * np.log(p_exp[i, :]))
         delta_h_meas = float(s_incoherent - s_meas)
         delta_h = float(s_incoherent - s_expected)
         nominator += delta_h_meas * delta_h
@@ -554,20 +554,20 @@ def _alpha_least_square(probs_exp: numpy.ndarray, probs_data: numpy.ndarray
     return nominator / denominator
 
 
-def _speckle_purity(probs_data: numpy.ndarray) -> float:
+def _speckle_purity(probs_data: np.ndarray) -> float:
     d = 4
-    return numpy.var(probs_data) * d ** 2 * (d + 1) / (d - 1)
+    return np.var(probs_data) * d ** 2 * (d + 1) / (d - 1)
 
 
 def _pairwise_xeb_probabilities(
         all_qubits: List[Tuple[int, int]],
         num_cycle_range: Sequence[int],
-        measured_bits: List[List[List[numpy.ndarray]]],
-        scrambling_gates: List[List[numpy.ndarray]],
+        measured_bits: List[List[List[np.ndarray]]],
+        scrambling_gates: List[List[np.ndarray]],
         interaction_sequence: List[Set[Tuple[
             Tuple[float, float], Tuple[float, float]]]] = None,
-) -> Tuple[Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[numpy.ndarray]],
-           Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[numpy.ndarray]]]:
+) -> Tuple[Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]],
+           Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]]]:
     num_trials = len(measured_bits[0])
     qubits = [cirq.GridQubit(*idx) for idx in all_qubits]
 
@@ -583,7 +583,7 @@ def _pairwise_xeb_probabilities(
     for l, qubit_set in enumerate(int_layers):
         qubit_pairs = [((q_s[0].row, q_s[0].col), (q_s[1].row, q_s[1].col))
                        for q_s in int_layers[l]]
-        p_data = {q_s: [numpy.zeros((num_trials, 4)) for _ in
+        p_data = {q_s: [np.zeros((num_trials, 4)) for _ in
                         range(len(num_cycle_range))] for q_s in qubit_pairs}
         for (q0, q1) in qubit_pairs:
             idx_0, idx_1 = all_qubits.index(q0), all_qubits.index(q1)
