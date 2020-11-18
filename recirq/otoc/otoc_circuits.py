@@ -282,7 +282,7 @@ def build_otoc_circuits(
     return otoc_circuits
 
 
-def replaced_gates(
+def replace_gates(
         meas_qubit: Any,
         butterfly_qubits: Union[Any, Sequence[Any]],
         cycle: int,
