@@ -9,7 +9,7 @@ from recirq.otoc.utils import cz_to_sqrt_iswap
 _CORRECTION_FILE = Dict[Tuple[Tuple[int, int], Tuple[int, int]], cirq.Circuit]
 
 
-def build_fingerprint_circuits(
+def build_otoc_circuits(
         qubits: Sequence[cirq.GridQubit],
         ancilla: cirq.GridQubit,
         cycle: int,
@@ -32,6 +32,83 @@ def build_fingerprint_circuits(
         idle_echo_frequency: int = 1,
         idle_echo_seed: int = None
 ) -> List[cirq.Circuit]:
+    r"""Build experimental circuits for measuring OTOCs.
+
+    A random circuit, $U$, composed of alternating layers of random single-qubit
+    gates and fixed two-qubit gates is first created, similar to those used
+    in an XEB experiment. The inverse of the random circuit, $U^\dagger$,
+    is also created and added after $U$. A perturbation, in the form of Pauli
+    operators I, X, Y, or Z on one or more 'butterfly' qubits, is added
+    between $U$ and $U^\dagger$. An ancilla qubit interacts with one qubit in
+    the system through a CZ gate at the beginning and the end of the quantum
+    circuit, and single-qubit readout on the ancilla is performed at the end
+    of the quantum circuit.
+
+    Args:
+        qubits: The qubits involved in the random circuits $U$ and $U^\dagger$.
+        ancilla: The ancilla qubit to measure OTOC with.
+        cycle: The number of interleaved single- and two-qubit gate layers in
+            $U$ (same in $U^\dagger$).
+        interaction_sequence: Qubit pairs that interact in each cycle. If the
+            number of cycles is larger than len(interaction_sequence),
+            the interacting qubit pairs will repeat themselves every
+            len(interaction_sequence) cycles.
+        forward_ops: The two-qubit gates assigned to each qubit pair in $U$.
+            Each two-qubit gate is represented as a cirq.Circuit. It could be a
+            circuit made of a single gate such as cirq.CZ, or a collection of
+            gates such as cirq.CZ with multiple cirq.Z gates (which may be
+            obtained from e.g. parallel-xeb calibrations). If specified as a
+            list (must have a length equal to cycle), each cycle will use gates
+            contained in the corresponding element of the list.
+        reverse_ops: The two-qubit gates assigned to each qubit pair in
+            $U^\dagger$, having the same format as forward_ops.
+        butterfly_qubits: The qubits to which a perturbation between $U$ and
+            $U^\dagger$ is to be applied.
+        cycles_per_echo: How often a spin-echo pulse (a Y gate) is to be
+            applied to the ancilla during its idling time. For example,
+            if specified to be 2, a Y gate is applied every two cycles.
+        random_seed: The seed for the random single-qubit gates. If
+            unspecified, no seed will be used.
+        sq_gates: Indices for the random single-qubit gates. Dimension should
+            be len(qubits) $\times$ cycle. The values should be integers from 0
+            to 7 if z_only is False, and floats between -1 and 1 if z_only is
+            True.
+        cz_correction: Correction to the composite CZ gate, obtained from
+            parallel-XEB. If unspecified, the ideal decomposition for CZ into
+            sqrt-iSWAP and single-qubit gates will be used.
+        use_physical_cz: If True, a direct CZ gate will be used (instead of
+            composite gate from sqrt-iSWAP and single-qubit gates).
+        light_cone_filter: If True, gates outside the light-cones of the
+            butterfly qubit(s) will be removed and replaced with spin-echo
+            gates. Gates outside the light-cone of the measurement qubit (
+            i.e. qubits[0]) will be completely removed.
+        cliffords: If True (and sq_gates is unspecified), Clifford gates
+            drawn randomly from +/-X/2 and +/-Y/2 will be used for the
+            single-qubit gates.
+        z_only: If True, only Z gates (with a random exponent between -1 and
+            1) will be used for the random single-qubit gates.
+        padding: If specified, a delay with the given value (in nano-seconds)
+            will be added between $U$ and $U^\dagger$.
+        layer_by_layer_cal: If True, the two-qubit gates in forward_ops and
+            reverse_ops are different in each layer (i.e. forward_ops and
+            reverse_ops are specified as List[_CORRECTION_FILE]).
+        idle_echo_frequency: How often spin-echo pulses (random +/-X or +/-Y
+            gates) are applied to qubits outside the light-cones of the
+            butterfly qubit(s). Has no effect if light_cone_filter is False.
+        idle_echo_seed: The seed for the random spin-echo gates for qubits
+            outside the light-cones of the butterfly qubit(s). If
+            unspecified, no seed will be used. Has no effect if
+            light_cone_filter is False.
+
+    Returns:
+        A list of 16 cirq.Circuits. The first 4 circuits are OTOC circuits
+        with the butterfly operators being I (i.e. no perturbation between U
+        and $U^\dagger$). Circuits 4 to 8, 8 to 12 and 12 to 16 correspond to
+        the butterfly operators being X, Y and Z, respectively. For each
+        case, the OTOC measurement result is $(p_0 - p_1 - p_2 + p_3) / 2$,
+        where $p_i$ is the excited state probability of the $i^\text{th}$
+        circuit for the corresponding butterfly operator.
+    """
     if cliffords and z_only:
         raise ValueError('cliffords and z_only cannot both be True')
 
@@ -189,29 +266,62 @@ def build_fingerprint_circuits(
     return otoc_circuits
 
 
-def add_t_gates(
-        first_qubit: Any,
-        butterfly_qubit: Union[Any, Sequence[Any]],
+def replaced_gates(
+        meas_qubit: Any,
+        butterfly_qubits: Union[Any, Sequence[Any]],
         cycle: int,
         qubit_order: List[Any],
         sq_gates: np.ndarray,
         interaction_sequence: Sequence[Set[Tuple[Any, Any]]],
-        num_t_gates: int,
+        num_replaced_gates: int,
         rand_seed: int = None,
-        three_axis: bool = False,
         to_cifford_only: bool = False,
         rand_seed_replaced_gates: int = None
 ) -> np.ndarray:
-    if np.ndim(first_qubit) != np.ndim(butterfly_qubit):
+    r"""Replace a select number of single-qubit gatrs with other random gates.
+
+    The replaced gates always reside within the lightcones of both the
+    butterfly qubit(s) and the measurement qubit of an OTOC circuit. The new
+    gates are non-Clifford gates by default, chosen randomly from $\pi/2$
+    rotations around 4 different axes on the equatorial plane of the Bloch
+    sphere ($\pi/4$, $3\pi/4$, $5\pi/4$ or $7\pi/4$ radians from the x-axis).
+
+    Args:
+        meas_qubit: The measurement qubit used in the OTOC experiment. Can be
+            specified in any format (e.g. a cirq.GridQubit object or Tuple[
+            int, int]).
+        butterfly_qubits: The qubits to which a perturbation between
+            random circuits $U$ and $U^\dagger$ is to be applied.
+        cycle: The number of interleaved single- and two-qubit gate layers in
+            $U$ (same in $U^\dagger$).
+        qubit_order: The order for all qubits involved in $U$.
+        sq_gates: Indices for the random single-qubit gates. Dimension should
+            be len(qubit_order) $\times$ cycle. The values should be integers
+            from 0 to 7.
+        interaction_sequence: Qubit pairs that interact in each cycle. If the
+            number of cycles is larger than len(interaction_sequence),
+            the interacting qubit pairs will repeat themselves every
+            len(interaction_sequence) cycles.
+        num_replaced_gates: The total number of single-qubit gates to replace.
+        rand_seed: The random seed for the locations of the replaced gates.
+            If unspecified, no random seed will be used.
+        to_cifford_only: If True, the replaced gates will be drawn randomly
+            from +/-X/2 and +/-Y/2.
+        rand_seed_replaced_gates: The random seed for the gate replacements.
+
+    Returns:
+        An np.ndarray with dimensions len(qubit_order) $\times$ cycle.
+    """
+    if np.ndim(meas_qubit) != np.ndim(butterfly_qubits):
         multiple_butterflies = True
     else:
         multiple_butterflies = False
 
     butterfly_cone = _extract_light_cone(
-        butterfly_qubit, cycle, False, True, interaction_sequence,
+        butterfly_qubits, cycle, False, True, interaction_sequence,
         multiple_butterflies=multiple_butterflies)
     measurement_cone = _extract_light_cone(
-        first_qubit, cycle, False, False, interaction_sequence,
+        meas_qubit, cycle, False, False, interaction_sequence,
         multiple_butterflies=False)
     q_sets = [b.intersection(m) for (b, m) in
               zip(butterfly_cone, measurement_cone)]
@@ -233,19 +343,13 @@ def add_t_gates(
     if rand_seed is not None:
         np.random.seed(rand_seed)
     np.random.shuffle(locs)
-    random_locs = locs[0:num_t_gates]
+    random_locs = locs[0:num_replaced_gates]
 
     if rand_seed_replaced_gates is not None:
         np.random.seed(rand_seed_replaced_gates)
 
-    if three_axis:
-        if to_cifford_only:
-            random_indices = np.random.choice(2, num_t_gates) * 2
-        else:
-            random_indices = np.ones(num_t_gates, dtype=int)
-    else:
-        add_num = 0 if to_cifford_only else 1
-        random_indices = np.random.choice(4, num_t_gates) * 2 + add_num
+    add_num = 0 if to_cifford_only else 1
+    random_indices = np.random.choice(4, num_replaced_gates) * 2 + add_num
 
     new_sq_gates = sq_gates.copy()
     for k, r in enumerate(random_locs):

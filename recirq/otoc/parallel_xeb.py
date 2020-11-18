@@ -103,7 +103,7 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
                        light_cones: List[List[Set[cirq.GridQubit]]] = None,
                        echo_indices: np.ndarray = None,
                        ) -> Tuple[List[cirq.Circuit], np.ndarray]:
-    """Builds random circuits for cross entropy benchmarking (XEB).
+    r"""Builds random circuits for cross entropy benchmarking (XEB).
 
     A list of cirq.Circuits of varying lengths are generated, which are made
     of random single-qubit gates and optional two-qubit gates.
@@ -129,9 +129,9 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
             rotations around axes on the equatorial plane of the Bloch sphere
             (z_only = False), or random rotations around the z-axis (z_only =
             True). In the former case, the axes of rotations will be chosen
-            randomly from 8 evenly spaced axes (\pi/4, \pi/2 ... 7\pi/4
+            randomly from 8 evenly spaced axes ($\pi/4$, $\pi/2$ ... $7\pi/4$
             radians from the x-axis). In the latter case, the angles of
-            rotation will be any random value between -\pi and \pi.
+            rotation will be any random value between $-\pi$ and $\pi$.
         ancilla: If specified, an additional qubit will be included in the
             circuit which does not interact with the other qubits and only
             has spin-echo pulses applied to itself.
@@ -252,7 +252,7 @@ def parallel_xeb_fidelities(
             of cycles in num_cycle_range.
         plot_individual_traces: Whether to plot the XEB fidelities along with
             the fitting results for each qubit pair.
-        plot_histograms: Whether to plot the histograms of cycle fidelities
+        plot_histograms: Whether to plot the histograms of cycle Pauli errors
             and changes in FSIM angles after fitting for all qubit pairs.
         save_directory: Directory to which the plots are to be saved. If
             unspecified, the plots will not be saved.
@@ -439,9 +439,8 @@ def parallel_xeb_fidelities(
         plt.ylabel(r'XEB Fidelity')
 
         if save_directory is not None:
-            fig.savefig(save_directory +
-                        '/xeb_q{}_{}_q{}_{}'.format(
-                            q0[0], q0[1], q1[0], q1[1]))
+            fig.savefig(save_directory + '/xeb_q{}_{}_q{}_{}'.format(
+                q0[0], q0[1], q1[0], q1[1]))
 
         if not plot_individual_traces:
             plt.close(fig)
@@ -473,11 +472,110 @@ def parallel_xeb_fidelities(
         plt.close(fig_1)
 
     if save_directory is not None:
-        fig_0.savefig(save_directory + 'pauli_error_histogram')
-        fig_1.savefig(save_directory + 'angle_shift_histogram')
+        fig_0.savefig(save_directory + '/pauli_error_histogram')
+        fig_1.savefig(save_directory + '/angle_shift_histogram')
 
     return (fitted_gates, correction_gates, fitted_angles,
             final_errors_optimized, final_errors_unoptimized)
+
+
+def single_qubit_xeb_fidelities(
+        all_qubits: List[Tuple[int, int]],
+        num_cycle_range: Sequence[int],
+        measured_bits: List[List[np.ndarray]],
+        scrambling_gates: List[np.ndarray],
+        plot_individual_traces: bool = False,
+        plot_histograms: bool = False,
+        save_directory: str = None
+) -> Dict[Tuple[int, int], float]:
+    """Computes single-qubit gate fidelities from parallel-XEB data.
+
+    Args:
+        all_qubits: List of qubits involved in a parallel XEB experiment,
+            specified using their (row, col) locations.
+        num_cycle_range: The different numbers of cycles in the random circuits.
+        measured_bits: The experimental bit-strings stored in a nested list.
+            The first dimension represents different trials (i.e. random
+            circuit instances) used in XEB. The second dimension represents
+            the different numbers of cycles and must be the same as len(
+            num_cycle_range). Each np.ndarray has dimension M x N, where M is
+            the number of repetitions (stats) for each circuit and N is the
+            number of qubits involved.
+        scrambling_gates: The random circuit indices specified as integers
+            between 0 and 7. See the documentation of build_xeb_circuits for
+            details. Each element of the list represents a different trials
+            and len(scrambling_gates) must be the same as the second dimension
+            of measured_bits.
+        plot_individual_traces: Whether to plot the XEB fidelities along with
+            the fitting results for each qubit.
+        plot_histograms: Whether to plot the histograms of single-qubit gate
+            Pauli errors.
+        save_directory: Directory to which the plots are to be saved. If
+            unspecified, the plots will not be saved.
+
+    Returns:
+        A dictionary with qubit (row, col) locations as keys and the
+        corresponding single-qubit gate Pauli errors as values.
+    """
+    num_qubits = len(all_qubits)
+    num_trials = len(measured_bits)
+    final_errors = {}
+
+    for k, q_index in enumerate(all_qubits):
+        p_data = [np.zeros((num_trials, 2)) for _ in
+                  range(len(num_cycle_range))]
+        for i in range(num_trials):
+            for j in range(len(num_cycle_range)):
+                p_data[j][i, :] = bits_to_probabilities(
+                    all_qubits, [q_index], measured_bits[i][j])
+
+        p_sim = [np.zeros((num_trials, 2)) for _ in
+                 range(max(num_cycle_range))]
+        for i in range(num_trials):
+            unitary = np.identity(2, dtype=complex)
+            for j in range(max(num_cycle_range)):
+                unitary = _rot_mats[scrambling_gates[i][k, j]].dot(unitary)
+                if j + 1 in num_cycle_range:
+                    idx = num_cycle_range.index(j + 1)
+                    p_sim[idx][i, :] = np.abs(unitary[:, 0]) ** 2
+
+        fidelities = [_alpha_least_square(p_sim[i], p_data[i]) for i in
+                      range(len(num_cycle_range))]
+
+        err, x_fitted, y_fitted = pauli_error_fit(
+            np.asarray(num_cycle_range), np.asarray(fidelities), num_qubits=1)
+        final_errors[q_index] = err
+
+        fig = plt.figure()
+        plt.plot(
+            num_cycle_range, fidelities, 'ro', figure=fig,
+            label=r'Qubit {} [$r_p$ = {}]'.format(
+                q_index, err.__round__(5)))
+        plt.plot(x_fitted, y_fitted, 'k--')
+        plt.legend()
+        plt.xlabel('Number of Cycles')
+        plt.ylabel(r'XEB Fidelity')
+
+        if save_directory is not None:
+            fig.savefig(save_directory + '/xeb_q{}'.format(q_index))
+
+        if not plot_individual_traces:
+            plt.close(fig)
+
+    q_pos = np.linspace(0, 1, num_qubits)
+
+    fig_0 = plt.figure()
+    plt.plot(sorted(final_errors.values()), q_pos, figure=fig_0)
+    plt.xlabel(r'Pauli Error Rate, $r_p$')
+    plt.ylabel(r'Integrated Histogram')
+    
+    if not plot_histograms:
+        plt.close(fig_0)
+    
+    if save_directory is not None:
+        fig_0.savefig(save_directory + '/pauli_error_histogram')
+    
+    return final_errors
 
 
 def _random_rotations(qubits: Sequence[cirq.GridQubit],

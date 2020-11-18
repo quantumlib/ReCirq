@@ -2,12 +2,12 @@ import cirq
 import numpy as np
 from matplotlib import pyplot as plt
 
-from recirq.otoc.otoc_circuits import build_fingerprint_circuits
+from recirq.otoc.otoc_circuits import build_otoc_circuits
 
 project_id = 'xiaomidec2018'
 engine = cirq.google.Engine(project_id=project_id,
                             proto_version=cirq.google.ProtoVersion.V2)
-processor_name = 'mcgee'
+processor_name = 'rainbow'
 
 qubit_locs = [(3, 3), (2, 3), (2, 4), (2, 5), (1, 5), (0, 5), (0, 6), (1, 6)]
 qubits = [cirq.GridQubit(*idx) for idx in qubit_locs]
@@ -34,7 +34,7 @@ for i in range(num_trials):
     for cycle in cycles:
         circuits_ic = []
         for k, q_b in enumerate(qubits[1:]):
-            circs = build_fingerprint_circuits(
+            circs = build_otoc_circuits(
                 qubits, ancilla, cycle, int_sets, forward_ops=forward_ops,
                 reverse_ops=reverse_ops, butterfly_qubits=q_b,
                 cycles_per_echo=2, sq_gates=rand_nums, use_physical_cz=True)
