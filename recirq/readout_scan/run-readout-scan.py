@@ -35,7 +35,7 @@ def main():
     """
     # Uncomment below for an auto-generated unique dataset_id
     # dataset_id = datetime.datetime.now().isoformat(timespec='minutes')
-    dataset_id = '2020-02-06-tutorial'
+    dataset_id = '2020-02-tutorial'
     data_collection_tasks = [
         ReadoutScanTask(
             dataset_id=dataset_id,
