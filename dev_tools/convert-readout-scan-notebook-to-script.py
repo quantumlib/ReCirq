@@ -49,7 +49,7 @@ TEMPLATE = """
 {% endblock in_prompt %}
 """
 
-REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ''))
 
 
 def save_tasks_py(nb):
