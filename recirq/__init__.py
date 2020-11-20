@@ -40,4 +40,5 @@ from recirq.engine_utils import (
 
 from recirq.documentation_utils import (
     display_markdown_docstring,
+    fetch_guide_data_collection_data,
 )

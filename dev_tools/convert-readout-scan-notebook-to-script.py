@@ -57,7 +57,9 @@ def save_tasks_py(nb):
     shouldnt_start_with = '# Put in a file named run-readout-scan.py'
     tasks_py = nb.copy()
     tasks_py.cells = [cell for cell in tasks_py.cells
-                      if not cell.source.startswith(shouldnt_start_with)]
+                      if not cell.source.startswith(shouldnt_start_with)
+                      and not cell.source.startswith('#@title')
+                      and not any(l.strip().startswith('!') for l in cell.source.splitlines())]
 
     exporter = PythonExporter()
     exporter.raw_template = TEMPLATE
@@ -103,7 +105,7 @@ def save_run_py(nb):
 
 
 def main():
-    with open(f'{REPO_DIR}/docs/Readout-Data-Collection.ipynb') as f:
+    with open(f'{REPO_DIR}/docs/guide/data_collection.ipynb') as f:
         nb = nbformat.read(f, as_version=4)
 
     save_tasks_py(nb)
