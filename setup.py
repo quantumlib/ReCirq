@@ -33,4 +33,8 @@ setup(name='recirq',
       description="",
       long_description=open('README.md', encoding='utf-8').read(),
       packages=find_packages(),
+      package_data={'recirq': [
+          # https://github.com/quantumlib/ReCirq/issues/101
+          'hfvqe/molecular_data/hydrogen_chains/*/*/*',
+      ]},
       )
