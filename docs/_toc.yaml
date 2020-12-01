@@ -35,9 +35,9 @@ toc:
   path: /cirq/experiments/quantum_chess
 - title: "Concepts"
   path: /cirq/experiments/quantum_chess/concepts
-  title: "Quantum Chess REST API"
+- title: "Quantum Chess REST API"
   path: /cirq/experiments/quantum_chess/quantum_chess_rest_api
-  title: "Quantum Chess client"
+- title: "Quantum Chess client"
   path: /cirq/experiments/quantum_chess/quantum_chess_client
 
 - heading: "Hartree-Fock VQE"
