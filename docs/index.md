@@ -27,8 +27,8 @@ The code documented here was used to produce high impact publications.
 
 There are many ways you can use ReCirq. One path is as follows: 
 
- 1. Pick an experiment that closest match your interest
- 2. Read the paper
+ 1. Pick an experiment that most closely matches your interest.
+ 2. Read the paper.
       - Pay careful attention to the error mitigation and calibration
         techniques used in the experiment to maximize performance.
  3. Go through the tutorial of each experiment. It will give you an overview 
@@ -36,7 +36,7 @@ There are many ways you can use ReCirq. One path is as follows:
     simulators or actual quantum computers.
       - Pay attention to the dependencies of the experiments. This includes
         Cirq, libraries like OpenFermion, and qsim.
- 4. Read the guide to learn about best practices for building up your own experiment
+ 4. Read the guide to learn about best practices for building up your own experiment.
  5. Go build your own experiment. If it is cutting edge, please contribute
     back to ReCirq!
 

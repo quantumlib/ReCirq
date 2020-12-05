@@ -21,8 +21,8 @@ the game, see this [paper on arxiv](https://arxiv.org/abs/1906.05836)
 This module explores an implementation of Quantum Chess that runs using Cirq. In
 [Concepts](./concepts) you will explore various quantum computing concepts, such as error
 mitigation, post-selection, and qubit mapping, without requiring specific domain
-knowledge, like quantum chemistry. And in [Quantum Chess REST API] you will implement
-a fully functional server, that defines the specific REST endpoints required by the
+knowledge, like quantum chemistry. In [Quantum Chess REST API](quantum_chess_rest_api.ipynb),
+you will implement a fully functional server, that defines the specific REST endpoints required by the
 Quantum Chess Engine to offload its quantum state handling to an external resource.
 A similar server was used in [this presentation](https://youtu.be/ec-Mb8OJuRg) to run Quantum Chess on Google's 
 Rainbow chip during the Google Quantum AI Summer symposium.
