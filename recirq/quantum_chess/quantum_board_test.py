@@ -238,7 +238,6 @@ def test_blocked_slide_clear(board):
         'a1a3a4:SPLIT_SLIDE:BASIC',
         'a3a8:SLIDE:BASIC',
     )
-    print(b.circuit)
     samples = b.sample(100)
     possibilities = [
         u.squares_to_bitboard(['a4']),
@@ -876,15 +875,14 @@ def test_undo_entangled_measurement():
         'b1a3c3:SPLIT_JUMP:BASIC',
         'c2c4:PAWN_TWO_STEP:BASIC'
     )
-    probs = b.get_probability_distribution(1000)
+    probs = b.get_probability_distribution(10000)
     assert_prob_about(probs, qb.square_to_bit('a3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
     b.perform_moves( 'd1c2:JUMP:EXCLUDED')
     assert b.undo_last_move()
-    print(b)
-    probs = b.get_probability_distribution(1000)
+    probs = b.get_probability_distribution(10000)
     assert_prob_about(probs, qb.square_to_bit('a3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
