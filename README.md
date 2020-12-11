@@ -15,12 +15,8 @@ from source:
 
     cd recirq/
     pip install .
-    
-Until ReCirq is published, please build documentation locally:
 
-    cd docs/
-    make html
-    
+Documentation is available at https://quantumai.google/cirq/experiments.
 
 ## See Also
 
