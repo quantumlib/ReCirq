@@ -9,7 +9,7 @@ scikit-learn
 # qaoa
 networkx
 pytket==0.6.1
-pytket-cirq==0.5
+pytket-cirq==0.5.1
 
 # quantum chess, only needed for tests
 scipy
