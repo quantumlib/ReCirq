@@ -36,10 +36,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # TODO: https://github.com/quantumlib/ReCirq/issues/104
-        # TODO: pip<21 and `legacy-resolver`.
-        python -m pip install --upgrade 'pip<21' wheel
-        pip install --use-deprecated=legacy-resolver -r requirements.txt
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
         pip install --no-deps -e .
 
     - name: Lint with flake8
