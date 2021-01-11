@@ -16,7 +16,7 @@ from typing import Optional
 from itertools import product
 import numpy as np
 from openfermion.ops import InteractionOperator, InteractionRDM
-from openfermion.utils import wedge
+from openfermion.linalg import wedge
 from openfermion.transforms import get_fermion_operator
 from recirq.hfvqe.circuits import rhf_params_to_matrix
 

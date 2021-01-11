@@ -21,7 +21,6 @@ import cirq
 from collections import defaultdict
 import numpy as np
 import openfermion
-import openfermioncirq
 
 from recirq.fermi_hubbard.decomposition import CPhaseEchoGate
 from recirq.fermi_hubbard.fermionic_circuits import create_one_particle_circuit
@@ -374,7 +373,7 @@ def _create_quadratic_hamiltonian_circuit(
 
     # Create Givens network circuit.
     _, transform, _ = hamiltonian.diagonalizing_bogoliubov_transform()
-    circuit += cirq.Circuit(openfermioncirq.bogoliubov_transform(
+    circuit += cirq.Circuit(openfermion.bogoliubov_transform(
         qubits, transform, range(particles)))
 
     return circuit
