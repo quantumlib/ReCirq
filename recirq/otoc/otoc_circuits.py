@@ -13,8 +13,8 @@
 # limitations under the License.
 
 """Functions for generating OTOC circuits."""
-
-from typing import Sequence, Union, Tuple, List, Dict, Set, Any
+import itertools
+from typing import Sequence, Union, Tuple, List, Dict, Set, Any, Optional
 
 import cirq
 import numpy as np
@@ -34,19 +34,19 @@ def build_otoc_circuits(
         forward_ops: Union[_CORRECTION_FILE, List[_CORRECTION_FILE]],
         reverse_ops: Union[_CORRECTION_FILE, List[_CORRECTION_FILE]],
         butterfly_qubits: Union[cirq.GridQubit, Sequence[cirq.GridQubit]],
-        cycles_per_echo: int = None,
-        random_seed: int = None,
-        sq_gates: np.ndarray = None,
-        cz_correction: Dict[Tuple[cirq.GridQubit, cirq.GridQubit],
-                            cirq.Circuit] = None,
+        cycles_per_echo: Optional[int] = None,
+        random_seed: Optional[int] = None,
+        sq_gates: Optional[np.ndarray] = None,
+        cz_correction: Optional[Dict[Tuple[cirq.GridQubit, cirq.GridQubit],
+                                     cirq.Circuit]] = None,
         use_physical_cz: bool = False,
         light_cone_filter: bool = False,
         cliffords: bool = False,
         z_only: bool = False,
-        padding: float = None,
+        padding: Optional[float] = None,
         layer_by_layer_cal: bool = False,
         idle_echo_frequency: int = 1,
-        idle_echo_seed: int = None
+        idle_echo_seed: Optional[int] = None
 ) -> List[cirq.Circuit]:
     r"""Build experimental circuits for measuring OTOCs.
 
@@ -132,6 +132,9 @@ def build_otoc_circuits(
     num_qubits = len(qubits)
     multi_b = True if np.ndim(butterfly_qubits) == 1 else False
 
+    # Specify the random single-qubit gates (rand_num) in term of random
+    # np.ndarray. The inverse of the single-qubit gates (rand_nums_rev) is
+    # also specified.
     if random_seed is not None:
         np.random.seed(random_seed)
 
@@ -146,6 +149,8 @@ def build_otoc_circuits(
             rand_nums = np.random.choice(8, (num_qubits, cycle))
     rand_nums_rev = _reverse_sq_indices(rand_nums, z_only=z_only)
 
+    # Specify the quantum circuits $U$ and $U^\dagger$ if no lightcone filter
+    # is applied.
     if not light_cone_filter:
         moments_for = _compile_moments(interaction_sequence, forward_ops,
                                        layer_by_layer_cal=layer_by_layer_cal)
@@ -163,16 +168,18 @@ def build_otoc_circuits(
             z_only=False, ancilla=ancilla, cycles_per_echo=cycles_per_echo,
             reverse=True)
 
+    # Specify the quantum circuits $U$ and $U^\dagger$ if lightcone filter
+    # is applied.
     else:
         light_cone_u = _extract_light_cone(
-            butterfly_qubits, cycle, False, True, interaction_sequence,
-            multiple_butterflies=multi_b)
+            butterfly_qubits, cycle, interaction_sequence,
+            reverse=False, from_right=True, multiple_butterflies=multi_b)
         light_cone_u_dagger = _extract_light_cone(
-            butterfly_qubits, cycle, True, False, interaction_sequence,
-            multiple_butterflies=multi_b)
+            butterfly_qubits, cycle, interaction_sequence,
+            reverse=True, from_right=False, multiple_butterflies=multi_b)
         light_cone_meas = _extract_light_cone(
-            qubits[0], cycle, True, True, interaction_sequence,
-            multiple_butterflies=False)
+            qubits[0], cycle, interaction_sequence,
+            reverse=True, from_right=True, multiple_butterflies=False)
 
         full_cone = [*light_cone_u, *light_cone_u_dagger]
         idle_echo_indices = np.zeros((num_qubits, cycle * 2), dtype=int)
@@ -223,66 +230,82 @@ def build_otoc_circuits(
     meas_phases = [0.0, 1.0]
     otoc_circuits = []
 
-    for b_ops in butterfly_ops:
-        for p_prep in prep_phases:
-            for p_meas in meas_phases:
-                init_ops = [cirq.PhasedXPowGate(
-                    phase_exponent=p_prep, exponent=0.5)(ancilla),
-                            cirq.Y(qubits[0]) ** 0.5]
-                circuit_full = cirq.Circuit(init_ops)
+    # Combine $U$ and $U^\dagger$ with other gates related to SPAM to
+    # complete the OTOC circuits.
+    for b_ops, p_prep, p_meas in itertools.product(
+            butterfly_ops, prep_phases, meas_phases):
 
-                if use_physical_cz:
-                    circuit_full.append(cirq.CZ(ancilla, qubits[0]))
-                    additional_layer = []
-                else:
-                    cz_seq = cz_to_sqrt_iswap(ancilla, qubits[0],
-                                              corrections=cz_correction)
-                    circuit_full.append(cz_seq[:-1])
-                    additional_layer = cz_seq[-1:]
+        # Initialize the ancilla with +/-X/2 gate, all other qubits with a Y/2
+        # gate, and then a CZ gate between the ancilla and the first
+        # (measurement) qubit.
+        init_ops = [cirq.PhasedXPowGate(
+            phase_exponent=p_prep, exponent=0.5)(ancilla),
+                    cirq.Y(qubits[0]) ** 0.5]
+        circuit_full = cirq.Circuit(init_ops)
 
-                if z_only:
-                    for q in qubits[1:]:
-                        if (q.row + q.col) % 2 == 0:
-                            additional_layer.append(cirq.Y(q))
-                else:
-                    additional_layer.append(
-                        [cirq.Y(q) ** 0.5 for q in qubits[1:]])
+        # CZ is either a single pulse or a composite gate made from
+        # sqrt-iSWAP and single-qubit gates.
+        if use_physical_cz:
+            circuit_full.append(cirq.CZ(ancilla, qubits[0]))
+            additional_layer = []
+        else:
+            cz_seq = cz_to_sqrt_iswap(ancilla, qubits[0],
+                                      corrections=cz_correction)
+            circuit_full.append(cz_seq[:-1])
+            additional_layer = cz_seq[-1:]
 
-                circuit_full.append(additional_layer)
-                circuit_full.append(circuits_forward[0])
-                if padding is not None:
-                    moment_pad = cirq.Moment(
-                        [cirq.WaitGate(duration=cirq.Duration(
-                            nanos=padding))(q) for q in qubits])
-                    circuit_full.append(moment_pad)
+        # If z_only is True, the system is initialized in a half-filling
+        # state, i.e. a basis state of the form |01010101...>. Otherwise the
+        # system is initialized into a superposition state |+++++...>.
+        if z_only:
+            for q in qubits[1:]:
+                if (q.row + q.col) % 2 == 0:
+                    additional_layer.append(cirq.Y(q))
+        else:
+            additional_layer.append(
+                [cirq.Y(q) ** 0.5 for q in qubits[1:]])
 
-                if b_ops is not None:
-                    if multi_b is True:
-                        b_mom = cirq.Moment(
-                            [b_ops(q_b) for q_b in butterfly_qubits])
-                        circuit_full.append(b_mom)
-                    else:
-                        circuit_full.append(
-                            b_ops(butterfly_qubits),
-                            strategy=cirq.InsertStrategy.NEW)
+        circuit_full.append(additional_layer)
+        circuit_full.append(circuits_forward[0])
 
-                circuit_full.append(circuits_backward[0])
+        # Adds a waiting period (in ns) between $U$ and $U^\dagger$,
+        # if specified.
+        if padding is not None:
+            moment_pad = cirq.Moment(
+                [cirq.WaitGate(duration=cirq.Duration(
+                    nanos=padding))(q) for q in qubits])
+            circuit_full.append(moment_pad)
 
-                if use_physical_cz:
-                    circuit_full.append(cirq.CZ(ancilla, qubits[0]))
-                else:
-                    circuit_full.append(cz_to_sqrt_iswap(
-                        ancilla, qubits[0], corrections=cz_correction))
-
-                circuit_full.append(cirq.PhasedXPowGate(
-                    phase_exponent=p_meas, exponent=0.5)(ancilla))
-                circuit_full.append(cirq.measure(ancilla, key='z'),
+        # Add the butterfly operator.
+        if b_ops is not None:
+            if multi_b is True:
+                b_mom = cirq.Moment([b_ops(q_b) for q_b in butterfly_qubits])
+                circuit_full.append(b_mom)
+            else:
+                circuit_full.append(b_ops(butterfly_qubits),
                                     strategy=cirq.InsertStrategy.NEW)
-                otoc_circuits.append(circuit_full)
+
+        circuit_full.append(circuits_backward[0])
+
+        # Add the CZ gate between ancilla and measurement qubit before
+        # projective measurement.
+        if use_physical_cz:
+            circuit_full.append(cirq.CZ(ancilla, qubits[0]))
+        else:
+            circuit_full.append(cz_to_sqrt_iswap(
+                ancilla, qubits[0], corrections=cz_correction))
+
+        # Pulse the ancilla to the z-axis (along either +z or -z) before
+        # measurement.
+        circuit_full.append(cirq.PhasedXPowGate(
+            phase_exponent=p_meas, exponent=0.5)(ancilla))
+        circuit_full.append(cirq.measure(ancilla, key='z'),
+                            strategy=cirq.InsertStrategy.NEW)
+        otoc_circuits.append(circuit_full)
     return otoc_circuits
 
 
-def replace_gates(
+def add_noncliffords(
         meas_qubit: Any,
         butterfly_qubits: Union[Any, Sequence[Any]],
         cycle: int,
@@ -290,17 +313,23 @@ def replace_gates(
         sq_gates: np.ndarray,
         interaction_sequence: Sequence[Set[Tuple[Any, Any]]],
         num_replaced_gates: int,
-        rand_seed: int = None,
+        rand_seed: Optional[int] = None,
         to_cifford_only: bool = False,
-        rand_seed_replaced_gates: int = None
+        rand_seed_replaced_gates: Optional[int] = None
 ) -> np.ndarray:
-    r"""Replace a select number of single-qubit gatrs with other random gates.
+    r"""Replace a selected number of single-qubit gates with non-Clifford gates.
 
     The replaced gates always reside within the lightcones of both the
     butterfly qubit(s) and the measurement qubit of an OTOC circuit. The new
     gates are non-Clifford gates by default, chosen randomly from $\pi/2$
     rotations around 4 different axes on the equatorial plane of the Bloch
     sphere ($\pi/4$, $3\pi/4$, $5\pi/4$ or $7\pi/4$ radians from the x-axis).
+
+    Note: For circuits with non-Clifford two-qubit gates (e.g. sqrt-iSWAP),
+    this function does not fundamentally change OTOC behavior. For circuits
+    with Clifford two-qubit gates (iSWAP or CZ), adding more non-Clifford
+    single-qubit gates creates more Pauli strings and generally leads to
+    smaller circuit-to-circuit variation in the OTOC value.
 
     Args:
         meas_qubit: The measurement qubit used in the OTOC experiment. Can be
@@ -333,15 +362,19 @@ def replace_gates(
     else:
         multiple_butterflies = False
 
+    # Compute the light-cones of the butterfly and measurement qubits,
+    # then take the intersection of the two cones.
     butterfly_cone = _extract_light_cone(
-        butterfly_qubits, cycle, False, True, interaction_sequence,
-        multiple_butterflies=multiple_butterflies)
+        butterfly_qubits, cycle, interaction_sequence, reverse=False,
+        from_right=True, multiple_butterflies=multiple_butterflies)
     measurement_cone = _extract_light_cone(
-        meas_qubit, cycle, False, False, interaction_sequence,
-        multiple_butterflies=False)
+        meas_qubit, cycle, interaction_sequence, reverse=False,
+        from_right=False, multiple_butterflies=False)
     q_sets = [b.intersection(m) for (b, m) in
               zip(butterfly_cone, measurement_cone)]
 
+    # Each set in pairs_set is the set of qubits that have two-qubit gates
+    # applied to them in a particular cycle.
     pairs_set = []
     for i in range(len(interaction_sequence)):
         pairs_i = set({})
@@ -350,12 +383,20 @@ def replace_gates(
             pairs_i.add(q1)
         pairs_set.append(pairs_i)
 
+    # locs is a list of tuples. First integer represents the index of a qubit.
+    # Second integer represents a cycle number. Overall, locs represents the
+    # qubits that lie within the lightcones of measurement and butterfly
+    # qubits, as well as have two-qubit gates applied to them, in each cycle
+    # of $U$.
     locs = []
     for j, q_set in enumerate(q_sets):
         for q in sorted(list(q_set)):
             if q in pairs_set[j % len(pairs_set)]:
                 locs.append((qubit_order.index(q), j))
 
+    # Pick random qubits/cycles from locs and replace the corresponding gates
+    # with non-Clifford rotations (or Clifford rotations, if to_clifford_only
+    # is True.
     if rand_seed is not None:
         np.random.seed(rand_seed)
     np.random.shuffle(locs)
@@ -380,8 +421,11 @@ def _compile_moments(
         layer_by_layer_cal: bool = False
 ) -> List[Union[cirq.Moment, Sequence[cirq.Moment]]]:
     moment_list = []
-    num_slices = 3
+
+    # num_slices refers to the number of moments in the cirq.Circuit object
+    # representing the two-qubit gate associated with each qubit pair.
     if layer_by_layer_cal:
+        num_slices = 1
         for file in ops_dict:
             if len(file) > 0:
                 num_slices = len(list(file.values())[0])
@@ -410,22 +454,49 @@ def _compile_moments(
     return moment_list
 
 
-def _compile_interactions(first_qubit: Any,
+def _compile_interactions(meas_qubit: Any,
                           butterfly_qubit: Union[Any, Sequence[Any]],
                           cycle: int,
                           interaction_sequence: Sequence[Set[Tuple[Any, Any]]]
                           ) -> Tuple[List[Set[Tuple[Any, Any]]],
                                      List[Set[Tuple[Any, Any]]]]:
+    r"""Compile the qubit pairs that interact in $U$ and $U^\dagger$.
+
+    The lightcones of a measurement qubit and butterfly qubit(s) are
+    calculated based on the order at which the two-qubit gates are applied
+    and number of circuit cycles. Then the pairs of qubits within the
+    lightcones of the measurement qubit and the butterfly qubit(s) for each
+    cycle in $U$ and $U^\dagger$ are returned.
+
+    Args:
+        meas_qubit: The measurement qubit used in the OTOC experiment. Can be
+            specified in any format (e.g. a cirq.GridQubit object or Tuple[
+            int, int]).
+        butterfly_qubit: The qubit(s) to which a perturbation between $U$ and
+            $U^\dagger$ is to be applied.
+        cycle: Number of cycles in $U$.
+        interaction_sequence: The pairs of qubits that interact in each
+        cycle. If len(interaction_sequence) < cycle, the sequence just
+        keeps repeating itself.
+
+    Returns:
+        forward_seq: Each set in the list represents the pairs of qubits that
+            fall within the lightcones of the measurement and butterfly qubits
+            for each cycle in $U$.
+        reverse_seq: Each set in the list represents the pairs of qubits that
+            fall within the lightcones of the measurement and butterfly qubits
+            for each cycle in $U^\dagger$.
+    """
     num_configs = len(interaction_sequence)
 
-    if np.ndim(first_qubit) != np.ndim(butterfly_qubit):
+    if np.ndim(meas_qubit) != np.ndim(butterfly_qubit):
         multiple_butterflies = True
     else:
         multiple_butterflies = False
 
     forward_cone = _extract_light_cone(
-        butterfly_qubit, cycle, False, True, interaction_sequence,
-        multiple_butterflies=multiple_butterflies)
+        butterfly_qubit, cycle, interaction_sequence, reverse=False,
+        from_right=True, multiple_butterflies=multiple_butterflies)
     forward_seq = []
     for i, cone in enumerate(forward_cone):
         int_list = []
@@ -435,8 +506,8 @@ def _compile_interactions(first_qubit: Any,
         forward_seq.append(set(int_list))
 
     reverse_cone_0 = _extract_light_cone(
-        first_qubit, cycle, True, True, interaction_sequence,
-        multiple_butterflies=False)
+        meas_qubit, cycle, interaction_sequence,
+        reverse=True, from_right=True, multiple_butterflies=False)
     reverse_seq = []
     reverse_seq_0 = list(reversed(forward_seq))
     for i, int_list in enumerate(reverse_seq_0):
@@ -451,9 +522,10 @@ def _compile_interactions(first_qubit: Any,
 
 
 def _extract_light_cone(butterfly_qubits: Union[Any, Sequence[Any]],
-                        cycle: int, reverse: bool,
-                        from_right: bool,
+                        cycle: int,
                         interaction_layers: Sequence[Set[Tuple[Any, Any]]],
+                        reverse: bool,
+                        from_right: bool,
                         multiple_butterflies: bool = False
                         ) -> List[Set[Any]]:
     num_configs = len(interaction_layers)

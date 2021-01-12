@@ -14,7 +14,7 @@
 
 """Functions for performing parallel cross entropy benchmarking."""
 
-from typing import Sequence, List, Set, Tuple, Dict, Union
+from typing import Sequence, List, Set, Tuple, Dict, Union, Optional
 
 import cirq
 import numpy as np
@@ -111,13 +111,14 @@ def build_xeb_circuits(qubits: Sequence[cirq.GridQubit],
                        benchmark_ops: Sequence[Union[
                            cirq.Moment, Sequence[cirq.Moment]]] = None,
                        random_seed: int = None,
-                       sq_rand_nums: np.ndarray = None,
+                       sq_rand_nums: Optional[np.ndarray] = None,
                        reverse: bool = False,
                        z_only: bool = False,
-                       ancilla: cirq.GridQubit = None,
-                       cycles_per_echo: int = None,
-                       light_cones: List[List[Set[cirq.GridQubit]]] = None,
-                       echo_indices: np.ndarray = None,
+                       ancilla: Optional[cirq.GridQubit] = None,
+                       cycles_per_echo: Optional[int] = None,
+                       light_cones: Optional[List[List[
+                           Set[cirq.GridQubit]]]] = None,
+                       echo_indices: Optional[np.ndarray] = None,
                        ) -> Tuple[List[cirq.Circuit], np.ndarray]:
     r"""Builds random circuits for cross entropy benchmarking (XEB).
 
@@ -214,14 +215,14 @@ def parallel_xeb_fidelities(
         measured_bits: List[List[List[np.ndarray]]],
         scrambling_gates: List[List[np.ndarray]],
         fsim_angles: Dict[str, float],
-        interaction_sequence: List[
-            Set[Tuple[Tuple[float, float], Tuple[float, float]]]] = None,
+        interaction_sequence: Optional[List[
+            Set[Tuple[Tuple[float, float], Tuple[float, float]]]]] = None,
         gate_to_fit: str = 'iswap',
         num_restarts: int = 3,
         num_points: int = 8,
         plot_individual_traces: bool = False,
         plot_histograms: bool = False,
-        save_directory: str = None
+        save_directory: Optional[str] = None
 ) -> Tuple[Dict[Tuple[Tuple[int, int], Tuple[int, int]], cirq.Circuit],
            Dict[Tuple[Tuple[int, int], Tuple[int, int]], cirq.Circuit],
            Dict[Tuple[Tuple[int, int], Tuple[int, int]], Dict[str, float]],
@@ -502,7 +503,7 @@ def single_qubit_xeb_fidelities(
         scrambling_gates: List[np.ndarray],
         plot_individual_traces: bool = False,
         plot_histograms: bool = False,
-        save_directory: str = None
+        save_directory: Optional[str] = None
 ) -> Dict[Tuple[int, int], float]:
     """Computes single-qubit gate fidelities from parallel-XEB data.
 
@@ -584,22 +585,23 @@ def single_qubit_xeb_fidelities(
     plt.plot(sorted(final_errors.values()), q_pos, figure=fig_0)
     plt.xlabel(r'Pauli Error Rate, $r_p$')
     plt.ylabel(r'Integrated Histogram')
-    
+
     if not plot_histograms:
         plt.close(fig_0)
-    
+
     if save_directory is not None:
         fig_0.savefig(save_directory + '/pauli_error_histogram')
-    
+
     return final_errors
 
 
 def _random_rotations(qubits: Sequence[cirq.GridQubit],
                       num_layers: int,
-                      rand_seed: int = None,
-                      rand_nums: np.ndarray = None,
-                      light_cones: List[List[Set[cirq.GridQubit]]] = None,
-                      echo_indices: np.ndarray = None,
+                      rand_seed: Optional[int] = None,
+                      rand_nums: Optional[np.ndarray] = None,
+                      light_cones: Optional[
+                          List[List[Set[cirq.GridQubit]]]] = None,
+                      echo_indices: Optional[np.ndarray] = None,
                       z_rotations_only: bool = False
                       ) -> Tuple[List[List[cirq.OP_TREE]], np.ndarray]:
     num_qubits = len(qubits)
@@ -678,8 +680,8 @@ def _pairwise_xeb_probabilities(
         num_cycle_range: Sequence[int],
         measured_bits: List[List[List[np.ndarray]]],
         scrambling_gates: List[List[np.ndarray]],
-        interaction_sequence: List[Set[Tuple[
-            Tuple[float, float], Tuple[float, float]]]] = None,
+        interaction_sequence: Optional[List[Set[Tuple[
+            Tuple[float, float], Tuple[float, float]]]]] = None,
 ) -> Tuple[Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]],
            Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]]]:
     num_trials = len(measured_bits[0])

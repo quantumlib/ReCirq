@@ -32,5 +32,5 @@ from recirq.otoc.parallel_xeb import (
 
 from recirq.otoc.otoc_circuits import (
     build_otoc_circuits,
-    replace_gates
+    add_noncliffords
 )
