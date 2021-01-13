@@ -22,8 +22,6 @@ import numpy as np
 import scipy as sp
 import openfermion as of
 
-from openfermion.hamiltonians import MolecularData
-
 from recirq.hfvqe.objective import generate_hamiltonian, \
     RestrictedHartreeFockObjective
 
@@ -62,7 +60,7 @@ def h_n_linear_molecule(bond_distance: float,
     # coverage: ignore
     if n_hydrogens < 1 or n_hydrogens % 2 != 0:
         raise ValueError('Must specify a positive, even number of hydrogens.')
-    molecule = MolecularData(
+    molecule = of.MolecularData(
         geometry=_h_n_linear_geometry(bond_distance, n_hydrogens),
         charge=0,
         basis=basis,
@@ -114,7 +112,7 @@ def h12_linear_molecule(bond_distance: float, basis: Optional[str] = 'sto-3g'):
                                basis=basis)  # testpragma: no cover
 
 
-def get_ao_integrals(molecule: MolecularData,
+def get_ao_integrals(molecule: of.MolecularData,
                      e_convergence: Optional[float] = 1e-8):
     """Use psi4numpy to grab the atomic orbital integrals
 
