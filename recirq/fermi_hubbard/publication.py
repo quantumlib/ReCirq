@@ -11,11 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Data specific to experiment published in arXiv:2009.XXXXX."""
+"""Data specific to experiment published in arXiv:2010.07965."""
 
-from typing import Callable, Tuple
-
+from io import BytesIO
 from copy import deepcopy
+import os
+from typing import Callable, List, Optional, Tuple
+from urllib.request import urlopen
+from zipfile import ZipFile
+
 import numpy as np
 
 from recirq.fermi_hubbard.decomposition import (
@@ -209,3 +213,50 @@ def rainbow23_layouts(sites_count: int = 8) -> Tuple[ZigZagLayout]:
                  for flip in (False, True)
                  for exchange in (False, True)
                  for reverse in (False, True))
+
+
+def fetch_publication_data(
+        base_dir: Optional[str] = None,
+        exclude: Optional[List[str]] = None,
+) -> None:
+    """Downloads and extracts publication data from the Dryad repository at
+    https://doi.org/10.5061/dryad.crjdfn32v, saving to disk.
+
+    The following data are downloaded and saved:
+
+    - gaussians_1u1d_nofloquet
+    - gaussians_1u1d
+    - trapping_2u2d
+    - trapping_3u3d
+
+    unless they already exist in the `base_dir` or are present in `exclude`.
+
+    Args:
+        base_dir: Base directory as a relative path to save data in.
+            Set to "fermi_hubbard_data" if not specified.
+        exclude: List of data to skip while downloading. See above for options.
+    """
+    if base_dir is None:
+        base_dir = "fermi_hubbard_data"
+
+    base_url = "https://datadryad.org/stash/downloads/file_stream/"
+    data = {
+        "gaussians_1u1d_nofloquet": "706210",
+        "gaussians_1u1d": "706211",
+        "trapping_2u2d": "706212",
+        "trapping_3u3d": "706213"
+    }
+    if exclude is not None:
+        data = {path: key for path, key in data.items() if path not in exclude}
+
+    for path, key in data.items():
+        print(f"Downloading {path}...")
+        if os.path.exists(path=base_dir + os.path.sep + path):
+            print("Data already exists.\n")
+            continue
+
+        with urlopen(base_url + key) as stream:
+            with ZipFile(BytesIO(stream.read())) as zfile:
+                zfile.extractall(base_dir)
+
+        print("Successfully downloaded.\n")

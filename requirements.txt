@@ -15,8 +15,7 @@ pytket-cirq
 scipy
 
 # hfvqe
-openfermion==0.11.0
+openfermion~=1.0.0
 
 # fermi_hubbard
-openfermioncirq
 tqdm  # notebook progress bars
