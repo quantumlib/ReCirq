@@ -36,7 +36,7 @@ if [ "$TF_DOCS_INSTALLED" != "1" ]; then
   pip install -U git+https://github.com/tensorflow/docs@$TF_DOCS_COMMIT
 fi
 
-FORMAT_CMD="python3 -m tensorflow_docs.tools.nbfmt --indent=1"
+FORMAT_CMD="python3 -m tensorflow_docs.tools.nbfmt --indent=2"
 
 # Test the notebooks
 unformatted=$($FORMAT_CMD --test docs 2>&1 | grep "\- docs" || true)
