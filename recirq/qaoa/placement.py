@@ -64,7 +64,7 @@ def tk_to_cirq_qubit(tk: Qubit):
     return (
         cirq.LineQubit(ind[0])
         if len(ind) == 1
-        else cirq.GridQid(*ind, dimension=len(ind))
+        else cirq.GridQubit(*ind)
     )
 
 
