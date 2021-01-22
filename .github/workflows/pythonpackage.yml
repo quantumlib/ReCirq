@@ -63,4 +63,4 @@ jobs:
           python-version: '3.7'
           architecture: 'x64'
       - name: Doc check
-        run: dev_tools/nbformat
+        run: dev_tools/nbfmt
