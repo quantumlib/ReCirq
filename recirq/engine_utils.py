@@ -25,6 +25,7 @@ import cirq
 from cirq import work, study, circuits, ops
 from cirq.google import devices as cg_devices, gate_sets, engine as cg_engine
 from cirq.google.engine.engine_job import TERMINAL_STATES
+from cirq.google.engine.client.quantum_v1alpha1.gapic import enums
 
 
 def _get_program_id(program: Any):
@@ -372,3 +373,15 @@ async def execute_in_queue(func, tasks, num_workers: int):
     await queue.join()
     for wjob in worker_jobs:
         wjob.cancel()
+
+
+def check_reservation_status(processor_ids: List[str]):
+    engine = cirq.google.get_engine()
+    available_processors = []
+    for processor_id in processor_ids:
+        processor = engine.get_processor(processor_id)
+        schedule = processor.get_schedule()
+        unallocated = list(filter(lambda t: t.slot_type == enums.QuantumTimeSlot.TimeSlotType.UNALLOCATED, schedule))
+        if len(unallocated) != 0:
+            available_processors.append(processor_id)
+    return available_processors
