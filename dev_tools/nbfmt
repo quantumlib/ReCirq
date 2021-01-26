@@ -25,4 +25,10 @@ if [[ ! -f dev_tools/nbformat ]]; then
 fi
 
 # Run the formatter.
-dev_tools/nbformat "$@"
+result=$(dev_tools/nbformat "$@")
+status=$?
+
+# Make sure error message references right file.
+result=${result//"check/nbformat"/"dev_tools/nbfmt"}
+printf '%s\n' "${result[@]}"
+exit $status
