@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import time
 from typing import Dict, List, Optional, Tuple
 
 import cirq
@@ -145,6 +146,7 @@ class CirqBoard:
         The second value is a list of ancilla values, as represented as a
         dictionary from ancilla name to value (0 or 1).
         """
+        t0 = time.perf_counter()
         measure_circuit = self.circuit.copy()
         ancilla = []
         error_count = 0
@@ -255,6 +257,8 @@ class CirqBoard:
                         f'Discarded {error_count} from error mitigation '
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
+                    t1 = time.perf_counter()
+                    self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -262,6 +266,8 @@ class CirqBoard:
                 f'Discarded {error_count} from error mitigation '
                 f'{noise_count} from noise and {post_count} from post-selection\n'
             )
+        t1 = time.perf_counter()
+        self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
