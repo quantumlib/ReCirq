@@ -28,8 +28,8 @@ def normal_move(s: cirq.Qid, t: cirq.Qid):
     s: source qubit (square where piece starts)
     t: target qubit (square to move piece to)
   """
-    yield cirq.ISWAP(s, t)**0.5
-    yield cirq.ISWAP(s, t)**0.5
+    yield cirq.ISWAP(s, t) ** 0.5
+    yield cirq.ISWAP(s, t) ** 0.5
 
 
 def split_move(s: cirq.Qid, t1: cirq.Qid, t2: cirq.Qid):
@@ -44,9 +44,9 @@ def split_move(s: cirq.Qid, t1: cirq.Qid, t2: cirq.Qid):
       t1: target qubit (first square to move piece to)
       t2: target qubit (second square to move piece to)
     """
-    yield cirq.ISWAP(s, t1)**0.5
-    yield cirq.ISWAP(s, t2)**0.5
-    yield cirq.ISWAP(s, t2)**0.5
+    yield cirq.ISWAP(s, t1) ** 0.5
+    yield cirq.ISWAP(s, t2) ** 0.5
+    yield cirq.ISWAP(s, t2) ** 0.5
 
 
 def merge_move(s1: cirq.Qid, s2: cirq.Qid, t: cirq.Qid):
@@ -57,13 +57,13 @@ def merge_move(s1: cirq.Qid, s2: cirq.Qid, t: cirq.Qid):
     two target qubits.
 
     Args:
-      s: source qubit (square where piece starts)
-      t1: target qubit (first square to move piece to)
-      t2: target qubit (second square to move piece to)
+      s1: source qubit (first square where a piece starts from)
+      s2: source qubit (second square where a piece starts from)
+      t: target qubit (square to move a piece to)
     """
-    yield cirq.ISWAP(s1, t)**-0.5
-    yield cirq.ISWAP(s1, t)**-0.5
-    yield cirq.ISWAP(s2, t)**-0.5
+    yield cirq.ISWAP(s1, t) ** -0.5
+    yield cirq.ISWAP(s1, t) ** -0.5
+    yield cirq.ISWAP(s2, t) ** -0.5
 
 
 def slide_move(s: cirq.Qid,
@@ -80,7 +80,7 @@ def slide_move(s: cirq.Qid,
     Args:
       s: source qubit (square where piece starts)
       t: target qubit (square to move piece to)
-      p: qubit blocked the path
+      path: qubit blocked the path
     """
     if len(path) == 0:
         return normal_move(s, t)
@@ -137,7 +137,7 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
     # and turns it into ISWAP.controlled_by(ancilla)
     yield cirq.X(ancilla).controlled_by(path2, path1)
 
-    yield (cirq.ISWAP(squbit, tqubit)**0.5).controlled_by(ancilla)
+    yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(ancilla)
     yield (cirq.ISWAP(squbit, tqubit2)).controlled_by(ancilla)
 
     # Now switch to anti-control of path1
@@ -160,8 +160,8 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
 def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path1, path2)
 
-    yield (cirq.ISWAP(squbit, tqubit)**-1.0).controlled_by(ancilla)
-    yield (cirq.ISWAP(squbit2, tqubit)**-0.5).controlled_by(ancilla)
+    yield (cirq.ISWAP(squbit, tqubit) ** -1.0).controlled_by(ancilla)
+    yield (cirq.ISWAP(squbit2, tqubit) ** -0.5).controlled_by(ancilla)
 
     # Now switch to anti-control of path1
     yield cirq.X(ancilla).controlled_by(path2)

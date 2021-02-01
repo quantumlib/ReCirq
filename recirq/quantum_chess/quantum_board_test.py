@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
-import cirq
-import cirq.contrib.noise_models as ccn
 
 import recirq.engine_utils as utils
+import recirq.quantum_chess.bit_utils as u
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_board as qb
-import recirq.quantum_chess.bit_utils as u
 from recirq.quantum_chess.test_utils import (
     assert_sample_distribution,
     assert_samples_in,
@@ -82,8 +80,8 @@ def test_classical_jump_move(board):
 
 
 @pytest.mark.parametrize('move_type,board', (
-    *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
-    *[(enums.MoveType.SPLIT_SLIDE, b) for b in ALL_CIRQ_BOARDS],
+        *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
+        *[(enums.MoveType.SPLIT_SLIDE, b) for b in ALL_CIRQ_BOARDS],
 ))
 def test_split_move(move_type, board):
     b = board.with_state(u.squares_to_bitboard(['a1']))
@@ -588,15 +586,15 @@ def test_pawn_capture(board):
 
 
 @pytest.mark.parametrize('initial_board,source,target', (
-    (u.squares_to_bitboard(['e1', 'f1', 'h1']), 'e1', 'g1'),
-    (u.squares_to_bitboard(['e1', 'g1', 'h1']), 'e1', 'g1'),
-    (u.squares_to_bitboard(['e1', 'f1', 'g1', 'h1']), 'e1', 'g1'),
-    (u.squares_to_bitboard(['e8', 'f8', 'h8']), 'e8', 'g8'),
-    (u.squares_to_bitboard(['e8', 'g8', 'h8']), 'e8', 'g8'),
-    (u.squares_to_bitboard(['e8', 'f8', 'g8', 'h8']), 'e8', 'g8'),
-    (u.squares_to_bitboard(['e1', 'c1', 'a1']), 'e1', 'c1'),
-    (u.squares_to_bitboard(['e1', 'd1', 'a1']), 'e1', 'c1'),
-    (u.squares_to_bitboard(['e1', 'c1', 'd1', 'a1']), 'e1', 'c1'),
+        (u.squares_to_bitboard(['e1', 'f1', 'h1']), 'e1', 'g1'),
+        (u.squares_to_bitboard(['e1', 'g1', 'h1']), 'e1', 'g1'),
+        (u.squares_to_bitboard(['e1', 'f1', 'g1', 'h1']), 'e1', 'g1'),
+        (u.squares_to_bitboard(['e8', 'f8', 'h8']), 'e8', 'g8'),
+        (u.squares_to_bitboard(['e8', 'g8', 'h8']), 'e8', 'g8'),
+        (u.squares_to_bitboard(['e8', 'f8', 'g8', 'h8']), 'e8', 'g8'),
+        (u.squares_to_bitboard(['e1', 'c1', 'a1']), 'e1', 'c1'),
+        (u.squares_to_bitboard(['e1', 'd1', 'a1']), 'e1', 'c1'),
+        (u.squares_to_bitboard(['e1', 'c1', 'd1', 'a1']), 'e1', 'c1'),
 ))
 def test_illegal_castle(initial_board, source, target):
     """Tests various combinations of illegal capture.
@@ -857,6 +855,7 @@ def test_basic_ep():
     ]
     assert_samples_in(b, possibilities)
 
+
 def test_undo_last_move():
     # TODO  (cantwellc) more comprehensive tests
     b = qb.CirqBoard(u.squares_to_bitboard(['a2']))
@@ -869,8 +868,9 @@ def test_undo_last_move():
     probs = b.get_probability_distribution(1000)
     assert_prob_about(probs, qb.square_to_bit('a2'), 1.0)
 
+
 def test_undo_entangled_measurement():
-    b = qb.CirqBoard(u.squares_to_bitboard(['a2','b1','c2','d1']))
+    b = qb.CirqBoard(u.squares_to_bitboard(['a2', 'b1', 'c2', 'd1']))
     assert b.perform_moves(
         'b1a3c3:SPLIT_JUMP:BASIC',
         'c2c4:PAWN_TWO_STEP:BASIC'
@@ -880,7 +880,7 @@ def test_undo_entangled_measurement():
     assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
-    b.perform_moves( 'd1c2:JUMP:EXCLUDED')
+    b.perform_moves('d1c2:JUMP:EXCLUDED')
     assert b.undo_last_move()
     probs = b.get_probability_distribution(10000)
     assert_prob_about(probs, qb.square_to_bit('a3'), 0.5)
