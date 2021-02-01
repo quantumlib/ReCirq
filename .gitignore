@@ -39,6 +39,7 @@ docs/generated
 
 # Default pycharm virtual env
 .venv/
+venv/
 
 # Notebook formatting script.
 nbformat

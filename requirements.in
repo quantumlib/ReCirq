@@ -1,0 +1,23 @@
+cirq==0.9.1
+seaborn
+sphinx
+ipython
+pytest
+numpy
+
+# optimize
+scikit-learn
+
+# qaoa
+networkx
+pytket-cirq==0.3
+pytket==0.5.2
+
+# quantum chess, only needed for tests
+scipy
+
+# hfvqe
+openfermion~=1.0.0
+
+# fermi_hubbard
+tqdm  # notebook progress bars
