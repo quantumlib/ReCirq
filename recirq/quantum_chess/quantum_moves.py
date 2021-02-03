@@ -54,7 +54,7 @@ def merge_move(s1: cirq.Qid, s2: cirq.Qid, t: cirq.Qid):
 
     This function takes three qubits and returns a generator
     that performs a split move from the source qubit to the
-    two target qubits.
+    two source qubits.
 
     Args:
       s1: source qubit (first square where a piece starts from)
