@@ -52,6 +52,7 @@ def apply_moves(b: ab.AsciiBoard, moves: List[str]) -> bool:
 def main_loop(args):
     f = open(args.filename, 'r')
     moves = [line.strip() for line in f]
+    utils.check_reservation_status([args.processor_name])
     board = create_board(processor_name=args.processor_name,
                          noise_mitigation=0.1)
     b = ab.AsciiBoard(board=board)
