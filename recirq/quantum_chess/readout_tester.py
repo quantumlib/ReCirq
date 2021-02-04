@@ -22,8 +22,6 @@
 from typing import Dict
 
 import cirq
-import cirq.google as cg
-import numpy as np
 
 
 class ReadoutTester:
