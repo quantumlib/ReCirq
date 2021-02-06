@@ -16,6 +16,7 @@ import asyncio
 import math
 import os
 import uuid
+import datetime
 from dataclasses import dataclass, field
 from typing import List, Any, Optional, Callable, Dict, Union
 
@@ -374,46 +375,30 @@ async def execute_in_queue(func, tasks, num_workers: int):
     for wjob in worker_jobs:
         wjob.cancel()
 
-import datetime
-import pytz
-time_zone = 'America/Los_Angeles'
-tz = pytz.timezone(time_zone)
-now = tz.localize(datetime.datetime.now())
-def date_string(timestamp):
-  if timestamp.seconds < 0:
-    return 'Beginning of time'
-  if timestamp.seconds > 4771848621:
-    return 'End of time'
-  time = datetime.datetime.fromtimestamp(timestamp.seconds).astimezone(tz)
-  return time.strftime('%Y-%m-%d %H:%M:%S')
 
-def delta(start, end):
-  if start.seconds < 0 or end.seconds > 5000000000:
-    return "∞"
-  return "{} hrs".format((end.seconds - start.seconds) / (60 * 60))
+def _get_current_time():
+    return datetime.datetime.now()
 
-def time_slot_string(time_slot):
-  start = date_string(time_slot.start_time)
-  end = date_string(time_slot.end_time)
-  slot_type = cirq.google.engine.client.quantum_v1alpha1.types.QuantumTimeSlot.TimeSlotType.Name(time_slot.slot_type)
-  slot_string = "{} to {} ({}) - {}".format(start, end, delta(time_slot.start_time, time_slot.end_time), slot_type)
-  if time_slot.HasField('reservation_config'):
-    return "{} for {}".format(slot_string, time_slot.reservation_config.project_id)
-  if time_slot.HasField('maintenance_config'):
-    return "{} {} - {}".format(slot_string, time_slot.maintenance_config.title, time_slot.maintenance_config.description)
-  return slot_string
-
-def check_reservation_status(processor_ids: List[str]):
+def get_available_processors(processor_ids: List[str]):
+    """Checks the reservation status of the processors and returns a list of processors that are available to run on at the present time.
+    """
+    project_id = os.environ['GOOGLE_CLOUD_PROJECT']
     engine = cirq.google.get_engine()
     available_processors = []
     for processor_id in processor_ids:
-        print("HERE???", processor_id)
+        # Simulators don't have a reservation schedule and are always available.
+        if QUANTUM_PROCESSORS[processor_id].is_simulator:
+            available_processors.append(processor_id)
+            break
         processor = engine.get_processor(processor_id)
-        schedule = processor.get_schedule()
-        print(schedule)
-        unallocated = list(filter(lambda t: t.slot_type == enums.QuantumTimeSlot.TimeSlotType.UNALLOCATED, schedule))
-        for slot in unallocated:
-            print(time_slot_string(slot))
-        # if len(unallocated) != 0:
-        #     available_processors.append(processor_id)
+        for time_slot in processor.get_schedule():
+            # Ignore time slots that do not contain the current time.
+            if time_slot.start_time < _get_current_time() < time_slot.end_time:
+                # Time slots need to be either in OPEN_SWIM or reserved by the current project to be considered available.
+                if time_slot.slot_type == enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM:
+                    available_processors.append(processor_id)
+                    break
+                if time_slot.slot_type == enums.QuantumTimeSlot.TimeSlotType.RESERVATION and time_slot.project_id == project_id:
+                    available_processors.append(processor_id)
+                    break
     return available_processors

@@ -14,12 +14,17 @@
 
 import os
 import uuid
+from datetime import datetime
 
 import pytest
+from unittest.mock import patch
 
 import cirq
+from cirq.google.engine import EngineTimeSlot
+from cirq.google.engine.client.quantum_v1alpha1.gapic import enums
 import recirq
 from recirq.engine_utils import _get_program_id
+
 
 
 def test_get_program_id():
@@ -108,3 +113,43 @@ def test_sampler_by_name():
     assert isinstance(recirq.get_sampler_by_name('Syc23-zeros',
                                                  gateset='sqrt-iswap'),
                       recirq.ZerosSampler)
+
+
+def test_get_available_processors_simulators():
+    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
+    assert 'Syc23-simulator' in recirq.get_available_processors(['Syc23-simulator'])
+
+
+@patch('recirq.engine_utils._get_current_time')
+@patch('cirq.google.engine.EngineProcessor.get_schedule')
+def test_get_available_processors_open_swim_1(schedule_mock, time_mock):
+    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
+    schedule_mock.return_value = [
+        EngineTimeSlot(
+            "Sycamore23",
+            datetime.fromtimestamp(100),
+            datetime.fromtimestamp(500),
+            enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM
+        )
+    ]
+    time_mock.return_value = datetime.fromtimestamp(300)
+    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
+    assert 'Sycamore23' in recirq.get_available_processors(['Sycamore23'])
+
+
+@patch('recirq.engine_utils._get_current_time')
+@patch('cirq.google.engine.EngineProcessor.get_schedule')
+def test_get_available_processors_open_swim_2(schedule_mock, time_mock):
+    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
+    schedule_mock.return_value = [
+        EngineTimeSlot(
+            "Sycamore23",
+            datetime.fromtimestamp(100),
+            datetime.fromtimestamp(500),
+            enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM
+        )
+    ]
+    time_mock.return_value = datetime.fromtimestamp(700)
+    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
+    assert recirq.get_available_processors(['Sycamore23']) == []
+
