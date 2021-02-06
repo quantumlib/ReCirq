@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import copy
-import random
 from typing import Dict, Iterable, List, Optional, Set
 
 import cirq
@@ -56,14 +55,14 @@ class CircuitTransformer:
         return c
 
     def find_start_qubit(self, qubit_list: List[cirq.Qid],
-                         depth=3) -> cirq.GridQubit:
+                         depth=3) -> Optional[cirq.GridQubit]:
         """Finds a reasonable starting qubit to start the mapping.
 
         Uses the heuristic of the most connected qubit. """
         best = None
         best_count = -1
         for q in qubit_list:
-            c = self.qubits_within(3, q, qubit_list)
+            c = self.qubits_within(depth, q, qubit_list)
             if c > best_count:
                 best_count = c
                 best = q
@@ -191,7 +190,7 @@ class CircuitTransformer:
                 del mapping[node_to_map]
                 available_qubits.add(node_to_try)
             else:
-                #We have successfully mapped all qubits!
+                # We have successfully mapped all qubits!
                 return True
 
         # All available qubits were not valid.
@@ -211,7 +210,7 @@ class CircuitTransformer:
         # Build up an adjacency graph based on the circuits.
         # Two qubit gates will turn into edges in the graph
         g = {}
-        #Keep track of single qubits that don't interact.
+        # Keep track of single qubits that don't interact.
         sq = []
         for m in circuit:
             for op in m:
@@ -303,7 +302,7 @@ class SycamoreDecomposer(cirq.PointOptimizer):
 
     def optimization_at(self, circuit: cirq.Circuit, index: int,
                         op: cirq.Operation
-                       ) -> Optional[cirq.PointOptimizationSummary]:
+                        ) -> Optional[cirq.PointOptimizationSummary]:
         if len(op.qubits) > 3:
             raise ValueError(f'Four qubit ops not yet supported: {op}')
         new_ops = None
@@ -314,14 +313,14 @@ class SycamoreDecomposer(cirq.PointOptimizer):
             if op.gate.sub_gate == cirq.ISWAP:
                 new_ops = controlled_iswap.controlled_iswap(
                     *qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-1:
+            if op.gate.sub_gate == cirq.ISWAP ** -1:
                 new_ops = controlled_iswap.controlled_iswap(*qubits,
                                                             *op.controls,
                                                             inverse=True)
-            if op.gate.sub_gate == cirq.ISWAP**0.5:
+            if op.gate.sub_gate == cirq.ISWAP ** 0.5:
                 new_ops = controlled_iswap.controlled_sqrt_iswap(
                     *qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-0.5:
+            if op.gate.sub_gate == cirq.ISWAP ** -0.5:
                 new_ops = controlled_iswap.controlled_inv_sqrt_iswap(
                     *qubits, *op.controls)
             if op.gate.sub_gate == cirq.X:

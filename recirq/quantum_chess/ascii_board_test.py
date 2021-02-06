@@ -1,5 +1,3 @@
-import pytest
-import cirq
 import recirq.quantum_chess.ascii_board as ab
 import recirq.quantum_chess.constants as c
 import recirq.quantum_chess.move as m
@@ -40,7 +38,6 @@ def test_fen():
 def test_ep_flag():
     b = ab.AsciiBoard()
     b.reset()
-    assert b._ep_flag(m.Move('b2', 'b3'), c.PAWN) == None
-    assert b._ep_flag(m.Move('b2', 'b4'), c.KNIGHT) == None
+    assert b._ep_flag(m.Move('b2', 'b3'), c.PAWN) is None
+    assert b._ep_flag(m.Move('b2', 'b4'), c.KNIGHT) is None
     assert b._ep_flag(m.Move('b2', 'b4'), c.PAWN) == 1
-
