@@ -380,7 +380,8 @@ def _get_current_time():
     return datetime.datetime.now()
 
 def get_available_processors(processor_ids: List[str]):
-    """Checks the reservation status of the processors and returns a list of processors that are available to run on at the present time.
+    """Checks the reservation status of the processors and returns a list of
+    processors that are available to run on at the present time.
     """
     project_id = os.environ['GOOGLE_CLOUD_PROJECT']
     engine = cirq.google.get_engine()
@@ -394,7 +395,8 @@ def get_available_processors(processor_ids: List[str]):
         for time_slot in processor.get_schedule():
             # Ignore time slots that do not contain the current time.
             if time_slot.start_time < _get_current_time() < time_slot.end_time:
-                # Time slots need to be either in OPEN_SWIM or reserved by the current project to be considered available.
+                # Time slots need to be either in OPEN_SWIM or reserved by the
+                # current project to be considered available.
                 if time_slot.slot_type == enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM:
                     available_processors.append(processor_id)
                     break
