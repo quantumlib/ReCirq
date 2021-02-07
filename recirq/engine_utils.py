@@ -379,6 +379,7 @@ async def execute_in_queue(func, tasks, num_workers: int):
 def _get_current_time():
     return datetime.datetime.now()
 
+
 def get_available_processors(processor_ids: List[str]):
     """Checks the reservation status of the processors and returns a list of
     processors that are available to run on at the present time.
@@ -390,7 +391,7 @@ def get_available_processors(processor_ids: List[str]):
         # Simulators don't have a reservation schedule and are always available.
         if QUANTUM_PROCESSORS[processor_id].is_simulator:
             available_processors.append(processor_id)
-            break
+            continue
         processor = engine.get_processor(processor_id)
         for time_slot in processor.get_schedule():
             # Ignore time slots that do not contain the current time.

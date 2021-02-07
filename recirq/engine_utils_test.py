@@ -120,9 +120,10 @@ def test_get_available_processors_simulators():
     assert 'Syc23-simulator' in recirq.get_available_processors(['Syc23-simulator'])
 
 
+@patch('cirq.google.engine.engine_client.quantum.QuantumEngineServiceClient')
 @patch('recirq.engine_utils._get_current_time')
 @patch('cirq.google.engine.EngineProcessor.get_schedule')
-def test_get_available_processors_open_swim_1(schedule_mock, time_mock):
+def test_get_available_processors_open_swim_1(schedule_mock, time_mock, engine_mock):
     os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
     schedule_mock.return_value = [
         EngineTimeSlot(
@@ -137,9 +138,10 @@ def test_get_available_processors_open_swim_1(schedule_mock, time_mock):
     assert 'Sycamore23' in recirq.get_available_processors(['Sycamore23'])
 
 
+@patch('cirq.google.engine.engine_client.quantum.QuantumEngineServiceClient')
 @patch('recirq.engine_utils._get_current_time')
 @patch('cirq.google.engine.EngineProcessor.get_schedule')
-def test_get_available_processors_open_swim_2(schedule_mock, time_mock):
+def test_get_available_processors_open_swim_2(schedule_mock, time_mock, engine_mock):
     os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
     schedule_mock.return_value = [
         EngineTimeSlot(
