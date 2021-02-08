@@ -24,7 +24,6 @@ from recirq.otoc.utils import (
 )
 
 from recirq.otoc.parallel_xeb import (
-    default_interaction_sequence,
     build_xeb_circuits,
     parallel_xeb_fidelities,
     single_qubit_xeb_fidelities,
