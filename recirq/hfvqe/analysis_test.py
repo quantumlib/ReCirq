@@ -19,8 +19,7 @@ from recirq.hfvqe.circuits import rhf_params_to_matrix
 from recirq.hfvqe.analysis import (trace_distance, kdelta, energy_from_opdm,
                                    fidelity_witness, fidelity,
                                    mcweeny_purification)
-from recirq.hfvqe.molecular_example import make_h6_1_3
-from recirq.hfvqe.molecular_example_odd_qubits import (make_h3_2_5)
+from recirq.hfvqe.molecular_example import make_h6_1_3, make_h3_2_5
 from recirq.hfvqe.gradient_hf import rhf_func_generator
 
 

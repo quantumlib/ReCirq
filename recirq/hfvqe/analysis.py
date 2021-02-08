@@ -15,7 +15,7 @@
 from typing import Dict, List, Optional
 import numpy as np
 
-from openfermion.utils import wedge
+from openfermion.linalg import wedge
 from openfermion.ops import InteractionRDM
 
 import recirq.hfvqe.util as ccu

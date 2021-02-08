@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 
 import recirq
 from recirq.readout_scan.tasks import ReadoutScanTask
@@ -32,3 +33,8 @@ which is primarily affected by readout error.
  - `qubit`: The qubit to benchmark.
  - `resolution_factor`: We select the number of points in the linspace so that the special points: (-1/2, 0, 1/2, 1, 3/2) * pi are always included. The total number of theta evaluations is resolution_factor * 4 + 1.
 """
+
+
+def test_fetch_guide_data_collection_data(tmpdir):
+    recirq.fetch_guide_data_collection_data(base_dir=tmpdir)
+    assert os.path.exists(f'{tmpdir}/2020-02-tutorial')
