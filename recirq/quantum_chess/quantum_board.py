@@ -24,7 +24,7 @@ from recirq.quantum_chess.bit_utils import (
     square_to_bit,
     xy_to_bit,
 )
-import recirq.quantum_chess.circuit_transformer as circuit_transformer
+import recirq.quantum_chess.circuit_transformer as ct
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
@@ -60,6 +60,8 @@ class CirqBoard:
             an error or post-selects the result away.
         noise_mitigation: Threshold of samples to overcome in order
             to be considered not noise.
+        transformer: The CircuitTransformer to use to convert the board's
+            NamedQubit circuit into a GridQubit circuit.
     """
 
     def __init__(self,
@@ -68,11 +70,14 @@ class CirqBoard:
                  device: Optional[cirq.Device] = None,
                  error_mitigation: Optional[
                      enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
-                 noise_mitigation: Optional[float] = 0.0):
+                 noise_mitigation: Optional[float] = 0.0,
+                 transformer: Optional[ct.CircuitTransformer] = None):
         self.device = device
         self.sampler = sampler
         if device is not None:
-            self.transformer = circuit_transformer.CircuitTransformer(device)
+            self.transformer = (
+                transformer
+                or ct.ConnectivityHeuristicCircuitTransformer(device))
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
@@ -179,11 +184,9 @@ class CirqBoard:
             # Translate circuit to grid qubits and sqrtISWAP gates
             if self.device is not None:
                 # Decompose 3-qubit operations
-                circuit_transformer.SycamoreDecomposer().optimize_circuit(
-                    measure_circuit)
+                ct.SycamoreDecomposer().optimize_circuit(measure_circuit)
                 # Create NamedQubit to GridQubit mapping and transform
-                measure_circuit = self.transformer.optimize_circuit(
-                    measure_circuit)
+                measure_circuit = self.transformer.transform(measure_circuit)
 
                 # For debug, ensure that the circuit correctly validates
                 self.device.validate_circuit(measure_circuit)
