@@ -167,3 +167,23 @@ def test_get_available_processors_current_project_reservation(
     ]
     time_mock.return_value = datetime.fromtimestamp(300)
     assert 'Sycamore23' in recirq.get_available_processors(['Sycamore23'])
+
+
+@patch('cirq.google.engine.engine_client.quantum.QuantumEngineServiceClient')
+@patch('recirq.engine_utils._get_current_time')
+@patch('cirq.google.engine.EngineProcessor.get_schedule')
+def test_get_available_processors_other_project_reservation(
+        schedule_mock, time_mock, engine_mock):
+    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
+    schedule_mock.return_value = [
+        qtypes.QuantumTimeSlot(
+            processor_name='Sycamore23',
+            start_time=Timestamp(seconds=100),
+            end_time=Timestamp(seconds=500),
+            slot_type=enums.QuantumTimeSlot.TimeSlotType.RESERVATION,
+            reservation_config=qtypes.QuantumTimeSlot.ReservationConfig(
+                project_id='other_project'),
+        )
+    ]
+    time_mock.return_value = datetime.fromtimestamp(300)
+    assert recirq.get_available_processors(['Sycamore23']) == []
