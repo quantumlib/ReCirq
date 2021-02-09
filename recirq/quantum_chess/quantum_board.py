@@ -94,6 +94,7 @@ class CirqBoard:
         # the move-history when undoing moves
         self.init_basis_state = basis_state
         self.clear_debug_log()
+        self.timing_stats = []
         return self
 
     def clear_debug_log(self) -> None:
@@ -259,6 +260,7 @@ class CirqBoard:
                         f'{post_count} from post-selection\n')
                     t1 = time.perf_counter()
                     self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
+                    self.timing_stats.append(t1 - t0)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -268,6 +270,7 @@ class CirqBoard:
             )
         t1 = time.perf_counter()
         self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
+        self.timing_stats.append(t1 - t0)
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
