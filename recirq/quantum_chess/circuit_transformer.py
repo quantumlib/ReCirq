@@ -24,7 +24,7 @@ ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 class CircuitTransformer:
     """Abstract interface for circuit transformations.
 
-    For example: named -> grid qubit transformations.
+    For example: NamedQubit -> GridQubit transformations.
     """
     def __init__(self):
         pass
@@ -325,14 +325,14 @@ class SycamoreDecomposer(cirq.PointOptimizer):
             if op.gate.sub_gate == cirq.ISWAP:
                 new_ops = controlled_iswap.controlled_iswap(
                     *qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-1:
+            if op.gate.sub_gate == cirq.ISWAP ** -1:
                 new_ops = controlled_iswap.controlled_iswap(*qubits,
                                                             *op.controls,
                                                             inverse=True)
-            if op.gate.sub_gate == cirq.ISWAP**0.5:
+            if op.gate.sub_gate == cirq.ISWAP ** 0.5:
                 new_ops = controlled_iswap.controlled_sqrt_iswap(
                     *qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-0.5:
+            if op.gate.sub_gate == cirq.ISWAP ** -0.5:
                 new_ops = controlled_iswap.controlled_inv_sqrt_iswap(
                     *qubits, *op.controls)
             if op.gate.sub_gate == cirq.X:
