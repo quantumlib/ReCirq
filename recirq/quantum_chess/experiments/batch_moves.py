@@ -11,8 +11,9 @@ FILENAME is a filename with moves in the move format described
 by recirq.quantum_chess.move (see also interactive_board for
 examples).
 
-PROCESSOR_NAME is a processor name from engine_utils.py.
-Defaults to a 54 qubit sycamore noiseless simulator.
+PROCESSOR_NAME is a processor name from engine_utils.py. If empty, it will find
+an available quantum processor to run on. Default to 54 qubit sycamore
+noiseless simulator if none are available.
 
 FEN is a initial position in chess FEN notation. Optional.
 Default is the normal classical chess starting position.
