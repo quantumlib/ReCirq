@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
-import cirq
 
 import recirq.quantum_chess.bit_utils as u
-import recirq.quantum_chess.enums as enums
-import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_board as qb
 import recirq.quantum_chess.quantum_board_test as quantum_board_test
 import recirq.quantum_chess.test_utils as test_utils
@@ -29,12 +26,12 @@ def assert_samples_in(b, possibilities):
 
 
 @pytest.mark.parametrize('solution,sq', (
-    ('b3d5--b7', 'd5'),
-    ('b7d5--b3', 'd5'),
-    ('b3f3--b7', 'f3'),
-    ('b7f3--b3', 'f3'),
-    ('b3f7--b7', 'f7'),
-    ('b7f7--b3', 'f7'),
+        ('b3d5--b7', 'd5'),
+        ('b7d5--b3', 'd5'),
+        ('b3f3--b7', 'f3'),
+        ('b7f3--b3', 'f3'),
+        ('b3f7--b7', 'f7'),
+        ('b7f7--b3', 'f7'),
 ))
 def test_t1(solution, sq):
     for board in ALL_CIRQ_BOARDS:

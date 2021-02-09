@@ -19,9 +19,9 @@ Default is the normal classical chess starting position.
 """
 import argparse
 from typing import List
-import sys
 
 import cirq.google as cg
+
 import recirq.engine_utils as utils
 import recirq.quantum_chess.ascii_board as ab
 import recirq.quantum_chess.enums as enums
@@ -32,7 +32,7 @@ import recirq.quantum_chess.quantum_board as qb
 def create_board(processor_name: str, *, noise_mitigation: float):
     return qb.CirqBoard(init_basis_state=0,
                         sampler=utils.get_sampler_by_name(
-                            processor_name, gateset=cg.SQRT_ISWAP_GATESET),
+                            processor_name, gateset='sqrt-iswap'),
                         device=utils.get_device_obj_by_name(processor_name),
                         error_mitigation=enums.ErrorMitigation.Correct,
                         noise_mitigation=noise_mitigation)

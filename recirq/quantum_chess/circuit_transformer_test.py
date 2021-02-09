@@ -45,7 +45,7 @@ def test_single_qubit_ops(device):
 def test_single_qubit_with_two_qubits(device):
     transformer = ct.CircuitTransformer(device)
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3),
-                     cirq.ISWAP(a3, a4)**0.5)
+                     cirq.ISWAP(a3, a4) ** 0.5)
     transformer.qubit_mapping(c)
     device.validate_circuit(transformer.optimize_circuit(c))
 
