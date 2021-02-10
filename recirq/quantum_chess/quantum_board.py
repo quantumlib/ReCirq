@@ -263,7 +263,7 @@ class CirqBoard:
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
                     t1 = time.perf_counter()
-                    record_time(t0, t1)
+                    self.record_time(t0, t1)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -272,7 +272,7 @@ class CirqBoard:
                 f'{noise_count} from noise and {post_count} from post-selection\n'
             )
         t1 = time.perf_counter()
-        record_time(t0, t1)
+        self.record_time(t0, t1)
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
