@@ -1,5 +1,5 @@
 # Copyright 2020 Google
-#
+1;95;0c#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -135,6 +135,10 @@ class CirqBoard:
                 return False
         return True
 
+    def record_time(self, t0, t1) -> None:
+        self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
+        self.timing_stats.append(t1 - t0)
+    
     def sample_with_ancilla(self, num_samples: int
                             ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
@@ -259,8 +263,7 @@ class CirqBoard:
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
                     t1 = time.perf_counter()
-                    self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
-                    self.timing_stats.append(t1 - t0)
+                    record_time(t0, t1)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -269,8 +272,7 @@ class CirqBoard:
                 f'{noise_count} from noise and {post_count} from post-selection\n'
             )
         t1 = time.perf_counter()
-        self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
-        self.timing_stats.append(t1 - t0)
+        record_time(t0, t1)
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
