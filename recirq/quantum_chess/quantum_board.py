@@ -143,7 +143,9 @@ class CirqBoard:
                 return False
         return True
 
-    def record_time(self, t0, t1) -> None:
+    def record_time(self, t0, t1: Optional[float] = None) -> None:
+        if t1 is None:
+            t1 = time.perf_counter()
         self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
         self.timing_stats.append(t1 - t0)
     
@@ -270,8 +272,7 @@ class CirqBoard:
                         f'Discarded {error_count} from error mitigation '
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
-                    t1 = time.perf_counter()
-                    self.record_time(t0, t1)
+                    self.record_time(t0)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -279,8 +280,7 @@ class CirqBoard:
                 f'Discarded {error_count} from error mitigation '
                 f'{noise_count} from noise and {post_count} from post-selection\n'
             )
-        t1 = time.perf_counter()
-        self.record_time(t0, t1)
+        self.record_time(t0)
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
