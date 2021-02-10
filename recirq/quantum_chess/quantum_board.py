@@ -104,6 +104,14 @@ class CirqBoard:
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
+            
+    def clear_timing_stats(self) -> None:
+        self.timing_stats = []
+
+    def print_timing_stats(self, clear_stats: bool = False) -> None:
+        print(self.timing_stats)
+        if clear_stats:
+            self.clear_timing_stats()
 
     def perform_moves(self, *moves) -> bool:
         """Performs a list of moves, specified as strings.
