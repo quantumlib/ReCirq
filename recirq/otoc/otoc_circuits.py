@@ -456,6 +456,9 @@ def _compile_moments(
     ops_dict: Union[_GATE_CORRECTIONS, List[_GATE_CORRECTIONS]],
     layer_by_layer_cal: bool = False,
 ) -> List[Union[cirq.Moment, Sequence[cirq.Moment]]]:
+    """Outputs the cirq.Moment(s) for each two-qubit layer based on the the pairs that interact
+    in each layer and the gates associated with them.
+    """
     moment_list = []
 
     # num_slices refers to the number of moments in the cirq.Circuit object
@@ -566,6 +569,9 @@ def _extract_light_cone(
     from_right: bool,
     multiple_butterflies: bool = False,
 ) -> List[Set[Any]]:
+    """Outputs the set of qubits that fall within the lightcone of butterfly qubit(s) in each
+    cycle.
+    """
     num_configs = len(interaction_layers)
     int_seq = [interaction_layers[c % num_configs] for c in range(cycle)]
     if reverse ^ from_right:
@@ -588,6 +594,7 @@ def _extract_light_cone(
 
 
 def _add_layer(set_0: Set[Any], sets_1: Set[Tuple[Any, Any]]) -> Set[Any]:
+    """Comv"""
     new_set = set_0.copy()
     for set_1 in sets_1:
         q0, q1 = set_1

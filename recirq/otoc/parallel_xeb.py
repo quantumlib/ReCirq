@@ -19,6 +19,7 @@ from typing import Sequence, List, Set, Tuple, Dict, Union, Optional
 import cirq
 import numpy as np
 import pybobyqa
+from cirq.experiments.cross_entropy_benchmarking import _default_interaction_sequence
 from matplotlib import pyplot as plt
 
 from recirq.otoc.utils import (
@@ -642,7 +643,7 @@ def _pairwise_xeb_probabilities(
     qubits = [cirq.GridQubit(*idx) for idx in all_qubits]
 
     if interaction_sequence is None:
-        int_layers = default_interaction_sequence(qubits)
+        int_layers = _default_interaction_sequence(qubits)
     else:
         int_layers = [
             {(cirq.GridQubit(i, j), cirq.GridQubit(k, l)) for ((i, j), (k, l)) in layer}
