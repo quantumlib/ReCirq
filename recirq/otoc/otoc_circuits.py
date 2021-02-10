@@ -352,39 +352,33 @@ def add_noncliffords(
 ) -> np.ndarray:
     r"""Replace a selected number of single-qubit gates with non-Clifford gates.
 
-    The replaced gates always reside within the lightcones of both the
-    butterfly qubit(s) and the measurement qubit of an OTOC circuit. The new
-    gates are non-Clifford gates by default, chosen randomly from $\pi/2$
-    rotations around 4 different axes on the equatorial plane of the Bloch
-    sphere ($\pi/4$, $3\pi/4$, $5\pi/4$ or $7\pi/4$ radians from the x-axis).
+    The replaced gates always reside within the lightcones of both the butterfly qubit(s) and the
+    measurement qubit of an OTOC circuit. The new gates are non-Clifford gates by default,
+    chosen randomly from $\pi/2$ rotations around 4 different axes on the equatorial plane of the
+    Bloch sphere ($\pi/4$, $3\pi/4$, $5\pi/4$ or $7\pi/4$ radians from the x-axis).
 
-    Note: For circuits with non-Clifford two-qubit gates (e.g. sqrt-iSWAP),
-    this function does not fundamentally change OTOC behavior. For circuits
-    with Clifford two-qubit gates (iSWAP or CZ), adding more non-Clifford
-    single-qubit gates creates more Pauli strings and generally leads to
-    smaller circuit-to-circuit variation in the OTOC value.
+    Note: For circuits with non-Clifford two-qubit gates (e.g. sqrt-iSWAP), this function does
+    not fundamentally change OTOC behavior. For circuits with Clifford two-qubit gates (iSWAP or
+    CZ), adding more non-Clifford single-qubit gates creates more Pauli strings and generally
+    leads to smaller circuit-to-circuit variation in the OTOC value.
 
     Args:
-        meas_qubit: The measurement qubit used in the OTOC experiment. Can be
-            specified in any format (e.g. a cirq.GridQubit object or Tuple[
-            int, int]).
-        butterfly_qubits: The qubits to which a perturbation between
-            random circuits $U$ and $U^\dagger$ is to be applied.
-        cycle: The number of interleaved single- and two-qubit gate layers in
-            $U$ (same in $U^\dagger$).
+        meas_qubit: The measurement qubit used in the OTOC experiment. Can be specified in any
+            format (e.g. a cirq.GridQubit object or Tuple[int, int]).
+        butterfly_qubits: The qubits to which a perturbation between random circuits $U$ and
+            $U^\dagger$ is to be applied.
+        cycle: The number of interleaved single- and two-qubit gate layers in $U$ (same in
+            $U^\dagger$).
         qubit_order: The order for all qubits involved in $U$.
-        sq_gates: Indices for the random single-qubit gates. Dimension should
-            be len(qubit_order) $\times$ cycle. The values should be integers
-            from 0 to 7.
-        interaction_sequence: Qubit pairs that interact in each cycle. If the
-            number of cycles is larger than len(interaction_sequence),
-            the interacting qubit pairs will repeat themselves every
-            len(interaction_sequence) cycles.
+        sq_gates: Indices for the random single-qubit gates. Dimension should be len(qubit_order)
+            $\times$ cycle. The values should be integers from 0 to 7.
+        interaction_sequence: Qubit pairs that interact in each cycle. If the number of cycles is
+            larger than len(interaction_sequence), the interacting qubit pairs will repeat
+            themselves every len(interaction_sequence) cycles.
         num_replaced_gates: The total number of single-qubit gates to replace.
-        rand_seed: The random seed for the locations of the replaced gates.
-            If unspecified, no random seed will be used.
-        to_cifford_only: If True, the replaced gates will be drawn randomly
-            from +/-X/2 and +/-Y/2.
+        rand_seed: The random seed for the locations of the replaced gates. If unspecified,
+            no random seed will be used.
+        to_cifford_only: If True, the replaced gates will be drawn randomly from +/-X/2 and +/-Y/2.
         rand_seed_replaced_gates: The random seed for the gate replacements.
 
     Returns:
@@ -501,30 +495,25 @@ def _compile_interactions(
 ) -> Tuple[List[Set[Tuple[Any, Any]]], List[Set[Tuple[Any, Any]]]]:
     r"""Compile the qubit pairs that interact in $U$ and $U^\dagger$.
 
-    The lightcones of a measurement qubit and butterfly qubit(s) are
-    calculated based on the order at which the two-qubit gates are applied
-    and number of circuit cycles. Then the pairs of qubits within the
-    lightcones of the measurement qubit and the butterfly qubit(s) for each
+    The lightcones of a measurement qubit and butterfly qubit(s) are calculated based on the
+    order at which the two-qubit gates are applied and number of circuit cycles. Then the pairs
+    of qubits within the lightcones of the measurement qubit and the butterfly qubit(s) for each
     cycle in $U$ and $U^\dagger$ are returned.
 
     Args:
-        meas_qubit: The measurement qubit used in the OTOC experiment. Can be
-            specified in any format (e.g. a cirq.GridQubit object or Tuple[
-            int, int]).
-        butterfly_qubit: The qubit(s) to which a perturbation between $U$ and
-            $U^\dagger$ is to be applied.
+        meas_qubit: The measurement qubit used in the OTOC experiment. Can be specified in any
+            format (e.g. a cirq.GridQubit object or Tuple[int, int]).
+        butterfly_qubit: The qubit(s) to which a perturbation between $U$ and $U^\dagger$ is to
+            be applied.
         cycle: Number of cycles in $U$.
         interaction_sequence: The pairs of qubits that interact in each
-        cycle. If len(interaction_sequence) < cycle, the sequence just
-        keeps repeating itself.
+        cycle. If len(interaction_sequence) < cycle, the sequence just keeps repeating itself.
 
     Returns:
-        forward_seq: Each set in the list represents the pairs of qubits that
-            fall within the lightcones of the measurement and butterfly qubits
-            for each cycle in $U$.
-        reverse_seq: Each set in the list represents the pairs of qubits that
-            fall within the lightcones of the measurement and butterfly qubits
-            for each cycle in $U^\dagger$.
+        forward_seq: Each set in the list represents the pairs of qubits that fall within the
+            lightcones of the measurement and butterfly qubits for each cycle in $U$.
+        reverse_seq: Each set in the list represents the pairs of qubits that fall within the
+            lightcones of the measurement and butterfly qubits for each cycle in $U^\dagger$.
     """
     num_configs = len(interaction_sequence)
 

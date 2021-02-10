@@ -63,49 +63,41 @@ def build_xeb_circuits(
 ) -> Tuple[List[cirq.Circuit], np.ndarray]:
     r"""Builds random circuits for cross entropy benchmarking (XEB).
 
-    A list of cirq.Circuits of varying lengths are generated, which are made
-    of random single-qubit gates and optional two-qubit gates.
+    A list of cirq.Circuits of varying lengths are generated, which are made of random
+    single-qubit gates and optional two-qubit gates.
 
     Args:
         qubits: The qubits to be involved in XEB.
         cycles: The different numbers of cycles the random circuits will have.
-        benchmark_ops: The operations to be inserted between random
-            single-qubit gates. They can be one or more cirq.Moment objects,
-            or None (in which case no operation will be inserted between the
-            random single-qubit gates).
-        random_seed: The random seed for the single-qubit gates. If
-            unspecified, no random seed will be used.
-        sq_rand_nums: The random numbers representing the single-qubit gates.
-            They must be integers from 0 to 7 if the z_only is False,
-            and floats between -1 and 1 if z_only is True. The dimension of
-            sq_rand_nums should be len(qubits) by max(cycles). If
+        benchmark_ops: The operations to be inserted between random single-qubit gates. They can
+            be one or more cirq.Moment objects, or None (in which case no operation will be
+            inserted between the random single-qubit gates).
+        random_seed: The random seed for the single-qubit gates. If unspecified, no random seed
+            will be used.
+        sq_rand_nums: The random numbers representing the single-qubit gates. They must be
+            integers from 0 to 7 if the z_only is False, and floats between -1 and 1 if z_only is
+            True. The dimension of sq_rand_nums should be len(qubits) by max(cycles). If
             unspecified, the gates will be generated in-situ at random.
-        reverse: If True, benchmark_ops will be applied before the random
-            single-qubit gates in each cycle. Otherwise, it will be applied
-            after the random single-qubit gates.
-        z_only: Whether the single-qubit gates are to be random \pi/2
-            rotations around axes on the equatorial plane of the Bloch sphere
-            (z_only = False), or random rotations around the z-axis (z_only =
-            True). In the former case, the axes of rotations will be chosen
-            randomly from 8 evenly spaced axes ($\pi/4$, $\pi/2$ ... $7\pi/4$
-            radians from the x-axis). In the latter case, the angles of
-            rotation will be any random value between $-\pi$ and $\pi$.
-        ancilla: If specified, an additional qubit will be included in the
-            circuit which does not interact with the other qubits and only
-            has spin-echo pulses applied to itself.
-        cycles_per_echo: How often a spin-echo (Y gate) gate is to be applied
-            to the ancilla qubit. For example, if the value is 2, a Y gate
-            will be applied every other cycle.
-        light_cones: A list of length 1 or 2, each specifying a lightcone
-            correponding to a list of sets of qubits with the same length as
-            max(cycles). For each cycle, single-qubit gates outside the first
-            lightcone are either removed or replaced with a spin-echo pulse.
-            Single-qubit gates outside the second lightcone, if specified,
-            are always removed.
-        echo_indices: An array with the same dimension as sq_rand_nums and
-            random integer values of 1, 2, 3 or 4. They specify the spin-echo
-            pulses applied to qubits outside the first lightcone, which can
-            be +/-X or +/-Y gates.
+        reverse: If True, benchmark_ops will be applied before the random single-qubit gates in
+            each cycle. Otherwise, it will be applied after the random single-qubit gates.
+        z_only: Whether the single-qubit gates are to be random \pi/2 rotations around axes on
+            the equatorial plane of the Bloch sphere (z_only = False), or random rotations around
+            the z-axis (z_only = True). In the former case, the axes of rotations will be chosen
+            randomly from 8 evenly spaced axes ($\pi/4$, $\pi/2$ ... $7\pi/4$ radians from the
+            x-axis). In the latter case, the angles of rotation will be any random value between
+            $-\pi$ and $\pi$.
+        ancilla: If specified, an additional qubit will be included in the circuit which does not
+            interact with the other qubits and only has spin-echo pulses applied to itself.
+        cycles_per_echo: How often a spin-echo (Y gate) gate is to be applied to the ancilla
+            qubit. For example, if the value is 2, a Y gate will be applied every other cycle.
+        light_cones: A list of length 1 or 2, each specifying a lightcone correponding to a list
+            of sets of qubits with the same length as max(cycles). For each cycle, single-qubit
+            gates outside the first lightcone are either removed or replaced with a spin-echo
+            pulse. Single-qubit gates outside the second lightcone, if specified, are always
+            removed.
+        echo_indices: An array with the same dimension as sq_rand_nums and random integer values
+            of 1, 2, 3 or 4. They specify the spin-echo pulses applied to qubits outside the
+            first lightcone, which can be +/-X or +/-Y gates.
 
     Returns:
         A list of random circuits, each containing a specified number of cycles.
@@ -181,62 +173,53 @@ def parallel_xeb_fidelities(
     """Computes and optimizes cycle fidelities from parallel XEB data.
 
     Args:
-        all_qubits: List of qubits involved in a parallel XEB experiment,
-            specified using their (row, col) locations.
+        all_qubits: List of qubits involved in a parallel XEB experiment, specified using their
+            (row, col) locations.
         num_cycle_range: The different numbers of cycles in the random circuits.
-        measured_bits: The experimental bit-strings stored in a nested list.
-            The first dimension of the nested list represents different
-            configurations (e.g. how the two-qubit gates are applied) used in
-            parallel XEB. The second dimension represents different trials (
-            i.e. random circuit instances) used in XEB. The third dimension
-            represents the different numbers of cycles and must be the same
-            as len(num_cycle_range). Each np.ndarray has dimension M x N,
-            where M is the number of repetitions (stats) for each circuit and N
-            is the number of qubits involved.
-        scrambling_gates: The random circuit indices specified as integers
-            between 0 and 7. See the documentation of build_xeb_circuits for
-            details. The first dimension of the nested list represents the
-            different configurations and must be the same as the first
-            dimension of measured_bits. The second dimension represents
-            the different trials and must be the same as the second dimension
-            of measured_bits.
-        fsim_angles: An initial guess for the five FSIM angles for each qubit
-            pair.
-        interaction_sequence: The pairs of qubits with FSIM applied for each
-            configuration. Must be the same as len(measured_bits).
-        gate_to_fit: Can be either 'iswap', 'sqrt-iswap', 'cz' or any other
-            string. Determines the FSIM angles that will be changed from their
-            initial guess values to optimize the XEB fidelity of each qubit
-            pair. For 'iswap', only 'delta_plus' and 'delta_minus_off_diag'
-            are changed. For 'sqrt-iswap', 'delta_plus',
-            'delta_minus_off_diag' and 'delta_minus_diag' are changed. For
-            'cz', only 'delta_plus' and 'delta_minus_diag' are changed. For
-            any other string, all five angles are changed.
+        measured_bits: The experimental bit-strings stored in a nested list. The first dimension
+            of the nested list represents different configurations (e.g. how the two-qubit gates
+            are applied) used in parallel XEB. The second dimension represents different trials
+            (i.e. random circuit instances) used in XEB. The third dimension represents the
+            different numbers of cycles and must be the same as len(num_cycle_range). Each
+            np.ndarray has dimension M x N, where M is the number of repetitions (stats) for each
+            circuit and N is the number of qubits involved.
+        scrambling_gates: The random circuit indices specified as integers between 0 and 7. See
+            the documentation of build_xeb_circuits for details. The first dimension of the
+            nested list represents the different configurations and must be the same as the first
+            dimension of measured_bits. The second dimension represents the different trials and
+            must be the same as the second dimension of measured_bits.
+        fsim_angles: An initial guess for the five FSIM angles for each qubit pair.
+        interaction_sequence: The pairs of qubits with FSIM applied for each configuration. Must
+            be the same as len(measured_bits).
+        gate_to_fit: Can be either 'iswap', 'sqrt-iswap', 'cz' or any other string. Determines
+            the FSIM angles that will be changed from their initial guess values to optimize the
+            XEB fidelity of each qubit pair. For 'iswap', only 'delta_plus' and
+            'delta_minus_off_diag' are changed. For 'sqrt-iswap', 'delta_plus',
+            'delta_minus_off_diag' and 'delta_minus_diag' are changed. For 'cz',
+            only 'delta_plus' and 'delta_minus_diag' are changed. For any other string, all five
+            angles are changed.
         num_restarts: Number of restarts with different random initial guesses.
-        num_points: The total number of XEB fidelities to be used in the
-            cost function for optimization. Default is 8, such that the cost
-            function is the sum of the XEB fidelities for the first 8 numbers
-            of cycles in num_cycle_range.
-        plot_individual_traces: Whether to plot the XEB fidelities along with
-            the fitting results for each qubit pair.
-        plot_histograms: Whether to plot the histograms of cycle Pauli errors
-            and changes in FSIM angles after fitting for all qubit pairs.
-        save_directory: Directory to which the plots are to be saved. If
-            unspecified, the plots will not be saved.
+        num_points: The total number of XEB fidelities to be used in the cost function for
+            optimization. Default is 8, such that the cost function is the sum of the XEB
+            fidelities for the first 8 numbers of cycles in num_cycle_range.
+        plot_individual_traces: Whether to plot the XEB fidelities along with the fitting results
+            for each qubit pair.
+        plot_histograms: Whether to plot the histograms of cycle Pauli errors and changes in FSIM
+            angles after fitting for all qubit pairs.
+        save_directory: Directory to which the plots are to be saved. If unspecified, the plots
+            will not be saved.
 
     Returns:
-        fitted_gates: A dictionary with qubit pairs as keys and optimized
-            FSIM unitaries, represented by cirq.Circuit objects, as values.
-        correction_gates: Same as fitted_gates, but with all Z rotations
-            reversed in signs.
-        fitted_angles: A dictionary with qubit pairs as keys and optimized
-            FSIM unitaries as values. Here the FSIM unitaries are represented
-            as a dictionaries with the names of the FSIM phases as keys and
-            their fitted values as values.
-        final_errors_optimized: A dictionary with qubit pairs as keys and
-            their cycle errors after fitting as values.
-        final_errors_unoptimized: A dictionary with qubit pairs as keys and
-            their cycle errors before fitting as values.
+        fitted_gates: A dictionary with qubit pairs as keys and optimized FSIM unitaries,
+            represented by cirq.Circuit objects, as values.
+        correction_gates: Same as fitted_gates, but with all Z rotations reversed in signs.
+        fitted_angles: A dictionary with qubit pairs as keys and optimized FSIM unitaries as
+            values. Here the FSIM unitaries are represented as a dictionaries with the names of
+            the FSIM phases as keys and their fitted values as values.
+        final_errors_optimized: A dictionary with qubit pairs as keys and their cycle errors
+            after fitting as values.
+        final_errors_unoptimized: A dictionary with qubit pairs as keys and their cycle errors
+            before fitting as values.
     """
     num_trials = len(measured_bits[0])
     p_data_all, sq_gates = _pairwise_xeb_probabilities(
@@ -482,31 +465,27 @@ def single_qubit_xeb_fidelities(
     """Computes single-qubit gate fidelities from parallel-XEB data.
 
     Args:
-        all_qubits: List of qubits involved in a parallel XEB experiment,
-            specified using their (row, col) locations.
+        all_qubits: List of qubits involved in a parallel XEB experiment, specified using their
+            (row, col) locations.
         num_cycle_range: The different numbers of cycles in the random circuits.
-        measured_bits: The experimental bit-strings stored in a nested list.
-            The first dimension represents different trials (i.e. random
-            circuit instances) used in XEB. The second dimension represents
-            the different numbers of cycles and must be the same as len(
-            num_cycle_range). Each np.ndarray has dimension M x N, where M is
-            the number of repetitions (stats) for each circuit and N is the
-            number of qubits involved.
-        scrambling_gates: The random circuit indices specified as integers
-            between 0 and 7. See the documentation of build_xeb_circuits for
-            details. Each element of the list represents a different trials
-            and len(scrambling_gates) must be the same as the second dimension
-            of measured_bits.
-        plot_individual_traces: Whether to plot the XEB fidelities along with
-            the fitting results for each qubit.
-        plot_histograms: Whether to plot the histograms of single-qubit gate
-            Pauli errors.
-        save_directory: Directory to which the plots are to be saved. If
-            unspecified, the plots will not be saved.
+        measured_bits: The experimental bit-strings stored in a nested list. The first dimension
+            represents different trials (i.e. random circuit instances) used in XEB. The second
+            dimension represents the different numbers of cycles and must be the same as len(
+            num_cycle_range). Each np.ndarray has dimension M x N, where M is the number of
+            repetitions (stats) for each circuit and N is the number of qubits involved.
+        scrambling_gates: The random circuit indices specified as integers between 0 and 7. See
+            the documentation of build_xeb_circuits for details. Each element of the list
+            represents a different trials and len(scrambling_gates) must be the same as the
+            second dimension of measured_bits.
+        plot_individual_traces: Whether to plot the XEB fidelities along with the fitting results
+            for each qubit.
+        plot_histograms: Whether to plot the histograms of single-qubit gate Pauli errors.
+        save_directory: Directory to which the plots are to be saved. If unspecified, the plots
+            will not be saved.
 
     Returns:
-        A dictionary with qubit (row, col) locations as keys and the
-        corresponding single-qubit gate Pauli errors as values.
+        A dictionary with qubit (row, col) locations as keys and the corresponding single-qubit
+        gate Pauli errors as values.
     """
     num_qubits = len(all_qubits)
     num_trials = len(measured_bits)
