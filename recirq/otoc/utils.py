@@ -29,7 +29,7 @@ def save_data(data: Any, file_name: str) -> None:
         data: Data to save to a pickle file.
         file_name: Path to save the file.
     """
-    with open(file_name, 'wb') as output:
+    with open(file_name, "wb") as output:
         pickle.dump(data, output)
 
 
@@ -42,17 +42,14 @@ def load_data(file_name: str) -> Optional[Any]:
     Returns:
         Data that the file contains.
     """
-    with open(file_name, 'rb') as input_data:
+    with open(file_name, "rb") as input_data:
         data = pickle.load(input_data)
     return data
 
 
-def pauli_error_fit(num_cycle_range: np.ndarray,
-                    data: np.ndarray,
-                    *,
-                    num_qubits: int = 2,
-                    add_offset: bool = False
-                    ) -> Tuple[float, np.ndarray, np.ndarray]:
+def pauli_error_fit(
+    num_cycle_range: np.ndarray, data: np.ndarray, *, num_qubits: int = 2, add_offset: bool = False
+) -> Tuple[float, np.ndarray, np.ndarray]:
     """Obtaining a Pauli error rate from an empirical decay curve.
 
     Args:
@@ -72,13 +69,13 @@ def pauli_error_fit(num_cycle_range: np.ndarray,
     """
     f_s = 1.0e2
 
-    def _exp_decay_with_offset(length: np.ndarray, err: float,
-                               a_coeff: float, b_coeff: float) -> np.ndarray:
+    def _exp_decay_with_offset(
+        length: np.ndarray, err: float, a_coeff: float, b_coeff: float
+    ) -> np.ndarray:
         p = 1.0 - err / (1.0 - 4 ** (-num_qubits)) / f_s
         return a_coeff * np.power(p, length) + b_coeff
 
-    def _exp_decay_no_offset(length: np.ndarray, err: float,
-                             a_coeff: float) -> np.ndarray:
+    def _exp_decay_no_offset(length: np.ndarray, err: float, a_coeff: float) -> np.ndarray:
         return _exp_decay_with_offset(length, err, a_coeff, 0.0)
 
     fit_fun = _exp_decay_with_offset if add_offset else _exp_decay_no_offset
@@ -89,10 +86,11 @@ def pauli_error_fit(num_cycle_range: np.ndarray,
     return pauli_error, x_vals, y_vals
 
 
-def bits_to_probabilities(all_qubits: Sequence[Tuple[int, int]],
-                          subsys_qubits: Sequence[Tuple[int, int]],
-                          bits: np.ndarray
-                          ) -> np.ndarray:
+def bits_to_probabilities(
+    all_qubits: Sequence[Tuple[int, int]],
+    subsys_qubits: Sequence[Tuple[int, int]],
+    bits: np.ndarray,
+) -> np.ndarray:
     """Converts a collection of bit-strings into a probability distribution.
 
     Args:
@@ -119,9 +117,13 @@ def bits_to_probabilities(all_qubits: Sequence[Tuple[int, int]],
     return np.asarray(p_reduced) / num_trials
 
 
-def angles_to_fsim(theta: float, phi: float, delta_plus: float,
-                   delta_minus_diag: float, delta_minus_off_diag: float
-                   ) -> np.ndarray:
+def angles_to_fsim(
+    theta: float,
+    phi: float,
+    delta_plus: float,
+    delta_minus_diag: float,
+    delta_minus_off_diag: float,
+) -> np.ndarray:
     """Converts five phases to a 2x2 FSIM unitary.
 
     Args:
@@ -140,8 +142,10 @@ def angles_to_fsim(theta: float, phi: float, delta_plus: float,
     u21 = -1j * s * np.exp(1j * (delta_plus + delta_minus_off_diag) / 2.0)
     u22 = c * np.exp(1j * (delta_plus - delta_minus_diag) / 2.0)
     u33 = np.exp(1j * (delta_plus - phi))
-    return np.array([[1, 0, 0, 0], [0, u11, u12, 0], [0, u21, u22, 0],
-                     [0, 0, 0, u33]], dtype=complex)
+    return np.array(
+        [[1, 0, 0, 0], [0, u11, u12, 0], [0, u21, u22, 0], [0, 0, 0, u33]],
+        dtype=complex,
+    )
 
 
 def fsim_to_angles(u_fsim: np.ndarray) -> Dict[str, float]:
@@ -158,23 +162,23 @@ def fsim_to_angles(u_fsim: np.ndarray) -> Dict[str, float]:
     theta = np.arctan(np.abs(u_fsim[1, 2] / u_fsim[1, 1]))
     delta_plus = np.angle(-u_fsim[1, 2] * u_fsim[2, 1])
     phi = -np.angle(u_fsim[3, 3]) + delta_plus
-    delta_minus_off_diag = np.angle(
-        u_fsim[2, 1] / (-1j) / np.exp(1j * delta_plus / 2.0)) * 2.0
-    delta_minus_diag = np.angle(
-        u_fsim[1, 1] / np.exp(1j * delta_plus / 2.0)) * 2.0
+    delta_minus_off_diag = np.angle(u_fsim[2, 1] / (-1j) / np.exp(1j * delta_plus / 2.0)) * 2.0
+    delta_minus_diag = np.angle(u_fsim[1, 1] / np.exp(1j * delta_plus / 2.0)) * 2.0
 
-    angles = {'theta': theta,
-              'delta_plus': delta_plus,
-              'delta_minus_off_diag': delta_minus_off_diag,
-              'delta_minus_diag': delta_minus_diag,
-              'phi': phi}  # type: Dict[str, float]
+    angles = {
+        "theta": theta,
+        "delta_plus": delta_plus,
+        "delta_minus_off_diag": delta_minus_off_diag,
+        "delta_minus_diag": delta_minus_diag,
+        "phi": phi,
+    }  # type: Dict[str, float]
 
     return angles
 
 
-def generic_fsim_gate(fsim_angles: Dict[str, float],
-                      qubits: Tuple[cirq.GridQubit, cirq.GridQubit]
-                      ) -> List[cirq.OP_TREE]:
+def generic_fsim_gate(
+    fsim_angles: Dict[str, float], qubits: Tuple[cirq.GridQubit, cirq.GridQubit]
+) -> List[cirq.OP_TREE]:
     """Converts five FSIM phases to a list of Cirq ops.
 
     Args:
@@ -186,35 +190,52 @@ def generic_fsim_gate(fsim_angles: Dict[str, float],
         A list of gates (equivalent to an FSIM gate) acting on the two qubits.
     """
     q_0, q_1 = qubits
-    g_f = [cirq.Z(q_0) ** (-(fsim_angles['delta_minus_off_diag'] +
-                             fsim_angles['delta_minus_diag'] -
-                             2 * fsim_angles['delta_plus']) / np.pi / 4.0),
-           cirq.Z(q_1) ** ((fsim_angles['delta_minus_off_diag'] +
-                            fsim_angles['delta_minus_diag'] +
-                            2 * fsim_angles['delta_plus']) / np.pi / 4.0)
-           ]  # type: List[cirq.OP_TREE]
+    g_f = [
+        cirq.Z(q_0)
+        ** (
+            -(
+                fsim_angles["delta_minus_off_diag"]
+                + fsim_angles["delta_minus_diag"]
+                - 2 * fsim_angles["delta_plus"]
+            )
+            / np.pi
+            / 4.0
+        ),
+        cirq.Z(q_1)
+        ** (
+            (
+                fsim_angles["delta_minus_off_diag"]
+                + fsim_angles["delta_minus_diag"]
+                + 2 * fsim_angles["delta_plus"]
+            )
+            / np.pi
+            / 4.0
+        ),
+    ]  # type: List[cirq.OP_TREE]
 
-    if not np.isclose(fsim_angles['phi'], 0):
-        g_f.append(cirq.CZ(q_0, q_1) ** (-fsim_angles['phi'] / np.pi))
+    if not np.isclose(fsim_angles["phi"], 0):
+        g_f.append(cirq.CZ(q_0, q_1) ** (-fsim_angles["phi"] / np.pi))
 
-    if not np.isclose(fsim_angles['theta'], 0):
-        g_f.append(cirq.ISWAP(q_0, q_1) ** (
-                -fsim_angles['theta'] / (np.pi / 2.0)))
+    if not np.isclose(fsim_angles["theta"], 0):
+        g_f.append(cirq.ISWAP(q_0, q_1) ** (-fsim_angles["theta"] / (np.pi / 2.0)))
 
-    g_f.append(cirq.Z(q_0) ** (-(fsim_angles['delta_minus_diag'] -
-                                 fsim_angles['delta_minus_off_diag']) /
-                               np.pi / 4.0))
-    g_f.append(cirq.Z(q_1) ** ((fsim_angles['delta_minus_diag'] -
-                                fsim_angles['delta_minus_off_diag']) /
-                               np.pi / 4.0))
+    g_f.append(
+        cirq.Z(q_0)
+        ** (-(fsim_angles["delta_minus_diag"] - fsim_angles["delta_minus_off_diag"]) / np.pi / 4.0)
+    )
+    g_f.append(
+        cirq.Z(q_1)
+        ** ((fsim_angles["delta_minus_diag"] - fsim_angles["delta_minus_off_diag"]) / np.pi / 4.0)
+    )
     return g_f
 
 
-def cz_to_sqrt_iswap(qubit_0: cirq.GridQubit,
-                     qubit_1: cirq.GridQubit,
-                     *,
-                     corrections: Dict[Tuple[cirq.GridQubit, cirq.GridQubit],
-                                       cirq.Circuit] = None) -> cirq.Circuit:
+def cz_to_sqrt_iswap(
+    qubit_0: cirq.GridQubit,
+    qubit_1: cirq.GridQubit,
+    *,
+    corrections: Dict[Tuple[cirq.GridQubit, cirq.GridQubit], cirq.Circuit] = None
+) -> cirq.Circuit:
     """Generates a composite CZ gate with sqrt-iSWAP and single-qubit gates.
 
     Args:
@@ -226,11 +247,17 @@ def cz_to_sqrt_iswap(qubit_0: cirq.GridQubit,
     Returns:
         A circuit equivalent to a CZ gate between the two qubits.
     """
-    op_list = [cirq.Z(qubit_0) ** 0.5, cirq.Z(qubit_1) ** 0.5,
-               cirq.X(qubit_0) ** 0.5, cirq.X(qubit_1) ** -0.5,
-               cirq.ISWAP(qubit_0, qubit_1) ** -0.5, cirq.X(qubit_0) ** -1,
-               cirq.ISWAP(qubit_0, qubit_1) ** 0.5, cirq.X(qubit_0) ** 0.5,
-               cirq.X(qubit_1) ** 0.5]
+    op_list = [
+        cirq.Z(qubit_0) ** 0.5,
+        cirq.Z(qubit_1) ** 0.5,
+        cirq.X(qubit_0) ** 0.5,
+        cirq.X(qubit_1) ** -0.5,
+        cirq.ISWAP(qubit_0, qubit_1) ** -0.5,
+        cirq.X(qubit_0) ** -1,
+        cirq.ISWAP(qubit_0, qubit_1) ** 0.5,
+        cirq.X(qubit_0) ** 0.5,
+        cirq.X(qubit_1) ** 0.5,
+    ]
 
     if corrections is not None:
         circ_corrected = corrections[(qubit_0, qubit_1)]

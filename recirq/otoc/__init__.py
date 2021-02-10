@@ -20,7 +20,7 @@ from recirq.otoc.utils import (
     angles_to_fsim,
     fsim_to_angles,
     generic_fsim_gate,
-    cz_to_sqrt_iswap
+    cz_to_sqrt_iswap,
 )
 
 from recirq.otoc.parallel_xeb import (
@@ -29,7 +29,4 @@ from recirq.otoc.parallel_xeb import (
     single_qubit_xeb_fidelities,
 )
 
-from recirq.otoc.otoc_circuits import (
-    build_otoc_circuits,
-    add_noncliffords
-)
+from recirq.otoc.otoc_circuits import build_otoc_circuits, add_noncliffords
