@@ -101,7 +101,9 @@ def build_xeb_circuits(
             first lightcone, which can be +/-X or +/-Y gates.
 
     Returns:
-        A list of random circuits, each containing a specified number of cycles.
+        all_circuits: A list of random circuits, each containing a specified number of cycles.
+        sq_gate_indices: An NxM array, where N is the number of qubits and M is the maximnum
+            number of cycles. The array elements are the indices for the random single-qubit gates.
     """
     if light_cones is not None:
         if len(light_cones) > 2:
@@ -113,7 +115,7 @@ def build_xeb_circuits(
         num_d = 0
     max_cycles = max(cycles)
 
-    single_rots, indices = _random_rotations(
+    single_rots, sq_gate_indices = _random_rotations(
         qubits,
         max_cycles,
         random_seed,
@@ -146,7 +148,7 @@ def build_xeb_circuits(
                 if benchmark_ops is not None:
                     circuit_exp.append(benchmark_ops[i % num_d])
         all_circuits.append(circuit_exp)
-    return all_circuits, indices
+    return all_circuits, sq_gate_indices
 
 
 def parallel_xeb_fidelities(
@@ -560,14 +562,13 @@ def _random_rotations(
 ) -> Tuple[List[List[cirq.OP_TREE]], np.ndarray]:
     num_qubits = len(qubits)
 
-    if rand_seed is not None:
-        np.random.seed(rand_seed)
+    random_state = cirq.value.parse_random_state(rand_seed)
 
     if rand_nums is None:
         if z_rotations_only:
-            rand_nums = np.random.uniform(-1, 1, (num_qubits, num_layers))
+            rand_nums = random_state.uniform(-1, 1, (num_qubits, num_layers))
         else:
-            rand_nums = np.random.choice(8, (num_qubits, num_layers))
+            rand_nums = random_state.choice(8, (num_qubits, num_layers))
 
     single_q_layers = []  # type: List[List[cirq.OP_TREE]]
 

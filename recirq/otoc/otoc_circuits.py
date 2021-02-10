@@ -569,8 +569,8 @@ def _extract_light_cone(
     from_right: bool,
     multiple_butterflies: bool = False,
 ) -> List[Set[Any]]:
-    """Outputs the set of qubits that fall within the lightcone of butterfly qubit(s) in each
-    cycle.
+    """Output the set of qubits that fall within the lightcone of butterfly qubit(s) in each
+    cycle. Used to set the lightcone filter in build_otoc_circuits.
     """
     num_configs = len(interaction_layers)
     int_seq = [interaction_layers[c % num_configs] for c in range(cycle)]
@@ -594,7 +594,9 @@ def _extract_light_cone(
 
 
 def _add_layer(set_0: Set[Any], sets_1: Set[Tuple[Any, Any]]) -> Set[Any]:
-    """Comv"""
+    """Expand the lightcone (set_0) after a set of interactions (sets_1). Used to set the
+    lightcone filter in build_otoc_circuits.
+    """
     new_set = set_0.copy()
     for set_1 in sets_1:
         q0, q1 = set_1
@@ -604,6 +606,9 @@ def _add_layer(set_0: Set[Any], sets_1: Set[Tuple[Any, Any]]) -> Set[Any]:
 
 
 def _reverse_sq_indices(indices: np.ndarray, z_only: bool = False) -> np.ndarray:
+    r"""Accept indices presenting SQ gates and output their reverse. Used to create $U^\dagger$ in
+    build_otoc_circuits.
+    """
     if z_only:
         rev_indices = -indices[:, ::-1]
     else:

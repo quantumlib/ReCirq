@@ -24,9 +24,8 @@ from recirq.otoc.utils import save_data
 def main():
     # Specify a working directory, project ID and processor name.
     dir_str = ""
-    project_id = ""
-    engine = cirq.google.Engine(project_id=project_id, proto_version=cirq.google.ProtoVersion.V2)
     processor_name = "rainbow"
+    sampler = cirq.google.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim")
 
     # Specify qubits to measure. Here we choose the qubits to be on a line.
     qubit_locs = [(3, 3), (2, 3), (2, 4), (2, 5), (1, 5), (0, 5), (0, 6), (1, 6)]
@@ -55,36 +54,34 @@ def main():
 
     # Specify the number of random circuits in parallel XEB the cycles at which
     # fidelities are to be measured.
-    num_trials = 20
-    num_cycle_range = range(3, 75, 10)
-    num_cycles = len(num_cycle_range)
+    num_circuits = 20
+    num_num_cycles = range(3, 75, 10)
+    num_cycles = len(num_num_cycles)
 
     # Generate random XEB circuits, measure the resulting bit-strings, and save
     # the data as well as random circuit information.
-    all_bits_sqrtiswap = []
-    all_phases_sqrtiswap = []
+    all_bits = []
+    all_sq_gates = []
     for xeb_config in xeb_configs:
-        bits_sqrtiswap = []
-        phases_sqrtiswap = []
-        for i in range(num_trials):
+        bits = []
+        sq_gates = []
+        for i in range(num_circuits):
             print(i)
-            circuits, rand_indices = build_xeb_circuits(
-                qubits, num_cycle_range, xeb_config, random_seed=i
+            circuits, sq_gate_indices_i = build_xeb_circuits(
+                qubits, num_num_cycles, xeb_config, random_seed=i
             )
-            phases_sqrtiswap.append(rand_indices)
+            sq_gates.append(sq_gate_indices_i)
             for c in circuits:
                 c.append(cirq.measure(*qubits, key="z"))
             sweep_params = [{} for _ in range(len(circuits))]
-            job = engine.run_batch(
+            job = sampler.run_batch(
                 programs=circuits,
                 params_list=sweep_params,
-                repetitions=5000,
-                processor_ids=[processor_name],
-                gate_set=cirq.google.SQRT_ISWAP_GATESET,
+                repetitions=5000
             )
-            bits_sqrtiswap.append([job.results()[j].measurements["z"] for j in range(num_cycles)])
-        all_bits_sqrtiswap.append(bits_sqrtiswap)
-        all_phases_sqrtiswap.append(phases_sqrtiswap)
+            bits.append([job[j][0].measurements["z"] for j in range(num_cycles)])
+        all_bits.append(bits)
+        all_sq_gates.append(sq_gates)
 
     # Perform fits on each qubit pair to miminize the cycle errors. The fitting
     # results are saved to the working directory.
@@ -103,9 +100,9 @@ def main():
         err_0_unopt,
     ) = parallel_xeb_fidelities(
         qubit_locs,
-        num_cycle_range,
-        all_bits_sqrtiswap,
-        all_phases_sqrtiswap,
+        num_num_cycles,
+        all_bits,
+        all_sq_gates,
         fsim_angles_0,
         interaction_sequence=int_layers,
         gate_to_fit="sqrt-iswap",
