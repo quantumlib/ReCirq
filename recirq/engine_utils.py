@@ -404,6 +404,7 @@ def get_available_processors(processor_names: List[str]):
             try:
                 time_slot = EngineTimeSlot.from_proto(time_slot)
             # Parsing the end_time of the last time range in the schedule might give throw an error.
+            # TODO: remove this check once it is fixed in cirq.
             except ValueError as e:
                 continue
             # Ignore time slots that do not contain the current time.
