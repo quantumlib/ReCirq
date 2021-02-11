@@ -98,17 +98,21 @@ class CirqBoard:
         return self
 
     def clear_debug_log(self) -> None:
+        """Clears debug log."""
         self.debug_log = ''
 
     def print_debug_log(self, clear_log: bool = True) -> None:
+        """Prints debug log. Clears debug log if clear_log is enabled."""
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
             
     def clear_timing_stats(self) -> None:
+        """Clears timing stats."""
         self.timing_stats = []
 
     def print_timing_stats(self, clear_stats: bool = False) -> None:
+        """Prints timing stats. Clears timing stats if clears_stats is enabled."""
         print(self.timing_stats)
         if clear_stats:
             self.clear_timing_stats()
@@ -143,10 +147,13 @@ class CirqBoard:
                 return False
         return True
 
-    def record_time(self, t0, t1: Optional[float] = None) -> None:
+    def record_time(self, action: str, t0: float, t1: Optional[float] = None) -> None:
+        """Writes time span from t0 to t1 (if specified, otherwise the current time is used)
+        into the debug log and timing stats.
+        """
         if t1 is None:
             t1 = time.perf_counter()
-        self.debug_log += (f"sample_with_ancilla takes {t1 - t0:0.4f} seconds.\n")
+        self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
         self.timing_stats.append(t1 - t0)
     
     def sample_with_ancilla(self, num_samples: int
@@ -272,7 +279,7 @@ class CirqBoard:
                         f'Discarded {error_count} from error mitigation '
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
-                    self.record_time(t0)
+                    self.record_time("sample_with_ancilla", t0)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -280,7 +287,7 @@ class CirqBoard:
                 f'Discarded {error_count} from error mitigation '
                 f'{noise_count} from noise and {post_count} from post-selection\n'
             )
-        self.record_time(t0)
+        self.record_time("sample_with_ancilla", t0)
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:

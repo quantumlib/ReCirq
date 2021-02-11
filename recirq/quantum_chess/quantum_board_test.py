@@ -887,3 +887,24 @@ def test_undo_entangled_measurement():
     assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
+
+def test_record_time():
+    b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
+    assert b.perform_moves(
+        'b8a6c6:SPLIT_JUMP:BASIC',
+        'b5a6:PAWN_CAPTURE:BASIC',
+        'c6b8:JUMP:BASIC',
+        'c7c5:PAWN_TWO_STEP:BASIC',
+        'b5c6:PAWN_EP:BASIC',
+    )
+    assert "sample_with_ancilla takes" in b.debug_log
+    assert "seconds." in b.debug_log
+    assert float(b.debug_log.split("sample_with_ancilla takes ")[-1].split(" seconds.")[0]) > 0
+
+    b.record_time("test_action", 0.12, 0.345)
+    assert "test_action takes" in b.debug_log
+    expected_time = pytest.approx(0.345-0.12, 1e-7)
+    assert float(b.debug_log.split("test_action takes ")[-1].split(" seconds.")[0]) == expected_time
+    assert len(b.timing_stats) == 2
+    assert b.timing_stats[1] == expected_time
+    
