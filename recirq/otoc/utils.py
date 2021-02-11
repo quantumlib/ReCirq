@@ -53,18 +53,15 @@ def pauli_error_fit(
     """Obtaining a Pauli error rate from an empirical decay curve.
 
     Args:
-        num_cycle_range: The number of cycles in an error-benchmarking
-            experiment (e.g. XEB).
-        data: Fidelity at each given cycle. Must have the same dimension as
-            num_cycle_range.
+        num_cycle_range: The number of cycles in an error-benchmarking experiment (e.g. XEB).
+        data: Fidelity at each given cycle. Must have the same dimension as num_cycle_range.
         num_qubits: Number of qubits involved in the experiment.
-        add_offset: Whether the fitted exponential decay is forced to asymptote
-            to 0 or a non-zero offset.
+        add_offset: Whether the fitted exponential decay is forced to asymptote to 0 or a
+            non-zero offset.
 
     Returns:
         pauli_error: The average Pauli error per cycle from the fit.
-        x_vals: A list of 200 evenly spaced values between 0 and
-            max(num_cycle_range).
+        x_vals: A list of 200 evenly spaced values between 0 and max(num_cycle_range).
         y_vals: The fitted fidelity for each value in x_vals.
     """
     f_s = 1.0e2
@@ -94,17 +91,16 @@ def bits_to_probabilities(
     """Converts a collection of bit-strings into a probability distribution.
 
     Args:
-        all_qubits: A list of Tuples representing the (row, column) locations
-            of all qubits that are measured. The qubits are assumed to be on
-            a 2D grid.
-        subsys_qubits: The qubits whose joint probabilities are to be
-            computed. They should be a subset of all_qubits.
-        bits: a 2D np.array where each row represents a bit-string (with the
-            same length as all_qubits) and each column represents a trial.
+        all_qubits: A list of Tuples representing the (row, column) locations of all qubits that
+            are measured. The qubits are assumed to be on a 2D grid.
+        subsys_qubits: The qubits whose joint probabilities are to be computed. They should be a
+            subset of all_qubits.
+        bits: A 2D np.array where each row represents a bit-string (with the same length as
+            all_qubits) and each column represents a trial.
 
     Returns:
-        The probabilities of all possible bit-strings for subsys_qubits,
-        ordered according to the big-endian notation.
+        The probabilities of all possible bit-strings for subsys_qubits, ordered according to the
+        big-endian notation.
     """
     num_qubits = len(subsys_qubits)
     indices = [all_qubits.index(q) for q in subsys_qubits]
@@ -155,8 +151,8 @@ def fsim_to_angles(u_fsim: np.ndarray) -> Dict[str, float]:
         u_fsim: A 2x2 np.array corresponding to an FSIM unitary
 
     Returns:
-        A dictionary with the keys being the name of a unitary phase and
-        value being the value of the phase.
+        A dictionary with the keys being the name of a unitary phase and value being the value of
+        the phase.
     """
     u_fsim = u_fsim * np.exp(-1j * np.angle(u_fsim[0, 0]))
     theta = np.arctan(np.abs(u_fsim[1, 2] / u_fsim[1, 1]))
@@ -182,8 +178,8 @@ def generic_fsim_gate(
     """Converts five FSIM phases to a list of Cirq ops.
 
     Args:
-        fsim_angles:A dictionary with the keys being the name of a unitary
-            phase and value being the value of the phase.
+        fsim_angles:A dictionary with the keys being the name of a unitary phase and value being
+            the value of the phase.
         qubits: The pair of cirq.GridQubits to which the gates are applied.
 
     Returns:
@@ -233,20 +229,17 @@ def generic_fsim_gate(
 def cz_to_sqrt_iswap(
     qubit_0: cirq.GridQubit,
     qubit_1: cirq.GridQubit,
-    *,
-    corrections: Dict[Tuple[cirq.GridQubit, cirq.GridQubit], cirq.Circuit] = None
 ) -> cirq.Circuit:
     """Generates a composite CZ gate with sqrt-iSWAP and single-qubit gates.
 
     Args:
         qubit_0: The first qubit the CZ acts upon.
         qubit_1: The second qubit the CZ acts upon.
-        corrections: Optional corrections obtained from XEB. The corrections
-            add virtual Z gates into the composite CZ gate.
 
     Returns:
         A circuit equivalent to a CZ gate between the two qubits.
     """
+
     op_list = [
         cirq.Z(qubit_0) ** 0.5,
         cirq.Z(qubit_1) ** 0.5,
@@ -259,22 +252,4 @@ def cz_to_sqrt_iswap(
         cirq.X(qubit_1) ** 0.5,
     ]
 
-    if corrections is not None:
-        circ_corrected = corrections[(qubit_0, qubit_1)]
-        q_add_0 = circ_corrected[0].operations[0].qubits[0]
-        z_add_0 = circ_corrected[0].operations[0].gate.exponent
-        z_add_1 = circ_corrected[0].operations[1].gate.exponent
-
-        if q_add_0 == qubit_1:
-            z_add_0, z_add_1 = z_add_1, z_add_0
-
-        op_list[0] = cirq.Z(qubit_0) ** (0.5 + z_add_0)
-        op_list[1] = cirq.Z(qubit_1) ** (0.5 + z_add_1)
-
-        circuit = cirq.Circuit(op_list)
-        circuit.append(circ_corrected[-1])
-
-    else:
-        circuit = cirq.Circuit(op_list)
-
-    return circuit
+    return cirq.Circuit(op_list)

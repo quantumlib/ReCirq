@@ -116,12 +116,14 @@ def build_otoc_circuits(
             light_cone_filter is False.
 
     Returns:
-        A list of 16 cirq.Circuits. The first 4 circuits are OTOC circuits with the butterfly
-        operators being I (i.e. no perturbation between U and $U^\dagger$). Circuits 4 to 8,
-        8 to 12 and 12 to 16 correspond to the butterfly operators being X, Y and Z,
-        respectively. For each case, the OTOC measurement result is $(p_0 - p_1 - p_2 + p_3) / 2$,
-        where $p_i$ is the excited state probability of the $i^\text{th}$ circuit for the
-        corresponding butterfly operator.
+        An OTOCCircuits containing the following fields:
+        butterfly_I: 4 OTOC circuits with I as the butterfly operator (i.e. normalization circuits).
+        butterfly_X: 4 OTOC circuits with X as the butterfly operator.
+        butterfly_Y: 4 OTOC circuits with Y as the butterfly operator.
+        butterfly_Z: 4 OTOC circuits with Z as the butterfly operator.
+        For each case, the OTOC measurement result is $(p_0 - p_1 - p_2 + p_3) / 2$, where $p_i$
+        is the excited state probability of the $i^\text{th}$ circuit for the corresponding
+        butterfly operator.
     """
     if cliffords and z_only:
         raise ValueError("cliffords and z_only cannot both be True")

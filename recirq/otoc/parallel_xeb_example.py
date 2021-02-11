@@ -13,22 +13,24 @@
 # limitations under the License.
 
 """Example for performing parallel-XEB and calibrating unitary shifts."""
+import os
 
 import cirq
 import numpy as np
 
-from recirq.otoc.parallel_xeb import build_xeb_circuits, parallel_xeb_fidelities
+from recirq.otoc.parallel_xeb import build_xeb_circuits, parallel_xeb_fidelities, plot_xeb_results
 from recirq.otoc.utils import save_data
 
 
 def main():
     # Specify a working directory, project ID and processor name.
-    dir_str = ""
-    processor_name = "rainbow"
-    sampler = cirq.google.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim")
+    dir_str = os.getcwd()
+    processor_name = "mcgee"
+    sampler = cirq.google.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim",
+                                             project_id='xiaomidec2018')
 
     # Specify qubits to measure. Here we choose the qubits to be on a line.
-    qubit_locs = [(3, 3), (2, 3), (2, 4), (2, 5), (1, 5), (0, 5), (0, 6), (1, 6)]
+    qubit_locs = [(3, 2), (3, 3), (2, 3), (2, 4)]
     qubits = [cirq.GridQubit(*idx) for idx in qubit_locs]
     num_qubits = len(qubits)
 
@@ -54,7 +56,7 @@ def main():
 
     # Specify the number of random circuits in parallel XEB the cycles at which
     # fidelities are to be measured.
-    num_circuits = 20
+    num_circuits = 10
     num_num_cycles = range(3, 75, 10)
     num_cycles = len(num_num_cycles)
 
@@ -85,34 +87,27 @@ def main():
 
     # Perform fits on each qubit pair to miminize the cycle errors. The fitting
     # results are saved to the working directory.
-    fsim_angles_0 = {
+    fsim_angles_init = {
         "theta": -0.25 * np.pi,
         "delta_plus": 0,
         "delta_minus_off_diag": 0,
         "delta_minus_diag": 0,
         "phi": 0.0,
     }
-    (
-        fitted_gates_0,
-        corrected_gates_0,
-        fsim_fitted_0,
-        err_0_opt,
-        err_0_unopt,
-    ) = parallel_xeb_fidelities(
+    xeb_results = parallel_xeb_fidelities(
         qubit_locs,
         num_num_cycles,
         all_bits,
         all_sq_gates,
-        fsim_angles_0,
+        fsim_angles_init,
         interaction_sequence=int_layers,
         gate_to_fit="sqrt-iswap",
-        plot_individual_traces=True,
         num_restarts=5,
-        plot_histograms=True,
-        save_directory=None,
     )
 
-    save_data(corrected_gates_0, dir_str + "/gate_corrections")
+    plot_xeb_results(xeb_results)
+
+    save_data(xeb_results.correction_gates, dir_str + "/gate_corrections")
 
 
 if __name__ == "__main__":
