@@ -11,8 +11,9 @@ FILENAME is a filename with moves in the move format described
 by recirq.quantum_chess.move (see also interactive_board for
 examples).
 
-PROCESSOR_NAME is a processor name from engine_utils.py.
-Defaults to a 54 qubit sycamore noiseless simulator.
+PROCESSOR_NAME is a processor name from engine_utils.py. If empty, it will find
+an available quantum processor to run on. Default to 54 qubit sycamore
+noiseless simulator if none are available.
 
 FEN is a initial position in chess FEN notation. Optional.
 Default is the normal classical chess starting position.
@@ -52,7 +53,17 @@ def apply_moves(b: ab.AsciiBoard, moves: List[str]) -> bool:
 def main_loop(args):
     f = open(args.filename, 'r')
     moves = [line.strip() for line in f]
-    board = create_board(processor_name=args.processor_name,
+    if args.processor_name:
+        processor_name = args.processor_name
+    else:
+        # Execute on a quantum processor if it is available.
+        available_processors = utils.get_available_processors(utils.QUANTUM_PROCESSORS.keys())
+        if available_processors:
+            processor_name = available_processors[0]
+        else:
+            processor_name = 'Syc54-noiseless'
+    print(f'Using processor {processor_name}')
+    board = create_board(processor_name=processor_name,
                          noise_mitigation=0.1)
     b = ab.AsciiBoard(board=board)
     if args.position:
@@ -72,7 +83,6 @@ def parse():
                         help='path to file that contains one move per line')
     parser.add_argument('--processor_name',
                         type=str,
-                        default='Syc54-noiseless',
                         help='name of the QuantumProcessor object to use')
     parser.add_argument('--position',
                         type=str,
