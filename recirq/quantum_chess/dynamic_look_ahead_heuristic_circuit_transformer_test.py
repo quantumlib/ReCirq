@@ -37,13 +37,13 @@ logical = {
 
 logical2 = {
     a0: [(a2, 0), (a1, 1), (a3, 6)],
-    a1: [(a0, 1), (a2, 3), (a7, math.inf)],
+    a1: [(a0, 1), (a2, 3), (a7, 8)],
     a2: [(a0, 0), (a1, 3), (a3, 5)],
     a3: [(a2, 5), (a0, 6)],
-    a4: [(a5, 0), (a6, math.inf)],
+    a4: [(a5, 0), (a6, 7)],
     a5: [(a4, 0)],
-    a6: [(a7, 0), (a4, math.inf)],
-    a7: [(a6, 0), (a1, math.inf)],
+    a6: [(a7, 0), (a4, 7)],
+    a7: [(a6, 0), (a1, 8)],
 }
 
 zero_zero = cirq.GridQubit(0, 0)
@@ -139,6 +139,12 @@ def test_build_logical_qubits_graph():
         cirq.ISWAP(a6, a7),
     )
     assert t.build_logical_qubits_graph(c2) == logical2
+    c3 = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3))
+    assert t.build_logical_qubits_graph(c3) == {
+        a1: [(a3, 2)],
+        a2: [(a3, 1)],
+        a3: [(a2, 1), (a1, 2)],
+    }
 
 def test_graph_center():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)

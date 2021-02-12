@@ -377,10 +377,16 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
           circuit: The circuit from which to build a logical qubits graph.
         """
         g = defaultdict(list)
+        moment_index = 0
 
         # Build an adjacency graph based on the circuit.
         for i, m in enumerate(circuit):
+            moment_index = i
             for op in m:
+                if len(op.qubits) == 1:
+                    q = op.qubits[0]
+                    if q not in g:
+                        g[q] = []
                 if len(op.qubits) == 2:
                     q1, q2 = op.qubits
                     q1_neighbors = [n[0] for n in g[q1]]
@@ -403,16 +409,15 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         # Connect disjoint components by adding an edge between the nodes of
         # each disjoint component that are least connected.
         while len(components) > 1:
+            moment_index += 1
             first_comp = components.pop()
             first_q = self.get_least_connected_qubit(g, first_comp)
             second_comp = components.pop()
             second_q = self.get_least_connected_qubit(g, second_comp)
 
-            # Add an edge between the two least connected nodes, and set its
-            # moment index to infinity since this edge doesn't represent a
-            # actual gate in the circuit.
-            g[first_q].append((second_q, math.inf))
-            g[second_q].append((first_q, math.inf))
+            # Add an edge between the two least connected nodes.
+            g[first_q].append((second_q, moment_index))
+            g[second_q].append((first_q, moment_index))
 
             # Combine the two components and add it back to the components
             # deque to continue connecting disjoint components.
@@ -624,11 +629,6 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         """
         mapping = defaultdict()
 
-        # The circuit doesn't contain any 2-qubit gates, return an empty
-        # mapping.
-        if not lg:
-            return mapping
-
         pg_center = self.find_graph_center(pg)
         lg_center = self.find_graph_center(lg)
         mapping[lg_center] = pg_center
@@ -659,9 +659,10 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
                             min_dist = dist
                             nearest_candidate_qubits = distances[dist]
                     candidate_qubits = nearest_candidate_qubits
-                    if candidate_qubits == 1:
-                        pq = candidate_qubits[0]
+                    if len(candidate_qubits) == 1:
                         break
+            if len(candidate_qubits) == 1:
+                pq = candidate_qubits[0]
             # If there are still more than one candidate qubit at this point,
             # choose the one with the closest degree to the logical qubit.
             if len(candidate_qubits) > 1:
@@ -689,8 +690,8 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         pg = self.build_physical_qubits_graph()
         lg = self.build_logical_qubits_graph(circuit)
         initial_mapping = self.calculate_initial_mapping(pg, lg)
-        # TODO: return the transformed circuit here instead.
-        return initial_mapping
+        # TODO: change this to use the result of the SWAP update algorithm.
+        return circuit.transform_qubits(lambda q: initial_mapping[q])
 
 class SycamoreDecomposer(cirq.PointOptimizer):
     """Optimizer that decomposes all three qubit operations into

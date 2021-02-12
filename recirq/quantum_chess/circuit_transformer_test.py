@@ -33,52 +33,64 @@ d1 = cirq.NamedQubit('d1')
 @pytest.mark.parametrize('device',
                          (cirq.google.Sycamore23, cirq.google.Sycamore))
 def test_single_qubit_ops(device):
-    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3))
-    device.validate_circuit(transformer.transform(c))
+    t = ct.ConnectivityHeuristicCircuitTransformer(device)
+    device.validate_circuit(t.transform(c))
+    t2 = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
+    device.validate_circuit(t2.transform(c))
 
 
 @pytest.mark.parametrize('device',
                          (cirq.google.Sycamore23, cirq.google.Sycamore))
 def test_single_qubit_with_two_qubits(device):
-    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3),
                      cirq.ISWAP(a3, a4) ** 0.5)
-    device.validate_circuit(transformer.transform(c))
+    t = ct.ConnectivityHeuristicCircuitTransformer(device)
+    device.validate_circuit(t.transform(c))
+    t2 = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
+    device.validate_circuit(t2.transform(c))
 
 
 @pytest.mark.parametrize('device',
                          (cirq.google.Sycamore23, cirq.google.Sycamore))
 def test_three_split_moves(device):
-    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
     c = cirq.Circuit(qm.split_move(a1, a2, b1), qm.split_move(a2, a3, b3),
                      qm.split_move(b1, c1, c2))
-    device.validate_circuit(transformer.transform(c))
+    t = ct.ConnectivityHeuristicCircuitTransformer(device)
+    device.validate_circuit(t.transform(c))
+    t2 = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
+    device.validate_circuit(t2.transform(c))
 
 
 @pytest.mark.parametrize('device',
                          (cirq.google.Sycamore23, cirq.google.Sycamore))
 def test_disconnected(device):
-    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
     c = cirq.Circuit(qm.split_move(a1, a2, a3), qm.split_move(a3, a4, d1),
                      qm.split_move(b1, b2, b3), qm.split_move(c1, c2, c3))
-    device.validate_circuit(transformer.transform(c))
+    t = ct.ConnectivityHeuristicCircuitTransformer(device)
+    device.validate_circuit(t.transform(c))
+#    t2 = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
+#    device.validate_circuit(t2.transform(c))
 
 
 @pytest.mark.parametrize('device',
                          (cirq.google.Sycamore23, cirq.google.Sycamore))
 def test_move_around_square(device):
-    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
     c = cirq.Circuit(qm.normal_move(a1, a2), qm.normal_move(a2, b2),
                      qm.normal_move(b2, b1), qm.normal_move(b1, a1))
-    device.validate_circuit(transformer.transform(c))
+    t = ct.ConnectivityHeuristicCircuitTransformer(device)
+    device.validate_circuit(t.transform(c))
+#    t2 = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
+#    device.validate_circuit(t2.transform(c))
 
 
 @pytest.mark.parametrize('device',
                          (cirq.google.Sycamore23, cirq.google.Sycamore))
 def test_split_then_merge(device):
-    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
     c = cirq.Circuit(qm.split_move(a1, a2, b1), qm.split_move(a2, a3, b3),
                      qm.split_move(b1, c1, c2), qm.normal_move(c1, d1),
                      qm.normal_move(a3, a4), qm.merge_move(a4, d1, a1))
-    device.validate_circuit(transformer.transform(c))
+    t = ct.ConnectivityHeuristicCircuitTransformer(device)
+    device.validate_circuit(t.transform(c))
+#    t2 = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
+#    device.validate_circuit(t2.transform(c))
