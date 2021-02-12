@@ -1,0 +1,140 @@
+from collections import deque
+
+import pytest
+import cirq
+
+import recirq.quantum_chess.mcpe_utils as mcpe
+
+
+def test_peek():
+    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]
+    dlists = mcpe.DependencyLists(cirq.Circuit(g))
+    assert dlists.peek_front(x) == g[0]
+    assert dlists.peek_front(y) == g[0]
+    assert dlists.peek_front(z) == g[1]
+
+
+def test_pop():
+    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]
+    dlists = mcpe.DependencyLists(cirq.Circuit(g))
+
+    assert dlists.peek_front(x) == g[0]
+    dlists.pop_front(x)
+    assert dlists.peek_front(x) == g[1]
+
+
+def test_empty():
+    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    dlists = mcpe.DependencyLists(
+        cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)))
+
+    assert not dlists.empty(x)
+    dlists.pop_front(x)
+    assert not dlists.empty(x)
+    dlists.pop_front(x)
+    assert dlists.empty(x)
+
+    assert not dlists.all_empty()
+    dlists.pop_front(y)
+    dlists.pop_front(y)
+    dlists.pop_front(z)
+    dlists.pop_front(z)
+    assert dlists.all_empty()
+
+
+def test_active_gates():
+    w, x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(4))
+    dlists = mcpe.DependencyLists(
+        cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(y, z), cirq.X(w)))
+
+    assert dlists.active_gates() == {cirq.ISWAP(x, y), cirq.X(w)}
+
+
+def test_physical_mapping():
+    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
+    mapping = mcpe.QubitMapping(dict(zip(q, Q)))
+    assert list(map(mapping.physical, q)) == Q
+    assert cirq.ISWAP(q[1],
+                      q[5]).transform_qubits(mapping.physical) == cirq.ISWAP(
+                          Q[1], Q[5])
+
+
+def test_swap():
+    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
+    mapping = mcpe.QubitMapping(dict(zip(q, Q)))
+
+    mapping.swap_physical(Q[0], Q[1])
+    g = cirq.CNOT(q[0], q[2])
+    assert g.transform_qubits(mapping.physical) == cirq.CNOT(Q[1], Q[2])
+
+    mapping.swap_physical(Q[2], Q[3])
+    mapping.swap_physical(Q[1], Q[4])
+    assert g.transform_qubits(mapping.physical) == cirq.CNOT(Q[4], Q[3])
+
+
+def test_mcpe_example_8():
+    # This test is example 8 from the circuit in figure 9 of
+    # https://ieeexplore.ieee.org/abstract/document/8976109.
+    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
+    mapping = mcpe.QubitMapping(dict(zip(q, Q)))
+    dlists = mcpe.DependencyLists(
+        cirq.Circuit(cirq.CNOT(q[0], q[2]), cirq.CNOT(q[5], q[2]),
+                     cirq.CNOT(q[0], q[5]), cirq.CNOT(q[4], q[0]),
+                     cirq.CNOT(q[0], q[3]), cirq.CNOT(q[5], q[0]),
+                     cirq.CNOT(q[3], q[1])))
+
+    assert dlists.maximum_consecutive_positive_effect(Q[0], Q[1], mapping) == 4
+
+
+def test_mcpe_example_9():
+    # This test is example 9 from the circuit in figures 9 and 10 of
+    # https://ieeexplore.ieee.org/abstract/document/8976109.
+    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
+    mapping = mcpe.QubitMapping(dict(zip(q, Q)))
+    dlists = mcpe.DependencyLists(
+        cirq.Circuit(cirq.CNOT(q[0], q[2]), cirq.CNOT(q[5], q[2]),
+                     cirq.CNOT(q[0], q[5]), cirq.CNOT(q[4], q[0]),
+                     cirq.CNOT(q[0], q[3]), cirq.CNOT(q[5], q[0]),
+                     cirq.CNOT(q[3], q[1])))
+
+    # At first CNOT(q0, q2) is the active gate.
+    assert dlists.active_gates() == {cirq.CNOT(q[0], q[2])}
+    # The swaps connected to either q0 or q2 to consider are:
+    #   (Q0, Q1), (Q0, Q3), (Q1, Q2), (Q2, Q5)
+    # Of these, (Q0, Q3) and (Q2, Q5) can be discarded because they would
+    # negatively impact the active CNOT(q0, q2) gate.
+    assert mcpe.effect_of_swap((Q[0], Q[3]), (Q[0], Q[2])) < 0
+    assert mcpe.effect_of_swap((Q[2], Q[5]), (Q[0], Q[2])) < 0
+    # The remaining candidate swaps are: (Q0, Q1) and (Q1, Q2)
+    # (Q0, Q1) has a higher MCPE, so it looks better to apply that one.
+    assert dlists.maximum_consecutive_positive_effect(Q[0], Q[1], mapping) == 4
+    assert dlists.maximum_consecutive_positive_effect(Q[1], Q[2], mapping) == 1
+    mapping.swap_physical(Q[0], Q[1])
+
+    # The swap-update algorithm would now advance beyond the front-most gates that
+    # now satisfy adjacency constraints after the swap -- the CNOT(q0, q2) and
+    # CNOT(q5, q2)
+    assert dlists.active_gates() == {cirq.CNOT(q[0], q[2])}
+    dlists.pop_front(q[0])
+    dlists.pop_front(q[2])
+    assert dlists.active_gates() == {cirq.CNOT(q[5], q[2])}
+    dlists.pop_front(q[5])
+    dlists.pop_front(q[2])
+
+    # Now the active gate is g2 (which is CNOT(q0, q5))
+    assert dlists.active_gates() == {cirq.CNOT(q[0], q[5])}
+    # For this active gate, the swaps to consider are:
+    #   (Q0, Q1), (Q1, Q2), (Q1, Q4), (Q2, Q5), (Q4, Q5)
+    # (Q0, Q1) can be discarded because it negatively impacts the active gate.
+    assert mcpe.effect_of_swap((Q[0], Q[1]), (Q[1], Q[5])) < 0
+    # Of the remaining candidate swaps, (Q0, Q4) has the highest MCPE.
+    assert dlists.maximum_consecutive_positive_effect(Q[1], Q[2], mapping) == 1
+    assert dlists.maximum_consecutive_positive_effect(Q[1], Q[4], mapping) == 3
+    assert dlists.maximum_consecutive_positive_effect(Q[2], Q[5], mapping) == 2
+    assert dlists.maximum_consecutive_positive_effect(Q[4], Q[5], mapping) == 2
