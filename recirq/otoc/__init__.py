@@ -23,10 +23,6 @@ from recirq.otoc.utils import (
     cz_to_sqrt_iswap,
 )
 
-from recirq.otoc.parallel_xeb import (
-    build_xeb_circuits,
-    parallel_xeb_fidelities,
-    plot_xeb_results
-)
+from recirq.otoc.parallel_xeb import build_xeb_circuits, parallel_xeb_fidelities, plot_xeb_results
 
 from recirq.otoc.otoc_circuits import build_otoc_circuits, add_noncliffords

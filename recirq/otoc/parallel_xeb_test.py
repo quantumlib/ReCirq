@@ -12,62 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Example for performing parallel-XEB and calibrating unitary shifts."""
-import os
-
 import cirq
 import numpy as np
 
-from recirq.otoc.parallel_xeb import build_xeb_circuits, parallel_xeb_fidelities, plot_xeb_results
-from recirq.otoc.utils import save_data
+from recirq.otoc import build_xeb_circuits, parallel_xeb_fidelities
 
 
-def main():
-    # Specify a working directory, project ID and processor name.
-    dir_str = os.getcwd()
-    processor_name = "rainbow"
-    sampler = cirq.google.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim")
-
-    # Specify qubits to measure. Here we choose the qubits to be on a line.
-    qubit_locs = [(3, 3), (2, 3), (2, 4), (2, 5), (1, 5), (0, 5), (0, 6), (1, 6)]
+# Simulate 3-qubit parallel XEB using Cirq.Simulator() and ensure fidelities are close to 1.
+def test_parallel_xeb_fidelities() -> None:
+    sampler = cirq.Simulator()
+    qubit_locs = [(0, 0), (0, 1), (0, 2)]
     qubits = [cirq.GridQubit(*idx) for idx in qubit_locs]
-    num_qubits = len(qubits)
 
-    # Specify the gate layers to calibrate. For qubits on a line, all two-qubit
-    # gates can be calibrated in two layers.
-    int_layers = [
-        {(qubit_locs[i], qubit_locs[i + 1]) for i in range(0, num_qubits - 1, 2)},
-        {(qubit_locs[i], qubit_locs[i + 1]) for i in range(1, num_qubits - 1, 2)},
-    ]
+    int_layers = [{(qubit_locs[0], qubit_locs[1])}, {(qubit_locs[1], qubit_locs[2])}]
 
     xeb_configs = [
-        [
-            cirq.Moment(
-                [cirq.ISWAP(qubits[i], qubits[i + 1]) ** 0.5 for i in range(0, num_qubits - 1, 2)]
-            )
-        ],
-        [
-            cirq.Moment(
-                [cirq.ISWAP(qubits[i], qubits[i + 1]) ** 0.5 for i in range(1, num_qubits - 1, 2)]
-            )
-        ],
+        [cirq.Moment([cirq.ISWAP(qubits[0], qubits[1]) ** 0.5])],
+        [cirq.Moment([cirq.ISWAP(qubits[1], qubits[2]) ** 0.5])],
     ]
 
-    # Specify the number of random circuits in parallel XEB the cycles at which
-    # fidelities are to be measured.
     num_circuits = 10
-    num_num_cycles = range(3, 75, 10)
+    num_num_cycles = range(3, 23, 5)
     num_cycles = len(num_num_cycles)
 
-    # Generate random XEB circuits, measure the resulting bit-strings, and save
-    # the data as well as random circuit information.
     all_bits = []
     all_sq_gates = []
     for xeb_config in xeb_configs:
         bits = []
         sq_gates = []
         for i in range(num_circuits):
-            print(i)
             circuits, sq_gate_indices_i = build_xeb_circuits(
                 qubits, num_num_cycles, xeb_config, random_seed=i
             )
@@ -80,8 +53,6 @@ def main():
         all_bits.append(bits)
         all_sq_gates.append(sq_gates)
 
-    # Perform fits on each qubit pair to miminize the cycle errors. The fitting
-    # results are saved to the working directory.
     fsim_angles_init = {
         "theta": -0.25 * np.pi,
         "delta_plus": 0,
@@ -97,13 +68,13 @@ def main():
         fsim_angles_init,
         interaction_sequence=int_layers,
         gate_to_fit="sqrt-iswap",
-        num_restarts=5,
+        num_restarts=1,
+        num_points=4,
+        print_fitting_progress=False,
     )
 
-    plot_xeb_results(xeb_results)
+    f_01 = xeb_results.raw_data[(qubit_locs[0], qubit_locs[1])].fidelity_unoptimized[1]
+    f_12 = xeb_results.raw_data[(qubit_locs[1], qubit_locs[2])].fidelity_unoptimized[1]
 
-    save_data(xeb_results.correction_gates, dir_str + "/gate_corrections")
-
-
-if __name__ == "__main__":
-    main()
+    assert np.allclose(f_01, 1, atol=0.1)
+    assert np.allclose(f_12, 1, atol=0.1)

@@ -50,10 +50,7 @@ def main():
         for i in range(num_qubits - 1)
     }
 
-    reverse_ops = {
-        (qubit_locs[i], qubit_locs[i + 1]): cirq.Circuit([cirq.CZ(qubits[i], qubits[i + 1])])
-        for i in range(num_qubits - 1)
-    }
+    reverse_ops = forward_ops
 
     # Build two random circuit instances (each having 12 cycles).
     circuit_list = []

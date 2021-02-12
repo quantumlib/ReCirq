@@ -27,7 +27,8 @@ from recirq.otoc.utils import (
     angles_to_fsim,
     pauli_error_fit,
     generic_fsim_gate,
-    cz_to_sqrt_iswap)
+    cz_to_sqrt_iswap,
+)
 
 _rot_ops = [
     cirq.X ** 0.5,
@@ -151,17 +152,17 @@ def plot_xeb_results(xeb_results: ParallelXEBResults) -> None:
 
 
 def build_xeb_circuits(
-        qubits: Sequence[cirq.GridQubit],
-        cycles: Sequence[int],
-        benchmark_ops: Sequence[Union[cirq.Moment, Sequence[cirq.Moment]]] = None,
-        random_seed: int = None,
-        sq_rand_nums: Optional[np.ndarray] = None,
-        reverse: bool = False,
-        z_only: bool = False,
-        ancilla: Optional[cirq.GridQubit] = None,
-        cycles_per_echo: Optional[int] = None,
-        light_cones: Optional[List[List[Set[cirq.GridQubit]]]] = None,
-        echo_indices: Optional[np.ndarray] = None,
+    qubits: Sequence[cirq.GridQubit],
+    cycles: Sequence[int],
+    benchmark_ops: Sequence[Union[cirq.Moment, Sequence[cirq.Moment]]] = None,
+    random_seed: int = None,
+    sq_rand_nums: Optional[np.ndarray] = None,
+    reverse: bool = False,
+    z_only: bool = False,
+    ancilla: Optional[cirq.GridQubit] = None,
+    cycles_per_echo: Optional[int] = None,
+    light_cones: Optional[List[List[Set[cirq.GridQubit]]]] = None,
+    echo_indices: Optional[np.ndarray] = None,
 ) -> Tuple[List[cirq.Circuit], np.ndarray]:
     r"""Builds random circuits for cross entropy benchmarking (XEB).
 
@@ -253,17 +254,18 @@ def build_xeb_circuits(
 
 
 def parallel_xeb_fidelities(
-        all_qubits: List[Tuple[int, int]],
-        num_cycle_range: Sequence[int],
-        measured_bits: List[List[List[np.ndarray]]],
-        scrambling_gates: List[List[np.ndarray]],
-        fsim_angles: Dict[str, float],
-        interaction_sequence: Optional[
-            List[Set[Tuple[Tuple[float, float], Tuple[float, float]]]]
-        ] = None,
-        gate_to_fit: str = "iswap",
-        num_restarts: int = 3,
-        num_points: int = 8
+    all_qubits: List[Tuple[int, int]],
+    num_cycle_range: Sequence[int],
+    measured_bits: List[List[List[np.ndarray]]],
+    scrambling_gates: List[List[np.ndarray]],
+    fsim_angles: Dict[str, float],
+    interaction_sequence: Optional[
+        List[Set[Tuple[Tuple[float, float], Tuple[float, float]]]]
+    ] = None,
+    gate_to_fit: str = "iswap",
+    num_restarts: int = 3,
+    num_points: int = 8,
+    print_fitting_progress: bool = True,
 ) -> ParallelXEBResults:
     """Computes and optimizes cycle fidelities from parallel XEB data.
 
@@ -297,6 +299,7 @@ def parallel_xeb_fidelities(
         num_points: The total number of XEB fidelities to be used in the cost function for
             optimization. Default is 8, such that the cost function is the sum of the XEB
             fidelities for the first 8 numbers of cycles in num_cycle_range.
+        print_fitting_progress: Whether to print progress during the fitting process.
 
     Returns:
         A ParallelXEBResults object that contains the following fields:
@@ -333,10 +336,11 @@ def parallel_xeb_fidelities(
     raw_data = {}
 
     for (q0, q1), p_data in p_data_all.items():
-        print("Fitting qubits {} and {}".format(q0, q1))
+        if print_fitting_progress:
+            print("Fitting qubits {} and {}".format(q0, q1))
 
         def xeb_fidelity(
-                angle_shifts: np.ndarray, num_p: int
+            angle_shifts: np.ndarray, num_p: int
         ) -> Tuple[float, List[float], np.ndarray, np.ndarray, float]:
             new_angles = fsim_angles.copy()
             for i, angle_name in enumerate(_fsim_angle_labels):
@@ -488,15 +492,14 @@ def parallel_xeb_fidelities(
 
         correction_gates[(q0, q1)] = circuit_corrected
 
-        raw_data[(q0, q1)] = XEBData(fidelity_optimized=(np.asarray(num_cycle_range),
-                                                         np.asarray(f_vals_1)),
-                                     fidelity_optimized_fit=(x_fitted_1, y_fitted_1),
-                                     fidelity_unoptimized=(np.asarray(num_cycle_range),
-                                                           np.asarray(f_vals_0)),
-                                     fidelity_unoptimized_fit=(x_fitted_0, y_fitted_0),
-                                     purity=(np.asarray(num_cycle_range),
-                                             np.asarray(sp_purities)),
-                                     purity_fit=(x_vals_p, y_vals_p))
+        raw_data[(q0, q1)] = XEBData(
+            fidelity_optimized=(np.asarray(num_cycle_range), np.asarray(f_vals_1)),
+            fidelity_optimized_fit=(x_fitted_1, y_fitted_1),
+            fidelity_unoptimized=(np.asarray(num_cycle_range), np.asarray(f_vals_0)),
+            fidelity_unoptimized_fit=(x_fitted_0, y_fitted_0),
+            purity=(np.asarray(num_cycle_range), np.asarray(sp_purities)),
+            purity_fit=(x_vals_p, y_vals_p),
+        )
 
     return ParallelXEBResults(
         fitted_gates=fitted_gates,
@@ -505,18 +508,18 @@ def parallel_xeb_fidelities(
         final_errors_optimized=final_errors_optimized,
         final_errors_unoptimized=final_errors_unoptimized,
         purity_errors=purity_errors,
-        raw_data=raw_data
+        raw_data=raw_data,
     )
 
 
 def _random_rotations(
-        qubits: Sequence[cirq.GridQubit],
-        num_layers: int,
-        rand_seed: Optional[int] = None,
-        rand_nums: Optional[np.ndarray] = None,
-        light_cones: Optional[List[List[Set[cirq.GridQubit]]]] = None,
-        echo_indices: Optional[np.ndarray] = None,
-        z_rotations_only: bool = False,
+    qubits: Sequence[cirq.GridQubit],
+    num_layers: int,
+    rand_seed: Optional[int] = None,
+    rand_nums: Optional[np.ndarray] = None,
+    light_cones: Optional[List[List[Set[cirq.GridQubit]]]] = None,
+    echo_indices: Optional[np.ndarray] = None,
+    z_rotations_only: bool = False,
 ) -> Tuple[List[List[cirq.OP_TREE]], np.ndarray]:
     """Generate random single-qubit rotations and group them into different circuit layers."""
     num_qubits = len(qubits)
@@ -592,13 +595,13 @@ def _speckle_purity(probs_data: np.ndarray) -> float:
 
 
 def _pairwise_xeb_probabilities(
-        all_qubits: List[Tuple[int, int]],
-        num_cycle_range: Sequence[int],
-        measured_bits: List[List[List[np.ndarray]]],
-        scrambling_gates: List[List[np.ndarray]],
-        interaction_sequence: Optional[
-            List[Set[Tuple[Tuple[float, float], Tuple[float, float]]]]
-        ] = None,
+    all_qubits: List[Tuple[int, int]],
+    num_cycle_range: Sequence[int],
+    measured_bits: List[List[List[np.ndarray]]],
+    scrambling_gates: List[List[np.ndarray]],
+    interaction_sequence: Optional[
+        List[Set[Tuple[Tuple[float, float], Tuple[float, float]]]]
+    ] = None,
 ) -> Tuple[
     Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]],
     Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]],
