@@ -310,6 +310,8 @@ def parallel_xeb_fidelities(
             after fitting as values.
         final_errors_unoptimized: A dictionary with qubit pairs as keys and their cycle errors
             before fitting as values.
+        purity_errors: A dictionary with qubit pairs as keys and their speckle purity errors per
+            cycle as values.
         raw_data: A dictionary with qubit pairs as keys and XEBData as values. Each XEBData
             contains the cycle-dependent XEB fidelities and purities, as well as their fits.
     """
@@ -516,6 +518,7 @@ def _random_rotations(
         echo_indices: Optional[np.ndarray] = None,
         z_rotations_only: bool = False,
 ) -> Tuple[List[List[cirq.OP_TREE]], np.ndarray]:
+    """Generate random single-qubit rotations and group them into different circuit layers."""
     num_qubits = len(qubits)
 
     random_state = cirq.value.parse_random_state(rand_seed)
@@ -560,6 +563,9 @@ def _random_rotations(
 
 
 def _alpha_least_square(probs_exp: np.ndarray, probs_data: np.ndarray) -> float:
+    """Compare an ideal and an experimental probability distribution and compute their
+    cross-entropy fidelity.
+    """
     if probs_exp.shape != probs_data.shape:
         raise ValueError("probs_exp and probs_data must have the same shape")
     num_trials, num_states = probs_exp.shape
@@ -580,6 +586,7 @@ def _alpha_least_square(probs_exp: np.ndarray, probs_data: np.ndarray) -> float:
 
 
 def _speckle_purity(probs_data: np.ndarray) -> float:
+    """Compute the speckle purity of a probability distribution"""
     d = 4
     return np.var(probs_data) * d ** 2 * (d + 1) / (d - 1)
 
@@ -596,6 +603,35 @@ def _pairwise_xeb_probabilities(
     Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]],
     Dict[Tuple[Tuple[int, int], Tuple[int, int]], List[np.ndarray]],
 ]:
+    """Computes the probability distributions of each qubit pair in a parallel XEB experiment.
+
+    Args:
+        all_qubits: List of qubits involved in parallel XEB, specified as (col, row) tuples.
+        num_cycle_range: Different numbers of circuit cycles used in parallel XEB.
+        measured_bits: The experimental bit-strings stored in a nested list. The first dimension
+            of the nested list represents different configurations (e.g. how the two-qubit gates
+            are applied) used in parallel XEB. The second dimension represents different trials
+            (i.e. random circuit instances) used in XEB. The third dimension represents the
+            different numbers of cycles and must be the same as len(num_cycle_range). Each
+            np.ndarray has dimension M x N, where M is the number of repetitions (stats) for each
+            circuit and N is the number of qubits involved.
+        scrambling_gates: The random circuit indices specified as integers between 0 and 7. See
+            the documentation of build_xeb_circuits for details. The first dimension of the
+            nested list represents the different configurations and must be the same as the first
+            dimension of measured_bits. The second dimension represents the different trials and
+            must be the same as the second dimension of measured_bits.
+        interaction_sequence: The pairs of qubits with FSIM applied for each configuration. Must
+            be the same as len(measured_bits).
+
+    Returns:
+        p_data_all: Keys are qubit pairs. Each value is a list (with length =
+            len(num_cycle_range)) of np.array. The rows of the array are of length 4 and
+            represent the measured probabilities of two-qubit basis states. Each row represents
+            the result from a different trial (circuit instance).
+        sq_gates: Keys are qubit pairs. Each value is a list (with length = number of circuit
+            instances) of np.array. Each array contains the indices (integers between 0 and 7)
+            for the random SQ gates relevant to the given qubit pair.
+    """
     num_trials = len(measured_bits[0])
     qubits = [cirq.GridQubit(*idx) for idx in all_qubits]
 
@@ -633,6 +669,7 @@ def _pairwise_xeb_probabilities(
 
 
 def _spin_echo_gates(idx: int) -> cirq.ops:
+    """Outputs one of 4 single-qubit pi rotations which is used for spin echoes."""
     pi_pulses = [
         cirq.PhasedXPowGate(phase_exponent=0.0, exponent=1.0),
         cirq.PhasedXPowGate(phase_exponent=0.5, exponent=1.0),
