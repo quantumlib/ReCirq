@@ -14,7 +14,17 @@
 import copy
 import math
 from collections import defaultdict, deque
-from typing import Deque, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import (
+    Deque,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    ValuesView,
+)
 
 import cirq
 
@@ -335,9 +345,8 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         g = defaultdict(list)
         for q in self.device.qubit_set():
             neighbors = [n for n in q.neighbors() if n in self.device.qubit_set()]
-            for neighbor in neighbors:
-                if q not in g[neighbor]:
-                    g[neighbor].append(q)
+            for n in neighbors:
+                g[q].append(n)
         return g
 
     def get_least_connected_qubit(
@@ -351,14 +360,7 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
           g: A logical qubits graph.
           component: A deque of qubits belonging to the same component.
         """
-        qubit = None
-        min_degree = math.inf
-        for q in component:
-            degree = len(g[q])
-            if degree < min_degree:
-                qubit = q
-                min_degree = degree
-        return qubit
+        return min(component, key=lambda q: len(g[q]))
 
     def build_logical_qubits_graph(
         self,
@@ -547,7 +549,7 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
 
     def find_candidate_qubits(
         self,
-        mapping: Dict[cirq.Qid, cirq.GridQubit],
+        mapped: ValuesView[cirq.GridQubit],
         pg: Dict[cirq.GridQubit, List[cirq.GridQubit]],
         pq: cirq.GridQubit,
     ) -> List[cirq.GridQubit]:
@@ -557,7 +559,7 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         found.
 
         Args:
-          mapping: The current mapping of logical qubits to physical qubits.
+          mapped: The set of currently mapped physical qubits.
           lg: A physical qubits graph.
           lq: The physical qubit from which to find candidate qubits.
         """
@@ -574,7 +576,7 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
                     if neighbor not in visited:
                         visited.add(neighbor)
                         queue.append(neighbor)
-                    if neighbor not in mapping and neighbor not in qubits:
+                    if neighbor not in mapped and neighbor not in qubits:
                         qubits.append(neighbor)
                 level -= 1
             if len(qubits) > 0:

@@ -28,78 +28,127 @@ a5 = cirq.NamedQubit('a5')
 a6 = cirq.NamedQubit('a6')
 a7 = cirq.NamedQubit('a7')
 
-logical = {
-    a0: [(a2, 0), (a1, 1), (a3, 6)],
-    a1: [(a0, 1), (a2, 3)],
-    a2: [(a0, 0), (a1, 3), (a3, 5)],
-    a3: [(a2, 5), (a0, 6)],
-}
+grid_qubits = dict(
+    (f'{row}_{col}', cirq.GridQubit(row, col))
+    for row in range(2) for col in range(11)
+)
 
-logical2 = {
-    a0: [(a2, 0), (a1, 1), (a3, 6)],
-    a1: [(a0, 1), (a2, 3), (a7, 8)],
-    a2: [(a0, 0), (a1, 3), (a3, 5)],
-    a3: [(a2, 5), (a0, 6)],
-    a4: [(a5, 0), (a6, 7)],
-    a5: [(a4, 0)],
-    a6: [(a7, 0), (a4, 7)],
-    a7: [(a6, 0), (a1, 8)],
-}
-
-zero_zero = cirq.GridQubit(0, 0)
-zero_one = cirq.GridQubit(0, 1)
-zero_two = cirq.GridQubit(0, 2)
-zero_three = cirq.GridQubit(0, 3)
-zero_four = cirq.GridQubit(0, 4)
-zero_five = cirq.GridQubit(0, 5)
-zero_six = cirq.GridQubit(0, 6)
-zero_seven = cirq.GridQubit(0, 7)
-zero_eight = cirq.GridQubit(0, 8)
-zero_nine = cirq.GridQubit(0, 9)
-zero_ten = cirq.GridQubit(0, 10)
-one_zero = cirq.GridQubit(1, 0)
-one_one = cirq.GridQubit(1, 1)
-one_two = cirq.GridQubit(1, 2)
-one_three = cirq.GridQubit(1, 3)
-one_four = cirq.GridQubit(1, 4)
-one_five = cirq.GridQubit(1, 5)
-one_six = cirq.GridQubit(1, 6)
-one_seven = cirq.GridQubit(1, 7)
-one_eight = cirq.GridQubit(1, 8)
-one_nine = cirq.GridQubit(1, 9)
-one_ten = cirq.GridQubit(1, 10)
-
-physical = {
-    zero_zero: [zero_one, one_zero],
-    zero_one: [zero_zero, one_one, zero_two],
-    zero_two: [zero_one, one_two, zero_three],
-    zero_three: [zero_two, one_three, zero_four],
-    zero_four: [zero_three, one_four, zero_five],
-    zero_five: [zero_four, one_five, zero_six],
-    zero_six: [zero_five, one_six, zero_seven],
-    zero_seven: [zero_six, one_seven, zero_eight],
-    zero_eight: [zero_seven, one_eight, zero_nine],
-    zero_nine: [zero_eight, one_nine, zero_ten],
-    zero_ten: [zero_nine, one_ten],
-    one_zero: [one_one, zero_zero],
-    one_one: [one_zero, zero_one, one_two],
-    one_two: [one_one, zero_two, one_three],
-    one_three: [one_two, zero_three, one_four],
-    one_four: [one_three, zero_four, one_five],
-    one_five: [one_four, zero_five, one_six],
-    one_six: [one_five, zero_six, one_seven],
-    one_seven: [one_six, zero_seven, one_eight],
-    one_eight: [one_seven, zero_eight, one_nine],
-    one_nine: [one_eight, zero_nine, one_ten],
-    one_ten: [one_nine, zero_ten],
-}
 
 def test_build_physical_qubits_graph():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
     g = t.build_physical_qubits_graph()
-    assert len(g) == len(physical)
-    for q in physical:
-        assert set(physical[q]) == set(g[q])
+    expected = {
+        grid_qubits['0_0']: [
+            grid_qubits['0_1'],
+            grid_qubits['1_0']
+        ],
+        grid_qubits['0_1']: [
+            grid_qubits['0_0'],
+            grid_qubits['1_1'],
+            grid_qubits['0_2'],
+        ],
+        grid_qubits['0_2']: [
+            grid_qubits['0_1'],
+            grid_qubits['1_2'],
+            grid_qubits['0_3'],
+        ],
+        grid_qubits['0_3']: [
+            grid_qubits['0_2'],
+            grid_qubits['1_3'],
+            grid_qubits['0_4'],
+        ],
+        grid_qubits['0_4']: [
+            grid_qubits['0_3'],
+            grid_qubits['1_4'],
+            grid_qubits['0_5'],
+        ],
+        grid_qubits['0_5']: [
+            grid_qubits['0_4'],
+            grid_qubits['1_5'],
+            grid_qubits['0_6'],
+        ],
+        grid_qubits['0_6']: [
+            grid_qubits['0_5'],
+            grid_qubits['1_6'],
+            grid_qubits['0_7'],
+        ],
+        grid_qubits['0_7']: [
+            grid_qubits['0_6'],
+            grid_qubits['1_7'],
+            grid_qubits['0_8'],
+        ],
+        grid_qubits['0_8']: [
+            grid_qubits['0_7'],
+            grid_qubits['1_8'],
+            grid_qubits['0_9'],
+        ],
+        grid_qubits['0_9']: [
+            grid_qubits['0_8'],
+            grid_qubits['1_9'],
+            grid_qubits['0_10'],
+        ],
+        grid_qubits['0_10']: [
+            grid_qubits['0_9'],
+            grid_qubits['1_10'],
+        ],
+        grid_qubits['1_0']: [
+            grid_qubits['1_1'],
+            grid_qubits['0_0'],
+        ],
+        grid_qubits['1_1']: [
+            grid_qubits['1_0'],
+            grid_qubits['0_1'],
+            grid_qubits['1_2'],
+        ],
+        grid_qubits['1_2']: [
+            grid_qubits['1_1'],
+            grid_qubits['0_2'],
+            grid_qubits['1_3'],
+        ],
+        grid_qubits['1_3']: [
+            grid_qubits['1_2'],
+            grid_qubits['0_3'],
+            grid_qubits['1_4'],
+        ],
+        grid_qubits['1_4']: [
+            grid_qubits['1_3'],
+            grid_qubits['0_4'],
+            grid_qubits['1_5'],
+        ],
+        grid_qubits['1_5']: [
+            grid_qubits['1_4'],
+            grid_qubits['0_5'],
+            grid_qubits['1_6'],
+        ],
+        grid_qubits['1_6']: [
+            grid_qubits['1_5'],
+            grid_qubits['0_6'],
+            grid_qubits['1_7'],
+        ],
+        grid_qubits['1_7']: [
+            grid_qubits['1_6'],
+            grid_qubits['0_7'],
+            grid_qubits['1_8'],
+        ],
+        grid_qubits['1_8']: [
+            grid_qubits['1_7'],
+            grid_qubits['0_8'],
+            grid_qubits['1_9'],
+        ],
+        grid_qubits['1_9']: [
+            grid_qubits['1_8'],
+            grid_qubits['0_9'],
+            grid_qubits['1_10'],
+        ],
+        grid_qubits['1_10']: [
+            grid_qubits['1_9'],
+            grid_qubits['0_10'],
+        ],
+    }
+    assert len(g) == len(expected)
+    for q in expected:
+        assert set(g[q]) == set(expected[q])
+
 
 def test_get_least_connected_qubit():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
@@ -113,6 +162,7 @@ def test_get_least_connected_qubit():
     assert t.get_least_connected_qubit(g, deque([0, 1, 2])) == 0
     assert t.get_least_connected_qubit(g, deque([3, 4])) == 3
 
+
 def test_build_logical_qubits_graph():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
     # One connected component.
@@ -120,89 +170,147 @@ def test_build_logical_qubits_graph():
         cirq.ISWAP(a2, a0),
         cirq.ISWAP(a0, a1),
         cirq.ISWAP(a0, a2),
-        cirq.ISWAP(a2, a1),
         cirq.ISWAP(a1, a2),
         cirq.ISWAP(a2, a3),
-        cirq.ISWAP(a0, a3),
     )
-    assert t.build_logical_qubits_graph(c) == logical
-    # Three connected components.
-    c2 = cirq.Circuit(
+    assert t.build_logical_qubits_graph(c) == {
+        a0: [(a2, 0), (a1, 1)],
+        a1: [(a0, 1), (a2, 3)],
+        a2: [(a0, 0), (a1, 3), (a3, 4)],
+        a3: [(a2, 4)],
+    }
+    # Three connected components with one-qubit and two-qubit gates.
+    c = cirq.Circuit(
         cirq.ISWAP(a2, a0),
         cirq.ISWAP(a0, a1),
         cirq.ISWAP(a0, a2),
-        cirq.ISWAP(a2, a1),
         cirq.ISWAP(a1, a2),
         cirq.ISWAP(a2, a3),
-        cirq.ISWAP(a0, a3),
         cirq.ISWAP(a4, a5),
         cirq.ISWAP(a6, a7),
     )
-    assert t.build_logical_qubits_graph(c2) == logical2
-    c3 = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3))
-    assert t.build_logical_qubits_graph(c3) == {
+    assert t.build_logical_qubits_graph(c) == {
+        a0: [(a2, 0), (a1, 1)],
+        a1: [(a0, 1), (a2, 3)],
+        a2: [(a0, 0), (a1, 3), (a3, 4)],
+        a3: [(a2, 4), (a7, 6)],
+        a4: [(a5, 0), (a6, 5)],
+        a5: [(a4, 0)],
+        a6: [(a7, 0), (a4, 5)],
+        a7: [(a6, 0), (a3, 6)],
+    }
+    # Three connected components with only one-qubit gates.
+    c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3))
+    assert t.build_logical_qubits_graph(c) == {
         a1: [(a3, 2)],
         a2: [(a3, 1)],
         a3: [(a2, 1), (a1, 2)],
     }
 
+
 def test_graph_center():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
-    assert t.find_graph_center(physical) == zero_five
-    assert t.find_graph_center(logical) == a0
+    g = {
+        0: [1, 4],
+        1: [0, 2, 4],
+        2: [1, 4, 5],
+        3: [4],
+        4: [0, 1, 2, 3, 5],
+        5: [2, 4],
+    }
+    assert t.find_graph_center(g) == 4
+    g = {
+        0: [(1,), (4,)],
+        1: [(0,), (2,), (4,)],
+        2: [(1,), (4,), (5,)],
+        3: [(4,)],
+        4: [(0,), (1,), (2,), (3,), (5,)],
+        5: [(2,), (4,)],
+    }
+    assert t.find_graph_center(g) == 4
+
 
 def test_traverse():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
-    assert t.traverse(logical, a0) == deque([a0, a2, a1, a3])
+    g = {
+        0: [(2, 0), (1, 1), (3, 6)],
+        1: [(0, 1), (2, 3)],
+        2: [(0, 0), (1, 3), (3, 5)],
+        3: [(2, 5), (0, 6)],
+    }
+    assert t.traverse(g, 0) == deque([0, 2, 1, 3])
+    assert t.traverse(g, 1) == deque([1, 0, 2, 3])
+    assert t.traverse(g, 2) == deque([2, 0, 1, 3])
+    assert t.traverse(g, 3) == deque([3, 2, 0, 1])
+
 
 def test_find_reference_qubits():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
-    mapping = {
-        a0: zero_five,
+    g = {
+        a0: [(a2, 0), (a1, 1)],
+        a1: [(a0, 1), (a2, 3)],
+        a2: [(a0, 0), (a1, 3), (a3, 5)],
+        a3: [(a2, 5)],
     }
-    assert t.find_reference_qubits(mapping, logical, a2) == [zero_five]
+    mapping = {
+        a0: grid_qubits['0_5'],
+    }
+    assert set(t.find_reference_qubits(mapping, g, a2)) == {
+        grid_qubits['0_5'],
+    }
+    mapping = {
+        a0: grid_qubits['0_5'],
+        a2: grid_qubits['1_5'],
+    }
+    assert set(t.find_reference_qubits(mapping, g, a1)) == {
+        grid_qubits['0_5'],
+        grid_qubits['1_5'],
+    }
+
 
 def test_find_candidate_qubits():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
+    g = t.build_physical_qubits_graph()
     # First level has free qubits.
-    mapping = {
-        zero_five: "mapped",
+    mapped = {
+        grid_qubits['0_5'],
     }
-    assert t.find_candidate_qubits(mapping, physical, zero_five) == [
+    assert set(t.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
         cirq.GridQubit(0, 4),
         cirq.GridQubit(1, 5),
         cirq.GridQubit(0, 6),
-    ]
-    # Second level has free qubits.
-    mapping = {
-        zero_five: "mapped",
-        zero_four: "mapped",
-        zero_six: "mapped",
-        one_five: "mapped",
     }
-    assert t.find_candidate_qubits(mapping, physical, zero_five) == [
+    # Second level has free qubits.
+    mapped = {
+        grid_qubits['0_4'],
+        grid_qubits['0_5'],
+        grid_qubits['0_6'],
+        grid_qubits['1_5'],
+    }
+    assert set(t.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
         cirq.GridQubit(0, 3),
         cirq.GridQubit(1, 4),
         cirq.GridQubit(1, 6),
         cirq.GridQubit(0, 7),
-    ]
-    # Third level has free qubits.
-    mapping = {
-        zero_three: "mapped",
-        zero_four: "mapped",
-        zero_five: "mapped",
-        zero_six: "mapped",
-        zero_seven: "mapped",
-        one_four: "mapped",
-        one_five: "mapped",
-        one_six: "mapped",
     }
-    assert t.find_candidate_qubits(mapping, physical, zero_five) == [
+    # Third level has free qubits.
+    mapped = {
+        grid_qubits['0_3'],
+        grid_qubits['0_4'],
+        grid_qubits['0_5'],
+        grid_qubits['0_6'],
+        grid_qubits['0_7'],
+        grid_qubits['1_4'],
+        grid_qubits['1_5'],
+        grid_qubits['1_6'],
+    }
+    assert set(t.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
         cirq.GridQubit(0, 2),
         cirq.GridQubit(1, 3),
         cirq.GridQubit(1, 7),
         cirq.GridQubit(0, 8),
-    ]
+    }
+
 
 def test_find_shortest_path_distance():
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
@@ -218,16 +326,5 @@ def test_find_shortest_path_distance():
         8: [2, 7],
     }
     assert t.find_shortest_path_distance(g, 0, 5) == 3
-
-def test_calculate_initial_mapping():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
-    c = cirq.Circuit(
-        cirq.ISWAP(a2, a0),
-        cirq.ISWAP(a0, a1),
-        cirq.ISWAP(a0, a2),
-        cirq.ISWAP(a2, a1),
-        cirq.ISWAP(a1, a2),
-        cirq.ISWAP(a2, a3),
-        cirq.ISWAP(a0, a3),
-    )
-    print(t.transform(c))
+    assert t.find_shortest_path_distance(g, 1, 8) == 2
+    assert t.find_shortest_path_distance(g, 4, 7) == 3
