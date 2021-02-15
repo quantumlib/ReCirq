@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import time
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import cirq
@@ -94,7 +95,7 @@ class CirqBoard:
         # the move-history when undoing moves
         self.init_basis_state = basis_state
         self.clear_debug_log()
-        self.timing_stats = []
+        self.timing_stats = defaultdict(list)
         return self
 
     def clear_debug_log(self) -> None:
@@ -109,7 +110,7 @@ class CirqBoard:
             
     def clear_timing_stats(self) -> None:
         """Clears timing stats."""
-        self.timing_stats = []
+        self.timing_stats = defaultdict(list)
 
     def print_timing_stats(self, clear_stats: bool = False) -> None:
         """Prints timing stats. Clears timing stats if clears_stats is enabled."""
@@ -154,7 +155,7 @@ class CirqBoard:
         if t1 is None:
             t1 = time.perf_counter()
         self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
-        self.timing_stats.append(t1 - t0)
+        self.timing_stats[action].append(t1 - t0)
     
     def sample_with_ancilla(self, num_samples: int
                             ) -> Tuple[List[int], List[Dict[str, int]]]:
@@ -279,7 +280,7 @@ class CirqBoard:
                         f'Discarded {error_count} from error mitigation '
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
-                    self.record_time("sample_with_ancilla", t0)
+                    self.record_time('sample_with_ancilla', t0)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples

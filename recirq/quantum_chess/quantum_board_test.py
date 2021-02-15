@@ -897,14 +897,21 @@ def test_record_time():
         'c7c5:PAWN_TWO_STEP:BASIC',
         'b5c6:PAWN_EP:BASIC',
     )
-    assert "sample_with_ancilla takes" in b.debug_log
-    assert "seconds." in b.debug_log
-    assert float(b.debug_log.split("sample_with_ancilla takes ")[-1].split(" seconds.")[0]) > 0
+    assert 'sample_with_ancilla takes' in b.debug_log
+    assert 'seconds.' in b.debug_log
+    assert float(b.debug_log.split('sample_with_ancilla takes ')[-1].split(' seconds.')[0]) > 0
 
-    b.record_time("test_action", 0.12, 0.345)
-    assert "test_action takes" in b.debug_log
-    expected_time = pytest.approx(0.345-0.12, 1e-7)
-    assert float(b.debug_log.split("test_action takes ")[-1].split(" seconds.")[0]) == expected_time
+    b.record_time('test_action', 0.12, 0.345)
+    assert 'test_action takes' in b.debug_log
+    expected_time_1 = pytest.approx(0.345 - 0.12, 1e-7)
+    assert float(b.debug_log.split('test_action takes ')[-1].split(' seconds.')[0]) == expected_time_1
     assert len(b.timing_stats) == 2
-    assert b.timing_stats[1] == expected_time
+    assert b.timing_stats['test_action'][-1] == expected_time_1
+
+    b.record_time('test_action', 0.5, 0.987)
+    expected_time_2 = pytest.approx(0.987 - 0.5, 1e-7)
+    assert float(b.debug_log.split('test_action takes ')[-1].split(' seconds.')[0]) == expected_time_2
+    assert len(b.timing_stats) == 2
+    assert len(b.timing_stats['test_action']) == 2
+    assert b.timing_stats['test_action'][-1] == expected_time_2
     
