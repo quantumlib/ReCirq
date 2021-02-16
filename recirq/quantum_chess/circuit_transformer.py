@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import copy
-import random
 from typing import Dict, Iterable, List, Optional, Set
 
 import cirq
@@ -23,19 +22,31 @@ ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 
 class CircuitTransformer:
+    """Abstract interface for circuit transformations.
+
+    For example: NamedQubit -> GridQubit transformations.
+    """
+    def __init__(self):
+        pass
+
+    def transform(self, circuit: cirq.Circuit) -> cirq.Circuit:
+        """Applies the transformation to the circuit."""
+        return None
+
+
+class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
     """Optimizer that will transform a circuit using NamedQubits
     and transform it to use GridQubits.  This will use a breadth-first
     search to find a suitable mapping into the specified grid.
 
     It will then transform all operations to use the new qubits.
     """
-
     def __init__(self, device: cirq.Device):
+        super().__init__()
         self.device = device
         self.mapping = None
         self.starting_qubit = self.find_start_qubit(device.qubits)
         self.qubit_list = device.qubits
-        super().__init__()
 
     def qubits_within(self, depth: int, qubit: cirq.GridQubit,
                       qubit_list: Iterable[cirq.GridQubit]) -> int:
@@ -55,15 +66,16 @@ class CircuitTransformer:
             c += self.qubits_within(depth - 1, qubit + diff, qubit_list)
         return c
 
-    def find_start_qubit(self, qubit_list: List[cirq.Qid],
-                         depth=3) -> cirq.GridQubit:
+    def find_start_qubit(self,
+                         qubit_list: List[cirq.Qid],
+                         depth=3) -> Optional[cirq.GridQubit]:
         """Finds a reasonable starting qubit to start the mapping.
 
         Uses the heuristic of the most connected qubit. """
         best = None
         best_count = -1
         for q in qubit_list:
-            c = self.qubits_within(3, q, qubit_list)
+            c = self.qubits_within(depth, q, qubit_list)
             if c > best_count:
                 best_count = c
                 best = q
@@ -191,7 +203,7 @@ class CircuitTransformer:
                 del mapping[node_to_map]
                 available_qubits.add(node_to_try)
             else:
-                #We have successfully mapped all qubits!
+                # We have successfully mapped all qubits!
                 return True
 
         # All available qubits were not valid.
@@ -211,7 +223,7 @@ class CircuitTransformer:
         # Build up an adjacency graph based on the circuits.
         # Two qubit gates will turn into edges in the graph
         g = {}
-        #Keep track of single qubits that don't interact.
+        # Keep track of single qubits that don't interact.
         sq = []
         for m in circuit:
             for op in m:
@@ -279,7 +291,7 @@ class CircuitTransformer:
         self.mapping = mapping
         return mapping
 
-    def optimize_circuit(self, circuit: cirq.Circuit) -> cirq.Circuit:
+    def transform(self, circuit: cirq.Circuit) -> cirq.Circuit:
         """ Creates a new qubit mapping for a circuit and transforms it.
 
         This uses `qubit_mapping` to create a mapping from the qubits
@@ -300,10 +312,9 @@ class SycamoreDecomposer(cirq.PointOptimizer):
     Currently supported are controlled ISWAPs with a single control
     and control-X gates with multiple controls (TOFFOLI gates).:w
     """
-
-    def optimization_at(self, circuit: cirq.Circuit, index: int,
-                        op: cirq.Operation
-                       ) -> Optional[cirq.PointOptimizationSummary]:
+    def optimization_at(
+            self, circuit: cirq.Circuit, index: int,
+            op: cirq.Operation) -> Optional[cirq.PointOptimizationSummary]:
         if len(op.qubits) > 3:
             raise ValueError(f'Four qubit ops not yet supported: {op}')
         new_ops = None
@@ -314,14 +325,14 @@ class SycamoreDecomposer(cirq.PointOptimizer):
             if op.gate.sub_gate == cirq.ISWAP:
                 new_ops = controlled_iswap.controlled_iswap(
                     *qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-1:
+            if op.gate.sub_gate == cirq.ISWAP ** -1:
                 new_ops = controlled_iswap.controlled_iswap(*qubits,
                                                             *op.controls,
                                                             inverse=True)
-            if op.gate.sub_gate == cirq.ISWAP**0.5:
+            if op.gate.sub_gate == cirq.ISWAP ** 0.5:
                 new_ops = controlled_iswap.controlled_sqrt_iswap(
                     *qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-0.5:
+            if op.gate.sub_gate == cirq.ISWAP ** -0.5:
                 new_ops = controlled_iswap.controlled_inv_sqrt_iswap(
                     *qubits, *op.controls)
             if op.gate.sub_gate == cirq.X:

@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import time
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import cirq
@@ -24,7 +26,7 @@ from recirq.quantum_chess.bit_utils import (
     square_to_bit,
     xy_to_bit,
 )
-import recirq.quantum_chess.circuit_transformer as circuit_transformer
+import recirq.quantum_chess.circuit_transformer as ct
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
@@ -60,6 +62,8 @@ class CirqBoard:
             an error or post-selects the result away.
         noise_mitigation: Threshold of samples to overcome in order
             to be considered not noise.
+        transformer: The CircuitTransformer to use to convert the board's
+            NamedQubit circuit into a GridQubit circuit.
     """
 
     def __init__(self,
@@ -68,11 +72,14 @@ class CirqBoard:
                  device: Optional[cirq.Device] = None,
                  error_mitigation: Optional[
                      enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
-                 noise_mitigation: Optional[float] = 0.0):
+                 noise_mitigation: Optional[float] = 0.0,
+                 transformer: Optional[ct.CircuitTransformer] = None):
         self.device = device
         self.sampler = sampler
         if device is not None:
-            self.transformer = circuit_transformer.CircuitTransformer(device)
+            self.transformer = (
+                transformer
+                or ct.ConnectivityHeuristicCircuitTransformer(device))
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
@@ -93,15 +100,28 @@ class CirqBoard:
         # the move-history when undoing moves
         self.init_basis_state = basis_state
         self.clear_debug_log()
+        self.timing_stats = defaultdict(list)
         return self
 
     def clear_debug_log(self) -> None:
+        """Clears debug log."""
         self.debug_log = ''
 
     def print_debug_log(self, clear_log: bool = True) -> None:
+        """Prints debug log. Clears debug log if clear_log is enabled."""
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
+            
+    def clear_timing_stats(self) -> None:
+        """Clears timing stats."""
+        self.timing_stats = defaultdict(list)
+
+    def print_timing_stats(self, clear_stats: bool = False) -> None:
+        """Prints timing stats. Clears timing stats if clears_stats is enabled."""
+        print(self.timing_stats)
+        if clear_stats:
+            self.clear_timing_stats()
 
     def perform_moves(self, *moves) -> bool:
         """Performs a list of moves, specified as strings.
@@ -128,13 +148,22 @@ class CirqBoard:
         self.with_state(self.init_basis_state)
 
         # Repeat history up to last move
-        for m in range(len(current_move_history)-1):
+        for m in range(len(current_move_history) - 1):
             if not self.do_move(current_move_history[m]):
                 return False
         return True
 
+    def record_time(self, action: str, t0: float, t1: Optional[float] = None) -> None:
+        """Writes time span from t0 to t1 (if specified, otherwise the current time is used)
+        into the debug log and timing stats.
+        """
+        if t1 is None:
+            t1 = time.perf_counter()
+        self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
+        self.timing_stats[action].append(t1 - t0)
+    
     def sample_with_ancilla(self, num_samples: int
-                           ) -> Tuple[List[int], List[Dict[str, int]]]:
+                            ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
 
         Sends the current circuit to the sampler then retrieves the results.
@@ -145,6 +174,7 @@ class CirqBoard:
         The second value is a list of ancilla values, as represented as a
         dictionary from ancilla name to value (0 or 1).
         """
+        t0 = time.perf_counter()
         measure_circuit = self.circuit.copy()
         ancilla = []
         error_count = 0
@@ -161,7 +191,7 @@ class CirqBoard:
             # Noise and error mitigation will discard reps, so increase
             # the total number of repetitions to compensate
             if len(self.post_selection) > 1:
-                num_reps = num_samples * (2**(len(self.post_selection) + 1))
+                num_reps = num_samples * (2 ** (len(self.post_selection) + 1))
             else:
                 num_reps = num_samples
             if self.error_mitigation == enums.ErrorMitigation.Correct:
@@ -179,11 +209,9 @@ class CirqBoard:
             # Translate circuit to grid qubits and sqrtISWAP gates
             if self.device is not None:
                 # Decompose 3-qubit operations
-                circuit_transformer.SycamoreDecomposer().optimize_circuit(
-                    measure_circuit)
+                ct.SycamoreDecomposer().optimize_circuit(measure_circuit)
                 # Create NamedQubit to GridQubit mapping and transform
-                measure_circuit = self.transformer.optimize_circuit(
-                    measure_circuit)
+                measure_circuit = self.transformer.transform(measure_circuit)
 
                 # For debug, ensure that the circuit correctly validates
                 self.device.validate_circuit(measure_circuit)
@@ -255,6 +283,7 @@ class CirqBoard:
                         f'Discarded {error_count} from error mitigation '
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
+                    self.record_time('sample_with_ancilla', t0)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -262,6 +291,7 @@ class CirqBoard:
                 f'Discarded {error_count} from error mitigation '
                 f'{noise_count} from noise and {post_count} from post-selection\n'
             )
+        self.record_time("sample_with_ancilla", t0)
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
@@ -290,13 +320,13 @@ class CirqBoard:
             for bit in range(64):
                 if nth_bit_of(bit, sample):
                     self.probabilities[bit] += 1
-                    self.empty_squares = set_nth_bit(bit,self.empty_squares,0)
+                    self.empty_squares = set_nth_bit(bit, self.empty_squares, False)
                 else:
-                    self.full_squares = set_nth_bit(bit,self.full_squares,0)
+                    self.full_squares = set_nth_bit(bit, self.full_squares, False)
 
         for bit in range(64):
             self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
-        
+
         self.accumulations_valid = True
 
     def get_probability_distribution(self,
@@ -308,7 +338,7 @@ class CirqBoard:
         """
         if not self.accumulations_valid:
             self._generate_accumulations(repetitions)
-        
+
         return self.probabilities
 
     def get_full_squares_bitboard(self, repetitions: int = 1000) -> int:
@@ -373,8 +403,7 @@ class CirqBoard:
         new_qubit = self.new_ancilla()
 
         # Replace operations using the qubit with the ancilla instead
-        self.circuit = self.circuit.transform_qubits(lambda q: new_qubit
-                                                     if q == qubit else q)
+        self.circuit = self.circuit.transform_qubits(lambda q: new_qubit if q == qubit else q)
 
         # Remove the qubit from the list of active qubits
         self.entangled_squares.remove(qubit)
@@ -426,10 +455,10 @@ class CirqBoard:
     def set_castle(self, sbit: int, rook_sbit: int, tbit: int,
                    rook_tbit: int) -> None:
         """Adjusts classical bits for a castling operation."""
-        self.state = set_nth_bit(sbit, self.state, 0)
-        self.state = set_nth_bit(rook_sbit, self.state, 0)
-        self.state = set_nth_bit(tbit, self.state, 1)
-        self.state = set_nth_bit(rook_tbit, self.state, 1)
+        self.state = set_nth_bit(sbit, self.state, False)
+        self.state = set_nth_bit(rook_sbit, self.state, False)
+        self.state = set_nth_bit(tbit, self.state, True)
+        self.state = set_nth_bit(rook_tbit, self.state, True)
 
     def queenside_castle(self, squbit: int, rook_squbit: int, tqubit: int,
                          rook_tqubit: int, b_qubit: int) -> None:
@@ -518,10 +547,10 @@ class CirqBoard:
                         not nth_bit_of(sbit, self.state) or
                         nth_bit_of(tbit, self.state)):
                     raise ValueError('Invalid classical e.p. move')
-                    return 0
-                self.state = set_nth_bit(epbit, self.state, 0)
-                self.state = set_nth_bit(sbit, self.state, 0)
-                self.state = set_nth_bit(tbit, self.state, 1)
+
+                self.state = set_nth_bit(epbit, self.state, False)
+                self.state = set_nth_bit(sbit, self.state, False)
+                self.state = set_nth_bit(tbit, self.state, True)
                 return 1
 
             # If any squares are quantum, it's a quantum move
@@ -567,8 +596,8 @@ class CirqBoard:
                                             [old_tqubit], []))
             else:
                 # Classical case
-                self.state = set_nth_bit(sbit, self.state, 0)
-                self.state = set_nth_bit(tbit, self.state, 1)
+                self.state = set_nth_bit(sbit, self.state, False)
+                self.state = set_nth_bit(tbit, self.state, True)
             return 1
 
         if m.move_type == enums.MoveType.SPLIT_SLIDE:
@@ -653,7 +682,7 @@ class CirqBoard:
                     # Remove the target from the board into an ancilla
                     # and set bit to zero
                     self.unhook(tqubit)
-                    self.state = set_nth_bit(tbit, self.state, 0)
+                    self.state = set_nth_bit(tbit, self.state, False)
 
                     # Re-add target since we need to swap into the square
                     self.add_entangled(tqubit)
@@ -663,11 +692,11 @@ class CirqBoard:
 
                     # Set source to empty
                     self.unhook(squbit)
-                    self.state = set_nth_bit(sbit, self.state, 0)
+                    self.state = set_nth_bit(sbit, self.state, False)
 
                     # Now set the whole path to empty
                     for p in path_qubits:
-                        self.state = set_nth_bit(qubit_to_bit(p), self.state, 0)
+                        self.state = set_nth_bit(qubit_to_bit(p), self.state, False)
                         self.unhook(p)
                     return 1
             # Basic slide (or successful excluded slide)
@@ -690,8 +719,8 @@ class CirqBoard:
             if (squbit not in self.entangled_squares and
                     tqubit not in self.entangled_squares):
                 # Classical version
-                self.state = set_nth_bit(sbit, self.state, 0)
-                self.state = set_nth_bit(tbit, self.state, 1)
+                self.state = set_nth_bit(sbit, self.state, False)
+                self.state = set_nth_bit(tbit, self.state, True)
                 return 1
 
             # Measure source for capture
@@ -719,7 +748,7 @@ class CirqBoard:
                 # The source is empty.
                 # Change source qubit to be an ancilla
                 # and set classical bit to zero
-                self.state = set_nth_bit(sbit, self.state, 0)
+                self.state = set_nth_bit(sbit, self.state, False)
                 self.unhook(squbit)
 
             return 1
@@ -729,7 +758,7 @@ class CirqBoard:
             tqubit2 = bit_to_qubit(tbit2)
             self.add_entangled(squbit, tqubit, tqubit2)
             self.circuit.append(qm.split_move(squbit, tqubit, tqubit2))
-            self.state = set_nth_bit(sbit, self.state, 0)
+            self.state = set_nth_bit(sbit, self.state, False)
             self.unhook(squbit)
             return 1
 
@@ -756,10 +785,10 @@ class CirqBoard:
 
             # Piece in non-superposition in the way, not legal
             if (nth_bit_of(rook_tbit, self.state) and
-                    not rook_tqubit in self.entangled_squares):
+                    rook_tqubit not in self.entangled_squares):
                 return 0
             if (nth_bit_of(tbit, self.state) and
-                    not tqubit in self.entangled_squares):
+                    tqubit not in self.entangled_squares):
                 return 0
 
             # Not in superposition, just castle
@@ -815,13 +844,13 @@ class CirqBoard:
 
             # Piece in non-superposition in the way, not legal
             if (nth_bit_of(rook_tbit, self.state) and
-                    not rook_tqubit in self.entangled_squares):
+                    rook_tqubit not in self.entangled_squares):
                 return 0
             if (nth_bit_of(tbit, self.state) and
-                    not tqubit in self.entangled_squares):
+                    tqubit not in self.entangled_squares):
                 return 0
             if (b_bit is not None and nth_bit_of(b_bit, self.state) and
-                    not b_qubit in self.entangled_squares):
+                    b_qubit not in self.entangled_squares):
                 return 0
 
             # Not in superposition, just castle
@@ -901,5 +930,5 @@ class CirqBoard:
             s += ' |\n'
         s += ' +----------------------------------+\n    '
         for x in range(8):
-           s += move.to_rank(x) + '   '
+            s += move.to_rank(x) + '   '
         return s
