@@ -40,20 +40,11 @@ def _satisfies_adjacency(gate: cirq.Operation) -> bool:
     return q1.is_adjacent(q2)
 
 
-def generate_swap(q1: cirq.Qid,
-                  q2: cirq.Qid) -> Generator[cirq.Operation, None, None]:
-    """Generates a single SWAP gate."""
-    yield cirq.SWAP(q1, q2)
-
-
-def generate_iswap(q1: cirq.Qid,
-                   q2: cirq.Qid) -> Generator[cirq.Operation, None, None]:
-    """Generates an ISWAP as two sqrt-ISWAP gates.
-
-    This is a suitable replacement for SWAPs (up to a phase shift) but is a more
-    efficient representation on hardware supporting sqrt-ISWAP natively (ex
-    Google Sycamore chips).
-    """
+def generate_decomposed_swap(
+        q1: cirq.Qid, q2: cirq.Qid) -> Generator[cirq.Operation, None, None]:
+    """Generates a SWAP operation using sqrt-iswap gates."""
+    yield cirq.ISWAP(q1, q2)**0.5
+    yield cirq.ISWAP(q1, q2)**0.5
     yield cirq.ISWAP(q1, q2)**0.5
     yield cirq.ISWAP(q1, q2)**0.5
 
@@ -76,8 +67,9 @@ class SwapUpdater:
                  circuit: cirq.Circuit,
                  device_qubits: Optional[Iterable[cirq.GridQubit]],
                  initial_mapping: Dict[cirq.Qid, cirq.GridQubit] = {},
-                 swap_factory: Callable[[cirq.Qid, cirq.Qid],
-                                        List[cirq.Operation]] = generate_swap):
+                 swap_factory: Callable[
+                     [cirq.Qid, cirq.Qid],
+                     List[cirq.Operation]] = generate_decomposed_swap):
         self.device_qubits = device_qubits
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
@@ -184,5 +176,5 @@ class SwapUpdateTransformer(ct.CircuitTransformer):
         for q in circuit.all_qubits():
             assert q in initial_mapping
         updater = SwapUpdater(circuit, circuit.device.qubit_set(),
-                              initial_mapping, generate_iswap)
+                              initial_mapping)
         return cirq.Circuit(updater.add_swaps(), device=circuit.device)

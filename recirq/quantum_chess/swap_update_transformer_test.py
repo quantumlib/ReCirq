@@ -2,7 +2,7 @@ import pytest
 import cirq
 
 import recirq.quantum_chess.mcpe_utils as mcpe
-from recirq.quantum_chess.swap_update_transformer import SwapUpdater, SwapUpdateTransformer, generate_iswap
+from recirq.quantum_chess.swap_update_transformer import SwapUpdater, SwapUpdateTransformer, generate_decomposed_swap
 import recirq.quantum_chess.quantum_moves as qm
 
 # Logical qubits q0 - q5.
@@ -41,7 +41,8 @@ def test_example_9_candidate_swaps():
 def test_example_9_iterations():
     Q = FIGURE_9A_PHYSICAL_QUBITS
     initial_mapping = dict(zip(q, Q))
-    updater = SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping)
+    updater = SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping,
+                          lambda q1, q2: [cirq.SWAP(q1, q2)])
 
     # First iteration adds a swap between Q0 and Q1.
     assert list(updater.update_iteration()) == [cirq.SWAP(Q[0], Q[1])]
@@ -64,9 +65,11 @@ def test_example_9_iterations():
 def test_example_9():
     Q = FIGURE_9A_PHYSICAL_QUBITS
     initial_mapping = dict(zip(q, Q))
-    updater = SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping)
+    updater = SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping,
+                          lambda q1, q2: [cirq.SWAP(q1, q2)])
     updated_circuit = cirq.Circuit(
-        SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping).add_swaps())
+        SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping,
+                    lambda q1, q2: [cirq.SWAP(q1, q2)]).add_swaps())
     assert updated_circuit == cirq.Circuit(cirq.SWAP(Q[0], Q[1]),
                                            cirq.CNOT(Q[1], Q[2]),
                                            cirq.CNOT(Q[5], Q[2]),
@@ -98,14 +101,17 @@ def test_pentagonal_split_and_merge():
         assert q1.is_adjacent(q2)
 
 
-def test_with_iswaps():
+def test_decomposed_swaps():
     Q = FIGURE_9A_PHYSICAL_QUBITS
     initial_mapping = dict(zip(q, Q))
     updater = SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping,
-                          generate_iswap)
+                          generate_decomposed_swap)
     # First iteration adds a swap between Q0 and Q1.
-    # generate_iswap implements that swap operation as two sqrt-iswaps.
+    # generate_decomposed_swap implements that swap operation as four
+    # sqrt-iswaps.
     assert list(updater.update_iteration()) == [
+        cirq.ISWAP(Q[0], Q[1])**0.5,
+        cirq.ISWAP(Q[0], Q[1])**0.5,
         cirq.ISWAP(Q[0], Q[1])**0.5,
         cirq.ISWAP(Q[0], Q[1])**0.5,
     ]
