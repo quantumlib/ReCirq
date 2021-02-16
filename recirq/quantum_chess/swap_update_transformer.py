@@ -174,7 +174,7 @@ class SwapUpdateTransformer(ct.CircuitTransformer):
           physical GridQubits.
         """
         for q in circuit.all_qubits():
-            assert q in initial_mapping
+            assert q in self.initial_mapping
         updater = SwapUpdater(circuit, circuit.device.qubit_set(),
-                              initial_mapping)
+                              self.initial_mapping)
         return cirq.Circuit(updater.add_swaps(), device=circuit.device)
