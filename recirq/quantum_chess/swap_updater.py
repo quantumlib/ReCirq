@@ -22,10 +22,7 @@ from typing import Callable, Dict, Generator, Iterable, List, Optional, Tuple
 
 import cirq
 
-import recirq.quantum_chess.circuit_transformer as ct
 import recirq.quantum_chess.mcpe_utils as mcpe
-
-ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 
 def _satisfies_adjacency(gate: cirq.Operation) -> bool:
@@ -75,15 +72,6 @@ class SwapUpdater:
         self.mapping = mcpe.QubitMapping(initial_mapping)
         self.swap_factory = swap_factory
 
-    def _adjacent_qubits(
-            self,
-            qubit: cirq.GridQubit) -> Generator[cirq.GridQubit, None, None]:
-        """Generates the qubits adjacent to a given GridQubit on the device."""
-        for diff in ADJACENCY:
-            other = qubit + diff
-            if self.device_qubits is None or other in self.device_qubits:
-                yield other
-
     def generate_candidate_swaps(
         self, gates: Iterable[cirq.Operation]
     ) -> Generator[Tuple[cirq.GridQubit, cirq.GridQubit], None, None]:
@@ -97,7 +85,7 @@ class SwapUpdater:
             for gate_q in gate.qubits:
                 yield from (
                     (gate_q, swap_q)
-                    for swap_q in self._adjacent_qubits(gate_q)
+                    for swap_q in gate_q.neighbors(self.device_qubits)
                     if mcpe.effect_of_swap((gate_q, swap_q), gate.qubits) > 0)
 
     def update_iteration(self) -> Generator[cirq.Operation, None, None]:
@@ -150,31 +138,3 @@ class SwapUpdater:
         """
         while not self.dlists.all_empty():
             yield from self.update_iteration()
-
-
-class SwapUpdateTransformer(ct.CircuitTransformer):
-    """Transformer that runs the SwapUpdater to transform circuits.
-
-    Args:
-      initial_mapping: the initial mapping between the circuit's logical qubits
-        and physical GridQubits. This must contain all qubits in the circuit to
-        be transformed.
-    """
-    def __init__(self, initial_mapping: Dict[cirq.Qid, cirq.GridQubit] = {}):
-        super().__init__()
-        self.initial_mapping = initial_mapping
-
-    def transform(self, circuit: cirq.Circuit) -> cirq.Circuit:
-        """Adds ISWAPs to satisfy adjacency constraints.
-
-        Args:
-          circuit: the input circuit of GridQubits to modify
-        Returns:
-          the modified circuit with ISWAPs inserted and operations mapped to
-          physical GridQubits.
-        """
-        for q in circuit.all_qubits():
-            assert q in self.initial_mapping
-        updater = SwapUpdater(circuit, circuit.device.qubit_set(),
-                              self.initial_mapping)
-        return cirq.Circuit(updater.add_swaps(), device=circuit.device)
