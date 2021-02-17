@@ -1,4 +1,4 @@
-cirq==0.9.1
+cirq~=0.9.1
 seaborn
 sphinx
 ipython
@@ -8,8 +8,8 @@ scikit-learn
 
 # qaoa
 networkx
-pytket~=0.6.1
-pytket-cirq~=0.5.0
+pytket~=0.7.1
+pytket-cirq~=0.7.0
 
 # quantum chess, only needed for tests
 scipy
