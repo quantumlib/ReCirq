@@ -52,7 +52,12 @@ _fsim_angle_labels = [
 
 @dataclass
 class XEBData:
-    """Class for storing the cycle-dependent fidelities and purities of an XEB experiment."""
+    """Class for storing the cycle-dependent fidelities and purities of an XEB experiment.
+
+    Each field contains two 1D arrays representing the circuit length (i.e. number of cycles) and
+    the corresponding fidelity or purity values. Fields containing 'fit' in their names are
+    fitting results to an exponential decay.
+    """
 
     fidelity_optimized: Tuple[np.ndarray, np.ndarray]
     fidelity_optimized_fit: Tuple[np.ndarray, np.ndarray]

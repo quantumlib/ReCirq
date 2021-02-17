@@ -108,9 +108,9 @@ def bits_to_probabilities(
     for i in range(num_qubits):
         bits_red[:, i] *= 2 ** (num_qubits - i - 1)
     bits = list(np.sum(bits_red, axis=1))
-    p_reduced = [bits.count(i) for i in range(2 ** num_qubits)]
+    p_reduced = np.bincount(bits, minlength=2 ** num_qubits)
     num_trials, _ = bits_red.shape
-    return np.asarray(p_reduced) / num_trials
+    return p_reduced / num_trials
 
 
 def angles_to_fsim(
