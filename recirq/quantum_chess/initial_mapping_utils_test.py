@@ -17,7 +17,7 @@ from collections import deque
 
 import cirq
 
-import recirq.quantum_chess.circuit_transformer as ct
+import recirq.quantum_chess.initial_mapping_utils as imu
 
 a0 = cirq.NamedQubit('a0')
 a1 = cirq.NamedQubit('a1')
@@ -35,8 +35,7 @@ grid_qubits = dict(
 
 
 def test_build_physical_qubits_graph():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
-    g = t.build_physical_qubits_graph()
+    g = imu.build_physical_qubits_graph(cirq.google.Foxtail)
     expected = {
         grid_qubits['0_0']: [
             grid_qubits['0_1'],
@@ -151,7 +150,6 @@ def test_build_physical_qubits_graph():
 
 
 def test_get_least_connected_qubit():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
     g = {
         0: [1],
         1: [0, 2],
@@ -159,12 +157,11 @@ def test_get_least_connected_qubit():
         3: [4],
         4: [3],
     }
-    assert t.get_least_connected_qubit(g, deque([0, 1, 2])) == 0
-    assert t.get_least_connected_qubit(g, deque([3, 4])) == 3
+    assert imu.get_least_connected_qubit(g, deque([0, 1, 2])) in {0, 2}
+    assert imu.get_least_connected_qubit(g, deque([3, 4])) in {3, 4}
 
 
 def test_build_logical_qubits_graph():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
     # One connected component.
     c = cirq.Circuit(
         cirq.ISWAP(a2, a0),
@@ -173,7 +170,7 @@ def test_build_logical_qubits_graph():
         cirq.ISWAP(a1, a2),
         cirq.ISWAP(a2, a3),
     )
-    assert t.build_logical_qubits_graph(c) == {
+    assert imu.build_logical_qubits_graph(c) == {
         a0: [(a2, 0), (a1, 1)],
         a1: [(a0, 1), (a2, 3)],
         a2: [(a0, 0), (a1, 3), (a3, 4)],
@@ -187,29 +184,79 @@ def test_build_logical_qubits_graph():
         cirq.ISWAP(a1, a2),
         cirq.ISWAP(a2, a3),
         cirq.ISWAP(a4, a5),
-        cirq.ISWAP(a6, a7),
+        cirq.X(a6),
     )
-    assert t.build_logical_qubits_graph(c) == {
+    assert imu.build_logical_qubits_graph(c) == {
         a0: [(a2, 0), (a1, 1)],
         a1: [(a0, 1), (a2, 3)],
         a2: [(a0, 0), (a1, 3), (a3, 4)],
-        a3: [(a2, 4), (a7, 6)],
+        a3: [(a2, 4), (a6, 6)],
         a4: [(a5, 0), (a6, 5)],
         a5: [(a4, 0)],
-        a6: [(a7, 0), (a4, 5)],
-        a7: [(a6, 0), (a3, 6)],
+        a6: [(a4, 5), (a3, 6)],
     }
     # Three connected components with only one-qubit gates.
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3))
-    assert t.build_logical_qubits_graph(c) == {
+    assert imu.build_logical_qubits_graph(c) == {
         a1: [(a3, 2)],
         a2: [(a3, 1)],
         a3: [(a2, 1), (a1, 2)],
     }
+    # Three connected components with a measurement gates.
+    c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3), cirq.measure(a1))
+    assert imu.build_logical_qubits_graph(c) == {
+        a1: [(a3, 3)],
+        a2: [(a3, 2)],
+        a3: [(a2, 2), (a1, 3)],
+    }
+    # One connected component with an invalid gate.
+    with pytest.raises(ValueError, match='Operation.*has more than 2 qubits!'):
+        c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.CCNOT(a1, a2, a3))
+        imu.build_logical_qubits_graph(c)
+
+
+def test_find_all_pairs_shortest_paths():
+    v = 7
+    m = dict((x, x) for x in range(v))
+    g = {
+        0: [1],
+        1: [0, 2],
+        2: [1, 3, 5],
+        3: [2, 4, 6],
+        4: [3, 5],
+        5: [2],
+        6: [3],
+    }
+    assert imu.find_all_pairs_shortest_paths(g, v, m) == [
+        [0, 1, 2, 3, 4, 3, 4],
+        [1, 0, 1, 2, 3, 2, 3],
+        [2, 1, 0, 1, 2, 1, 2],
+        [3, 2, 1, 0, 1, 2, 1],
+        [4, 3, 2, 1, 0, 1, 2],
+        [3, 2, 1, 2, 3, 0, 3],
+        [4, 3, 2, 1, 2, 3, 0],
+    ]
+    g = {
+        0: [(1,)],
+        1: [(0,), (2,)],
+        2: [(1,), (3,), (5,)],
+        3: [(2,), (4,), (6,)],
+        4: [(3,), (5,)],
+        5: [(2,)],
+        6: [(3,)],
+    }
+    assert imu.find_all_pairs_shortest_paths(g, v, m) == [
+        [0, 1, 2, 3, 4, 3, 4],
+        [1, 0, 1, 2, 3, 2, 3],
+        [2, 1, 0, 1, 2, 1, 2],
+        [3, 2, 1, 0, 1, 2, 1],
+        [4, 3, 2, 1, 0, 1, 2],
+        [3, 2, 1, 2, 3, 0, 3],
+        [4, 3, 2, 1, 2, 3, 0],
+    ]
 
 
 def test_graph_center():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
     g = {
         0: [1, 4],
         1: [0, 2, 4],
@@ -218,7 +265,7 @@ def test_graph_center():
         4: [0, 1, 2, 3, 5],
         5: [2, 4],
     }
-    assert t.find_graph_center(g) == 4
+    assert imu.find_graph_center(g) == 4
     g = {
         0: [(1,), (4,)],
         1: [(0,), (2,), (4,)],
@@ -227,25 +274,23 @@ def test_graph_center():
         4: [(0,), (1,), (2,), (3,), (5,)],
         5: [(2,), (4,)],
     }
-    assert t.find_graph_center(g) == 4
+    assert imu.find_graph_center(g) == 4
 
 
 def test_traverse():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
     g = {
         0: [(2, 0), (1, 1), (3, 6)],
         1: [(0, 1), (2, 3)],
         2: [(0, 0), (1, 3), (3, 5)],
         3: [(2, 5), (0, 6)],
     }
-    assert t.traverse(g, 0) == deque([0, 2, 1, 3])
-    assert t.traverse(g, 1) == deque([1, 0, 2, 3])
-    assert t.traverse(g, 2) == deque([2, 0, 1, 3])
-    assert t.traverse(g, 3) == deque([3, 2, 0, 1])
+    assert imu.traverse(g, 0) == deque([0, 2, 1, 3])
+    assert imu.traverse(g, 1) == deque([1, 0, 2, 3])
+    assert imu.traverse(g, 2) == deque([2, 0, 1, 3])
+    assert imu.traverse(g, 3) == deque([3, 2, 0, 1])
 
 
 def test_find_reference_qubits():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
     g = {
         a0: [(a2, 0), (a1, 1)],
         a1: [(a0, 1), (a2, 3)],
@@ -255,27 +300,26 @@ def test_find_reference_qubits():
     mapping = {
         a0: grid_qubits['0_5'],
     }
-    assert set(t.find_reference_qubits(mapping, g, a2)) == {
+    assert set(imu.find_reference_qubits(mapping, g, a2)) == {
         grid_qubits['0_5'],
     }
     mapping = {
         a0: grid_qubits['0_5'],
         a2: grid_qubits['1_5'],
     }
-    assert set(t.find_reference_qubits(mapping, g, a1)) == {
+    assert set(imu.find_reference_qubits(mapping, g, a1)) == {
         grid_qubits['0_5'],
         grid_qubits['1_5'],
     }
 
 
 def test_find_candidate_qubits():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
-    g = t.build_physical_qubits_graph()
+    g = imu.build_physical_qubits_graph(cirq.google.Foxtail)
     # First level has free qubits.
     mapped = {
         grid_qubits['0_5'],
     }
-    assert set(t.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
+    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
         cirq.GridQubit(0, 4),
         cirq.GridQubit(1, 5),
         cirq.GridQubit(0, 6),
@@ -287,7 +331,7 @@ def test_find_candidate_qubits():
         grid_qubits['0_6'],
         grid_qubits['1_5'],
     }
-    assert set(t.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
+    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
         cirq.GridQubit(0, 3),
         cirq.GridQubit(1, 4),
         cirq.GridQubit(1, 6),
@@ -304,7 +348,7 @@ def test_find_candidate_qubits():
         grid_qubits['1_5'],
         grid_qubits['1_6'],
     }
-    assert set(t.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
+    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
         cirq.GridQubit(0, 2),
         cirq.GridQubit(1, 3),
         cirq.GridQubit(1, 7),
@@ -312,8 +356,7 @@ def test_find_candidate_qubits():
     }
 
 
-def test_find_shortest_path_distance():
-    t = ct.DynamicLookAheadHeuristicCircuitTransformer(cirq.google.Foxtail)
+def test_find_shortest_path():
     g = {
         0: [1, 7],
         1: [0, 2, 7],
@@ -325,6 +368,19 @@ def test_find_shortest_path_distance():
         7: [0, 1, 6, 8],
         8: [2, 7],
     }
-    assert t.find_shortest_path_distance(g, 0, 5) == 3
-    assert t.find_shortest_path_distance(g, 1, 8) == 2
-    assert t.find_shortest_path_distance(g, 4, 7) == 3
+    assert imu.find_shortest_path(g, 0, 5) == 3
+    assert imu.find_shortest_path(g, 1, 8) == 2
+    assert imu.find_shortest_path(g, 4, 7) == 3
+
+
+@pytest.mark.parametrize('device', [
+    cirq.google.Sycamore23, cirq.google.Sycamore
+])
+def test_calculate_initial_mapping(device):
+    c = cirq.Circuit(
+        cirq.X(a1),
+        cirq.X(a2),
+        cirq.ISWAP(a0, a2) ** 0.5,
+    )
+    mapping = imu.calculate_initial_mapping(device, c)
+    device.validate_circuit(c.transform_qubits(lambda q: mapping[q]))
