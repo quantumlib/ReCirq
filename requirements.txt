@@ -19,3 +19,6 @@ openfermion~=1.0.0
 
 # fermi_hubbard
 tqdm  # notebook progress bars
+
+# otoc
+Py-BOBYQA
