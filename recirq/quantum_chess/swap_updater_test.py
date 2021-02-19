@@ -14,8 +14,7 @@ q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
 #   Q0 = Q1 = Q2
 #   ||   ||   ||
 #   Q3 = Q4 = Q5
-FIGURE_9A_PHYSICAL_QUBITS = list(
-    cirq.GridQubit(row, col) for row in range(2) for col in range(3))
+FIGURE_9A_PHYSICAL_QUBITS = cirq.GridQubit.rect(2, 3)
 # Circuit from figure 9a in
 # https://ieeexplore.ieee.org/abstract/document/8976109.
 FIGURE_9A_CIRCUIT = cirq.Circuit(cirq.CNOT(q[0], q[2]), cirq.CNOT(q[5], q[2]),
@@ -82,23 +81,25 @@ def test_example_9():
 
 
 def test_pentagonal_split_and_merge():
-    grid_3x2 = list(
-        cirq.GridQubit(row, col) for row in range(2) for col in range(3))
+    grid_2x3 = cirq.GridQubit.rect(2, 3, 4, 4)
     logical_qubits = list(
         cirq.NamedQubit(f'{x}{i}') for x in ('a', 'b') for i in range(3))
-    initial_mapping = dict(zip(logical_qubits, grid_3x2))
+    initial_mapping = dict(zip(logical_qubits, grid_2x3))
     a1, a2, a3, b1, b2, b3 = logical_qubits
-    circuit = cirq.Circuit(qm.normal_move(a1, b1), qm.normal_move(a2, a3),
-                           qm.merge_move(a3, b1, b3))
+    logical_circuit = cirq.Circuit(qm.normal_move(a1, b1),
+                                   qm.normal_move(a2, a3),
+                                   qm.merge_move(a3, b1, b3))
 
-    updated_circuit = cirq.Circuit(
-        SwapUpdater(circuit, grid_3x2, initial_mapping).add_swaps())
-    for op in updated_circuit.all_operations():
-        assert len(op.qubits) <= 2
-        assert all(q in grid_3x2 for q in op.qubits)
-        if len(op.qubits) == 2:
-            q1, q2 = op.qubits
-            assert q1.is_adjacent(q2)
+    updater = SwapUpdater(logical_circuit, grid_2x3, initial_mapping)
+    updated_circuit = cirq.Circuit(updater.add_swaps())
+
+    # Whereas the original circuit's initial mapping was not valid due to
+    # adjacency constraints, the updated circuit is valid.
+    device = cirq.google.Sycamore
+    with pytest.raises(ValueError):
+        device.validate_circuit(
+            logical_circuit.transform_qubits(lambda q: initial_mapping.get(q)))
+    device.validate_circuit(updated_circuit)
 
 
 def test_already_optimal():
@@ -117,8 +118,8 @@ def test_already_optimal():
     )
     updated_circuit = cirq.Circuit(
         SwapUpdater(circuit, grid_2x3, initial_mapping).add_swaps())
-    # The circuit was already optimal, so we don't add any extra operations,
-    # just map the logical qubits to physical qubits.
+    # The circuit was already optimal, so we didn't need to add any extra
+    # operations, just map the logical qubits to physical qubits.
     assert circuit.transform_qubits(
         lambda q: initial_mapping.get(q)) == updated_circuit
 
@@ -129,8 +130,15 @@ def test_decomposed_swaps():
     updater = SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping,
                           generate_decomposed_swap)
     # First iteration adds a swap between Q0 and Q1.
-    # generate_decomposed_swap implements that swap operation as four
-    # sqrt-iswaps.
-    assert cirq.Circuit(
-        updater.update_iteration()) == cirq.google.optimized_for_sycamore(
-            cirq.Circuit(cirq.SWAP(Q[0], Q[1])))
+    # generate_decomposed_swap decomposes that into sqrt-iswap operations.
+    assert list(updater.update_iteration()) == list(
+        generate_decomposed_swap(Q[0], Q[1]))
+
+    # Whatever the decomposed operations are, they'd better be equivalent to a
+    # SWAP.
+    swap_unitary = cirq.unitary(cirq.Circuit(cirq.SWAP(Q[0], Q[1])))
+    generated_unitary = cirq.unitary(
+        cirq.Circuit(generate_decomposed_swap(Q[0], Q[1])))
+    cirq.testing.assert_allclose_up_to_global_phase(swap_unitary,
+                                                    generated_unitary,
+                                                    atol=1e-8)
