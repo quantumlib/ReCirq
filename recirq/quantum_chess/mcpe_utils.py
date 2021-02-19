@@ -51,10 +51,11 @@ def effect_of_swap(swap_qubits: Tuple[cirq.GridQubit, cirq.GridQubit],
       gate_qubits: the pair of qubits that the gate operates on
     """
     gate_after = map(swap_map_fn(*swap_qubits), gate_qubits)
-    # TODO: Using manhattan distance only works for grid devices when all qubits
-    # are fair game.
-    # This will need to be updated for
-    # https://github.com/quantumlib/ReCirq/issues/129.
+    # TODO(https://github.com/quantumlib/ReCirq/issues/149):
+    # Using manhattan distance only works for grid devices when all qubits
+    # are usable (no holes, hanging strips, or disconnected qubits).
+    # Update this to use the shortest path length computed on the device's
+    # connectivity graph (ex using the output of Floyd-Warshall).
     return manhattan_dist(*gate_qubits) - manhattan_dist(*gate_after)
 
 
@@ -67,11 +68,6 @@ class QubitMapping:
     def __init__(self, initial_mapping: Dict[cirq.Qid, cirq.GridQubit] = {}):
         self.logical_to_physical = initial_mapping
         self.physical_to_logical = {v: k for k, v in initial_mapping.items()}
-
-    def insert(self, logical_q: cirq.Qid, physical_q: cirq.GridQubit) -> None:
-        """Inserts a mapping between a logical and physical qubit."""
-        self.logical_to_physical[logical_q] = physical_q
-        self.physical_to_logical[physical_q] = logical_q
 
     def swap_physical(self, q1: cirq.GridQubit, q2: cirq.GridQubit) -> None:
         """Updates the mapping by swapping two physical qubits."""
@@ -164,7 +160,10 @@ class DependencyLists:
         """
         total_cost = 0
         for gate in gates:
-            assert len(gate.qubits) <= 2
+            if len(gate.qubits) > 2:
+                raise ValueError(
+                    "Cannot compute maximum consecutive positive effect on gates with >2 qubits."
+                )
             if len(gate.qubits) != 2:
                 # Single-qubit gates would not be affected by the swap. We can
                 # treat the change in cost as 0 for those.

@@ -94,11 +94,33 @@ def test_pentagonal_split_and_merge():
     updated_circuit = cirq.Circuit(
         SwapUpdater(circuit, grid_3x2, initial_mapping).add_swaps())
     for op in updated_circuit.all_operations():
-        assert len(op.qubits) == 2
-        q1, q2 = op.qubits
-        assert q1 in grid_3x2
-        assert q2 in grid_3x2
-        assert q1.is_adjacent(q2)
+        assert len(op.qubits) <= 2
+        assert all(q in grid_3x2 for q in op.qubits)
+        if len(op.qubits) == 2:
+            q1, q2 = op.qubits
+            assert q1.is_adjacent(q2)
+
+
+def test_already_optimal():
+    grid_2x3 = cirq.GridQubit.rect(2, 3)
+    logical_qubits = list(
+        cirq.NamedQubit(f'{x}{i}') for x in ('a', 'b') for i in range(3))
+    initial_mapping = dict(zip(logical_qubits, grid_2x3))
+    a1, a2, a3, b1, b2, b3 = logical_qubits
+    # Circuit has gates that already operate only on adjacent qubits.
+    circuit = cirq.Circuit(
+        cirq.ISWAP(a1, b1),
+        cirq.ISWAP(a2, a3),
+        cirq.ISWAP(b1, b2),
+        cirq.ISWAP(a3, b3),
+        cirq.ISWAP(b2, b3),
+    )
+    updated_circuit = cirq.Circuit(
+        SwapUpdater(circuit, grid_2x3, initial_mapping).add_swaps())
+    # The circuit was already optimal, so we don't add any extra operations,
+    # just map the logical qubits to physical qubits.
+    assert circuit.transform_qubits(
+        lambda q: initial_mapping.get(q)) == updated_circuit
 
 
 def test_decomposed_swaps():
@@ -109,9 +131,6 @@ def test_decomposed_swaps():
     # First iteration adds a swap between Q0 and Q1.
     # generate_decomposed_swap implements that swap operation as four
     # sqrt-iswaps.
-    assert list(updater.update_iteration()) == [
-        cirq.ISWAP(Q[0], Q[1])**0.5,
-        cirq.ISWAP(Q[0], Q[1])**0.5,
-        cirq.ISWAP(Q[0], Q[1])**0.5,
-        cirq.ISWAP(Q[0], Q[1])**0.5,
-    ]
+    assert cirq.Circuit(
+        updater.update_iteration()) == cirq.google.optimized_for_sycamore(
+            cirq.Circuit(cirq.SWAP(Q[0], Q[1])))

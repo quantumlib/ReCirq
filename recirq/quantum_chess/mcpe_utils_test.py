@@ -6,6 +6,43 @@ import cirq
 import recirq.quantum_chess.mcpe_utils as mcpe
 
 
+def test_manhattan_distance():
+    assert mcpe.manhattan_dist(cirq.GridQubit(0, 0), cirq.GridQubit(0, 0)) == 0
+    assert mcpe.manhattan_dist(cirq.GridQubit(1, 2), cirq.GridQubit(1, 2)) == 0
+    assert mcpe.manhattan_dist(cirq.GridQubit(1, 2), cirq.GridQubit(3, 4)) == 4
+    assert mcpe.manhattan_dist(cirq.GridQubit(3, 4), cirq.GridQubit(1, 2)) == 4
+    assert mcpe.manhattan_dist(cirq.GridQubit(-1, 2), cirq.GridQubit(3,
+                                                                     -4)) == 10
+
+
+def test_swap_map_fn():
+    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    swap = mcpe.swap_map_fn(x, y)
+    assert swap(x) == y
+    assert swap(y) == x
+    assert swap(z) == z
+    assert cirq.Circuit(cirq.ISWAP(x, z), cirq.ISWAP(y, z), cirq.ISWAP(
+        x, y)).transform_qubits(swap) == cirq.Circuit(cirq.ISWAP(y, z),
+                                                      cirq.ISWAP(x, z),
+                                                      cirq.ISWAP(y, x))
+
+
+def test_effect_of_swap():
+    a1, a2, a3, b1, b2, b3 = cirq.GridQubit.rect(2, 3)
+    # If there's a gate operating on (a1, a3), then swapping a1 and a2 will
+    # bring the gate's qubits closer together by 1.
+    assert mcpe.effect_of_swap((a1, a2), (a1, a3)) == 1
+    # In reverse, a gate operating on (a2, a3) will get worse by 1 when swapping
+    # (a1, a2).
+    assert mcpe.effect_of_swap((a1, a2), (a2, a3)) == -1
+    # If the qubits to be swapped are completely independent of the gate's
+    # qubits, then there's no effect on the gate.
+    assert mcpe.effect_of_swap((a1, a2), (b1, b2)) == 0
+    # We can also measure the effect of swapping non-adjacent qubits (although
+    # we would never be able to do this with a real SWAP gate).
+    assert mcpe.effect_of_swap((a1, a3), (a1, b3)) == 2
+
+
 def test_peek():
     x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
     g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]

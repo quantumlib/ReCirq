@@ -30,7 +30,9 @@ def _satisfies_adjacency(gate: cirq.Operation) -> bool:
 
     Requires the input to be either a binary or unary operation on GridQubits.
     """
-    assert len(gate.qubits) <= 2
+    if len(gate.qubits) > 2:
+        raise ValueError(
+            "Cannot determine physical adjacency for gates with > 2 qubits")
     if len(gate.qubits) < 2:
         return True
     q1, q2 = gate.qubits
@@ -40,10 +42,8 @@ def _satisfies_adjacency(gate: cirq.Operation) -> bool:
 def generate_decomposed_swap(
         q1: cirq.Qid, q2: cirq.Qid) -> Generator[cirq.Operation, None, None]:
     """Generates a SWAP operation using sqrt-iswap gates."""
-    yield cirq.ISWAP(q1, q2)**0.5
-    yield cirq.ISWAP(q1, q2)**0.5
-    yield cirq.ISWAP(q1, q2)**0.5
-    yield cirq.ISWAP(q1, q2)**0.5
+    yield from cirq.google.optimized_for_sycamore(
+        cirq.Circuit(cirq.SWAP(q1, q2))).all_operations()
 
 
 class SwapUpdater:
@@ -111,16 +111,19 @@ class SwapUpdater:
                 # physical_gate needs to be fixed up with some swaps.
                 active_physical_gates.append(physical_gate)
 
-        # If all the active gates in this pass were added to the final circuit,
-        # then we have nothing left to do until we make another pass and get the
-        # newly active gates.
+        # If all the active gates in this pass were already optimal + added to
+        # the final circuit, then we have nothing left to do until we make
+        # another pass and get the newly active gates.
         if not active_physical_gates:
             return
 
         candidates = set(self.generate_candidate_swaps(active_physical_gates))
-        # This could happen on irregular topologies or when some device
-        # qubits are disallowed.
-        assert candidates, 'no swaps found that will improve the circuit'
+        if not candidates:
+            # This should never happen for reasonable initial mappings.
+            # For example, it can happen when the initial mapping placed a
+            # gate's qubits on disconnected components in the device
+            # connectivity graph.
+            raise ValueError("no swaps founds that will improve the circuit")
         chosen_swap = max(
             candidates,
             key=lambda swap: self.dlists.maximum_consecutive_positive_effect(
