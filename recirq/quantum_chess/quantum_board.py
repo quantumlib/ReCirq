@@ -83,6 +83,8 @@ class CirqBoard:
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
+
+        # None if there is no cache, stores the repetition number if there is a cache.
         self.accumulations_repetitions = None
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
@@ -112,7 +114,7 @@ class CirqBoard:
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
-            
+
     def clear_timing_stats(self) -> None:
         """Clears timing stats."""
         self.timing_stats = defaultdict(list)
@@ -161,7 +163,7 @@ class CirqBoard:
             t1 = time.perf_counter()
         self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
         self.timing_stats[action].append(t1 - t0)
-    
+
     def sample_with_ancilla(self, num_samples: int
                             ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
