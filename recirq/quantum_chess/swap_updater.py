@@ -17,6 +17,7 @@ Look-Ahead Heuristic for the Qubit Mapping Problem of NISQ Computers'
 
 This transforms circuits by adding additional SWAP gates to ensure that all operations are on adjacent qubits.
 """
+import math
 from collections import defaultdict
 from typing import Callable, Dict, Generator, Iterable, List, Optional, Tuple
 
@@ -37,6 +38,28 @@ def _satisfies_adjacency(gate: cirq.Operation) -> bool:
         return True
     q1, q2 = gate.qubits
     return q1.is_adjacent(q2)
+
+
+def _pairwise_shortest_distances(
+    qubits: Iterable[cirq.GridQubit]
+) -> Dict[Tuple[cirq.GridQubit, cirq.GridQubit], int]:
+    """Precomputes the shortest path length between each pair of qubits.
+
+    Returns:
+        dictionary mapping a pair of nodes to the length of the shortest path
+        between them.
+    """
+    shortest = {(q1, q2): math.inf for q1 in qubits for q2 in qubits}
+    for q in qubits:
+        shortest[(q, q)] = 0
+        for neighbor in q.neighbors(qubits):
+            shortest[(q, neighbor)] = 1
+    for k in qubits:
+        for i in qubits:
+            for j in qubits:
+                shortest[(i, j)] = min(shortest[(i, j)],
+                                       shortest[(i, k)] + shortest[(k, j)])
+    return shortest
 
 
 def generate_decomposed_swap(
@@ -71,6 +94,12 @@ class SwapUpdater:
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
         self.swap_factory = swap_factory
+        graph = {q: q.neighbors(device_qubits) for q in device_qubits}
+        self.pairwise_distances = _pairwise_shortest_distances(graph)
+
+    def _distance_between(self, q1: cirq.GridQubit, q2: cirq.GridQubit) -> int:
+        """Returns the precomputed length of the shortest path between two qubits."""
+        return self.pairwise_distances[(q1, q2)]
 
     def generate_candidate_swaps(
         self, gates: Iterable[cirq.Operation]
@@ -86,7 +115,13 @@ class SwapUpdater:
                 yield from (
                     (gate_q, swap_q)
                     for swap_q in gate_q.neighbors(self.device_qubits)
-                    if mcpe.effect_of_swap((gate_q, swap_q), gate.qubits) > 0)
+                    if mcpe.effect_of_swap((gate_q, swap_q), gate.qubits,
+                                           self._distance_between) > 0)
+
+    def _mcpe(self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit) -> int:
+        """Returns the maximum consecutive positive effect of swapping two qubits."""
+        return self.dlists.maximum_consecutive_positive_effect(
+            swap_q1, swap_q2, self.mapping, self._distance_between)
 
     def update_iteration(self) -> Generator[cirq.Operation, None, None]:
         """Runs one iteration of the swap update algorithm and updates internal
@@ -124,10 +159,7 @@ class SwapUpdater:
             # gate's qubits on disconnected components in the device
             # connectivity graph.
             raise ValueError("no swaps founds that will improve the circuit")
-        chosen_swap = max(
-            candidates,
-            key=lambda swap: self.dlists.maximum_consecutive_positive_effect(
-                *swap, self.mapping))
+        chosen_swap = max(candidates, key=lambda swap: self._mcpe(*swap))
         self.mapping.swap_physical(*chosen_swap)
         yield from self.swap_factory(*chosen_swap)
 

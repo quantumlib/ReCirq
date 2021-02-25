@@ -142,3 +142,58 @@ def test_decomposed_swaps():
     cirq.testing.assert_allclose_up_to_global_phase(swap_unitary,
                                                     generated_unitary,
                                                     atol=1e-8)
+
+
+def test_holes_in_device_graph():
+    grid_2x3 = cirq.GridQubit.rect(2, 3, 4, 4)
+    logical_qubits = list(
+        cirq.NamedQubit(f'{x}{i}') for x in ('a', 'b') for i in range(3))
+    initial_mapping = dict(zip(logical_qubits, grid_2x3))
+    a1, a2, a3, b1, b2, b3 = logical_qubits
+    # Circuit has a gate that operate on (b1, b3) qubits.
+    # The best way to add swaps would be between (b1, b2) and (b2, b3), but
+    # we aren't allowed to use b2, so we're forced to route swaps around it.
+    circuit = cirq.Circuit(cirq.ISWAP(b1, b3)**0.5)
+    allowed_qubits = set(grid_2x3) - {initial_mapping[b2]}
+
+    updated_circuit = cirq.Circuit(
+        SwapUpdater(circuit, allowed_qubits, initial_mapping).add_swaps())
+    cirq.google.Sycamore.validate_circuit(updated_circuit)
+    for op in updated_circuit.all_operations():
+        assert initial_mapping[b2] not in op.qubits
+
+
+def test_bad_initial_mapping():
+    grid_2x3 = cirq.GridQubit.rect(2, 3)
+    logical_qubits = list(
+        cirq.NamedQubit(f'{x}{i}') for x in ('a', 'b') for i in range(3))
+    initial_mapping = dict(zip(logical_qubits, grid_2x3))
+    a1, a2, a3, b1, b2, b3 = logical_qubits
+    # Initial mapping puts a1 on a qubit that we're not allowed to use, but the
+    # circuit uses a1.
+    # That should cause the swap updater to throw.
+    circuit = cirq.Circuit(cirq.ISWAP(a1, a3))
+    allowed_qubits = set(grid_2x3) - {initial_mapping[a1]}
+    with pytest.raises(KeyError):
+        print(
+            cirq.Circuit(
+                SwapUpdater(circuit, allowed_qubits,
+                            initial_mapping).add_swaps()))
+
+
+def test_disconnected_components():
+    grid_2x3 = cirq.GridQubit.rect(2, 3)
+    logical_qubits = list(
+        cirq.NamedQubit(f'{x}{i}') for x in ('a', 'b') for i in range(3))
+    initial_mapping = dict(zip(logical_qubits, grid_2x3))
+    print(initial_mapping)
+    a1, a2, a3, b1, b2, b3 = logical_qubits
+    # a2 and b2 are disallowed. That splits the device graph into 2 disconnected
+    # components and makes a3 unreachable from a1.
+    circuit = cirq.Circuit(cirq.ISWAP(a1, a3))
+    allowed_qubits = set(grid_2x3) - {initial_mapping[a2], initial_mapping[b2]}
+    with pytest.raises(ValueError):
+        print(
+            cirq.Circuit(
+                SwapUpdater(circuit, allowed_qubits,
+                            initial_mapping).add_swaps()))
