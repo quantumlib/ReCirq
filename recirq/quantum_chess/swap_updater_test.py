@@ -186,13 +186,12 @@ def test_disconnected_components():
     logical_qubits = list(
         cirq.NamedQubit(f'{x}{i}') for x in ('a', 'b') for i in range(3))
     initial_mapping = dict(zip(logical_qubits, grid_2x3))
-    print(initial_mapping)
     a1, a2, a3, b1, b2, b3 = logical_qubits
     # a2 and b2 are disallowed. That splits the device graph into 2 disconnected
     # components and makes a3 unreachable from a1.
     circuit = cirq.Circuit(cirq.ISWAP(a1, a3))
     allowed_qubits = set(grid_2x3) - {initial_mapping[a2], initial_mapping[b2]}
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         print(
             cirq.Circuit(
                 SwapUpdater(circuit, allowed_qubits,

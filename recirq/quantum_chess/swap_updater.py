@@ -18,7 +18,7 @@ Look-Ahead Heuristic for the Qubit Mapping Problem of NISQ Computers'
 This transforms circuits by adding additional SWAP gates to ensure that all operations are on adjacent qubits.
 """
 import math
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Callable, Dict, Generator, Iterable, List, Optional, Tuple
 
 import cirq
@@ -46,19 +46,22 @@ def _pairwise_shortest_distances(
     """Precomputes the shortest path length between each pair of qubits.
 
     Returns:
-        dictionary mapping a pair of nodes to the length of the shortest path
-        between them.
+        dictionary mapping a pair of qubits to the length of the shortest path
+        between them (disconnected qubits will be absent).
     """
-    shortest = {(q1, q2): math.inf for q1 in qubits for q2 in qubits}
-    for q in qubits:
-        shortest[(q, q)] = 0
-        for neighbor in q.neighbors(qubits):
-            shortest[(q, neighbor)] = 1
-    for k in qubits:
-        for i in qubits:
-            for j in qubits:
-                shortest[(i, j)] = min(shortest[(i, j)],
-                                       shortest[(i, k)] + shortest[(k, j)])
+    shortest = {}
+    for starting_qubit in qubits:
+        # Do BFS starting from starting_qubit.
+        # For device graphs where all edges are the same, repeated BFS is
+        # O(v**2) and is faster than Floyd-Warshall which is O(v**3).
+        to_be_visited = deque()
+        to_be_visited.append((starting_qubit, 0))
+        while to_be_visited:
+            qubit, cur_dist = to_be_visited.popleft()
+            shortest[(starting_qubit, qubit)] = cur_dist
+            for neighbor in qubit.neighbors(qubits):
+                if (starting_qubit, neighbor) not in shortest:
+                    to_be_visited.append((neighbor, cur_dist + 1))
     return shortest
 
 
