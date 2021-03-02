@@ -48,18 +48,24 @@ def _pairwise_shortest_distances(
         dictionary mapping a pair of qubits to the length of the shortest path
         between them (disconnected qubits will be absent).
     """
+    # Do BFS starting from each qubit and collect the shortest path lengths as
+    # we go.
+    # For device graphs where all edges are the same (where each edge can be
+    # treated as unit length) repeated BFS is O(v**2) and is faster than
+    # the Floyd-Warshall algorithm which is O(v**3).
+    # This won't work if in the future we figure out a way to incorporate edge
+    # weights (for example in order to give negative preference to gates with poor
+    # calibration metrics).
     shortest = {}
     for starting_qubit in qubits:
-        # Do BFS starting from starting_qubit.
-        # For device graphs where all edges are the same, repeated BFS is
-        # O(v**2) and is faster than Floyd-Warshall which is O(v**3).
         to_be_visited = deque()
+        shortest[(starting_qubit, starting_qubit)] = 0
         to_be_visited.append((starting_qubit, 0))
         while to_be_visited:
             qubit, cur_dist = to_be_visited.popleft()
-            shortest[(starting_qubit, qubit)] = cur_dist
             for neighbor in qubit.neighbors(qubits):
                 if (starting_qubit, neighbor) not in shortest:
+                    shortest[(starting_qubit, neighbor)] = cur_dist + 1
                     to_be_visited.append((neighbor, cur_dist + 1))
     return shortest
 
