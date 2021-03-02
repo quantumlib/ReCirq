@@ -102,8 +102,7 @@ class SwapUpdater:
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
         self.swap_factory = swap_factory
-        graph = {q: q.neighbors(device_qubits) for q in device_qubits}
-        self.pairwise_distances = _pairwise_shortest_distances(graph)
+        self.pairwise_distances = _pairwise_shortest_distances(self.device_qubits)
 
     def _distance_between(self, q1: cirq.GridQubit, q2: cirq.GridQubit) -> int:
         """Returns the precomputed length of the shortest path between two qubits."""
