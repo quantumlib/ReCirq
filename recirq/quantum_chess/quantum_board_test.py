@@ -914,4 +914,31 @@ def test_record_time():
     assert len(b.timing_stats) == 2
     assert len(b.timing_stats['test_action']) == 2
     assert b.timing_stats['test_action'][-1] == expected_time_2
-    
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_caching_accumulations_different_repetition_not_cached(board):
+    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b.do_move(
+        move.Move('b1',
+                  'c1',
+                  target2='d1',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    probs1 = b.get_probability_distribution(1)
+    probs2 = b.get_probability_distribution(100)
+    assert probs1 != probs2
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_caching_accumulations_same_repetition_cached(board):
+    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b.do_move(
+        move.Move('b1',
+                  'c1',
+                  target2='d1',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    probs1 = b.get_probability_distribution(100)
+    probs2 = b.get_probability_distribution(100)
+    assert probs1 == probs2

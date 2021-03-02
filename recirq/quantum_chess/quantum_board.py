@@ -83,11 +83,13 @@ class CirqBoard:
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
-        self.accumulations_valid = False
+
+        # None if there is no cache, stores the repetition number if there is a cache.
+        self.accumulations_repetitions = None
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
-        self.accumulations_valid = False
+        self.accumulations_repetitions = None
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -112,7 +114,7 @@ class CirqBoard:
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
-            
+
     def clear_timing_stats(self) -> None:
         """Clears timing stats."""
         self.timing_stats = defaultdict(list)
@@ -161,7 +163,7 @@ class CirqBoard:
             t1 = time.perf_counter()
         self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
         self.timing_stats[action].append(t1 - t0)
-    
+
     def sample_with_ancilla(self, num_samples: int
                             ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
@@ -327,7 +329,7 @@ class CirqBoard:
         for bit in range(64):
             self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
 
-        self.accumulations_valid = True
+        self.accumulations_repetitions = repetitions
 
     def get_probability_distribution(self,
                                      repetitions: int = 1000) -> List[float]:
@@ -336,7 +338,7 @@ class CirqBoard:
         The values are returned as a list in the same ordering as a
         bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.probabilities
@@ -350,7 +352,7 @@ class CirqBoard:
 
         Returns a bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.full_squares
@@ -364,7 +366,7 @@ class CirqBoard:
 
         Returns a bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.empty_squares
@@ -511,7 +513,7 @@ class CirqBoard:
             raise ValueError('Move type is unspecified')
 
         # Reset accumulations here because function has conditional return branches
-        self.accumulations_valid = False
+        self.accumulations_repetitions = None
 
         # Add move to the move move_history
         self.move_history.append(m)
