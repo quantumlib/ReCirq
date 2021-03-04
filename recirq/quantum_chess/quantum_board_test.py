@@ -45,6 +45,7 @@ ALL_CIRQ_BOARDS = BIG_CIRQ_BOARDS + (
 )
 
 
+
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_initial_state(board):
     """Tests basic functionality of boards and setting an initial state."""
@@ -941,3 +942,4 @@ def test_caching_accumulations_same_repetition_cached(board):
     probs1 = b.get_probability_distribution(100)
     probs2 = b.get_probability_distribution(100)
     assert probs1 == probs2
+    
