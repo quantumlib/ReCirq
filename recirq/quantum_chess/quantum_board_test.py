@@ -45,7 +45,6 @@ ALL_CIRQ_BOARDS = BIG_CIRQ_BOARDS + (
 )
 
 
-
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_initial_state(board):
     """Tests basic functionality of boards and setting an initial state."""
@@ -68,6 +67,7 @@ def test_initial_state(board):
         assert probs[bit] == 0.0
 
 
+        
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_jump_move(board):
     """Tests a jump move in a classical position."""
