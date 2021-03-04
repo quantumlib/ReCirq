@@ -66,8 +66,7 @@ def test_initial_state(board):
         assert qb.nth_bit_of(bit, empty_squares)
         assert probs[bit] == 0.0
 
-
-        
+      
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_jump_move(board):
     """Tests a jump move in a classical position."""
@@ -916,6 +915,7 @@ def test_record_time():
     assert len(b.timing_stats['test_action']) == 2
     assert b.timing_stats['test_action'][-1] == expected_time_2
 
+    
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_caching_accumulations_different_repetition_not_cached(board):
     b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
@@ -942,4 +942,3 @@ def test_caching_accumulations_same_repetition_cached(board):
     probs1 = b.get_probability_distribution(100)
     probs2 = b.get_probability_distribution(100)
     assert probs1 == probs2
-    
