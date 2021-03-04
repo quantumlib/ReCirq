@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import time
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import cirq
@@ -81,11 +83,13 @@ class CirqBoard:
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
-        self.accumulations_valid = False
+
+        # None if there is no cache, stores the repetition number if there is a cache.
+        self.accumulations_repetitions = None
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
-        self.accumulations_valid = False
+        self.accumulations_repetitions = None
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -98,15 +102,28 @@ class CirqBoard:
         # the move-history when undoing moves
         self.init_basis_state = basis_state
         self.clear_debug_log()
+        self.timing_stats = defaultdict(list)
         return self
 
     def clear_debug_log(self) -> None:
+        """Clears debug log."""
         self.debug_log = ''
 
     def print_debug_log(self, clear_log: bool = True) -> None:
+        """Prints debug log. Clears debug log if clear_log is enabled."""
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
+
+    def clear_timing_stats(self) -> None:
+        """Clears timing stats."""
+        self.timing_stats = defaultdict(list)
+
+    def print_timing_stats(self, clear_stats: bool = False) -> None:
+        """Prints timing stats. Clears timing stats if clears_stats is enabled."""
+        print(self.timing_stats)
+        if clear_stats:
+            self.clear_timing_stats()
 
     def perform_moves(self, *moves) -> bool:
         """Performs a list of moves, specified as strings.
@@ -138,6 +155,15 @@ class CirqBoard:
                 return False
         return True
 
+    def record_time(self, action: str, t0: float, t1: Optional[float] = None) -> None:
+        """Writes time span from t0 to t1 (if specified, otherwise the current time is used)
+        into the debug log and timing stats.
+        """
+        if t1 is None:
+            t1 = time.perf_counter()
+        self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
+        self.timing_stats[action].append(t1 - t0)
+
     def sample_with_ancilla(self, num_samples: int
                             ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
@@ -150,6 +176,7 @@ class CirqBoard:
         The second value is a list of ancilla values, as represented as a
         dictionary from ancilla name to value (0 or 1).
         """
+        t0 = time.perf_counter()
         measure_circuit = self.circuit.copy()
         ancilla = []
         error_count = 0
@@ -258,6 +285,7 @@ class CirqBoard:
                         f'Discarded {error_count} from error mitigation '
                         f'{noise_count} from noise and '
                         f'{post_count} from post-selection\n')
+                    self.record_time('sample_with_ancilla', t0)
                     return (rtn, ancilla)
         else:
             rtn = [self.state] * num_samples
@@ -265,6 +293,7 @@ class CirqBoard:
                 f'Discarded {error_count} from error mitigation '
                 f'{noise_count} from noise and {post_count} from post-selection\n'
             )
+        self.record_time("sample_with_ancilla", t0)
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
@@ -300,7 +329,7 @@ class CirqBoard:
         for bit in range(64):
             self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
 
-        self.accumulations_valid = True
+        self.accumulations_repetitions = repetitions
 
     def get_probability_distribution(self,
                                      repetitions: int = 1000) -> List[float]:
@@ -309,7 +338,7 @@ class CirqBoard:
         The values are returned as a list in the same ordering as a
         bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.probabilities
@@ -323,7 +352,7 @@ class CirqBoard:
 
         Returns a bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.full_squares
@@ -337,7 +366,7 @@ class CirqBoard:
 
         Returns a bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.empty_squares
@@ -484,7 +513,7 @@ class CirqBoard:
             raise ValueError('Move type is unspecified')
 
         # Reset accumulations here because function has conditional return branches
-        self.accumulations_valid = False
+        self.accumulations_repetitions = None
 
         # Add move to the move move_history
         self.move_history.append(m)

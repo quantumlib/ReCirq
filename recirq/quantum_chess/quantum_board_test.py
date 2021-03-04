@@ -887,3 +887,58 @@ def test_undo_entangled_measurement():
     assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
+
+def test_record_time():
+    b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
+    assert b.perform_moves(
+        'b8a6c6:SPLIT_JUMP:BASIC',
+        'b5a6:PAWN_CAPTURE:BASIC',
+        'c6b8:JUMP:BASIC',
+        'c7c5:PAWN_TWO_STEP:BASIC',
+        'b5c6:PAWN_EP:BASIC',
+    )
+    assert 'sample_with_ancilla takes' in b.debug_log
+    assert 'seconds.' in b.debug_log
+    assert float(b.debug_log.split('sample_with_ancilla takes ')[-1].split(' seconds.')[0]) > 0
+
+    b.record_time('test_action', 0.12, 0.345)
+    assert 'test_action takes' in b.debug_log
+    expected_time_1 = pytest.approx(0.345 - 0.12, 1e-7)
+    assert float(b.debug_log.split('test_action takes ')[-1].split(' seconds.')[0]) == expected_time_1
+    assert len(b.timing_stats) == 2
+    assert b.timing_stats['test_action'][-1] == expected_time_1
+
+    b.record_time('test_action', 0.5, 0.987)
+    expected_time_2 = pytest.approx(0.987 - 0.5, 1e-7)
+    assert float(b.debug_log.split('test_action takes ')[-1].split(' seconds.')[0]) == expected_time_2
+    assert len(b.timing_stats) == 2
+    assert len(b.timing_stats['test_action']) == 2
+    assert b.timing_stats['test_action'][-1] == expected_time_2
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_caching_accumulations_different_repetition_not_cached(board):
+    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b.do_move(
+        move.Move('b1',
+                  'c1',
+                  target2='d1',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    probs1 = b.get_probability_distribution(1)
+    probs2 = b.get_probability_distribution(100)
+    assert probs1 != probs2
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_caching_accumulations_same_repetition_cached(board):
+    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b.do_move(
+        move.Move('b1',
+                  'c1',
+                  target2='d1',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    probs1 = b.get_probability_distribution(100)
+    probs2 = b.get_probability_distribution(100)
+    assert probs1 == probs2
