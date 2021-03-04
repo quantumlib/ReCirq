@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import networkx as nx
 import numpy as np
 import pytket
-import pytket.cirq
+import pytket.extensions.cirq
 from pytket.circuit import Node, Qubit
 from pytket.passes import SequencePass, RoutingPass, PlacementPass
 from pytket.predicates import CompilationUnit, ConnectivityPredicate
@@ -87,7 +87,7 @@ def place_on_device(circuit: cirq.Circuit,
         initial_map: Initial placement of qubits
         final_map: The final placement of qubits after action of the circuit
     """
-    tk_circuit = pytket.cirq.cirq_to_tk(circuit)
+    tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
     tk_device = _device_to_tket_device(device)
 
     unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
@@ -103,7 +103,7 @@ def place_on_device(circuit: cirq.Circuit,
                      for n1, n2 in unit.initial_map.items()}
     final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
              for n1, n2 in unit.final_map.items()}
-    routed_circuit = pytket.cirq.tk_to_cirq(unit.circuit)
+    routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
 
     return routed_circuit, initial_map, final_map
 

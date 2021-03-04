@@ -22,19 +22,31 @@ ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 
 class CircuitTransformer:
+    """Abstract interface for circuit transformations.
+
+    For example: NamedQubit -> GridQubit transformations.
+    """
+    def __init__(self):
+        pass
+
+    def transform(self, circuit: cirq.Circuit) -> cirq.Circuit:
+        """Applies the transformation to the circuit."""
+        return None
+
+
+class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
     """Optimizer that will transform a circuit using NamedQubits
     and transform it to use GridQubits.  This will use a breadth-first
     search to find a suitable mapping into the specified grid.
 
     It will then transform all operations to use the new qubits.
     """
-
     def __init__(self, device: cirq.Device):
+        super().__init__()
         self.device = device
         self.mapping = None
         self.starting_qubit = self.find_start_qubit(device.qubits)
         self.qubit_list = device.qubits
-        super().__init__()
 
     def qubits_within(self, depth: int, qubit: cirq.GridQubit,
                       qubit_list: Iterable[cirq.GridQubit]) -> int:
@@ -54,7 +66,8 @@ class CircuitTransformer:
             c += self.qubits_within(depth - 1, qubit + diff, qubit_list)
         return c
 
-    def find_start_qubit(self, qubit_list: List[cirq.Qid],
+    def find_start_qubit(self,
+                         qubit_list: List[cirq.Qid],
                          depth=3) -> Optional[cirq.GridQubit]:
         """Finds a reasonable starting qubit to start the mapping.
 
@@ -278,7 +291,7 @@ class CircuitTransformer:
         self.mapping = mapping
         return mapping
 
-    def optimize_circuit(self, circuit: cirq.Circuit) -> cirq.Circuit:
+    def transform(self, circuit: cirq.Circuit) -> cirq.Circuit:
         """ Creates a new qubit mapping for a circuit and transforms it.
 
         This uses `qubit_mapping` to create a mapping from the qubits
@@ -299,10 +312,9 @@ class SycamoreDecomposer(cirq.PointOptimizer):
     Currently supported are controlled ISWAPs with a single control
     and control-X gates with multiple controls (TOFFOLI gates).:w
     """
-
-    def optimization_at(self, circuit: cirq.Circuit, index: int,
-                        op: cirq.Operation
-                        ) -> Optional[cirq.PointOptimizationSummary]:
+    def optimization_at(
+            self, circuit: cirq.Circuit, index: int,
+            op: cirq.Operation) -> Optional[cirq.PointOptimizationSummary]:
         if len(op.qubits) > 3:
             raise ValueError(f'Four qubit ops not yet supported: {op}')
         new_ops = None

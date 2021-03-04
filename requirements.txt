@@ -1,4 +1,4 @@
-cirq==0.9.1
+cirq~=0.9.1
 seaborn
 sphinx
 ipython
@@ -8,8 +8,8 @@ scikit-learn
 
 # qaoa
 networkx
-pytket
-pytket-cirq
+pytket~=0.7.1
+pytket-cirq~=0.7.0
 
 # quantum chess, only needed for tests
 scipy
@@ -19,3 +19,6 @@ openfermion~=1.0.0
 
 # fermi_hubbard
 tqdm  # notebook progress bars
+
+# otoc
+Py-BOBYQA
