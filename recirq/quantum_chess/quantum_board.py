@@ -114,16 +114,6 @@ class CirqBoard:
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
-            
-    def clear_timing_stats(self) -> None:
-        """Clears timing stats."""
-        self.timing_stats = defaultdict(list)
-
-    def print_timing_stats(self, clear_stats: bool = False) -> None:
-        """Prints timing stats. Clears timing stats if clears_stats is enabled."""
-        print(self.timing_stats)
-        if clear_stats:
-            self.clear_timing_stats()
 
     def clear_timing_stats(self) -> None:
         """Clears timing stats."""
