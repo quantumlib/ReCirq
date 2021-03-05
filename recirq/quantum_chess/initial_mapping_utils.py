@@ -123,15 +123,13 @@ def find_all_pairs_shortest_paths(
         Dict[cirq.GridQubit, List[cirq.GridQubit]],
         Dict[cirq.Qid, List[Tuple[cirq.Qid, int]]],
     ],
-) -> List[List[int]]:
-    """Returns a matrix of the shortest distance between each pair of nodes.
+) -> Dict[Tuple[cirq.Qid, cirq.Qid], int]:
+    """Returns a dict of the shortest distance between each pair of nodes.
 
     Implements the Floyd–Warshall algorithm.
 
     Args:
       g: A physical qubits graph or a logical qubits graph.
-      v: The size of the graph.
-      m: A mapping of qubit to index.
     """
     dist = defaultdict(lambda: math.inf)
     for q in g:
