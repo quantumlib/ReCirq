@@ -50,11 +50,11 @@ def split_move(s: cirq.Qid, t1: cirq.Qid, t2: cirq.Qid):
 
 
 def merge_move(s1: cirq.Qid, s2: cirq.Qid, t: cirq.Qid):
-    """ A Split move in quantum chess.
+    """ A Merge move in quantum chess.
 
     This function takes three qubits and returns a generator
-    that performs a split move from the source qubit to the
-    two source qubits.
+    that performs a merge move from two source qubits to the
+    target qubit.
 
     Args:
       s1: source qubit (first square where a piece starts from)
@@ -149,7 +149,7 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path1)
 
     # In order to prevent path2 from needing connectivity to
-    # the ancilla qubit, swap path1 and path.
+    # the ancilla qubit, swap path1 and path2.
     # Then do a CNOT on ancilla with the swapped "path2"
     yield cirq.SWAP(path1, path2)
     yield cirq.X(ancilla).controlled_by(path1)
@@ -170,7 +170,7 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path2)
 
     # In order to prevent path2 from needing connectivity to
-    # the ancilla qubit, swap path1 and path.
+    # the ancilla qubit, swap path1 and path2.
     # Then do a CNOT on ancilla with the swapped "path2"
     yield cirq.SWAP(path2, path1)
     yield cirq.X(ancilla).controlled_by(path2)
