@@ -65,7 +65,9 @@ def test_three_split_moves(transformer, device):
     device.validate_circuit(t.transform(c))
 
 
-@pytest.mark.parametrize('transformer', [ct.ConnectivityHeuristicCircuitTransformer])
+@pytest.mark.parametrize('transformer',
+                         [ct.ConnectivityHeuristicCircuitTransformer,
+                          ct.DynamicLookAheadHeuristicCircuitTransformer])
 @pytest.mark.parametrize('device',
                          [cirq.google.Sycamore23, cirq.google.Sycamore])
 def test_disconnected(transformer, device):
@@ -75,7 +77,9 @@ def test_disconnected(transformer, device):
     device.validate_circuit(t.transform(c))
 
 
-@pytest.mark.parametrize('transformer', [ct.ConnectivityHeuristicCircuitTransformer])
+@pytest.mark.parametrize('transformer',
+                         [ct.ConnectivityHeuristicCircuitTransformer,
+                          ct.DynamicLookAheadHeuristicCircuitTransformer])
 @pytest.mark.parametrize('device',
                          [cirq.google.Sycamore23, cirq.google.Sycamore])
 def test_move_around_square(transformer, device):
@@ -85,7 +89,9 @@ def test_move_around_square(transformer, device):
     device.validate_circuit(t.transform(c))
 
 
-@pytest.mark.parametrize('transformer', [ct.ConnectivityHeuristicCircuitTransformer])
+@pytest.mark.parametrize('transformer',
+                         [ct.ConnectivityHeuristicCircuitTransformer,
+                          ct.DynamicLookAheadHeuristicCircuitTransformer])
 @pytest.mark.parametrize('device',
                          [cirq.google.Sycamore23, cirq.google.Sycamore])
 def test_split_then_merge(transformer, device):
@@ -93,4 +99,13 @@ def test_split_then_merge(transformer, device):
                      qm.split_move(b1, c1, c2), qm.normal_move(c1, d1),
                      qm.normal_move(a3, a4), qm.merge_move(a4, d1, a1))
     t = transformer(device)
+    device.validate_circuit(t.transform(c))
+
+
+@pytest.mark.parametrize('device',
+                         [cirq.google.Sycamore23, cirq.google.Sycamore])
+def test_split_then_merge_trapezoid(device):
+    c = cirq.Circuit(qm.split_move(a1, a2, b1), qm.normal_move(a2, a3),
+                     qm.merge_move(a3, b1, b3))
+    t = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
     device.validate_circuit(t.transform(c))

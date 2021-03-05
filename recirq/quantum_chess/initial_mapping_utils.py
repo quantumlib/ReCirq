@@ -123,10 +123,8 @@ def find_all_pairs_shortest_paths(
         Dict[cirq.GridQubit, List[cirq.GridQubit]],
         Dict[cirq.Qid, List[Tuple[cirq.Qid, int]]],
     ],
-    v: int,
-    m: Dict[cirq.Qid, int],
 ) -> List[List[int]]:
-    """ Returns a matrix of the shortest distance between each pair of nodes.
+    """Returns a matrix of the shortest distance between each pair of nodes.
 
     Implements the Floyd–Warshall algorithm.
 
@@ -135,20 +133,18 @@ def find_all_pairs_shortest_paths(
       v: The size of the graph.
       m: A mapping of qubit to index.
     """
-    shortest = [[math.inf for j in range(v)] for i in range(v)]
+    dist = defaultdict(lambda: math.inf)
     for q in g:
-        i = m[q]
-        shortest[i][i] = 0
+        dist[(q, q)] = 0
         for neighbor in g[q]:
             if isinstance(neighbor, tuple):
                 neighbor = neighbor[0]
-            j = m[neighbor]
-            shortest[i][j] = 1
-    for k in range(v):
-        for i in range(v):
-            for j in range(v):
-                shortest[i][j] = min(shortest[i][j], shortest[i][k] + shortest[k][j])
-    return shortest
+            dist[(q, neighbor)] = 1
+    for k in g:
+        for i in g:
+            for j in g:
+                dist[(i, j)] = min(dist[(i, j)], dist[(i, k)] + dist[(k, j)])
+    return dist
 
 
 def find_graph_center(
@@ -167,33 +163,25 @@ def find_graph_center(
     Args:
       g: A physical qubits graph or a logical qubits graph.
     """
-    qubit_to_index_mapping = defaultdict()
-    index_to_qubit_mapping = defaultdict()
-    for i, q in enumerate(g):
-        qubit_to_index_mapping[q] = i
-        index_to_qubit_mapping[i] = q
-
-    v = len(g)
-
-    shortest = find_all_pairs_shortest_paths(g, v, qubit_to_index_mapping)
+    shortest = find_all_pairs_shortest_paths(g)
 
     # For each node, find the length of the shortest path to the farthest
     # node.
-    farthest = [0 for i in range(v)]
-    for i in range(v):
-        for j in range(v):
-            if i != j and shortest[i][j] > farthest[i]:
-                farthest[i] = shortest[i][j]
+    farthest = defaultdict(int)
+    for i in g:
+        for j in g:
+            if i != j and shortest[(i, j)] > farthest[i]:
+                farthest[i] = shortest[(i, j)]
 
     # Find the graph center such that the length of the shortest path to the
     # farthest node is the smallest. Use the first graph center if there are
     # multiple graph centers.
-    center = 0
-    for i in range(v):
-        if farthest[i] < farthest[center]:
-            center = i
+    center = None
+    for q in g:
+        if not center or farthest[q] < farthest[center]:
+            center = q
 
-    return index_to_qubit_mapping[center]
+    return center
 
 
 def traverse(

@@ -18,6 +18,7 @@ import cirq
 
 import recirq.quantum_chess.controlled_iswap as controlled_iswap
 import recirq.quantum_chess.initial_mapping_utils as imu
+import recirq.quantum_chess.swap_updater as su
 
 ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
@@ -346,8 +347,8 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
           circuit: The circuit to transform.
         """
         initial_mapping = imu.calculate_initial_mapping(self.device, circuit)
-        # TODO(wingers): change this to use the result of the SWAP update algorithm.
-        return circuit.transform_qubits(lambda q: initial_mapping[q])
+        updater = su.SwapUpdater(circuit, self.device.qubit_set(), initial_mapping)
+        return cirq.Circuit(updater.add_swaps())
 
 class SycamoreDecomposer(cirq.PointOptimizer):
     """Optimizer that decomposes all three qubit operations into

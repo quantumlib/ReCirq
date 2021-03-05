@@ -151,6 +151,13 @@ def test_build_physical_qubits_graph():
 
 def test_get_least_connected_qubit():
     g = {
+        0: [1, 2],
+        1: [0, 2],
+        2: [0, 1, 3],
+        3: [2],
+    }
+    assert imu.get_least_connected_qubit(g, deque([0, 1, 2, 3])) == 3
+    g = {
         0: [1],
         1: [0, 2],
         2: [1],
@@ -215,10 +222,8 @@ def test_build_logical_qubits_graph():
         imu.build_logical_qubits_graph(c)
 
 
-def test_find_all_pairs_shortest_paths():
-    v = 7
-    m = dict((x, x) for x in range(v))
-    g = {
+@pytest.mark.parametrize('g', [
+    {
         0: [1],
         1: [0, 2],
         2: [1, 3, 5],
@@ -226,17 +231,8 @@ def test_find_all_pairs_shortest_paths():
         4: [3, 5],
         5: [2],
         6: [3],
-    }
-    assert imu.find_all_pairs_shortest_paths(g, v, m) == [
-        [0, 1, 2, 3, 4, 3, 4],
-        [1, 0, 1, 2, 3, 2, 3],
-        [2, 1, 0, 1, 2, 1, 2],
-        [3, 2, 1, 0, 1, 2, 1],
-        [4, 3, 2, 1, 0, 1, 2],
-        [3, 2, 1, 2, 3, 0, 3],
-        [4, 3, 2, 1, 2, 3, 0],
-    ]
-    g = {
+    },
+    {
         0: [(1,)],
         1: [(0,), (2,)],
         2: [(1,), (3,), (5,)],
@@ -244,16 +240,64 @@ def test_find_all_pairs_shortest_paths():
         4: [(3,), (5,)],
         5: [(2,)],
         6: [(3,)],
+    },
+])
+def test_find_all_pairs_shortest_paths(g):
+    expected = {
+        (0, 0): 0,
+        (0, 1): 1,
+        (0, 2): 2,
+        (0, 3): 3,
+        (0, 4): 4,
+        (0, 5): 3,
+        (0, 6): 4,
+        (1, 0): 1,
+        (1, 1): 0,
+        (1, 2): 1,
+        (1, 3): 2,
+        (1, 4): 3,
+        (1, 5): 2,
+        (1, 6): 3,
+        (2, 0): 2,
+        (2, 1): 1,
+        (2, 2): 0,
+        (2, 3): 1,
+        (2, 4): 2,
+        (2, 5): 1,
+        (2, 6): 2,
+        (3, 0): 3,
+        (3, 1): 2,
+        (3, 2): 1,
+        (3, 3): 0,
+        (3, 4): 1,
+        (3, 5): 2,
+        (3, 6): 1,
+        (4, 0): 4,
+        (4, 1): 3,
+        (4, 2): 2,
+        (4, 3): 1,
+        (4, 4): 0,
+        (4, 5): 1,
+        (4, 6): 2,
+        (5, 0): 3,
+        (5, 1): 2,
+        (5, 2): 1,
+        (5, 3): 2,
+        (5, 4): 3,
+        (5, 5): 0,
+        (5, 6): 3,
+        (6, 0): 4,
+        (6, 1): 3,
+        (6, 2): 2,
+        (6, 3): 1,
+        (6, 4): 2,
+        (6, 5): 3,
+        (6, 6): 0,
     }
-    assert imu.find_all_pairs_shortest_paths(g, v, m) == [
-        [0, 1, 2, 3, 4, 3, 4],
-        [1, 0, 1, 2, 3, 2, 3],
-        [2, 1, 0, 1, 2, 1, 2],
-        [3, 2, 1, 0, 1, 2, 1],
-        [4, 3, 2, 1, 0, 1, 2],
-        [3, 2, 1, 2, 3, 0, 3],
-        [4, 3, 2, 1, 2, 3, 0],
-    ]
+    result = imu.find_all_pairs_shortest_paths(g)
+    assert len(result) == len(expected)
+    for k in expected:
+        assert result[k] == expected[k]
 
 
 def test_graph_center():
@@ -374,7 +418,8 @@ def test_find_shortest_path():
 
 
 @pytest.mark.parametrize('device', [
-    cirq.google.Sycamore23, cirq.google.Sycamore
+    cirq.google.Sycamore23,
+    cirq.google.Sycamore,
 ])
 def test_calculate_initial_mapping(device):
     c = cirq.Circuit(
