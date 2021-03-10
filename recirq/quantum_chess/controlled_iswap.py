@@ -11,11 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Sequence, Iterable, List, Union, Optional
-
-import numpy as np
+from typing import Sequence, Union, Optional
 
 import cirq
+import numpy as np
 from cirq.optimizers.two_qubit_to_fsim import \
     _decompose_xx_yy_into_two_fsims_ignoring_single_qubit_ops, \
     _fix_single_qubit_gates_around_kak_interaction
@@ -23,7 +22,7 @@ from cirq.optimizers.two_qubit_to_fsim import \
 
 def _decompose_xx_yy(
         desired_interaction: Union[cirq.Operation, np.
-                                   ndarray, 'cirq.SupportsUnitary'],
+            ndarray, 'cirq.SupportsUnitary'],
         *,
         available_gate: cirq.Gate,
         atol: float = 1e-8,
@@ -86,7 +85,7 @@ def controlled_iswap(a: cirq.Qid,
 
     Returns a generator of cirq.Operations.
     """
-    available_gate = cirq.ISWAP**0.5
+    available_gate = cirq.ISWAP ** 0.5
     if inverse:
         mul = -1
     else:
@@ -102,16 +101,16 @@ def controlled_iswap(a: cirq.Qid,
             return cirq.PhasedXZGate.from_matrix(
                 cirq.unitary(op)).on(*op.qubits)
         if op.gate == cirq.FSimGate(-np.pi / 4, 0):
-            return cirq.ISWAP(*op.qubits)**0.5
+            return cirq.ISWAP(*op.qubits) ** 0.5
         return op
 
     circuit = cirq.Circuit(
         cirq.CNOT(b, a),
-        cirq.CNOT(c, b)**(-0.5 * mul),
+        cirq.CNOT(c, b) ** (-0.5 * mul),
         cirq.CZ(a, b),
-        cirq.CNOT(c, b)**(0.5 * mul),
+        cirq.CNOT(c, b) ** (0.5 * mul),
         cirq.Y(a).controlled_by(b),
-        cirq.S(b)**-1,
+        cirq.S(b) ** -1,
     )
 
     converted_ops = cirq.Circuit(
@@ -126,13 +125,13 @@ def controlled_sqrt_iswap(a: cirq.Qid, b: cirq.Qid, c: cirq.Qid):
     """Performs (ISWAP(a,b)i**0.5).controlled_by(c)"""
     return cirq.google.optimized_for_sycamore(
         cirq.Circuit(cirq.CNOT(a, b),
-                     cirq.TOFFOLI(c, b, a)**-0.5,
-                     cirq.CZ(c, b)**0.25, cirq.CNOT(a, b)))
+                     cirq.TOFFOLI(c, b, a) ** -0.5,
+                     cirq.CZ(c, b) ** 0.25, cirq.CNOT(a, b)))
 
 
 def controlled_inv_sqrt_iswap(a: cirq.Qid, b: cirq.Qid, c: cirq.Qid):
     """Performs (ISWAP(a,b)i**0.5).controlled_by(c)"""
     return cirq.google.optimized_for_sycamore(
         cirq.Circuit(cirq.CNOT(a, b),
-                     cirq.TOFFOLI(c, b, a)**0.5,
-                     cirq.CZ(c, b)**-0.25, cirq.CNOT(a, b)))
+                     cirq.TOFFOLI(c, b, a) ** 0.5,
+                     cirq.CZ(c, b) ** -0.25, cirq.CNOT(a, b)))

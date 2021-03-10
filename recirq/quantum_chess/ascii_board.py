@@ -1,13 +1,10 @@
-import sys
 from typing import Optional
 
-import cirq
-
-import recirq.quantum_chess.constants as c
 import recirq.quantum_chess.bit_utils as bu
+import recirq.quantum_chess.constants as c
 import recirq.quantum_chess.enums as enums
-from recirq.quantum_chess.move import to_rank, to_square, x_of, y_of, Move
 import recirq.quantum_chess.quantum_board as qb
+from recirq.quantum_chess.move import to_rank, to_square, x_of, y_of, Move
 
 
 class AsciiBoard:
@@ -46,7 +43,7 @@ class AsciiBoard:
             for y in range(self.size):
                 s = to_square(x, y)
                 if self._pieces[s] != c.EMPTY:
-                    rtn = bu.set_nth_bit(bu.xy_to_bit(x, y), rtn, 1)
+                    rtn = bu.set_nth_bit(bu.xy_to_bit(x, y), rtn, True)
         return rtn
 
     def load_fen(self, fen):
@@ -89,7 +86,7 @@ class AsciiBoard:
             for x in range(self.size):
                 bit = bu.xy_to_bit(x, y)
                 p = self._probs[bit]
-                if p < 0.99 and p > 0.01:
+                if 0.01 < p < 0.99:
                     prob = str(int(100 * p))
                     if len(prob) <= 2:
                         s += ' '
@@ -108,7 +105,8 @@ class AsciiBoard:
         """Returns the type of the piece at square (x,y)."""
         return self._pieces[y * self.size + x]
 
-    def _ep_flag(self, move: 'Move', piece_type: int):
+    @staticmethod
+    def _ep_flag(move: 'Move', piece_type: int):
         if abs(piece_type) != c.PAWN:
             return None
         if abs(y_of(move.target) - y_of(move.source)) == 2:
@@ -142,12 +140,11 @@ class AsciiBoard:
                     rtn.append(path)
         return rtn
 
-    def apply(self, move: 'Move', check_legality=True):
+    def apply(self, move: 'Move'):
         """Applies a move to the board."""
 
         s = self._pieces[move.source]
         t = self._pieces[move.target]
-        piece_type = abs(s)
 
         # Defaults to a BASIC JUMP move if not specified
         if not move.move_type:
