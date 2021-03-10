@@ -98,7 +98,7 @@ class EngineSampler(work.Sampler):
             program: 'cirq.Circuit',
             param_resolver: 'cirq.ParamResolverOrSimilarType' = None,
             repetitions: int = 1,
-    ) -> 'cirq.TrialResult':
+    ) -> 'cirq.Result':
         if param_resolver is None:
             param_resolver = study.ParamResolver({})
         return self.engine.run(
@@ -115,7 +115,7 @@ class EngineSampler(work.Sampler):
             program: 'cirq.Circuit',
             params: 'cirq.Sweepable',
             repetitions: int = 1,
-    ) -> List['cirq.TrialResult']:
+    ) -> List['cirq.Result']:
         return self.engine.run_sweep(
             program=program,
             params=params,
@@ -126,7 +126,7 @@ class EngineSampler(work.Sampler):
         ).results()
 
     async def run_async(self, program: 'cirq.Circuit',
-                        *, repetitions: int) -> 'cirq.TrialResult':
+                        *, repetitions: int) -> 'cirq.Result':
 
         program_id = _get_program_id(program)
         engine_job = self.engine.run_sweep(
@@ -163,7 +163,7 @@ class ZerosSampler(work.Sampler):
             program: 'cirq.Circuit',
             params: 'cirq.Sweepable',
             repetitions: int = 1,
-    ) -> List['cirq.TrialResult']:
+    ) -> List['cirq.Result']:
         assert isinstance(program, circuits.Circuit)
         meas = list(program.findall_operations_with_gate_type(
             ops.MeasurementGate))
@@ -173,7 +173,7 @@ class ZerosSampler(work.Sampler):
             for _, m, _ in meas:
                 assert len(m.qubits) == 1
             results = [
-                study.TrialResult(
+                study.Result(
                     params=p,
                     measurements={gate.key: np.zeros(
                         (repetitions, 1), dtype=int)
@@ -186,7 +186,7 @@ class ZerosSampler(work.Sampler):
             n_qubits = len(op.qubits)
             k = gate.key
             results = [
-                study.TrialResult(
+                study.Result(
                     params=p,
                     measurements={k: np.zeros(
                         (repetitions, n_qubits), dtype=int)})
@@ -195,7 +195,7 @@ class ZerosSampler(work.Sampler):
         return results
 
     async def run_async(self, program: 'cirq.Circuit',
-                        *, repetitions: int) -> 'cirq.TrialResult':
+                        *, repetitions: int) -> 'cirq.Result':
         program_id = _get_program_id(program)
 
         await asyncio.sleep(0.1)
