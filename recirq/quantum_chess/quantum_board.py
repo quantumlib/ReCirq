@@ -27,7 +27,7 @@ from recirq.quantum_chess.bit_utils import (
     xy_to_bit,
     bit_ones,
 )
-import recirq.quantum_chess.circuit_transformer as circuit_transformer
+import recirq.quantum_chess.circuit_transformer as ct
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
@@ -63,6 +63,8 @@ class CirqBoard:
             an error or post-selects the result away.
         noise_mitigation: Threshold of samples to overcome in order
             to be considered not noise.
+        transformer: The CircuitTransformer to use to convert the board's
+            NamedQubit circuit into a GridQubit circuit.
     """
 
     def __init__(self,
@@ -71,19 +73,24 @@ class CirqBoard:
                  device: Optional[cirq.Device] = None,
                  error_mitigation: Optional[
                      enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
-                 noise_mitigation: Optional[float] = 0.0):
+                 noise_mitigation: Optional[float] = 0.0,
+                 transformer: Optional[ct.CircuitTransformer] = None):
         self.device = device
         self.sampler = sampler
         if device is not None:
-            self.transformer = circuit_transformer.CircuitTransformer(device)
+            self.transformer = (
+                transformer
+                or ct.ConnectivityHeuristicCircuitTransformer(device))
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
-        self.accumulations_valid = False
+
+        # None if there is no cache, stores the repetition number if there is a cache.
+        self.accumulations_repetitions = None
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
-        self.accumulations_valid = False
+        self.accumulations_repetitions = None
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -108,7 +115,7 @@ class CirqBoard:
         print(self.debug_log)
         if clear_log:
             self.clear_debug_log()
-            
+
     def clear_timing_stats(self) -> None:
         """Clears timing stats."""
         self.timing_stats = defaultdict(list)
@@ -157,7 +164,7 @@ class CirqBoard:
             t1 = time.perf_counter()
         self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
         self.timing_stats[action].append(t1 - t0)
-    
+
     def sample_with_ancilla(self, num_samples: int
                             ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
@@ -205,11 +212,9 @@ class CirqBoard:
             # Translate circuit to grid qubits and sqrtISWAP gates
             if self.device is not None:
                 # Decompose 3-qubit operations
-                circuit_transformer.SycamoreDecomposer().optimize_circuit(
-                    measure_circuit)
+                ct.SycamoreDecomposer().optimize_circuit(measure_circuit)
                 # Create NamedQubit to GridQubit mapping and transform
-                measure_circuit = self.transformer.optimize_circuit(
-                    measure_circuit)
+                measure_circuit = self.transformer.transform(measure_circuit)
 
                 # For debug, ensure that the circuit correctly validates
                 self.device.validate_circuit(measure_circuit)
@@ -324,7 +329,7 @@ class CirqBoard:
         for bit in range(64):
             self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
 
-        self.accumulations_valid = True
+        self.accumulations_repetitions = repetitions
 
     def get_probability_distribution(self,
                                      repetitions: int = 1000) -> List[float]:
@@ -333,7 +338,7 @@ class CirqBoard:
         The values are returned as a list in the same ordering as a
         bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.probabilities
@@ -347,7 +352,7 @@ class CirqBoard:
 
         Returns a bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.full_squares
@@ -361,7 +366,7 @@ class CirqBoard:
 
         Returns a bitboard.
         """
-        if not self.accumulations_valid:
+        if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
         return self.empty_squares
@@ -516,7 +521,7 @@ class CirqBoard:
             raise ValueError('Move type is unspecified')
 
         # Reset accumulations here because function has conditional return branches
-        self.accumulations_valid = False
+        self.accumulations_repetitions = None
 
         # Add move to move_history
         self.move_history.append(m)
