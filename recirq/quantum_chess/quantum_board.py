@@ -321,8 +321,8 @@ class CirqBoard:
 
         samples = self.sample(repetitions)
         for sample in samples:
-            self.full_squares ^= sample
-            self.empty_squares ^= ~sample
+            self.full_squares &= sample
+            self.empty_squares &= ~sample
             for bit in bit_ones(sample):
                 self.probabilities[bit] += 1
 
@@ -414,10 +414,10 @@ class CirqBoard:
 
     def path_qubits(self, source: str, target: str) -> List[cirq.Qid]:
         """Returns all entangled qubits (or classical pieces)
-        between source and target. 
+        between source and target.
 
-        Source and target should be in the 
-        same line, i.e. same row, same column, or same diagal.
+        Source and target should be in the same line, i.e. same row, 
+        same column, or same diagal.
 
         Source and target should be specified in algebraic notation,
         such as 'f4'.
@@ -439,12 +439,12 @@ class CirqBoard:
             dy = -1
         else:
             dy = 0
-        dx = abs(xt - xs)
-        dy = abs(yt - ys)
+        x_slide = abs(xt - xs)
+        y_slide = abs(yt - ys)
         # Souce and target should always be in the same line.
-        if dx != dy and dx * dy:
+        if x_slide != y_slide and x_slide * y_slide:
             raise ValueError('Wrong inputs for path_qubits: source and target are not in the same line.')
-        max_slide = max(dx, dy)
+        max_slide = max(x_slide, y_slide)
         # Only calculates path when max_slide > 1.
         for t in range(1, max_slide):
             path_bit = xy_to_bit(xs + dx * t, ys + dy * t)
@@ -534,12 +534,9 @@ class CirqBoard:
         if (m.move_variant == enums.MoveVariant.CAPTURE or
                 m.move_type == enums.MoveType.PAWN_EP or
                 m.move_type == enums.MoveType.PAWN_CAPTURE):
-            is_deterministic = tqubit not in self.entangled_squares
+            # TODO: figure out if it is a deterministic capture.
             for val in list(self.allowed_pieces):
-                if is_deterministic:
-                    self.allowed_pieces.remove(val)
                 self.allowed_pieces.add(val - 1)
-            
 
         if m.move_type == enums.MoveType.PAWN_EP:
             # For en passant, first determine the square of the pawn being
@@ -575,7 +572,7 @@ class CirqBoard:
                 if not is_there:
                     return 0
                 self.add_entangled(squbit)
-                 # capture e.p. has a special circuit
+                # capture e.p. has a special circuit
                 self.circuit.append(
                     qm.capture_ep(squbit, tqubit, epqubit, self.new_ancilla(),
                                   self.new_ancilla(), self.new_ancilla()))
