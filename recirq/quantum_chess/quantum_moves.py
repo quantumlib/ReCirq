@@ -81,6 +81,7 @@ def slide_move(s: cirq.Qid,
       s: source qubit (square where piece starts)
       t: target qubit (square to move piece to)
       path: qubit blocked the path
+      ancilla: ancilla needed if len(path) > 1
     """
     if len(path) == 0:
         return normal_move(s, t)
@@ -111,6 +112,9 @@ def place_piece(s: cirq.Qid):
 
 
 def controlled_operation(gate, qubits, path_qubits, anti_qubits):
+    """Apply gate on qubits, controlled by path_qubits and 
+    anti-controlled by anti_qubits.
+    """
     for p in anti_qubits:
         yield cirq.X(p)
     yield gate.on(*qubits).controlled_by(*path_qubits, *anti_qubits)
@@ -119,6 +123,7 @@ def controlled_operation(gate, qubits, path_qubits, anti_qubits):
 
 
 def queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit, b_qubit):
+    """Performs queenside castle, anti-controlled by b_qubit."""
     yield cirq.X(b_qubit)
     yield cirq.ISWAP(rook_squbit, rook_tqubit).controlled_by(b_qubit)
     yield cirq.ISWAP(squbit, tqubit).controlled_by(b_qubit)

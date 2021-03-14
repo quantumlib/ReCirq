@@ -25,6 +25,7 @@ from recirq.quantum_chess.bit_utils import (
     set_nth_bit,
     square_to_bit,
     xy_to_bit,
+    bit_ones,
 )
 import recirq.quantum_chess.circuit_transformer as circuit_transformer
 import recirq.quantum_chess.enums as enums
@@ -233,6 +234,7 @@ class CirqBoard:
                         result = data.at[rep, key]
                         if result != self.post_selection[qubit]:
                             post_selected = False
+                            break
                 if not post_selected:
                     post_count += 1
                     continue
@@ -306,7 +308,7 @@ class CirqBoard:
 
     def _generate_accumulations(self, repetitions: int = 1000) -> None:
         """ Samples the state and generates the accumulated 
-        probabilities, empty_squares, and full_squares
+        probabilities, empty_squares, and full_squares.
         """
         self.probabilities = [0] * 64
         self.full_squares = (1 << 64) - 1
@@ -314,12 +316,10 @@ class CirqBoard:
 
         samples = self.sample(repetitions)
         for sample in samples:
-            for bit in range(64):
-                if nth_bit_of(bit, sample):
-                    self.probabilities[bit] += 1
-                    self.empty_squares = set_nth_bit(bit, self.empty_squares, False)
-                else:
-                    self.full_squares = set_nth_bit(bit, self.full_squares, False)
+            self.full_squares ^= sample
+            self.empty_squares ^= ~sample
+            for bit in bit_ones(sample):
+                self.probabilities[bit] += 1
 
         for bit in range(64):
             self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
@@ -353,7 +353,7 @@ class CirqBoard:
         return self.full_squares
 
     def get_empty_squares_bitboard(self, repetitions: int = 1000) -> int:
-        """Retrieves which squares are marked as full.
+        """Retrieves which squares are marked as empty.
 
         This information is created using a representative set of
         samples (defined by the repetitions argument) to determine
@@ -391,7 +391,7 @@ class CirqBoard:
 
         This exchanges all mentions of the qubit in the circuit
         with a new ancilla qubit and removes it from the set of
-        entangled squares.i
+        entangled squares.
         """
         if qubit not in self.entangled_squares:
             return
@@ -409,7 +409,10 @@ class CirqBoard:
 
     def path_qubits(self, source: str, target: str) -> List[cirq.Qid]:
         """Returns all entangled qubits (or classical pieces)
-        between source and target.
+        between source and target. 
+
+        Source and target should be in the 
+        same line, i.e. same row, same column, or same diagal.
 
         Source and target should be specified in algebraic notation,
         such as 'f4'.
@@ -431,14 +434,19 @@ class CirqBoard:
             dy = -1
         else:
             dy = 0
-        max_slide = max(abs(xs - xt), abs(ys - yt))
-        if max_slide > 1:
-            for t in range(1, max_slide):
-                path_bit = xy_to_bit(xs + dx * t, ys + dy * t)
-                path_qubit = bit_to_qubit(path_bit)
-                if (path_qubit in self.entangled_squares or
-                        nth_bit_of(path_bit, self.state)):
-                    rtn.append(path_qubit)
+        dx = abs(xt - xs)
+        dy = abs(yt - ys)
+        # Souce and target should always be in the same line.
+        if dx != dy and dx * dy:
+            raise ValueError('Wrong inputs for path_qubits: source and target are not in the same line.')
+        max_slide = max(dx, dy)
+        # Only calculates path when max_slide > 1.
+        for t in range(1, max_slide):
+            path_bit = xy_to_bit(xs + dx * t, ys + dy * t)
+            path_qubit = bit_to_qubit(path_bit)
+            if (path_qubit in self.entangled_squares or
+                nth_bit_of(path_bit, self.state)):
+                rtn.append(path_qubit)
         return rtn
 
     def create_path_ancilla(self, path_qubits: List[cirq.Qid]) -> cirq.Qid:
@@ -466,7 +474,7 @@ class CirqBoard:
                                 b_qubit))
 
     def post_select_on(self, qubit: cirq.Qid) -> int:
-        """Adds a post-selection requirement to the circuit,
+        """Adds a post-selection requirement to the circuit.
 
         Performs a single sample of the qubit to get a value.
         Adjusts the post-selection requirements dictionary to this value.
@@ -510,7 +518,7 @@ class CirqBoard:
         # Reset accumulations here because function has conditional return branches
         self.accumulations_valid = False
 
-        # Add move to the move move_history
+        # Add move to move_history
         self.move_history.append(m)
 
         sbit = square_to_bit(m.source)
@@ -521,16 +529,19 @@ class CirqBoard:
         if (m.move_variant == enums.MoveVariant.CAPTURE or
                 m.move_type == enums.MoveType.PAWN_EP or
                 m.move_type == enums.MoveType.PAWN_CAPTURE):
-            # TODO: figure out if it is a deterministic capture.
+            is_deterministic = tqubit not in self.entangled_squares
             for val in list(self.allowed_pieces):
+                if is_deterministic:
+                    self.allowed_pieces.remove(val)
                 self.allowed_pieces.add(val - 1)
+            
 
         if m.move_type == enums.MoveType.PAWN_EP:
             # For en passant, first determine the square of the pawn being
             # captured, which should be next to the target.
             if m.target[1] == '6':
                 epbit = square_to_bit(m.target[0] + '5')
-            elif m.target[1] == '2':
+            elif m.target[1] == '3':
                 epbit = square_to_bit(m.target[0] + '4')
             else:
                 raise ValueError(f'Invalid en passant target {m.target}')
@@ -559,10 +570,7 @@ class CirqBoard:
                 if not is_there:
                     return 0
                 self.add_entangled(squbit)
-                path_ancilla = self.new_ancilla()
-                captured_ancilla = self.new_ancilla()
-                captured_ancilla2 = self.new_ancilla()
-                # capture e.p. has a special circuit
+                 # capture e.p. has a special circuit
                 self.circuit.append(
                     qm.capture_ep(squbit, tqubit, epqubit, self.new_ancilla(),
                                   self.new_ancilla(), self.new_ancilla()))

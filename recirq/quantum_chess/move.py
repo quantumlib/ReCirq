@@ -1,4 +1,4 @@
-# Copyright 2020 Google
+A# Copyright 2020 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -112,7 +112,12 @@ class Move:
     def is_split_move(self) -> bool:
         return self.target2 is not None
 
+    def is_merge_move(self) -> bool:
+        return self.source2 is not None
+
     def __str__(self):
         if self.is_split_move():
             return self.source + '^' + self.target + self.target2
+        if self.is_merge_move():
+            return self.source + self.source2 + '^' + self.target
         return self.source + self.target
