@@ -417,7 +417,7 @@ class CirqBoard:
         between source and target.
 
         Source and target should be in the same line, i.e. same row, 
-        same column, or same diagal.
+        same column, or same diagonal.
 
         Source and target should be specified in algebraic notation,
         such as 'f4'.
