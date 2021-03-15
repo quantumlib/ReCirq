@@ -592,9 +592,10 @@ def test_pawn_capture(board):
         (u.squares_to_bitboard(['e8', 'f8', 'h8']), 'e8', 'g8'),
         (u.squares_to_bitboard(['e8', 'g8', 'h8']), 'e8', 'g8'),
         (u.squares_to_bitboard(['e8', 'f8', 'g8', 'h8']), 'e8', 'g8'),
+        (u.squares_to_bitboard(['e1', 'b1', 'a1']), 'e1', 'c1'),
         (u.squares_to_bitboard(['e1', 'c1', 'a1']), 'e1', 'c1'),
         (u.squares_to_bitboard(['e1', 'd1', 'a1']), 'e1', 'c1'),
-        (u.squares_to_bitboard(['e1', 'c1', 'd1', 'a1']), 'e1', 'c1'),
+        (u.squares_to_bitboard(['e1', 'b1', 'c1', 'd1', 'a1']), 'e1', 'c1'),
 ))
 def test_illegal_castle(initial_board, source, target):
     """Tests various combinations of illegal capture.
@@ -776,9 +777,9 @@ def test_capture_ep():
     """Tests capture en passant.
 
     Splits b8 to a6/c6.  Capture a6 with b5 pawn to put the source pawn
-    into superposition.  Then move c6 out of the way.
+    into superposition.
 
-    Finally, move c7 to c5 and perform en passant on b6.
+    Finally, move c7 to c5 and perform en passant on c6.
     """
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     did_it_move = b.perform_moves(
@@ -797,10 +798,7 @@ def test_capture_ep():
 def test_capture_ep2():
     """Tests capture en passant.
 
-    Splits b8 to a6/c6.  Capture a6 with b5 pawn to put the source pawn
-    into superposition.
-
-    Finally, move c7 to c5 and perform en passant on b6.  This should
+    Splits b8 to a6/c6. Move c7 to c5 and perform en passant on c6.  This should
     either capture the knight or the pawn.
     """
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
