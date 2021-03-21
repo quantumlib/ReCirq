@@ -25,7 +25,10 @@ from recirq.quantum_chess.test_utils import (
     assert_prob_about,
     assert_fifty_fifty,
 )
-from testfixtures import ShouldRaise
+from recirq.quantum_chess.bit_utils import (
+    bit_to_qubit,
+    square_to_bit,
+)
 
 BIG_CIRQ_BOARDS = (
     qb.CirqBoard(0, error_mitigation=enums.ErrorMitigation.Error),
@@ -80,13 +83,15 @@ def test_classical_jump_move(board):
     assert_samples_in(b, [u.squares_to_bitboard(['b1', 'c1'])])
 
 def test_path_qubits_error():
-    """ValueError should be returned when souce and target is not in the same line."""
-    b = qb.CirqBoard(u.squares_to_bitboard(['a1']))
-    with ShouldRaise(ValueError):
+    """Source and target should be in the same line, otherwise ValueError should be returned."""
+    b = qb.CirqBoard(u.squares_to_bitboard(['a1', 'b3', 'c4', 'd5', 'e6', 'f7']))
+    assert b.path_qubits("b3", "f7") == [bit_to_qubit(square_to_bit('c4')), \
+                                         bit_to_qubit(square_to_bit('d5')), bit_to_qubit(square_to_bit('e6'))]
+    with pytest.raises(ValueError):
         b.path_qubits("a1", "b3")
-    with ShouldRaise(ValueError):
+    with pytest.raises(ValueError):
         b.path_qubits("c4", "a1")
-        
+
 @pytest.mark.parametrize('move_type,board', (
         *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
         *[(enums.MoveType.SPLIT_SLIDE, b) for b in ALL_CIRQ_BOARDS],
