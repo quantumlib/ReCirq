@@ -82,7 +82,7 @@ def test_classical_jump_move(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['b1', 'c1'])])
 
-def test_path_qubits_error():
+def test_path_qubits():
     """Source and target should be in the same line, otherwise ValueError should be returned."""
     b = qb.CirqBoard(u.squares_to_bitboard(['a1', 'b3', 'c4', 'd5', 'e6', 'f7']))
     assert b.path_qubits("b3", "f7") == [bit_to_qubit(square_to_bit('c4')), \
