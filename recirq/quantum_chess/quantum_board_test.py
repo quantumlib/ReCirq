@@ -1,4 +1,4 @@
-# Copyright 2020 Google
+# Copyright 2020 GoogleA
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ from recirq.quantum_chess.test_utils import (
     assert_prob_about,
     assert_fifty_fifty,
 )
+from testfixtures import ShouldRaise
 
 BIG_CIRQ_BOARDS = (
     qb.CirqBoard(0, error_mitigation=enums.ErrorMitigation.Error),
@@ -78,7 +79,14 @@ def test_classical_jump_move(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['b1', 'c1'])])
 
-
+def test_path_qubits_error():
+    """ValueError should be returned when souce and target is not in the same line."""
+    b = qb.CirqBoard(u.squares_to_bitboard(['a1']))
+    with ShouldRaise(ValueError):
+        b.path_qubits("a1", "b3")
+    with ShouldRaise(ValueError):
+        b.path_qubits("c4", "a1")
+        
 @pytest.mark.parametrize('move_type,board', (
         *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
         *[(enums.MoveType.SPLIT_SLIDE, b) for b in ALL_CIRQ_BOARDS],
@@ -771,7 +779,17 @@ def test_classical_ep(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['d6'])])
 
-
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_classical_ep2(board):
+    """Fully classical en passant."""
+    b = board.with_state(u.squares_to_bitboard(['e4', 'd4']))
+    m = move.Move('e4',
+                  'd3',
+                  move_type=enums.MoveType.PAWN_EP,
+                  move_variant=enums.MoveVariant.BASIC)
+    b.do_move(m)
+    assert_samples_in(b, [u.squares_to_bitboard(['d3'])])
+    
 # Seems to be problematic on real device
 def test_capture_ep():
     """Tests capture en passant.

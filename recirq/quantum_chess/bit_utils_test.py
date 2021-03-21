@@ -39,6 +39,16 @@ def test_bit_to_qubit():
     assert u.bit_to_qubit(0) == cirq.NamedQubit("0")
 
 
+def test_num_ones():
+    assert u.num_ones(int('1000101', 2)) == 3
+    assert u.num_ones(int('0000000', 2)) == 0
+    assert u.num_ones(int('0111111', 2)) == 6
+        
+def test_bit_ones():
+    assert u.bit_ones(int('1000101', 2)) == [0, 2, 6]
+    assert u.bit_ones(int('0000000', 2)) == []
+    assert u.bit_ones(int('0111111', 2)) == [0, 1, 2, 3, 4, 5]
+
 def test_qubit_to_bit():
     assert u.qubit_to_bit(cirq.NamedQubit("2")) == 2
     assert u.qubit_to_bit(cirq.NamedQubit("0")) == 0
