@@ -86,7 +86,8 @@ def test_path_qubits_error():
     """Source and target should be in the same line, otherwise ValueError should be returned."""
     b = qb.CirqBoard(u.squares_to_bitboard(['a1', 'b3', 'c4', 'd5', 'e6', 'f7']))
     assert b.path_qubits("b3", "f7") == [bit_to_qubit(square_to_bit('c4')), \
-                                         bit_to_qubit(square_to_bit('d5')), bit_to_qubit(square_to_bit('e6'))]
+                                         bit_to_qubit(square_to_bit('d5')), \
+                                         bit_to_qubit(square_to_bit('e6'))]
     with pytest.raises(ValueError):
         b.path_qubits("a1", "b3")
     with pytest.raises(ValueError):
