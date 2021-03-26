@@ -45,6 +45,16 @@ def num_ones(n: int) -> int:
         n = n // 2
     return count
 
+def bit_ones(n: int) -> List[int]:
+    """Indices of ones in the binary representation of n."""
+    indices = []
+    index = 0
+    while n > 0:
+        if n % 2 == 1:
+            indices.append(index)
+        n >>= 1
+        index += 1
+    return indices
 
 def qubit_to_bit(q: cirq.LineQubit) -> int:
     """Retrieves the number from a cirq Qubit's name.
