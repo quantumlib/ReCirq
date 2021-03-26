@@ -19,15 +19,23 @@ class AsciiBoard:
                  size: Optional[int] = 8,
                  reps: Optional[int] = 1000,
                  board=None):
-        self._pieces = {}
-        self._sampled = {}
+
+        self.size = size
         self.reps = reps
         self.board = board or qb.CirqBoard(0)
-        for x in range(size):
-            for y in range(size):
+
+        self._reset_state()
+
+    def _reset_state(self):
+        """Resets all the values that represent the state to default values. """
+        self._pieces = {}
+        self._sampled = {}
+
+        for x in range(self.size):
+            for y in range(self.size):
                 s = to_square(x, y)
                 self._pieces[s] = 0
-        self.size = size
+
         self.ep_flag = None
         self.white_moves = True
         self.castling_flags = {
@@ -65,6 +73,7 @@ class AsciiBoard:
 
     def reset(self):
         """Resets to initial classical chess starting position."""
+        self._reset_state()
         if self.size != 8:
             raise ValueError('board size must be 8 for standard chess position')
         self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR')
