@@ -133,7 +133,7 @@ def test_move_around_square(device):
     device.validate_circuit(transformer.transform(c))
 
 
-@pytest.mark.parametrize('device', 
+@pytest.mark.parametrize('device',
                          (cirq.google.Sycamore23, cirq.google.Sycamore))
 def test_split_then_merge(device):
     transformer = ct.ConnectivityHeuristicCircuitTransformer(device)

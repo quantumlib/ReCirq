@@ -127,7 +127,6 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
                 best = node
         return best
     
-#                   mapping_trying: Dict[cirq.Qid, cirq.GridQubit],
     def map_helper(self,
                    cur_node: cirq.Qid,
                    mapping: Dict[cirq.Qid, cirq.GridQubit],
@@ -207,10 +206,10 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             # map the rest of the adjacent nodes
 
             success = self.map_helper(node_to_map, mapping, available_qubits,
-                                      graph, nodes_trying, True)
+                                      graph, nodes_trying)
             if success:
                 success = self.map_helper(cur_node, mapping, available_qubits,
-                                          graph, nodes_trying, True)
+                                          graph, nodes_trying)
 
             if not success:
                 # We have failed.  Undo this mapping and try another one.
@@ -287,7 +286,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
 
         while last_node != cur_node:
             # Depth first seach for a valid mapping
-            self.map_helper(cur_node, mapping, start_list, g, [], True)
+            self.map_helper(cur_node, mapping, start_list, g, [])
             last_node = cur_node
             cur_node = self.find_start_node(g, mapping)
             if not cur_node:
