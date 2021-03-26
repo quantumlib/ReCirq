@@ -49,7 +49,8 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         self.qubit_list = device.qubits
 
     def qubits_within(self, depth: int, qubit: cirq.GridQubit,
-                      qubit_list: Iterable[cirq.GridQubit]) -> int:
+                      qubit_list: Iterable[cirq.GridQubit],
+                      visited: Set[cirq.GridQubit]) -> int:
         """Returns the number of qubits within `depth` of the input `qubit`.
 
         Args:
@@ -59,11 +60,14 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         """
         if qubit not in qubit_list:
             return 0
+        if qubit in visited:
+            return 0
+        visited.add(qubit)
         if depth <= 0:
             return 1
         c = 1
         for diff in ADJACENCY:
-            c += self.qubits_within(depth - 1, qubit + diff, qubit_list)
+            c += self.qubits_within(depth - 1, qubit + diff, qubit_list, visited)
         return c
 
     def find_start_qubit(self,
@@ -75,14 +79,15 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         best = None
         best_count = -1
         for q in qubit_list:
-            c = self.qubits_within(depth, q, qubit_list)
+            c = self.qubits_within(depth, q, qubit_list, set())
             if c > best_count:
                 best_count = c
                 best = q
         return best
 
     def edges_within(self, depth: int, node: cirq.Qid,
-                     graph: Dict[cirq.Qid, Iterable[cirq.Qid]]) -> int:
+                     graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
+                     visited: Set[cirq.Qid]) -> int:
         """Returns the number of qubits within `depth` of the specified `node`.
 
         Args:
@@ -91,11 +96,14 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
           graph: edge graph of connections between qubits,
             representing by a dictionary from qubit to adjacent qubits.
         """
+        if node in visited:
+            return 0
+        visited.add(node)
         if depth <= 0:
             return 1
         c = 1
         for adj_node in graph[node]:
-            c += self.edges_within(depth - 1, adj_node, graph)
+            c += self.edges_within(depth - 1, adj_node, graph, visited)
         return c
 
     def find_start_node(self, graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
@@ -105,23 +113,27 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         Args:
             graph: edge graph of connections between qubits,
             representing by a dictionary from qubit to adjacent qubits.
+            mapping: stores current mapping from named qubits to grid qubits.
         """
         best = None
         best_count = -1
         for node in graph:
             if node in mapping:
                 continue
-            c = self.edges_within(3, node, graph)
+            visited = set()
+            c = self.edges_within(3, node, graph, visited)
             if c > best_count:
                 best_count = c
                 best = node
         return best
-
+    
+#                   mapping_trying: Dict[cirq.Qid, cirq.GridQubit],
     def map_helper(self,
                    cur_node: cirq.Qid,
                    mapping: Dict[cirq.Qid, cirq.GridQubit],
                    available_qubits: Set[cirq.GridQubit],
                    graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
+                   nodes_trying: List[cirq.Qid],
                    print_debug: bool = False) -> bool:
         """Helper function to construct mapping.
 
@@ -133,10 +145,11 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
 
         Args:
           cur_node: node to examine.
-          mapping: current mapping of named qubits to `GridQubits`
-          available_qubits: current set of unassigned qubits
+          mapping: current mapping of named qubits to `GridQubits`,
+          available_qubits: current set of unassigned qubits,
           graph: adjacency graph of connections between qubits,
-            representing by a dictionary from qubit to adjacent qubits
+            representing by a dictionary from qubit to adjacent qubits,
+          nodes_trying: saves the current nodes under trying in this stack.
 
         Returns:
           True if mapping was successful, False if no mapping was possible.
@@ -181,27 +194,32 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         # This makes back-tracking easier.
         node_to_map = nodes_to_map[0]
 
+
         for node_to_try in valid_adjacent_qubits:
             # Add proposed qubit to the mapping
             # and remove it from available qubits
             mapping[node_to_map] = node_to_try
             available_qubits.remove(node_to_try)
-
+            nodes_trying.append(node_to_map)
             # Recurse
             # Move on to the qubit we just mapped.
             # Then, come back to this node and
             # map the rest of the adjacent nodes
 
             success = self.map_helper(node_to_map, mapping, available_qubits,
-                                      graph)
+                                      graph, nodes_trying, True)
             if success:
                 success = self.map_helper(cur_node, mapping, available_qubits,
-                                          graph)
+                                          graph, nodes_trying, True)
 
             if not success:
                 # We have failed.  Undo this mapping and try another one.
-                del mapping[node_to_map]
-                available_qubits.add(node_to_try)
+                while True:
+                    named_qubit =  nodes_trying.pop()
+                    available_qubits.add(mapping[named_qubit])
+                    del mapping[named_qubit]
+                    if named_qubit == node_to_map:
+                        break
             else:
                 # We have successfully mapped all qubits!
                 return True
@@ -210,7 +228,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         # Fail upwards and back-track if possible.
         if print_debug:
             print('Warning: could not map all qubits!')
-            return False
+        return False
 
     def qubit_mapping(self,
                       circuit: cirq.Circuit) -> Dict[cirq.Qid, cirq.GridQubit]:
@@ -269,7 +287,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
 
         while last_node != cur_node:
             # Depth first seach for a valid mapping
-            self.map_helper(cur_node, mapping, start_list, g)
+            self.map_helper(cur_node, mapping, start_list, g, [], True)
             last_node = cur_node
             cur_node = self.find_start_node(g, mapping)
             if not cur_node:
