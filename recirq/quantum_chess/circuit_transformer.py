@@ -96,6 +96,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
           node: starting qubit
           graph: edge graph of connections between qubits,
             representing by a dictionary from qubit to adjacent qubits.
+          visited: saves the qubits that have already been counted.
         """
         if node in visited:
             return 0
