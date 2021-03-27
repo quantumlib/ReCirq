@@ -57,6 +57,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
           depth: how many connections to traverse
           qubit: starting qubit
           qubit_list: iterable of valid qubits
+          visited: grid qubits that have already been counted
         """
         if qubit not in qubit_list:
             return 0
@@ -148,7 +149,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
           available_qubits: current set of unassigned qubits,
           graph: adjacency graph of connections between qubits,
             representing by a dictionary from qubit to adjacent qubits,
-          nodes_trying: saves the current nodes under trying in this stack.
+          nodes_trying: this list is used as a stack containing nodes currently under trying.
 
         Returns:
           True if mapping was successful, False if no mapping was possible.
