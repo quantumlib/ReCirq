@@ -44,6 +44,8 @@ def _pairwise_shortest_distances(
 ) -> Dict[Tuple[cirq.GridQubit, cirq.GridQubit], int]:
     """Precomputes the shortest path length between each pair of qubits.
 
+    This function runs in O(V**2) where V=len(qubits).
+
     Returns:
         dictionary mapping a pair of qubits to the length of the shortest path
         between them (disconnected qubits will be absent).
@@ -51,11 +53,13 @@ def _pairwise_shortest_distances(
     # Do BFS starting from each qubit and collect the shortest path lengths as
     # we go.
     # For device graphs where all edges are the same (where each edge can be
-    # treated as unit length) repeated BFS is O(v**2) and is faster than
-    # the Floyd-Warshall algorithm which is O(v**3).
-    # This won't work if in the future we figure out a way to incorporate edge
-    # weights (for example in order to give negative preference to gates with poor
-    # calibration metrics).
+    # treated as unit length) repeated BFS is O(V**2 + V E). On sparse device
+    # graphs (like GridQubit graphs where qubits are locally connected to their
+    # neighbors) that is faster than the Floyd-Warshall algorithm which is
+    # O(V**3).
+    # However this won't work if in the future we figure out a way to
+    # incorporate edge weights (for example in order to give negative preference
+    # to gates with poor calibration metrics).
     shortest = {}
     for starting_qubit in qubits:
         to_be_visited = deque()
