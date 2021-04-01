@@ -25,6 +25,10 @@ from recirq.quantum_chess.test_utils import (
     assert_prob_about,
     assert_fifty_fifty,
 )
+from recirq.quantum_chess.bit_utils import (
+    bit_to_qubit,
+    square_to_bit,
+)
 
 BIG_CIRQ_BOARDS = (
     qb.CirqBoard(0, error_mitigation=enums.ErrorMitigation.Error),
@@ -78,6 +82,16 @@ def test_classical_jump_move(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['b1', 'c1'])])
 
+def test_path_qubits():
+    """Source and target should be in the same line, otherwise ValueError should be returned."""
+    b = qb.CirqBoard(u.squares_to_bitboard(['a1', 'b3', 'c4', 'd5', 'e6', 'f7']))
+    assert b.path_qubits("b3", "f7") == [bit_to_qubit(square_to_bit('c4')), \
+                                         bit_to_qubit(square_to_bit('d5')), \
+                                         bit_to_qubit(square_to_bit('e6'))]
+    with pytest.raises(ValueError):
+        b.path_qubits("a1", "b3")
+    with pytest.raises(ValueError):
+        b.path_qubits("c4", "a1")
 
 @pytest.mark.parametrize('move_type,board', (
         *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
@@ -592,9 +606,10 @@ def test_pawn_capture(board):
         (u.squares_to_bitboard(['e8', 'f8', 'h8']), 'e8', 'g8'),
         (u.squares_to_bitboard(['e8', 'g8', 'h8']), 'e8', 'g8'),
         (u.squares_to_bitboard(['e8', 'f8', 'g8', 'h8']), 'e8', 'g8'),
+        (u.squares_to_bitboard(['e1', 'b1', 'a1']), 'e1', 'c1'),
         (u.squares_to_bitboard(['e1', 'c1', 'a1']), 'e1', 'c1'),
         (u.squares_to_bitboard(['e1', 'd1', 'a1']), 'e1', 'c1'),
-        (u.squares_to_bitboard(['e1', 'c1', 'd1', 'a1']), 'e1', 'c1'),
+        (u.squares_to_bitboard(['e1', 'b1', 'c1', 'd1', 'a1']), 'e1', 'c1'),
 ))
 def test_illegal_castle(initial_board, source, target):
     """Tests various combinations of illegal capture.
@@ -770,15 +785,25 @@ def test_classical_ep(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['d6'])])
 
-
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_classical_ep2(board):
+    """Fully classical en passant."""
+    b = board.with_state(u.squares_to_bitboard(['e4', 'd4']))
+    m = move.Move('e4',
+                  'd3',
+                  move_type=enums.MoveType.PAWN_EP,
+                  move_variant=enums.MoveVariant.BASIC)
+    b.do_move(m)
+    assert_samples_in(b, [u.squares_to_bitboard(['d3'])])
+    
 # Seems to be problematic on real device
 def test_capture_ep():
     """Tests capture en passant.
 
     Splits b8 to a6/c6.  Capture a6 with b5 pawn to put the source pawn
-    into superposition.  Then move c6 out of the way.
+    into superposition.
 
-    Finally, move c7 to c5 and perform en passant on b6.
+    Finally, move c7 to c5 and perform en passant on c6.
     """
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     did_it_move = b.perform_moves(
@@ -797,10 +822,7 @@ def test_capture_ep():
 def test_capture_ep2():
     """Tests capture en passant.
 
-    Splits b8 to a6/c6.  Capture a6 with b5 pawn to put the source pawn
-    into superposition.
-
-    Finally, move c7 to c5 and perform en passant on b6.  This should
+    Splits b8 to a6/c6. Move c7 to c5 and perform en passant on c6.  This should
     either capture the knight or the pawn.
     """
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))

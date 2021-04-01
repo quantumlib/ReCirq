@@ -17,6 +17,8 @@ from typing import Dict, Iterable, List, Optional, Set
 import cirq
 
 import recirq.quantum_chess.controlled_iswap as controlled_iswap
+import recirq.quantum_chess.initial_mapping_utils as imu
+import recirq.quantum_chess.swap_updater as su
 
 ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
@@ -304,6 +306,49 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         self.qubit_mapping(circuit)
         return circuit.transform_qubits(lambda q: self.mapping[q])
 
+
+class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
+    """Optimizer that transforms a circuit to satify a device's constraints.
+
+    This implements the initial mapping algorithm and the SWAP-based update
+    algorithm proposed by the paper "A Dynamic Look-Ahead Heuristic for the
+    Qubit Mapping Problem of NISQ Computer":
+    https://ieeexplore.ieee.org/abstract/document/8976109.
+
+    The initial mapping algorithm first maps the center of the logical qubits
+    graph to the center of the physical qubits graph. It then traverses the
+    logical qubits in a breadth-first traversal order starting from the center
+    of the logical qubits graph. For each logical qubit, it finds the physical
+    qubit that minimizes the nearest neighbor distance for the leftmost gates.
+
+    The SWAP-based update algorithm uses a heuristic cost function of a SWAP
+    operation called maximum consecutive positive effect (MCPE) to greedily
+    look ahead in each moment for SWAP operations that will reduce the nearest
+    neighbor distance for the largest number of gates in the current look-ahead
+    window.
+
+    Reference:
+    P. Zhu, Z. Guan and X. Cheng, "A Dynamic Look-Ahead Heuristic for the
+    Qubit Mapping Problem of NISQ Computers," in IEEE Transactions on Computer-
+    Aided Design of Integrated Circuits and Systems, vol. 39, no. 12, pp. 4721-
+    4735, Dec. 2020, doi: 10.1109/TCAD.2020.2970594.
+    """
+    def __init__(self, device: cirq.Device):
+        super().__init__()
+        self.device = device
+
+    def transform(self, circuit: cirq.Circuit) -> cirq.Circuit:
+        """Returns a transformed circuit.
+
+        The transformed circuit satisfies all physical adjacency constraints
+        of the device.
+
+        Args:
+          circuit: The circuit to transform.
+        """
+        initial_mapping = imu.calculate_initial_mapping(self.device, circuit)
+        updater = su.SwapUpdater(circuit, self.device.qubit_set(), initial_mapping)
+        return cirq.Circuit(updater.add_swaps())
 
 class SycamoreDecomposer(cirq.PointOptimizer):
     """Optimizer that decomposes all three qubit operations into

@@ -1,6 +1,7 @@
 import recirq.quantum_chess.ascii_board as ab
 import recirq.quantum_chess.constants as c
 import recirq.quantum_chess.move as m
+from recirq.quantum_chess.enums import MoveType, MoveVariant
 
 
 def test_squares():
@@ -33,6 +34,18 @@ def test_fen():
         for y in range(8):
             square = m.to_square(x, y)
             assert b._pieces[square] == expected_pieces.get(square, c.EMPTY)
+
+
+def test_fen_existing_state():
+    b = ab.AsciiBoard()
+    b.reset()
+    b.apply(
+        m.Move(source='b1', target='a3', target2='c3', move_type=MoveType.SPLIT_JUMP, move_variant=MoveVariant.BASIC))
+    b.reset()
+
+    expected_board = ab.AsciiBoard()
+    expected_board.reset()
+    assert str(b) == str(expected_board)
 
 
 def test_ep_flag():

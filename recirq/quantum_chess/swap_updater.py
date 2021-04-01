@@ -17,7 +17,7 @@ Look-Ahead Heuristic for the Qubit Mapping Problem of NISQ Computers'
 
 This transforms circuits by adding additional SWAP gates to ensure that all operations are on adjacent qubits.
 """
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Callable, Dict, Generator, Iterable, List, Optional, Tuple
 
 import cirq
@@ -37,6 +37,41 @@ def _satisfies_adjacency(gate: cirq.Operation) -> bool:
         return True
     q1, q2 = gate.qubits
     return q1.is_adjacent(q2)
+
+
+def _pairwise_shortest_distances(
+    qubits: Iterable[cirq.GridQubit]
+) -> Dict[Tuple[cirq.GridQubit, cirq.GridQubit], int]:
+    """Precomputes the shortest path length between each pair of qubits.
+
+    This function runs in O(V**2) where V=len(qubits).
+
+    Returns:
+        dictionary mapping a pair of qubits to the length of the shortest path
+        between them (disconnected qubits will be absent).
+    """
+    # Do BFS starting from each qubit and collect the shortest path lengths as
+    # we go.
+    # For device graphs where all edges are the same (where each edge can be
+    # treated as unit length) repeated BFS is O(V**2 + V E). On sparse device
+    # graphs (like GridQubit graphs where qubits are locally connected to their
+    # neighbors) that is faster than the Floyd-Warshall algorithm which is
+    # O(V**3).
+    # However this won't work if in the future we figure out a way to
+    # incorporate edge weights (for example in order to give negative preference
+    # to gates with poor calibration metrics).
+    shortest = {}
+    for starting_qubit in qubits:
+        to_be_visited = deque()
+        shortest[(starting_qubit, starting_qubit)] = 0
+        to_be_visited.append((starting_qubit, 0))
+        while to_be_visited:
+            qubit, cur_dist = to_be_visited.popleft()
+            for neighbor in qubit.neighbors(qubits):
+                if (starting_qubit, neighbor) not in shortest:
+                    shortest[(starting_qubit, neighbor)] = cur_dist + 1
+                    to_be_visited.append((neighbor, cur_dist + 1))
+    return shortest
 
 
 def generate_decomposed_swap(
@@ -71,6 +106,11 @@ class SwapUpdater:
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
         self.swap_factory = swap_factory
+        self.pairwise_distances = _pairwise_shortest_distances(self.device_qubits)
+
+    def _distance_between(self, q1: cirq.GridQubit, q2: cirq.GridQubit) -> int:
+        """Returns the precomputed length of the shortest path between two qubits."""
+        return self.pairwise_distances[(q1, q2)]
 
     def generate_candidate_swaps(
         self, gates: Iterable[cirq.Operation]
@@ -86,7 +126,13 @@ class SwapUpdater:
                 yield from (
                     (gate_q, swap_q)
                     for swap_q in gate_q.neighbors(self.device_qubits)
-                    if mcpe.effect_of_swap((gate_q, swap_q), gate.qubits) > 0)
+                    if mcpe.effect_of_swap((gate_q, swap_q), gate.qubits,
+                                           self._distance_between) > 0)
+
+    def _mcpe(self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit) -> int:
+        """Returns the maximum consecutive positive effect of swapping two qubits."""
+        return self.dlists.maximum_consecutive_positive_effect(
+            swap_q1, swap_q2, self.mapping, self._distance_between)
 
     def update_iteration(self) -> Generator[cirq.Operation, None, None]:
         """Runs one iteration of the swap update algorithm and updates internal
@@ -124,10 +170,7 @@ class SwapUpdater:
             # gate's qubits on disconnected components in the device
             # connectivity graph.
             raise ValueError("no swaps founds that will improve the circuit")
-        chosen_swap = max(
-            candidates,
-            key=lambda swap: self.dlists.maximum_consecutive_positive_effect(
-                *swap, self.mapping))
+        chosen_swap = max(candidates, key=lambda swap: self._mcpe(*swap))
         self.mapping.swap_physical(*chosen_swap)
         yield from self.swap_factory(*chosen_swap)
 

@@ -50,11 +50,11 @@ def split_move(s: cirq.Qid, t1: cirq.Qid, t2: cirq.Qid):
 
 
 def merge_move(s1: cirq.Qid, s2: cirq.Qid, t: cirq.Qid):
-    """ A Split move in quantum chess.
+    """ A Merge move in quantum chess.
 
     This function takes three qubits and returns a generator
-    that performs a split move from the source qubit to the
-    two source qubits.
+    that performs a merge move from two source qubits to the
+    target qubit.
 
     Args:
       s1: source qubit (first square where a piece starts from)
@@ -81,6 +81,7 @@ def slide_move(s: cirq.Qid,
       s: source qubit (square where piece starts)
       t: target qubit (square to move piece to)
       path: qubit blocked the path
+      ancilla: ancilla needed if len(path) > 1
     """
     if len(path) == 0:
         return normal_move(s, t)
@@ -111,6 +112,9 @@ def place_piece(s: cirq.Qid):
 
 
 def controlled_operation(gate, qubits, path_qubits, anti_qubits):
+    """Apply gate on qubits, controlled by path_qubits and 
+    anti-controlled by anti_qubits.
+    """
     for p in anti_qubits:
         yield cirq.X(p)
     yield gate.on(*qubits).controlled_by(*path_qubits, *anti_qubits)
@@ -119,6 +123,7 @@ def controlled_operation(gate, qubits, path_qubits, anti_qubits):
 
 
 def queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit, b_qubit):
+    """Performs queenside castle, anti-controlled by b_qubit."""
     yield cirq.X(b_qubit)
     yield cirq.ISWAP(rook_squbit, rook_tqubit).controlled_by(b_qubit)
     yield cirq.ISWAP(squbit, tqubit).controlled_by(b_qubit)
@@ -149,7 +154,7 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path1)
 
     # In order to prevent path2 from needing connectivity to
-    # the ancilla qubit, swap path1 and path.
+    # the ancilla qubit, swap path1 and path2.
     # Then do a CNOT on ancilla with the swapped "path2"
     yield cirq.SWAP(path1, path2)
     yield cirq.X(ancilla).controlled_by(path1)
@@ -170,7 +175,7 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path2)
 
     # In order to prevent path2 from needing connectivity to
-    # the ancilla qubit, swap path1 and path.
+    # the ancilla qubit, swap path1 and path2.
     # Then do a CNOT on ancilla with the swapped "path2"
     yield cirq.SWAP(path2, path1)
     yield cirq.X(ancilla).controlled_by(path2)

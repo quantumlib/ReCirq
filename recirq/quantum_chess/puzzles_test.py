@@ -46,7 +46,7 @@ def test_t1(solution, sq):
 def test_t2(board):
     b = board.with_state(u.squares_to_bitboard(['a7', 'c3', 'g1']))
     did_it_move = b.perform_moves(
-        'c3b5e2:SPLIT_SLIDE:BASIC',
+        'c3b5e2:SPLIT_JUMP:BASIC',
         'a7a8:SLIDE:BASIC',
         'e2g1:JUMP:CAPTURE',
     )
@@ -74,7 +74,7 @@ def test_t3(board):
 def test_t4(board):
     b = board.with_state(u.squares_to_bitboard(['e3', 'e6', 'b6', 'h6']))
     did_it_move = b.perform_moves(
-        'e3d5f5:SPLIT_SLIDE:BASIC',
+        'e3d5f5:SPLIT_JUMP:BASIC',
         'e6d5:PAWN_CAPTURE:CAPTURE',
         'f5h6:JUMP:CAPTURE',
     )

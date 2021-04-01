@@ -70,7 +70,7 @@ def test_global_gradient_h4():
     circuit = cirq.Circuit(prepare_slater_determinant(qubits, u[:, :nocc].T))
 
     simulator = cirq.Simulator(dtype=np.complex128)
-    wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
+    wf = simulator.simulate(circuit).final_state_vector.reshape((-1, 1))
     opdm_alpha = get_opdm(wf, molecule.n_orbitals)
     opdm = np.zeros((molecule.n_qubits, molecule.n_qubits), dtype=np.complex128)
     opdm[::2, ::2] = opdm_alpha
@@ -91,7 +91,7 @@ def test_global_gradient_h4():
                                  virt=virt))
         circuit = cirq.Circuit(prepare_slater_determinant(
             qubits, u[:, :nocc].T))
-        wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
+        wf = simulator.simulate(circuit).final_state_vector.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_plus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
 
@@ -103,7 +103,7 @@ def test_global_gradient_h4():
                                  virt=virt))
         circuit = cirq.Circuit(prepare_slater_determinant(
             qubits, u[:, :nocc].T))
-        wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
+        wf = simulator.simulate(circuit).final_state_vector.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_minus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
 
@@ -119,7 +119,7 @@ def test_global_gradient_h4():
     circuit = cirq.Circuit(prepare_slater_determinant(qubits, u[:, :nocc].T))
 
     simulator = cirq.Simulator(dtype=np.complex128)
-    wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
+    wf = simulator.simulate(circuit).final_state_vector.reshape((-1, 1))
     opdm_alpha = get_opdm(wf, molecule.n_orbitals)
     opdm = np.zeros((molecule.n_qubits, molecule.n_qubits), dtype=np.complex128)
     opdm[::2, ::2] = opdm_alpha
@@ -139,7 +139,7 @@ def test_global_gradient_h4():
                                  virt=virt))
         circuit = cirq.Circuit(prepare_slater_determinant(
             qubits, u[:, :nocc].T))
-        wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
+        wf = simulator.simulate(circuit).final_state_vector.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_plus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
 
@@ -151,7 +151,7 @@ def test_global_gradient_h4():
                                  virt=virt))
         circuit = cirq.Circuit(prepare_slater_determinant(
             qubits, u[:, :nocc].T))
-        wf = simulator.simulate(circuit).final_state.reshape((-1, 1))
+        wf = simulator.simulate(circuit).final_state_vector.reshape((-1, 1))
         opdm_pepsilon = get_opdm(wf, molecule.n_orbitals)
         energy_minus_epsilon = rhf_objective.energy_from_opdm(opdm_pepsilon)
 
