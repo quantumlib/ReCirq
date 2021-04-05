@@ -207,8 +207,14 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             # Recurse
             # Move on to the qubit we just mapped.
             # Then, come back to this node and
-            # map the rest of the adjacent nodes
-
+            # map the rest of the adjacent nodes.
+            # Note:
+            # When the 1st run of map_helper below returns success but the 2nd
+            # run of map_helper returns failure, all nodes involved in 1st and
+            # 2nd run (i.e. nodes saved in the stack nodes_trying, down to
+            # node_to_map) are supposed to be reversed in mapping and
+            # available_qubits.
+            
             success = self.map_helper(node_to_map, mapping, available_qubits,
                                       graph, nodes_trying)
             if success:
