@@ -130,7 +130,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
                 best_count = c
                 best = node
         return best
-    
+
     def map_helper(self,
                    cur_node: cirq.Qid,
                    mapping: Dict[cirq.Qid, cirq.GridQubit],
@@ -148,10 +148,10 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
 
         Args:
           cur_node: node to examine.
-          mapping: current mapping of named qubits to `GridQubits`,
-          available_qubits: current set of unassigned qubits,
+          mapping: current mapping of named qubits to `GridQubits`.
+          available_qubits: current set of unassigned qubits.
           graph: adjacency graph of connections between qubits,
-            representing by a dictionary from qubit to adjacent qubits,
+            representing by a dictionary from qubit to adjacent qubits.
           nodes_trying: this list is used as a stack containing nodes currently under trying.
 
         Returns:
