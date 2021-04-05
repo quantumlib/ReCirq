@@ -39,8 +39,12 @@ def swap_map_fn(q1: cirq.Qid, q2: cirq.Qid) -> Callable[[cirq.Qid], cirq.Qid]:
     return lambda q: swaps.get(q, q)
 
 
-def effect_of_swap(swap_qubits: Tuple[cirq.GridQubit, cirq.GridQubit],
-                   gate_qubits: Tuple[cirq.GridQubit, cirq.GridQubit]) -> int:
+def effect_of_swap(
+    swap_qubits: Tuple[cirq.GridQubit, cirq.GridQubit],
+    gate_qubits: Tuple[cirq.GridQubit, cirq.GridQubit],
+    distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit],
+                          int] = manhattan_dist
+) -> int:
     """Returns the net effect of a swap on the distance between a gate's qubits.
 
     Note that this returns >0 if the distance would decrease and <0 if it would
@@ -49,14 +53,10 @@ def effect_of_swap(swap_qubits: Tuple[cirq.GridQubit, cirq.GridQubit],
     Args:
       swap_qubits: the pair of qubits to swap
       gate_qubits: the pair of qubits that the gate operates on
+      distance_fn: the function that computes the shortest distance between any two GridQubits
     """
     gate_after = map(swap_map_fn(*swap_qubits), gate_qubits)
-    # TODO(https://github.com/quantumlib/ReCirq/issues/149):
-    # Using manhattan distance only works for grid devices when all qubits
-    # are usable (no holes, hanging strips, or disconnected qubits).
-    # Update this to use the shortest path length computed on the device's
-    # connectivity graph (ex using the output of Floyd-Warshall).
-    return manhattan_dist(*gate_qubits) - manhattan_dist(*gate_after)
+    return distance_fn(*gate_qubits) - distance_fn(*gate_after)
 
 
 class QubitMapping:
@@ -144,7 +144,9 @@ class DependencyLists:
 
     def _maximum_consecutive_positive_effect_impl(
             self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit,
-            gates: Iterable[cirq.Operation], mapping: QubitMapping) -> int:
+            gates: Iterable[cirq.Operation], mapping: QubitMapping,
+            distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit],
+                                  int]) -> int:
         """Computes the MCPE contribution from a single qubit's dependency list.
 
         This is where the dynamic look-ahead window is applied -- the window of
@@ -157,6 +159,7 @@ class DependencyLists:
           swap_q2: the target qubit to swap
           gates: the dependency list of gate operations on logical qubits
           mapping: the mapping between logical and physical qubits for gates
+          distance_fn: the function that computes the shortest distance between any two GridQubits
         """
         total_cost = 0
         for gate in gates:
@@ -168,17 +171,22 @@ class DependencyLists:
                 # Single-qubit gates would not be affected by the swap. We can
                 # treat the change in cost as 0 for those.
                 continue
+            physical_gate_qubits = tuple(map(mapping.physical, gate.qubits))
             swap_cost = effect_of_swap((swap_q1, swap_q2),
-                                       tuple(map(mapping.physical,
-                                                 gate.qubits)))
+                                       physical_gate_qubits, distance_fn)
             if swap_cost < 0:
                 break
             total_cost += swap_cost
         return total_cost
 
-    def maximum_consecutive_positive_effect(self, swap_q1: cirq.GridQubit,
-                                            swap_q2: cirq.GridQubit,
-                                            mapping: QubitMapping) -> int:
+    def maximum_consecutive_positive_effect(
+        self,
+        swap_q1: cirq.GridQubit,
+        swap_q2: cirq.GridQubit,
+        mapping: QubitMapping,
+        distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit],
+                              int] = manhattan_dist
+    ) -> int:
         """Computes the MCPE heuristic cost function of applying the swap to the
         circuit represented by this set of DependencyLists.
 
@@ -186,8 +194,9 @@ class DependencyLists:
           swap_q1: the source qubit to swap
           swap_q2: the target qubit to swap
           mapping: the mapping between logical and physical qubits for gate in the dependency lists
+          distance_fn: the function that computes the shortest distance between any two GridQubits
         """
         return sum(
             self._maximum_consecutive_positive_effect_impl(
                 swap_q1, swap_q2, self.dependencies[mapping.logical(q)],
-                mapping) for q in (swap_q1, swap_q2))
+                mapping, distance_fn) for q in (swap_q1, swap_q2))

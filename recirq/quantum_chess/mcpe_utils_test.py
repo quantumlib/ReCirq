@@ -2,6 +2,7 @@ from collections import deque
 
 import pytest
 import cirq
+import numpy as np
 
 import recirq.quantum_chess.mcpe_utils as mcpe
 
@@ -41,6 +42,25 @@ def test_effect_of_swap():
     # We can also measure the effect of swapping non-adjacent qubits (although
     # we would never be able to do this with a real SWAP gate).
     assert mcpe.effect_of_swap((a1, a3), (a1, b3)) == 2
+
+
+def test_distance_fn():
+    a1, a2, a3, b1, b2, b3 = cirq.GridQubit.rect(2, 3)
+
+    # A gate operating on (a1, a3) will be improved by swapping a1 and a2, but
+    # by how much depends on the distance function used.
+    assert mcpe.effect_of_swap((a1, a2), (a1, a3), mcpe.manhattan_dist) == 1
+    double_manhattan = lambda q1, q2: 2 * mcpe.manhattan_dist(q1, q2)
+    assert mcpe.effect_of_swap((a1, a2), (a1, a3), double_manhattan) == 2
+
+    def euclidean_dist(q1, q2):
+        return ((q1.row - q2.row) ** 2 + (q1.col - q2.col) ** 2) ** 0.5
+    # Before, the gate qubits (a1, b2) are sqrt(2) units apart from each other
+    # by euclidean distance.
+    # After swapping a1 and a2, they'd only be 1 unit apart, so things improve
+    # by sqrt(2) - 1.
+    effect = mcpe.effect_of_swap((a1, a2), (a1, b2), euclidean_dist)
+    np.testing.assert_allclose(effect, 2 ** 0.5 - 1)
 
 
 def test_peek():
