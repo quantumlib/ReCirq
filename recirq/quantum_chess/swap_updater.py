@@ -40,12 +40,14 @@ def _satisfies_adjacency(gate: cirq.Operation) -> bool:
 
 
 def _pairwise_shortest_distances(
-    qubits: Iterable[cirq.GridQubit]
+    adjacencies: Dict[cirq.GridQubit, List[cirq.GridQubit]]
 ) -> Dict[Tuple[cirq.GridQubit, cirq.GridQubit], int]:
     """Precomputes the shortest path length between each pair of qubits.
 
     This function runs in O(V**2) where V=len(qubits).
 
+    Args:
+        adjacencies: adjacency list representation of the qubit graph
     Returns:
         dictionary mapping a pair of qubits to the length of the shortest path
         between them (disconnected qubits will be absent).
@@ -61,13 +63,13 @@ def _pairwise_shortest_distances(
     # incorporate edge weights (for example in order to give negative preference
     # to gates with poor calibration metrics).
     shortest = {}
-    for starting_qubit in qubits:
+    for starting_qubit in adjacencies:
         to_be_visited = deque()
         shortest[(starting_qubit, starting_qubit)] = 0
         to_be_visited.append((starting_qubit, 0))
         while to_be_visited:
             qubit, cur_dist = to_be_visited.popleft()
-            for neighbor in qubit.neighbors(qubits):
+            for neighbor in adjacencies[qubit]:
                 if (starting_qubit, neighbor) not in shortest:
                     shortest[(starting_qubit, neighbor)] = cur_dist + 1
                     to_be_visited.append((neighbor, cur_dist + 1))
@@ -105,8 +107,8 @@ class SwapUpdater:
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
         self.swap_factory = swap_factory
-        self.pairwise_distances = _pairwise_shortest_distances(
-            self.device_qubits)
+        self.adjacent = {q: q.neighbors(device_qubits) for q in device_qubits}
+        self.pairwise_distances = _pairwise_shortest_distances(self.adjacent)
         # Tracks swaps that have been made since the last circuit gate was
         # output.
         self.prev_swaps = set()
