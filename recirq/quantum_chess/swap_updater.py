@@ -23,7 +23,7 @@ from typing import Callable, Dict, Generator, Iterable, List, Optional, Tuple
 import cirq
 
 import recirq.quantum_chess.mcpe_utils as mcpe
-
+from cirq.google.optimizers.convert_to_sqrt_iswap import swap_to_sqrt_iswap
 
 def _satisfies_adjacency(gate: cirq.Operation) -> bool:
     """Returns true iff the input gate operates on adjacent qubits.
@@ -77,8 +77,7 @@ def _pairwise_shortest_distances(
 def generate_decomposed_swap(
         q1: cirq.Qid, q2: cirq.Qid) -> Generator[cirq.Operation, None, None]:
     """Generates a SWAP operation using sqrt-iswap gates."""
-    yield from cirq.google.optimized_for_sycamore(
-        cirq.Circuit(cirq.SWAP(q1, q2))).all_operations()
+    yield from swap_to_sqrt_iswap(q1, q2, 1.0)
 
 
 class SwapUpdater:
