@@ -38,7 +38,7 @@ def print_stats(time_sec: float, circuit: cirq.Circuit) -> None:
     print(f' qubits={len(circuit.all_qubits())}')
     print(f'    ops={n_ops}')
     print(f'moments={len(circuit.moments)}', flush=True)
-    print(f'   time={time_sec:0.3f}s ({time_sec / n_ops * 1000 * 1000:0.1f}us/op)')
+    print(f'   time={time_sec:0.3f}s ({time_sec * 1e6 / n_ops :0.1f}us/op)')
 
 
 def load_circuit_file(input_path: str) -> cirq.Circuit:
@@ -61,10 +61,8 @@ def optimize(name: str, circuit: cirq.Circuit) -> cirq.Circuit:
     return optimized
 
 
-def benchmark_transform(
-    name: str,
-    circuit: cirq.Circuit,
-    transformer: ct.CircuitTransformer) -> cirq.Circuit:
+def benchmark_transform(name: str, circuit: cirq.Circuit,
+                        transformer: ct.CircuitTransformer) -> cirq.Circuit:
     """Applies a transformation with profiling.
 
     Prints the (truncated) profile and some statistics about the size of the
@@ -107,9 +105,9 @@ def main(input_files: List[str]) -> None:
     device = cirq.google.Sycamore
     transformers = {
         'dynamic look-ahead placement':
-            ct.DynamicLookAheadHeuristicCircuitTransformer(device),
+        ct.DynamicLookAheadHeuristicCircuitTransformer(device),
         'middle-out placement':
-            ct.ConnectivityHeuristicCircuitTransformer(device),
+        ct.ConnectivityHeuristicCircuitTransformer(device),
     }
     for input_file in input_files:
         circuit = load_circuit_file(input_file)

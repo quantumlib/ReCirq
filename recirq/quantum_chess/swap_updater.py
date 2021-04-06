@@ -25,6 +25,7 @@ import cirq
 import recirq.quantum_chess.mcpe_utils as mcpe
 from cirq.google.optimizers.convert_to_sqrt_iswap import swap_to_sqrt_iswap
 
+
 def _satisfies_adjacency(gate: cirq.Operation) -> bool:
     """Returns true iff the input gate operates on adjacent qubits.
 
