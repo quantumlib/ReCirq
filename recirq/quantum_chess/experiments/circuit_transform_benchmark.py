@@ -18,8 +18,15 @@ Some statistics about the transformation in step (3) will be printed, including
 timing and increases to the circuit size.
 
 Any qasm format circuit file should work.
-See https://github.com/BensonZhou1991/circuittransform for some examples which
-are commonly used in publications.
+See 'circuits' in this directory, which contains the circuit files used for
+evaluation of https://ieeexplore.ieee.org/abstract/document/8976109.
+
+For example, to run the benchmark on all the circuits in that directory:
+  python recirq/quantum_chess/experiments/circuit_transform_benchmark.py \
+      recirq/quantum_chess/experiments/circuits/*
+NOTE however that the current dynamic look-ahead transformer implementation
+contains a bug and will never terminate on some of the circuits in that
+directory (https://github.com/quantumlib/ReCirq/issues/163).
 """
 
 import cirq
