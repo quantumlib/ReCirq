@@ -91,10 +91,10 @@ def test_pop_non_active():
     g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]
     dlists = mcpe.DependencyLists(cirq.Circuit(g))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         # Gate is in the dependency lists, but isn't currently active.
         dlists.pop_active(g[-1])
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         # Gate is not even in the dependency lists.
         dlists.pop_active(cirq.CNOT(x, y))
 

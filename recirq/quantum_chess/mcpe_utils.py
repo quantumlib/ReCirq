@@ -107,12 +107,15 @@ class DependencyLists:
             self._add_front_if_active(q)
 
     def _add_front_if_active(self, qubit: cirq.Qid) -> None:
-        """Adds a qubit's front gate to self.active_gates if it is active."""
+        """Adds a qubit's front gate to self.active_gates if it is active.
+
+        A gate is an active gate iff it is at the front of all the dependency
+        lists of all qubits it operates on. In that case, the gate has no
+        dependencies, and is conceptually ready to be executed.
+
+        """
         if not self.dependencies[qubit]:
             return
-        # Get the gate at the front of the dependency list for this qubit.
-        # It's an active gate iff it is at the front of all the dependency lists
-        # of all qubits it operates on.
         gate = self.dependencies[qubit][0]
         if all(self.dependencies[i] and self.dependencies[i][0] == gate
                for i in gate.qubits):
@@ -126,10 +129,8 @@ class DependencyLists:
         """Pops an active gate from the front of its dependency lists.
 
         Raises:
-            ValueError if gate is not one of the currently active gates.
+            KeyError if gate is not one of the currently active gates.
         """
-        if gate not in self.active_gates:
-            raise ValueError('not an active gate')
         self.active_gates.remove(gate)
         for q in gate.qubits:
             self.dependencies[q].popleft()
