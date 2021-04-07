@@ -34,6 +34,12 @@ from timeit import default_timer as timer
 
 
 def print_stats(time_sec: float, circuit: cirq.Circuit) -> None:
+    """Prints some statistics about the circuit size.
+
+    Args:
+        time_sec: the time it took to produce the circuit
+        circuit: print stats about this circuit
+    """
     n_ops = len(list(circuit.all_operations()))
     print(f' qubits={len(circuit.all_qubits())}')
     print(f'    ops={n_ops}')
@@ -42,6 +48,7 @@ def print_stats(time_sec: float, circuit: cirq.Circuit) -> None:
 
 
 def load_circuit_file(input_path: str) -> cirq.Circuit:
+    """Reads a QASM circuit file and returns it as a cirq Circuit."""
     print(f'reading: {input_path}', flush=True)
     start = timer()
     with open(input_path, 'r') as handle:
@@ -53,6 +60,12 @@ def load_circuit_file(input_path: str) -> cirq.Circuit:
 
 
 def optimize(name: str, circuit: cirq.Circuit) -> cirq.Circuit:
+    """Applies sycamore circuit decompositions/optimizations.
+
+    Args:
+        name: the name of the circuit for printing messages
+        circuit: the circuit to optimize_for_sycamore
+    """
     print(f'optimizing: {name}', flush=True)
     start = timer()
     optimized = cirq.google.optimized_for_sycamore(circuit)
@@ -68,6 +81,10 @@ def benchmark_transform(name: str, circuit: cirq.Circuit,
     Prints the (truncated) profile and some statistics about the size of the
     overhead in the transformed circuit.
 
+    Args:
+        name: the name of the circuit for printing messages
+        circuit: the circuit to transform
+        transformer: the transformation to apply
     Returns:
         the result of transformation.
     """
