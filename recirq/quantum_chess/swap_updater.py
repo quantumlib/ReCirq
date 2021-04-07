@@ -152,13 +152,12 @@ class SwapUpdater:
         # Handle the already-satisfied active gates.
         # Those can be immediately added into the final circuit.
         active_physical_gates = []
-        for gate in self.dlists.active_gates():
+        for gate in set(self.dlists.active_gates):
             physical_gate = gate.transform_qubits(self.mapping.physical)
             if _satisfies_adjacency(physical_gate):
                 # physical_gate is ready to be popped off the dependecy lists
                 # and added to the final circuit.
-                for q in gate.qubits:
-                    self.dlists.pop_front(q)
+                self.dlists.pop_active(gate)
                 self.prev_swaps.clear()
                 yield physical_gate
             else:
