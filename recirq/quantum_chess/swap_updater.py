@@ -106,7 +106,8 @@ class SwapUpdater:
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
         self.swap_factory = swap_factory
-        self.pairwise_distances = _pairwise_shortest_distances(self.device_qubits)
+        self.pairwise_distances = _pairwise_shortest_distances(
+            self.device_qubits)
         # Tracks swaps that have been made since the last circuit gate was
         # output.
         self.prev_swaps = set()
@@ -127,10 +128,11 @@ class SwapUpdater:
         for gate in gates:
             for gate_q in gate.qubits:
                 for swap_q in gate_q.neighbors(self.device_qubits):
-                    effect = mcpe.effect_of_swap((gate_q, swap_q), gate.qubits,
+                    swap_qubits = (gate_q, swap_q)
+                    effect = mcpe.effect_of_swap(swap_qubits, gate.qubits,
                                                  self._distance_between)
-                    if (gate_q, swap_q) not in self.prev_swaps and effect > 0:
-                        yield (gate_q, swap_q)
+                    if swap_qubits not in self.prev_swaps and effect > 0:
+                        yield swap_qubits
 
     def _mcpe(self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit) -> int:
         """Returns the maximum consecutive positive effect of swapping two qubits."""
