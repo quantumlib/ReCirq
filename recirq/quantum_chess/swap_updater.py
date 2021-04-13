@@ -106,7 +106,11 @@ class SwapUpdater:
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
         self.swap_factory = swap_factory
-        self.pairwise_distances = _pairwise_shortest_distances(self.device_qubits)
+        self.pairwise_distances = _pairwise_shortest_distances(
+            self.device_qubits)
+        # Tracks swaps that have been made since the last circuit gate was
+        # output.
+        self.prev_swaps = set()
 
     def _distance_between(self, q1: cirq.GridQubit, q2: cirq.GridQubit) -> int:
         """Returns the precomputed length of the shortest path between two qubits."""
@@ -123,11 +127,12 @@ class SwapUpdater:
         """
         for gate in gates:
             for gate_q in gate.qubits:
-                yield from (
-                    (gate_q, swap_q)
-                    for swap_q in gate_q.neighbors(self.device_qubits)
-                    if mcpe.effect_of_swap((gate_q, swap_q), gate.qubits,
-                                           self._distance_between) > 0)
+                for swap_q in gate_q.neighbors(self.device_qubits):
+                    swap_qubits = (gate_q, swap_q)
+                    effect = mcpe.effect_of_swap(swap_qubits, gate.qubits,
+                                                 self._distance_between)
+                    if swap_qubits not in self.prev_swaps and effect > 0:
+                        yield swap_qubits
 
     def _mcpe(self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit) -> int:
         """Returns the maximum consecutive positive effect of swapping two qubits."""
@@ -152,6 +157,7 @@ class SwapUpdater:
                 # and added to the final circuit.
                 for q in gate.qubits:
                     self.dlists.pop_front(q)
+                self.prev_swaps.clear()
                 yield physical_gate
             else:
                 # physical_gate needs to be fixed up with some swaps.
@@ -171,6 +177,8 @@ class SwapUpdater:
             # connectivity graph.
             raise ValueError("no swaps founds that will improve the circuit")
         chosen_swap = max(candidates, key=lambda swap: self._mcpe(*swap))
+        self.prev_swaps.add(chosen_swap)
+        self.prev_swaps.add(tuple(reversed(chosen_swap)))
         self.mapping.swap_physical(*chosen_swap)
         yield from self.swap_factory(*chosen_swap)
 
