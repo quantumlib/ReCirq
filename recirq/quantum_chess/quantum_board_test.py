@@ -444,7 +444,6 @@ def test_split_one_slide(board):
     assert_prob_about(probs, qb.square_to_bit('a3'), 0.25)
     assert_prob_about(probs, qb.square_to_bit('c1'), 0.75)
 
-
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_both_sides(board):
     """ Tests a split slide move where both paths of the slide
@@ -964,3 +963,51 @@ def test_caching_accumulations_same_repetition_cached(board):
     probs1 = b.get_probability_distribution(100)
     probs2 = b.get_probability_distribution(100)
     assert probs1 == probs2
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_split_capture_with_successful_measurement_outcome(board):
+    # Repeat the moves several times because the do_move calls will trigger a
+    # measurement.
+    for i in range(100):
+        b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
+        # a1 splits into a2 + a3
+        b.do_move(
+            move.Move('a1', 'a2', target2='a3',
+                      move_type=enums.MoveType.SPLIT_JUMP,
+                      move_variant=enums.MoveVariant.BASIC))
+        # Then a3 tries to capture c3, which requires measuring a3.
+        # The provided measurement outcome says that there is a piece on a3
+        # after all, so the capture is successful.
+        b.do_move(
+            move.Move('a3', 'c3', move_type=enums.MoveType.JUMP,
+                      move_variant=enums.MoveVariant.CAPTURE,
+                      measurement=True))
+        samples = b.sample(100)
+        # The only possible outcome is successful capture.
+        expected = u.squares_to_bitboard(['c3'])
+        assert all(sample == expected for sample in samples)
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_split_capture_with_failed_measurement_outcome(board):
+    # Repeat the moves several times because the do_move calls will trigger a
+    # measurement.
+    for i in range(100):
+        b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
+        # a1 splits into a2 + a3
+        b.do_move(
+            move.Move('a1', 'a2', target2='a3',
+                      move_type=enums.MoveType.SPLIT_JUMP,
+                      move_variant=enums.MoveVariant.BASIC))
+        # Then a3 tries to capture c3, which requires measuring a3.
+        # The provided measurement outcome says that there is not a piece on a3
+        # after all, so the capture is unsuccessful.
+        b.do_move(
+            move.Move('a3', 'c3',
+                      move_type=enums.MoveType.JUMP,
+                      move_variant=enums.MoveVariant.CAPTURE,
+                      measurement=False))
+        samples = b.sample(100)
+        # The only possible outcome is unsuccessful capture -- a1 jumped to a2,
+        # not a3, and the to-be-captured piece on c3 still remains.
+        expected = u.squares_to_bitboard(['a2', 'c3'])
+        assert all(sample == expected for sample in samples)
