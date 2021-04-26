@@ -481,7 +481,8 @@ class CirqBoard:
     def post_select_on(self, qubit: cirq.Qid, measurement_outcome: Optional[bool] = None) -> int:
         """Adds a post-selection requirement to the circuit.
 
-        If no measurement_outcome is provided, performs a single sample of the qubit to get a value for the post-selection condition.
+        If no measurement_outcome is provided, performs a single sample of the
+        qubit to get a value for the post-selection condition.
         Adjusts the post-selection requirements dictionary to this value.
         If this qubit is a square qubit, it adjusts the classical register
         to match the sample result.
