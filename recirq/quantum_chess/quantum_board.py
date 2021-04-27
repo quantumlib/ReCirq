@@ -478,7 +478,8 @@ class CirqBoard:
             qm.queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit,
                                 b_qubit))
 
-    def post_select_on(self, qubit: cirq.Qid, measurement_outcome: Optional[bool] = None) -> int:
+    def post_select_on(self, qubit: cirq.Qid,
+                       measurement_outcome: Optional[int] = None) -> bool:
         """Adds a post-selection requirement to the circuit.
 
         If no measurement_outcome is provided, performs a single sample of the
@@ -493,12 +494,9 @@ class CirqBoard:
                 post-selection is conditioned on the qubit having the given
                 outcome. If absent, a single measurement is performed instead.
 
-        Returns: the sample result as 1 or 0.
+        Returns: the measurement outcome or sample result as 1 or 0.
         """
-        result = None
-        if measurement_outcome is not None:
-            result = 1 if measurement_outcome else 0
-
+        result = measurement_outcome
         if 'anc' in qubit.name:
             if result is None:
                 ancilla_result = []

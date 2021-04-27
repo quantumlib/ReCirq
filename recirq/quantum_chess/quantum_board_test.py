@@ -981,11 +981,12 @@ def test_split_capture_with_successful_measurement_outcome(board):
         b.do_move(
             move.Move('a3', 'c3', move_type=enums.MoveType.JUMP,
                       move_variant=enums.MoveVariant.CAPTURE,
-                      measurement=True))
+                      measurement=1))
         samples = b.sample(100)
         # The only possible outcome is successful capture.
-        expected = u.squares_to_bitboard(['c3'])
-        assert all(sample == expected for sample in samples)
+        expected = {'c3'}
+        for sample in samples:
+            assert set(u.bitboard_to_squares(sample)) == expected
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_failed_measurement_outcome(board):
@@ -1005,9 +1006,10 @@ def test_split_capture_with_failed_measurement_outcome(board):
             move.Move('a3', 'c3',
                       move_type=enums.MoveType.JUMP,
                       move_variant=enums.MoveVariant.CAPTURE,
-                      measurement=False))
+                      measurement=0))
         samples = b.sample(100)
         # The only possible outcome is unsuccessful capture -- a1 jumped to a2,
         # not a3, and the to-be-captured piece on c3 still remains.
-        expected = u.squares_to_bitboard(['a2', 'c3'])
-        assert all(sample == expected for sample in samples)
+        expected = {'a2', 'c3'}
+        for sample in samples:
+            assert set(u.bitboard_to_squares(sample)) == expected

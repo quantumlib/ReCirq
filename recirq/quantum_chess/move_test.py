@@ -21,12 +21,12 @@ def test_equality():
     assert move.Move('a1', 'b4') != "a1b4"
 
     assert move.Move('a1', 'b4',
-                     measurement=True) == move.Move('a1',
+                     measurement=1) == move.Move('a1',
                                                     'b4',
-                                                    measurement=True)
-    assert move.Move('a1', 'b4', measurement=True) != move.Move(
-        'a1', 'b4', measurement=False)
-    assert move.Move('a1', 'b4', measurement=True) != move.Move('a1', 'b4')
+                                                    measurement=1)
+    assert move.Move('a1', 'b4', measurement=1) != move.Move(
+        'a1', 'b4', measurement=0)
+    assert move.Move('a1', 'b4', measurement=1) != move.Move('a1', 'b4')
 
     assert move.Move('a1', 'b4', move_type=enums.MoveType.JUMP) == move.Move(
         'a1', 'b4', move_type=enums.MoveType.JUMP)
@@ -45,19 +45,19 @@ def test_from_string():
         'b4',
         move_type=enums.MoveType.JUMP,
         move_variant=enums.MoveVariant.BASIC,
-        measurement=False)
+        measurement=0)
     assert move.Move.from_string('a1b4.m1:JUMP:BASIC') == move.Move(
         'a1',
         'b4',
         move_type=enums.MoveType.JUMP,
         move_variant=enums.MoveVariant.BASIC,
-        measurement=True)
+        measurement=1)
 
 
 def test_to_string():
     assert str(move.Move('a1', 'b4')) == 'a1b4'
     assert str(move.Move('a1', 'b4', target2='c4')) == 'a1^b4c4'
     assert str(move.Move('a1', 'b4', source2='b1')) == 'a1b1^b4'
-    assert str(move.Move('a1', 'b4', measurement=True)) == 'a1b4.m1'
+    assert str(move.Move('a1', 'b4', measurement=1)) == 'a1b4.m1'
     assert str(move.Move('a1', 'b4', source2='b1',
-                         measurement=False)) == 'a1b1^b4.m0'
+                         measurement=0)) == 'a1b1^b4.m0'

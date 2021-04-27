@@ -54,7 +54,7 @@ class Move:
                  target2: str = None,
                  move_type: enums.MoveType = None,
                  move_variant: enums.MoveVariant = None,
-                 measurement: bool = None):
+                 measurement: int = None):
         self.source = source
         self.source2 = source2
         self.target = target
@@ -87,6 +87,7 @@ class Move:
            'a1a2:JUMP:BASIC'
            'b1a3c3:SPLIT_JUMP:BASIC'
            'b1a3c3.m0:SPLIT_JUMP:BASIC'
+           'b1a3c3.m1:SPLIT_JUMP:BASIC'
            'a3b1--c3:MERGE_JUMP:BASIC'
         """
         fields = str_to_parse.split(':')
@@ -99,9 +100,9 @@ class Move:
         measurement = None
         if len(move_and_measurement) == 2:
             _, m_str = move_and_measurement
-            if m_str != 'm0' and m_str != 'm1':
+            if m_str[0] != 'm':
                 raise ValueError(f'Invalid measurement string {m_str}')
-            measurement = (m_str == 'm1')
+            measurement = int(m_str[1:])
 
         move_type = enums.MoveType[fields[1]]
         move_variant = enums.MoveVariant[fields[2]]
@@ -142,6 +143,6 @@ class Move:
             movestr = self.source + self.source2 + '^' + self.target
 
         if self.has_measurement():
-            return movestr + ('.m1' if self.measurement else '.m0')
+            return movestr + '.m' + str(self.measurement)
         else:
             return movestr
