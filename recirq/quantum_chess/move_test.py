@@ -12,9 +12,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import recirq.quantum_chess.move as move
+import recirq.quantum_chess.enums as enums
 
 
 def test_equality():
     assert move.Move('a1', 'b4') == move.Move('a1', 'b4')
     assert move.Move('a1', 'b4') != move.Move('a1', 'b5')
     assert move.Move('a1', 'b4') != "a1b4"
+
+    assert move.Move('a1', 'b4',
+                     measurement=1) == move.Move('a1',
+                                                    'b4',
+                                                    measurement=1)
+    assert move.Move('a1', 'b4', measurement=1) != move.Move(
+        'a1', 'b4', measurement=0)
+    assert move.Move('a1', 'b4', measurement=1) != move.Move('a1', 'b4')
+
+    assert move.Move('a1', 'b4', move_type=enums.MoveType.JUMP) == move.Move(
+        'a1', 'b4', move_type=enums.MoveType.JUMP)
+    assert move.Move('a1', 'b4', move_type=enums.MoveType.JUMP) != move.Move(
+        'a1', 'b4', move_type=enums.MoveType.SLIDE)
+
+
+def test_from_string():
+    assert move.Move.from_string('a1b4:JUMP:BASIC') == move.Move(
+        'a1',
+        'b4',
+        move_type=enums.MoveType.JUMP,
+        move_variant=enums.MoveVariant.BASIC)
+    assert move.Move.from_string('a1b4.m0:JUMP:BASIC') == move.Move(
+        'a1',
+        'b4',
+        move_type=enums.MoveType.JUMP,
+        move_variant=enums.MoveVariant.BASIC,
+        measurement=0)
+    assert move.Move.from_string('a1b4.m1:JUMP:BASIC') == move.Move(
+        'a1',
+        'b4',
+        move_type=enums.MoveType.JUMP,
+        move_variant=enums.MoveVariant.BASIC,
+        measurement=1)
+
+
+def test_to_string():
+    assert str(move.Move('a1', 'b4')) == 'a1b4'
+    assert str(move.Move('a1', 'b4', target2='c4')) == 'a1^b4c4'
+    assert str(move.Move('a1', 'b4', source2='b1')) == 'a1b1^b4'
+    assert str(move.Move('a1', 'b4', measurement=1)) == 'a1b4.m1'
+    assert str(move.Move('a1', 'b4', source2='b1',
+                         measurement=0)) == 'a1b1^b4.m0'

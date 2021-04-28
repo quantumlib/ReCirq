@@ -46,7 +46,6 @@ class Move:
     have a move type and variant that determines what kind of move this is
     (capture, exclusion, etc).
     """
-
     def __init__(self,
                  source: str,
                  target: str,
@@ -54,19 +53,23 @@ class Move:
                  source2: str = None,
                  target2: str = None,
                  move_type: enums.MoveType = None,
-                 move_variant: enums.MoveVariant = None):
+                 move_variant: enums.MoveVariant = None,
+                 measurement: int = None):
         self.source = source
         self.source2 = source2
         self.target = target
         self.target2 = target2
         self.move_type = move_type
         self.move_variant = move_variant
+        self.measurement = measurement
 
     def __eq__(self, other):
         if isinstance(other, Move):
-            return (self.source == other.source and
-                    self.target == other.target and
-                    self.target2 == other.target2)
+            return (self.source == other.source and self.target == other.target
+                    and self.target2 == other.target2
+                    and self.move_type == other.move_type
+                    and self.move_variant == other.move_variant
+                    and self.measurement == other.measurement)
         return False
 
     @classmethod
@@ -74,7 +77,7 @@ class Move:
         """Creates a move from a string shorthand for tests.
 
 
-        Format=source,target,target2,source2:type:variant
+        Format=source,target,target2,source2[.measurement]:type:variant
         with commas omitted.
 
         if target2 is specified, then source2 should
@@ -83,6 +86,8 @@ class Move:
         Examples:
            'a1a2:JUMP:BASIC'
            'b1a3c3:SPLIT_JUMP:BASIC'
+           'b1a3c3.m0:SPLIT_JUMP:BASIC'
+           'b1a3c3.m1:SPLIT_JUMP:BASIC'
            'a3b1--c3:MERGE_JUMP:BASIC'
         """
         fields = str_to_parse.split(':')
@@ -90,24 +95,36 @@ class Move:
             raise ValueError(f'Invalid move string {str_to_parse}')
         source = fields[0][0:2]
         target = fields[0][2:4]
+
+        move_and_measurement = fields[0].split('.', maxsplit=1)
+        measurement = None
+        if len(move_and_measurement) == 2:
+            _, m_str = move_and_measurement
+            if m_str[0] != 'm':
+                raise ValueError(f'Invalid measurement string {m_str}')
+            measurement = int(m_str[1:])
+
         move_type = enums.MoveType[fields[1]]
         move_variant = enums.MoveVariant[fields[2]]
         if len(fields[0]) <= 4:
             return cls(source,
                        target,
                        move_type=move_type,
-                       move_variant=move_variant)
+                       move_variant=move_variant,
+                       measurement=measurement)
         if len(fields[0]) <= 6:
             return cls(source,
                        target,
                        target2=fields[0][4:6],
                        move_type=move_type,
-                       move_variant=move_variant)
+                       move_variant=move_variant,
+                       measurement=measurement)
         return cls(source,
                    target,
                    source2=fields[0][6:8],
                    move_type=move_type,
-                   move_variant=move_variant)
+                   move_variant=move_variant,
+                   measurement=measurement)
 
     def is_split_move(self) -> bool:
         return self.target2 is not None
@@ -115,9 +132,17 @@ class Move:
     def is_merge_move(self) -> bool:
         return self.source2 is not None
 
+    def has_measurement(self) -> bool:
+        return self.measurement is not None
+
     def __str__(self):
+        movestr = self.source + self.target
         if self.is_split_move():
-            return self.source + '^' + self.target + self.target2
+            movestr = self.source + '^' + self.target + self.target2
         if self.is_merge_move():
-            return self.source + self.source2 + '^' + self.target
-        return self.source + self.target
+            movestr = self.source + self.source2 + '^' + self.target
+
+        if self.has_measurement():
+            return movestr + '.m' + str(self.measurement)
+        else:
+            return movestr

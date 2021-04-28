@@ -478,25 +478,36 @@ class CirqBoard:
             qm.queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit,
                                 b_qubit))
 
-    def post_select_on(self, qubit: cirq.Qid) -> int:
+    def post_select_on(self, qubit: cirq.Qid,
+                       measurement_outcome: Optional[int] = None) -> bool:
         """Adds a post-selection requirement to the circuit.
 
-        Performs a single sample of the qubit to get a value.
+        If no measurement_outcome is provided, performs a single sample of the
+        qubit to get a value for the post-selection condition.
         Adjusts the post-selection requirements dictionary to this value.
         If this qubit is a square qubit, it adjusts the classical register
         to match the sample result.
 
-        Returns: the sample result as 1 or 0.
+        Args:
+            qubit: the qubit to post-select on
+            measurement_outcome: the optional measurement outcome. If present,
+                post-selection is conditioned on the qubit having the given
+                outcome. If absent, a single measurement is performed instead.
+
+        Returns: the measurement outcome or sample result as 1 or 0.
         """
+        result = measurement_outcome
         if 'anc' in qubit.name:
-            ancilla_result = []
-            while len(ancilla_result) == 0:
-                _, ancilla_result = self.sample_with_ancilla(10)
-            result = ancilla_result[0][qubit.name]
+            if result is None:
+                ancilla_result = []
+                while len(ancilla_result) == 0:
+                    _, ancilla_result = self.sample_with_ancilla(10)
+                result = ancilla_result[0][qubit.name]
             self.post_selection[qubit] = result
         else:
             bit = qubit_to_bit(qubit)
-            result = nth_bit_of(bit, self.sample(1)[0])
+            if result is None:
+                result = nth_bit_of(bit, self.sample(1)[0])
             if qubit in self.entangled_squares:
                 ancillary = self.unhook(qubit)
                 self.post_selection[ancillary] = result
@@ -568,7 +579,7 @@ class CirqBoard:
 
             # Capture e.p. post-select on the source
             if m.move_variant == enums.MoveVariant.CAPTURE:
-                is_there = self.post_select_on(squbit)
+                is_there = self.post_select_on(squbit, m.measurement)
                 if not is_there:
                     return 0
                 self.add_entangled(squbit)
@@ -580,7 +591,7 @@ class CirqBoard:
 
             # Blocked/excluded e.p. post-select on the target
             if m.move_variant == enums.MoveVariant.EXCLUDED:
-                is_there = self.post_select_on(tqubit)
+                is_there = self.post_select_on(tqubit, m.measurement)
                 if is_there:
                     return 0
                 self.add_entangled(tqubit)
@@ -591,7 +602,7 @@ class CirqBoard:
 
         if m.move_type == enums.MoveType.PAWN_CAPTURE:
             # For pawn capture, first measure source.
-            is_there = self.post_select_on(squbit)
+            is_there = self.post_select_on(squbit, m.measurement)
             if not is_there:
                 return 0
             if tqubit in self.entangled_squares:
@@ -665,7 +676,7 @@ class CirqBoard:
 
             # For excluded case, measure target
             if m.move_variant == enums.MoveVariant.EXCLUDED:
-                is_there = self.post_select_on(tqubit)
+                is_there = self.post_select_on(tqubit, m.measurement)
                 if is_there:
                     return 0
 
@@ -679,7 +690,7 @@ class CirqBoard:
                 # We need to add the captured_ancilla to entangled squares
                 # So that we measure it
                 self.entangled_squares.add(capture_ancilla)
-                capture_allowed = self.post_select_on(capture_ancilla)
+                capture_allowed = self.post_select_on(capture_ancilla, m.measurement)
 
                 if not capture_allowed:
                     return 0
@@ -732,14 +743,14 @@ class CirqBoard:
 
             # Measure source for capture
             if m.move_variant == enums.MoveVariant.CAPTURE:
-                is_there = self.post_select_on(squbit)
+                is_there = self.post_select_on(squbit, m.measurement)
                 if not is_there:
                     return 0
                 self.unhook(tqubit)
 
             # Measure target for excluded
             if m.move_variant == enums.MoveVariant.EXCLUDED:
-                is_there = self.post_select_on(tqubit)
+                is_there = self.post_select_on(tqubit, m.measurement)
                 if is_there:
                     return 0
 
@@ -809,7 +820,7 @@ class CirqBoard:
                     tqubit in self.entangled_squares):
                 castle_ancilla = self.create_path_ancilla([rook_tqubit, tqubit])
                 self.entangled_squares.add(castle_ancilla)
-                castle_allowed = self.post_select_on(castle_ancilla)
+                castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
                 if castle_allowed:
                     self.unhook(rook_tqubit)
                     self.unhook(tqubit)
@@ -826,7 +837,7 @@ class CirqBoard:
             else:
                 measure_qubit = tqubit
                 measure_bit = tbit
-            is_there = self.post_select_on(measure_qubit)
+            is_there = self.post_select_on(measure_qubit, m.measurement)
             if is_there:
                 return 0
             self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
@@ -882,7 +893,7 @@ class CirqBoard:
                     tqubit in self.entangled_squares):
                 castle_ancilla = self.create_path_ancilla([rook_tqubit, tqubit])
                 self.entangled_squares.add(castle_ancilla)
-                castle_allowed = self.post_select_on(castle_ancilla)
+                castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
                 if castle_allowed:
                     self.unhook(rook_tqubit)
                     self.unhook(tqubit)
@@ -903,7 +914,7 @@ class CirqBoard:
             else:
                 measure_qubit = tqubit
                 measure_bit = tbit
-            is_there = self.post_select_on(measure_qubit)
+            is_there = self.post_select_on(measure_qubit, m.measurement)
             if is_there:
                 return 0
             if b_qubit not in self.entangled_squares:
