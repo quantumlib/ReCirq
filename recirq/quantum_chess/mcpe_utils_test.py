@@ -78,8 +78,25 @@ def test_pop():
     dlists = mcpe.DependencyLists(cirq.Circuit(g))
 
     assert dlists.peek_front(x) == g[0]
-    dlists.pop_front(x)
+    assert dlists.peek_front(y) == g[0]
+    assert dlists.peek_front(z) == g[1]
+    dlists.pop_active(g[0])
     assert dlists.peek_front(x) == g[1]
+    assert dlists.peek_front(y) == g[2]
+    assert dlists.peek_front(z) == g[1]
+
+
+def test_pop_non_active():
+    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]
+    dlists = mcpe.DependencyLists(cirq.Circuit(g))
+
+    with pytest.raises(KeyError):
+        # Gate is in the dependency lists, but isn't currently active.
+        dlists.pop_active(g[-1])
+    with pytest.raises(KeyError):
+        # Gate is not even in the dependency lists.
+        dlists.pop_active(cirq.CNOT(x, y))
 
 
 def test_empty():
@@ -88,16 +105,13 @@ def test_empty():
         cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)))
 
     assert not dlists.empty(x)
-    dlists.pop_front(x)
+    dlists.pop_active(dlists.peek_front(x))
     assert not dlists.empty(x)
-    dlists.pop_front(x)
+    dlists.pop_active(dlists.peek_front(x))
     assert dlists.empty(x)
 
     assert not dlists.all_empty()
-    dlists.pop_front(y)
-    dlists.pop_front(y)
-    dlists.pop_front(z)
-    dlists.pop_front(z)
+    dlists.pop_active(dlists.peek_front(y))
     assert dlists.all_empty()
 
 
@@ -106,7 +120,7 @@ def test_active_gates():
     dlists = mcpe.DependencyLists(
         cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(y, z), cirq.X(w)))
 
-    assert dlists.active_gates() == {cirq.ISWAP(x, y), cirq.X(w)}
+    assert dlists.active_gates == {cirq.ISWAP(x, y), cirq.X(w)}
 
 
 def test_physical_mapping():
@@ -161,7 +175,7 @@ def test_mcpe_example_9():
                      cirq.CNOT(q[3], q[1])))
 
     # At first CNOT(q0, q2) is the active gate.
-    assert dlists.active_gates() == {cirq.CNOT(q[0], q[2])}
+    assert dlists.active_gates == {cirq.CNOT(q[0], q[2])}
     # The swaps connected to either q0 or q2 to consider are:
     #   (Q0, Q1), (Q0, Q3), (Q1, Q2), (Q2, Q5)
     # Of these, (Q0, Q3) and (Q2, Q5) can be discarded because they would
@@ -177,15 +191,13 @@ def test_mcpe_example_9():
     # The swap-update algorithm would now advance beyond the front-most gates that
     # now satisfy adjacency constraints after the swap -- the CNOT(q0, q2) and
     # CNOT(q5, q2)
-    assert dlists.active_gates() == {cirq.CNOT(q[0], q[2])}
-    dlists.pop_front(q[0])
-    dlists.pop_front(q[2])
-    assert dlists.active_gates() == {cirq.CNOT(q[5], q[2])}
-    dlists.pop_front(q[5])
-    dlists.pop_front(q[2])
+    assert dlists.active_gates == {cirq.CNOT(q[0], q[2])}
+    dlists.pop_active(dlists.peek_front(q[0]))
+    assert dlists.active_gates == {cirq.CNOT(q[5], q[2])}
+    dlists.pop_active(dlists.peek_front(q[5]))
 
     # Now the active gate is g2 (which is CNOT(q0, q5))
-    assert dlists.active_gates() == {cirq.CNOT(q[0], q[5])}
+    assert dlists.active_gates == {cirq.CNOT(q[0], q[5])}
     # For this active gate, the swaps to consider are:
     #   (Q0, Q1), (Q1, Q2), (Q1, Q4), (Q2, Q5), (Q4, Q5)
     # (Q0, Q1) can be discarded because it negatively impacts the active gate.

@@ -126,23 +126,34 @@ def find_all_pairs_shortest_paths(
 ) -> Dict[Tuple[cirq.Qid, cirq.Qid], int]:
     """Returns a dict of the shortest distance between each pair of nodes.
 
-    Implements the Floyd–Warshall algorithm.
+    Implements repeated BFS, which is faster than the Floyd–Warshall algorithm
+    when the input graph is sparse.
 
     Args:
       g: A physical qubits graph or a logical qubits graph.
     """
-    dist = defaultdict(lambda: math.inf)
-    for q in g:
-        dist[(q, q)] = 0
-        for neighbor in g[q]:
+    all_qubits = set()
+    adjacent = defaultdict(list)
+    for k, v in g.items():
+        all_qubits.add(k)
+        for neighbor in v:
             if isinstance(neighbor, tuple):
                 neighbor = neighbor[0]
-            dist[(q, neighbor)] = 1
-    for k in g:
-        for i in g:
-            for j in g:
-                dist[(i, j)] = min(dist[(i, j)], dist[(i, k)] + dist[(k, j)])
-    return dist
+            all_qubits.add(neighbor)
+            adjacent[k].append(neighbor)
+
+    shortest = defaultdict(lambda: math.inf)
+    for starting_qubit in all_qubits:
+        to_be_visited = deque()
+        shortest[(starting_qubit, starting_qubit)] = 0
+        to_be_visited.append((starting_qubit, 0))
+        while to_be_visited:
+            qubit, cur_dist = to_be_visited.popleft()
+            for neighbor in adjacent[qubit]:
+                if (starting_qubit, neighbor) not in shortest:
+                    shortest[(starting_qubit, neighbor)] = cur_dist + 1
+                    to_be_visited.append((neighbor, cur_dist + 1))
+    return shortest
 
 
 def find_graph_center(

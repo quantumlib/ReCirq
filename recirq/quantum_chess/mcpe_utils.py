@@ -102,14 +102,40 @@ class DependencyLists:
             for operation in moment:
                 for qubit in operation.qubits:
                     self.dependencies[qubit].append(operation)
+        self.active_gates = set()
+        for q in self.dependencies:
+            self._add_front_if_active(q)
+
+    def _add_front_if_active(self, qubit: cirq.Qid) -> None:
+        """Adds a qubit's front gate to self.active_gates if it is active.
+
+        A gate is an active gate iff it is at the front of all the dependency
+        lists of all qubits it operates on. In that case, the gate has no
+        dependencies, and is conceptually ready to be executed.
+
+        """
+        if not self.dependencies[qubit]:
+            return
+        gate = self.dependencies[qubit][0]
+        if all(self.dependencies[i] and self.dependencies[i][0] == gate
+               for i in gate.qubits):
+            self.active_gates.add(gate)
 
     def peek_front(self, qubit: cirq.Qid) -> Iterable[cirq.Operation]:
         """Returns the first gate in a qubit's dependency list."""
         return self.dependencies[qubit][0]
 
-    def pop_front(self, qubit: cirq.Qid) -> None:
-        """Removes the first gate in a qubit's dependency list."""
-        self.dependencies[qubit].popleft()
+    def pop_active(self, gate: cirq.Operation) -> None:
+        """Pops an active gate from the front of its dependency lists.
+
+        Raises:
+            KeyError if gate is not one of the currently active gates.
+        """
+        self.active_gates.remove(gate)
+        for q in gate.qubits:
+            self.dependencies[q].popleft()
+        for q in gate.qubits:
+            self._add_front_if_active(q)
 
     def empty(self, qubit: cirq.Qid) -> bool:
         """Returns true iff the qubit's dependency list is empty."""
@@ -118,29 +144,6 @@ class DependencyLists:
     def all_empty(self) -> bool:
         """Returns true iff all dependency lists are empty."""
         return all(len(dlist) == 0 for dlist in self.dependencies.values())
-
-    def active_gates(self) -> Set[cirq.Operation]:
-        """Returns the currently active gates of the circuit represented by the
-        dependency lists.
-
-        The active gates are the ones which operate on qubits that have no other
-        preceding gate operations.
-        """
-        ret = set()
-        # Recomputing the active gates from scratch is less efficient than
-        # maintaining them as the dependency lists are updated (e.g. maintaining
-        # additional state for front gates, active gates, and frozen qubits).
-        # This can be optimized later if necessary.
-        for dlist in self.dependencies.values():
-            if not dlist:
-                continue
-            gate = dlist[0]
-            if gate in ret:
-                continue
-            if all(not self.empty(q) and self.peek_front(q) == gate
-                   for q in gate.qubits):
-                ret.add(gate)
-        return ret
 
     def _maximum_consecutive_positive_effect_impl(
             self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit,
