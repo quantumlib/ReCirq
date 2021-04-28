@@ -241,10 +241,10 @@ def fetch_publication_data(
 
     base_url = "https://datadryad.org/stash/downloads/file_stream/"
     data = {
-        "gaussians_1u1d_nofloquet": "706210",
-        "gaussians_1u1d": "706211",
-        "trapping_2u2d": "706212",
-        "trapping_3u3d": "706213"
+        "gaussians_1u1d_nofloquet": "451326",
+        "gaussians_1u1d": "451327",
+        "trapping_2u2d": "451328",
+        "trapping_3u3d": "451329"
     }
     if exclude is not None:
         data = {path: key for path, key in data.items() if path not in exclude}
