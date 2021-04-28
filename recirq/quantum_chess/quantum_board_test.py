@@ -1007,9 +1007,11 @@ def test_split_capture_with_failed_measurement_outcome(board):
                       move_type=enums.MoveType.JUMP,
                       move_variant=enums.MoveVariant.CAPTURE,
                       measurement=0))
-        samples = b.sample(100)
         # The only possible outcome is unsuccessful capture -- a1 jumped to a2,
         # not a3, and the to-be-captured piece on c3 still remains.
-        expected = {'a2', 'c3'}
-        for sample in samples:
-            assert set(u.bitboard_to_squares(sample)) == expected
+        # However, in the presence of readout error, we may not measure the
+        # piece on either a2 or a3 so post-filtered samples may not contain a2
+        # in rare cases.
+        probs = b.get_probability_distribution(100)
+        assert_prob_about(probs, u.square_to_bit('a2'), 1)
+        assert_prob_about(probs, u.square_to_bit('a3'), 0)
