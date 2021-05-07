@@ -29,6 +29,61 @@ c2 = cirq.NamedQubit('c2')
 c3 = cirq.NamedQubit('c3')
 d1 = cirq.NamedQubit('d1')
 
+@pytest.mark.parametrize('device',
+                         (cirq.google.Sycamore23, cirq.google.Sycamore))
+def test_qubits_within(device):
+    """ Coupling graph of grid qubits looks like:
+
+        Q0 = Q1 = Q2                                                                         
+        ||   ||   ||                                                                         
+        Q3 = Q4 = Q5
+    """
+    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
+    grid_qubits = cirq.GridQubit.rect(2, 3)
+    assert transformer.qubits_within(0, grid_qubits[0], grid_qubits, set()) == 1
+    assert transformer.qubits_within(1, grid_qubits[0], grid_qubits, set()) == 3
+    assert transformer.qubits_within(2, grid_qubits[0], grid_qubits, set()) == 5
+    assert transformer.qubits_within(3, grid_qubits[0], grid_qubits, set()) == 6
+    assert transformer.qubits_within(10, grid_qubits[0], grid_qubits, set()) == 6
+
+
+@pytest.mark.parametrize('device',      
+                         (cirq.google.Sycamore23, cirq.google.Sycamore))
+def test_edges_within(device):
+    """
+    The circuit looks like:
+
+    a1 --- a4 --- a3 --- a2      d1
+           |      |      |
+           b2     b1 --- c3
+    """
+    transformer = ct.ConnectivityHeuristicCircuitTransformer(device)
+    circuit = cirq.Circuit(cirq.X(d1), 
+                           cirq.ISWAP(a1, a4) ** 0.5,
+                           cirq.ISWAP(a4, b2),
+                           cirq.ISWAP(a4, a3),
+                           cirq.ISWAP(a3, b1),
+                           cirq.ISWAP(a3, a2),
+                           cirq.ISWAP(b1, c3),
+                           cirq.ISWAP(a2, c3))
+    graph = {}
+    for moment in circuit:
+        for op in moment:
+            if len(op.qubits) == 2:
+                q1, q2 = op.qubits
+                if q1 not in graph:
+                    graph[q1] = []
+                if q2 not in graph:
+                    graph[q2] = []
+                if q2 not in graph[q1]:
+                    graph[q1].append(q2)
+                if q1 not in graph[q2]:
+                    graph[q2].append(q1)
+    assert transformer.edges_within(0, cirq.NamedQubit('a3'), graph, set()) == 1
+    assert transformer.edges_within(1, cirq.NamedQubit('a3'), graph, set()) == 4
+    assert transformer.edges_within(2, cirq.NamedQubit('a3'), graph, set()) == 7
+    assert transformer.edges_within(10, cirq.NamedQubit('a3'), graph, set()) == 7
+
 
 @pytest.mark.parametrize('transformer',
                          [ct.ConnectivityHeuristicCircuitTransformer,
