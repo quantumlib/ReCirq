@@ -17,7 +17,7 @@ from copy import deepcopy
 from io import BytesIO
 import os
 import re
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional, Tuple
 from urllib.request import urlopen
 from zipfile import ZipFile
 
