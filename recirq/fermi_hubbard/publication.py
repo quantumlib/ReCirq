@@ -246,8 +246,7 @@ def fetch_publication_data(
 
     # Determine file IDs. Note these are not permanent on Dryad.
     file_ids = {}
-    lines = urlopen("https://doi.org/10.5061/dryad.crjdfn32v").readlines()
-    for line in lines:
+    for line in urlopen("https://doi.org/10.5061/dryad.crjdfn32v").readlines():
         for fname in fnames:
             if fname + ".zip" in line.decode():
                 file_id, = re.findall(r"file_stream/[\d]*\d+", line.decode())
