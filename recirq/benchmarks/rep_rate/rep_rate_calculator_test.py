@@ -105,3 +105,28 @@ def test_rep_rate_with_simulator():
     assert stats['p95']
     assert stats['p05'] >= stats['p10'] >= stats['Median']
     assert stats['Median'] >= stats['p90'] >= stats['p95']
+
+
+def test_create_rep_rate_circuit():
+  """Testing an internal method to make sure that the circuit
+  construction is correct.
+  """
+  tester = rep_rate.RepRateCalculator(project_id='test_project',
+                                        processor_id='qproc',
+                                        device=cg.Foxtail,
+                                        sampler=cirq.Simulator())
+  circuit, sweep = tester._create_rep_rate_circuit(False, width=11, depth=14, num_sweeps=1)
+  # 14 layers plus one moment for measurement
+  assert len(circuit)==15
+  assert len(circuit.all_qubits())==11
+  assert sweep is None
+
+  latencies = tester.get_samples(circuit, 7)
+  assert len(latencies) == 7
+
+  circuit, sweep = tester._create_rep_rate_circuit(True, width=2, depth=4, num_sweeps=3)
+  # 14 layers plus one moment for measurement
+  assert len(circuit)==5
+  assert len(circuit.all_qubits())==2
+  assert len(sweep) == 3
+
