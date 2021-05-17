@@ -6,7 +6,7 @@
 """
 import random
 import cirq
-import cirq_google as cg
+import cirq.google as cg
 import time
 import sympy
 
