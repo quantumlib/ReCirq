@@ -143,10 +143,9 @@ class RepRateCalculator:
             processor_id: Processor to test on.
         """
         gate_set = gate_set or cg.SQRT_ISWAP_GATESET
-        device = device or engine.get_processor(processor_id).get_device(
+        device = engine.get_processor(processor_id).get_device(
             gate_sets=[gate_set])
-        sampler = sampler or engine.sampler(processor_id=processor_id,
-                                            gate_set=gate_set)
+        sampler = engine.sampler(processor_id=processor_id, gate_set=gate_set)
         gate = cirq.ISWAP**0.5
         if gate_set == cg.SYC_GATESET:
             gate = cirq.google.SYC
