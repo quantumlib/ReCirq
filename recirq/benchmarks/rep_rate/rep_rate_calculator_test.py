@@ -24,10 +24,9 @@ def _get_stats_from_print_line(s) -> Dict[str, str]:
 
 
 def test_latency_with_simulator():
-    tester = rep_rate.RepRateCalculator(project_id='test_project',
-                                        processor_id='qproc',
-                                        device=cg.Foxtail,
-                                        sampler=cirq.Simulator())
+    tester = rep_rate.RepRateCalculator(device=cg.Foxtail,
+                                        sampler=cirq.Simulator(),
+                                        gate=cirq.ISWAP**0.5)
     latencies = tester.get_latency_samples(50)
     assert len(latencies) == 50
 
@@ -59,10 +58,9 @@ def test_latency_with_simulator():
 
 
 def test_rep_rate_with_simulator():
-    tester = rep_rate.RepRateCalculator(project_id='test_project',
-                                        processor_id='qproc',
-                                        device=cg.Foxtail,
-                                        sampler=cirq.Simulator())
+    tester = rep_rate.RepRateCalculator(device=cg.Foxtail,
+                                        sampler=cirq.Simulator(),
+                                        gate=cirq.ISWAP**0.5)
     tester.print_rep_rate(parameterized=True,
                           width=8,
                           depth=8,
@@ -108,25 +106,23 @@ def test_rep_rate_with_simulator():
 
 
 def test_create_rep_rate_circuit():
-  """Testing an internal method to make sure that the circuit
+    """Testing an internal method to make sure that the circuit
   construction is correct.
   """
-  tester = rep_rate.RepRateCalculator(project_id='test_project',
-                                        processor_id='qproc',
-                                        device=cg.Foxtail,
-                                        sampler=cirq.Simulator())
-  circuit, sweep = tester._create_rep_rate_circuit(False, width=11, depth=14, num_sweeps=1)
-  # 14 layers plus one moment for measurement
-  assert len(circuit)==15
-  assert len(circuit.all_qubits())==11
-  assert sweep is None
+    circuit, sweep = rep_rate._create_rep_rate_circuit(
+        False,
+        cirq.ISWAP,
+        qubits=cirq.GridQubit.rect(11, 1),
+        depth=14,
+        num_sweeps=1)
+    # 14 layers plus one moment for measurement
+    assert len(circuit) == 15
+    assert len(circuit.all_qubits()) == 11
+    assert sweep is None
 
-  latencies = tester.get_samples(circuit, 7)
-  assert len(latencies) == 7
-
-  circuit, sweep = tester._create_rep_rate_circuit(True, width=2, depth=4, num_sweeps=3)
-  # 14 layers plus one moment for measurement
-  assert len(circuit)==5
-  assert len(circuit.all_qubits())==2
-  assert len(sweep) == 3
-
+    circuit, sweep = rep_rate._create_rep_rate_circuit(
+        True, cirq.CZ, qubits=cirq.GridQubit.rect(1, 2), depth=4, num_sweeps=3)
+    # 4 layers plus one moment for measurement
+    assert len(circuit) == 5
+    assert len(circuit.all_qubits()) == 2
+    assert len(sweep) == 3

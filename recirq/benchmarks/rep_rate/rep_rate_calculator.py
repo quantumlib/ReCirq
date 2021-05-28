@@ -4,13 +4,97 @@
   This class should replicate the acquisition of date for
   rep rate and latency for processor data sheets.
 """
+from typing import List, Optional, Tuple
 import random
+import sympy
+import time
+
 import cirq
 import cirq.google as cg
-import time
-import sympy
+import numpy as np
 
-from typing import List, Optional, Tuple
+
+def _latency_circuit(qubits: List[cirq.Qid]) -> cirq.Circuit:
+    """Circuit for measuring round-trip latency.
+
+        Use the most simple circuit possible, a measurement of a single
+        random qubit.
+        """
+    return cirq.Circuit(cirq.measure(random.choice(qubits)))
+
+
+def _entangling_layer(gate: cirq.Gate, qubits: List[cirq.Qid]) -> cirq.Moment:
+    """Creates a layer of random two-qubit gates."""
+    m = cirq.Moment()
+    for q in qubits:
+        if q in m.qubits:
+            continue
+        pairings = [
+            q + adj
+            for adj in [(0, 1), (1, 0), (0, -1), (-1, 0)]
+            if q + adj in qubits and q + adj not in m.qubits
+        ]
+        if not pairings:
+            continue
+        q2 = random.choice(pairings)
+        m = m.with_operation(gate(q, q2))
+    return m
+
+
+def _sq_layer(qubits: List[cirq.Qid], parameterized: bool,
+              symbol_start: int) -> (cirq.Moment, int):
+    """Creates a layer of single-qubit gates.
+
+        If parameteried is true, this will add symbols to the qubits
+        in order to test parameter resolution.
+        """
+    m = cirq.Moment()
+    current_sym = symbol_start
+    for q in qubits:
+        if parameterized:
+            symbol = f's_{current_sym}'
+            current_sym += 1
+            m = m.with_operation(cirq.X(q)**sympy.Symbol(symbol))
+        else:
+            m = m.with_operation(
+                cirq.PhasedXZGate(x_exponent=random.random(),
+                                  z_exponent=random.random(),
+                                  axis_phase_exponent=random.random())(q))
+    return (m, current_sym)
+
+
+def _create_rep_rate_circuit(
+        parameterized: bool, gate: cirq.Gate, qubits: List[cirq.Qid],
+        depth: int,
+        num_sweeps: Optional[int]) -> Tuple[cirq.Circuit, cirq.Sweep]:
+    """Creates a testing circuit based on parameters.
+
+        The circuit will be of alternating single and two qubit layers
+        using the qubits specified and a number of moments specified by depth.
+
+        This function will also create a sweep if parameterized is true,
+        by parameterized all single qubit layers with random values for
+        angles.
+        """
+
+    c = cirq.Circuit()
+    symbol_count = 0
+    for layer in range(depth):
+        if layer % 2:
+            moment, symbol_count = _sq_layer(qubits, parameterized,
+                                             symbol_count)
+            c.append(moment)
+        else:
+            c.append(_entangling_layer(gate, qubits))
+    c.append(cirq.Moment(cirq.measure(*qubits)))
+
+    if not parameterized:
+        return (c, None)
+    sweeps = cirq.Zip(*[
+        cirq.Linspace('s_%d' % i, start=0, stop=1, length=num_sweeps)
+        for i in range(symbol_count)
+    ])
+    return (c, sweeps)
 
 
 class RepRateCalculator:
@@ -26,38 +110,50 @@ class RepRateCalculator:
     for latency and repetition rates.
     """
 
-    def __init__(self,
-                 project_id: str,
-                 processor_id: str,
-                 gate_set: Optional[cg.SerializableGateSet] = None,
-                 device: Optional[cirq.Device] = None,
-                 sampler: Optional[cirq.Sampler] = None):
+    def __init__(self, device: cirq.Device, sampler: cirq.Sampler,
+                 gate: cirq.Gate):
         """Initialize the tester object.
 
         Args:
-            project_id: Cloud project id as a string
-            processor_id: Processor to test on
-            gate_set: gate set to use.  Defaults to square root of iswap
-            device: device object to use. defaults to device provided by engine
-            sampler: sampler object to use.  defaults to engine sampler
+            device: Device object to use to construct circuits.
+            sampler: Sampler to test for rep rate.
+            gate: two-qubit gate to use for sample circuits.
         """
-        if not device or not sampler:
-            engine = cg.Engine(project_id=project_id)
-        gate_set = gate_set or cg.SQRT_ISWAP_GATESET
-        self.device = device or engine.get_processor(processor_id).get_device(
-            gate_sets=[gate_set])
-        self.sampler = sampler or engine.sampler(processor_id=processor_id,
-                                                 gate_set=gate_set)
-        self.gate = cirq.ISWAP**0.5
+        self.device = device
+        self.sampler = sampler
+        self.gate = gate
         self.qubits = list(self.device.qubits)
-        if gate_set == cg.SYC_GATESET:
-            self.gate = cirq.google.SYC
 
         # log of print statements for testing
         self.print_log = ''
 
+    @classmethod
+    def from_engine(cls,
+                    engine: cg.Engine,
+                    processor_id: str,
+                    gate_set: Optional[cg.SerializableGateSet] = None):
+        """
+        Constructs a RepRateTester using a cirq.google.Engine object.
+        Uses the device from the device specification from the API
+        and the sampler provided by the Engine.
+
+        Args:
+            engine: cirq.google.Engine to use for device and sampler.
+            gate_set: gate set to use.  Defaults to square root of iswap
+            processor_id: Processor to test on.
+        """
+        gate_set = gate_set or cg.SQRT_ISWAP_GATESET
+        device = device or engine.get_processor(processor_id).get_device(
+            gate_sets=[gate_set])
+        sampler = sampler or engine.sampler(processor_id=processor_id,
+                                            gate_set=gate_set)
+        gate = cirq.ISWAP**0.5
+        if gate_set == cg.SYC_GATESET:
+            gate = cirq.google.SYC
+        return cls(device, sampler, gate)
+
     def _flush_print_log(self) -> None:
-        """Remove print log used fro debugging."""
+        """Remove print log used for debugging."""
         self.print_log = ''
 
     def _print(self, s: str) -> None:
@@ -65,85 +161,6 @@ class RepRateCalculator:
         self.print_log += s
         self.print_log += '\n'
         print(s, flush=True)
-
-    def _latency_circuit(self) -> cirq.Circuit:
-        """Circuit for measuring round-trip latency.
-
-        Use the most simple circuit possible, a measurement of a single
-        random qubit.
-        """
-        return cirq.Circuit(cirq.measure(random.choice(self.qubits)))
-
-    def _entangling_layer(self, qubits: List[cirq.Qid]) -> cirq.Moment:
-        """Creates a layer of random two-qubit gates."""
-        m = cirq.Moment()
-        for q in qubits:
-            if q in m.qubits:
-                continue
-            pairings = [
-                q + adj
-                for adj in [(0, 1), (1, 0), (0, -1), (-1, 0)]
-                if q + adj in qubits and q + adj not in m.qubits
-            ]
-            if not pairings:
-                continue
-            q2 = random.choice(pairings)
-            m = m.with_operation(self.gate(q, q2))
-        return m
-
-    def _sq_layer(self, qubits: List[cirq.Qid], parameterized: bool,
-                  symbol_start: int) -> (cirq.Moment, int):
-        """Creates a layer of single-qubit gates.
-
-        If parameteried is true, this will add symbols to the qubits
-        in order to test parameter resolution.
-        """
-        m = cirq.Moment()
-        current_sym = symbol_start
-        for q in qubits:
-            if parameterized:
-                symbol = f's_{current_sym}'
-                current_sym += 1
-                m = m.with_operation(cirq.X(q)**sympy.Symbol(symbol))
-            else:
-                m = m.with_operation(
-                    cirq.PhasedXZGate(x_exponent=random.random(),
-                                      z_exponent=random.random(),
-                                      axis_phase_exponent=random.random())(q))
-        return (m, current_sym)
-
-    def _create_rep_rate_circuit(
-            self, parameterized: bool, width: int, depth: int,
-            num_sweeps: Optional[int]) -> Tuple[cirq.Circuit, cirq.Sweep]:
-        """Creates a testing circuit based on parameters.
-
-        The circuit will be of alternating single and two qubit layers
-        using a number of qubits specified by width and a number of
-        moments specified by depth.
-
-        This function will also create a sweep if parameterized is true,
-        by parameterized all single qubit layers with random values for
-        angles.
-        """
-        qubits = self.qubits[:width]
-        c = cirq.Circuit()
-        symbol_count = 0
-        for layer in range(depth):
-            if layer % 2:
-                moment, symbol_count = self._sq_layer(qubits, parameterized,
-                                                      symbol_count)
-                c.append(moment)
-            else:
-                c.append(self._entangling_layer(qubits))
-        c.append(cirq.Moment(cirq.measure(*qubits)))
-
-        if not parameterized:
-            return (c, None)
-        sweeps = cirq.Zip(*[
-            cirq.Linspace('s_%d' % i, start=0, stop=1, length=num_sweeps)
-            for i in range(symbol_count)
-        ])
-        return (c, sweeps)
 
     def get_samples(self, circuit: cirq.Circuit,
                     num_trials: int) -> List[float]:
@@ -164,7 +181,7 @@ class RepRateCalculator:
         return latencies
 
     def get_latency_samples(self, num_trials: int) -> List[float]:
-        return self.get_samples(self._latency_circuit(), num_trials)
+        return self.get_samples(_latency_circuit(self.qubits), num_trials)
 
     def print_latency(self, num_trials: int) -> None:
         self._flush_print_log()
@@ -221,8 +238,9 @@ class RepRateCalculator:
         self._flush_print_log()
         if not width:
             width = len(self.qubits)
-        circuit, sweep = self._create_rep_rate_circuit(parameterized, width,
-                                                       depth, num_sweeps)
+        circuit, sweep = _create_rep_rate_circuit(parameterized, self.gate,
+                                                  self.qubits[:width], depth,
+                                                  num_sweeps)
         latencies = []
         total_reps = repetitions
         if num_sweeps > 1:
@@ -241,23 +259,23 @@ class RepRateCalculator:
             self._print(f'Finished Trial {trial} with duration {duration}')
             latencies.append(duration)
         latencies = sorted(latencies)
-        median = latencies[len(latencies) // 2]
-        p05 = latencies[len(latencies) // 20]
-        p95 = latencies[-len(latencies) // 20]
-        p10 = latencies[len(latencies) // 10]
-        p90 = latencies[-len(latencies) // 10]
+        median = np.median(latencies)
+        p05 = np.percentile(latencies, 5)
+        p95 = np.percentile(latencies, 95)
+        p10 = np.percentile(latencies, 10)
+        p90 = np.percentile(latencies, 90)
         average = sum(latencies) / len(latencies)
         self._print(str(latencies))
         self._print(
             f'Latency:  Median={median}, p05={p05}, p10={p10}, p90={p90}, p95={p95}, avg={average}'
         )
         self._print(f'Total reps: {total_reps}')
-        median = total_reps / (median - subtract_latency)
-        p05 = total_reps / (p05 - subtract_latency)
-        p95 = total_reps / (p95 - subtract_latency)
-        p10 = total_reps / (p10 - subtract_latency)
-        p90 = total_reps / (p90 - subtract_latency)
-        average = total_reps / (average - subtract_latency)
+        rate_median = total_reps / (median - subtract_latency)
+        rate_p05 = total_reps / (p05 - subtract_latency)
+        rate_p95 = total_reps / (p95 - subtract_latency)
+        rate_p10 = total_reps / (p10 - subtract_latency)
+        rate_p90 = total_reps / (p90 - subtract_latency)
+        rate_average = total_reps / (average - subtract_latency)
         self._print(
-            f'Rep Rate:  Median={median}, p05={p05}, p10={p10}, p90={p90}, p95={p95}, avg={average}'
+            f'Rep Rate:  Median={rate_median}, p05={rate_p05}, p10={rate_p10}, p90={rate_p90}, p95={rate_p95}, avg={rate_average}'
         )
