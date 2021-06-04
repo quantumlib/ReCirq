@@ -46,7 +46,6 @@ class Move:
     have a move type and variant that determines what kind of move this is
     (capture, exclusion, etc).
     """
-
     def __init__(self,
                  source: str,
                  target: str,
@@ -54,19 +53,23 @@ class Move:
                  source2: str = None,
                  target2: str = None,
                  move_type: enums.MoveType = None,
-                 move_variant: enums.MoveVariant = None):
+                 move_variant: enums.MoveVariant = None,
+                 measurement: int = None):
         self.source = source
         self.source2 = source2
         self.target = target
         self.target2 = target2
         self.move_type = move_type
         self.move_variant = move_variant
+        self.measurement = measurement
 
     def __eq__(self, other):
         if isinstance(other, Move):
-            return (self.source == other.source and
-                    self.target == other.target and
-                    self.target2 == other.target2)
+            return (self.source == other.source and self.target == other.target
+                    and self.target2 == other.target2
+                    and self.move_type == other.move_type
+                    and self.move_variant == other.move_variant
+                    and self.measurement == other.measurement)
         return False
 
     @classmethod
@@ -74,40 +77,75 @@ class Move:
         """Creates a move from a string shorthand for tests.
 
 
-        Format=source,target,target2,source2:type:variant
-        with commas omitted.
+        Format=sources_and_targets[.measurement]:type:variant
 
-        if target2 is specified, then source2 should
-        be '--'
+        where sources_and_targets could be:
+            a pair of 2-character square strings concatenated together
+            source^t1t2 for split moves with 2 targets
+            s1s2^target for merge moves with 2 sources
 
         Examples:
            'a1a2:JUMP:BASIC'
-           'b1a3c3:SPLIT_JUMP:BASIC'
-           'a3b1--c3:MERGE_JUMP:BASIC'
+           'b1^a3c3:SPLIT_JUMP:BASIC'
+           'b1^a3c3.m0:SPLIT_JUMP:BASIC'
+           'b1^a3c3.m1:SPLIT_JUMP:BASIC'
+           'a3b1^c3:MERGE_JUMP:BASIC'
         """
         fields = str_to_parse.split(':')
         if len(fields) != 3:
             raise ValueError(f'Invalid move string {str_to_parse}')
-        source = fields[0][0:2]
-        target = fields[0][2:4]
+
+        move_and_measurement = fields[0].split('.', maxsplit=1)
+        source_target = move_and_measurement[0]
+        measurement = None
+        if len(move_and_measurement) == 2:
+            _, m_str = move_and_measurement
+            if m_str[0] != 'm':
+                raise ValueError(f'Invalid measurement string {m_str}')
+            measurement = int(m_str[1:])
+
+        sources = None
+        targets = None
+        if '^' in source_target:
+            sources_str, targets_str = source_target.split('^', maxsplit=1)
+            sources = [
+                sources_str[i:i + 2] for i in range(0, len(sources_str), 2)
+            ]
+            targets = [
+                targets_str[i:i + 2] for i in range(0, len(targets_str), 2)
+            ]
+        else:
+            if len(source_target) != 4:
+                raise ValueError(
+                    f'Invalid sources/targets string {source_target}')
+            sources = [source_target[0:2]]
+            targets = [source_target[2:4]]
+
         move_type = enums.MoveType[fields[1]]
         move_variant = enums.MoveVariant[fields[2]]
-        if len(fields[0]) <= 4:
-            return cls(source,
-                       target,
+        if len(sources) == 1 and len(targets) == 1:
+            return cls(sources[0],
+                       targets[0],
                        move_type=move_type,
-                       move_variant=move_variant)
-        if len(fields[0]) <= 6:
-            return cls(source,
-                       target,
-                       target2=fields[0][4:6],
+                       move_variant=move_variant,
+                       measurement=measurement)
+        if len(sources) == 1 and len(targets) == 2:
+            return cls(sources[0],
+                       targets[0],
+                       target2=targets[1],
                        move_type=move_type,
-                       move_variant=move_variant)
-        return cls(source,
-                   target,
-                   source2=fields[0][6:8],
-                   move_type=move_type,
-                   move_variant=move_variant)
+                       move_variant=move_variant,
+                       measurement=measurement)
+        if len(sources) == 2 and len(targets) == 1:
+            return cls(sources[0],
+                       targets[0],
+                       source2=sources[1],
+                       move_type=move_type,
+                       move_variant=move_variant,
+                       measurement=measurement)
+        raise ValueError(
+            f'Wrong number of sources {sources} or targets {targets} for {str_to_parse}'
+        )
 
     def is_split_move(self) -> bool:
         return self.target2 is not None
@@ -115,9 +153,33 @@ class Move:
     def is_merge_move(self) -> bool:
         return self.source2 is not None
 
-    def __str__(self):
+    def has_measurement(self) -> bool:
+        return self.measurement is not None
+
+    def to_string(self, include_type=False) -> str:
+        """
+        Constructs the string representation of this move object.
+
+        By default, only returns the move source(s), target(s), and measurement
+        if present.
+
+        Args:
+          include_type: also include the move type/variant in the string
+        """
+        movestr = self.source + self.target
         if self.is_split_move():
-            return self.source + '^' + self.target + self.target2
+            movestr = self.source + '^' + self.target + self.target2
         if self.is_merge_move():
-            return self.source + self.source2 + '^' + self.target
-        return self.source + self.target
+            movestr = self.source + self.source2 + '^' + self.target
+        if self.has_measurement():
+            movestr += '.m' + str(self.measurement)
+
+        if include_type and self.move_type is not None:
+            movestr += ':' + self.move_type.name
+        if include_type and self.move_variant is not None:
+            movestr += ':' + self.move_variant.name
+
+        return movestr
+
+    def __str__(self):
+        return self.to_string()

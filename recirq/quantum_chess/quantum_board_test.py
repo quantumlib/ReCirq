@@ -130,7 +130,7 @@ def test_split_move(move_type, board):
 def test_split_and_use_same_square(board):
     b = board.with_state(u.squares_to_bitboard(['a1']))
     assert b.perform_moves(
-        'a1a2b1:SPLIT_JUMP:BASIC',
+        'a1^a2b1:SPLIT_JUMP:BASIC',
         'b1b2:JUMP:BASIC',
         'b2a2:JUMP:BASIC',
     )
@@ -247,7 +247,7 @@ def test_blocked_slide_clear(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1']))
     assert b.perform_moves(
-        'a1a3a4:SPLIT_SLIDE:BASIC',
+        'a1^a3a4:SPLIT_SLIDE:BASIC',
         'a3a8:SLIDE:BASIC',
     )
     samples = b.sample(100)
@@ -336,8 +336,8 @@ def test_superposition_slide_move2(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1', 'b3', 'c3']))
     assert b.perform_moves(
-        'b3b2b1:SPLIT_JUMP:BASIC',
-        'c3c2c1:SPLIT_JUMP:BASIC',
+        'b3^b2b1:SPLIT_JUMP:BASIC',
+        'c3^c2c1:SPLIT_JUMP:BASIC',
         'a1e1:SLIDE:BASIC',
     )
     possibilities = [
@@ -366,8 +366,8 @@ def test_excluded_slide(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1', 'b2', 'c2']))
     did_it_move = b.perform_moves(
-        'b2b1a2:SPLIT_JUMP:BASIC',
-        'c2c1d2:SPLIT_JUMP:BASIC',
+        'b2^b1a2:SPLIT_JUMP:BASIC',
+        'c2^c1d2:SPLIT_JUMP:BASIC',
         'a1c1:SLIDE:EXCLUDED',
     )
     samples = b.sample(100)
@@ -396,9 +396,9 @@ def test_capture_slide(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1', 'a2', 'a3']))
     did_it_move = b.perform_moves(
-        'a1b1c1:SPLIT_JUMP:BASIC',
-        'a2b2c2:SPLIT_JUMP:BASIC',
-        'a3b3c3:SPLIT_JUMP:BASIC',
+        'a1^b1c1:SPLIT_JUMP:BASIC',
+        'a2^b2c2:SPLIT_JUMP:BASIC',
+        'a3^b3c3:SPLIT_JUMP:BASIC',
         'c1c3:SLIDE:CAPTURE',
     )
     samples = b.sample(1000)
@@ -428,8 +428,8 @@ def test_split_one_slide(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1', 'b2']))
     assert b.perform_moves(
-        'b2a2c2:SPLIT_JUMP:BASIC',
-        'a1a3c1:SPLIT_SLIDE:BASIC',
+        'b2^a2c2:SPLIT_JUMP:BASIC',
+        'a1^a3c1:SPLIT_SLIDE:BASIC',
     )
     samples = b.sample(100)
     possibilities = [
@@ -444,7 +444,6 @@ def test_split_one_slide(board):
     assert_prob_about(probs, qb.square_to_bit('a3'), 0.25)
     assert_prob_about(probs, qb.square_to_bit('c1'), 0.75)
 
-
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_both_sides(board):
     """ Tests a split slide move where both paths of the slide
@@ -458,10 +457,10 @@ def test_split_both_sides(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1', 'b3', 'c3', 'd3']))
     assert b.perform_moves(
-        'b3a3b4:SPLIT_JUMP:BASIC',
-        'c3c2c1:SPLIT_JUMP:BASIC',
-        'd3d2d1:SPLIT_JUMP:BASIC',
-        'a1a5e1:SPLIT_SLIDE:BASIC',
+        'b3^a3b4:SPLIT_JUMP:BASIC',
+        'c3^c2c1:SPLIT_JUMP:BASIC',
+        'd3^d2d1:SPLIT_JUMP:BASIC',
+        'a1^a5e1:SPLIT_SLIDE:BASIC',
     )
     samples = b.sample(1000)
     assert len(samples) == 1000
@@ -499,9 +498,9 @@ def test_merge_slide_one_side(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
     assert b.perform_moves(
-        'a1a4d1:SPLIT_SLIDE:BASIC',
-        'c3c4c5:SPLIT_JUMP:BASIC',
-        'a4d4--d1:MERGE_SLIDE:BASIC',
+        'a1^a4d1:SPLIT_SLIDE:BASIC',
+        'c3^c4c5:SPLIT_JUMP:BASIC',
+        'a4d1^d4:MERGE_SLIDE:BASIC',
     )
     possibilities = [
         u.squares_to_bitboard(['a4', 'c4']),
@@ -525,10 +524,10 @@ def test_merge_slide_both_side(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a1', 'c2', 'c3']))
     assert b.perform_moves(
-        'a1a4d1:SPLIT_SLIDE:BASIC',
-        'c3c4c5:SPLIT_JUMP:BASIC',
-        'c2d2e2:SPLIT_JUMP:BASIC',
-        'a4d4--d1:MERGE_SLIDE:BASIC',
+        'a1^a4d1:SPLIT_SLIDE:BASIC',
+        'c3^c4c5:SPLIT_JUMP:BASIC',
+        'c2^d2e2:SPLIT_JUMP:BASIC',
+        'a4d1^d4:MERGE_SLIDE:BASIC',
     )
     possibilities = [
         u.squares_to_bitboard(['a4', 'd2', 'c4']),
@@ -573,7 +572,7 @@ def test_pawn_capture(board):
     """
     b = board.with_state(u.squares_to_bitboard(['a3', 'b3', 'c3']))
     # Capture and put the pawn in superposition
-    assert b.perform_moves('a3a4a5:SPLIT_JUMP:BASIC', 'b3a4:PAWN_CAPTURE:BASIC')
+    assert b.perform_moves('a3^a4a5:SPLIT_JUMP:BASIC', 'b3a4:PAWN_CAPTURE:BASIC')
     possibilities = [
         u.squares_to_bitboard(['a5', 'b3', 'c3']),
         u.squares_to_bitboard(['a4', 'c3']),
@@ -584,7 +583,7 @@ def test_pawn_capture(board):
     assert_fifty_fifty(probs, qb.square_to_bit('a4'))
     assert_fifty_fifty(probs, qb.square_to_bit('b3'))
 
-    did_it_move = b.perform_moves('c3c4c5:SPLIT_JUMP:BASIC',
+    did_it_move = b.perform_moves('c3^c4c5:SPLIT_JUMP:BASIC',
                                   'b3c4:PAWN_CAPTURE:BASIC')
     if did_it_move:
         possibilities = [
@@ -685,8 +684,8 @@ def test_2block_ks_castle(board):
     """Kingside castling move blocked by 2 pieces in superposition."""
     b = board.with_state(u.squares_to_bitboard(['e8', 'f6', 'g6', 'h8']))
     did_it_move = b.perform_moves(
-        'f6f7f8:SPLIT_JUMP:BASIC',
-        'g6g7g8:SPLIT_JUMP:BASIC',
+        'f6^f7f8:SPLIT_JUMP:BASIC',
+        'g6^g7g8:SPLIT_JUMP:BASIC',
         'e8g8:KS_CASTLE:BASIC',
     )
     if did_it_move:
@@ -752,9 +751,9 @@ def test_entangled_qs_castle2(board):
     """Queenside castling move with all intervening squares blocked."""
     b = board.with_state(u.squares_to_bitboard(['e1', 'b3', 'c3', 'd3', 'a1']))
     did_it_move = b.perform_moves(
-        'b3b2b1:SPLIT_JUMP:BASIC',
-        'c3c2c1:SPLIT_JUMP:BASIC',
-        'd3d2d1:SPLIT_JUMP:BASIC',
+        'b3^b2b1:SPLIT_JUMP:BASIC',
+        'c3^c2c1:SPLIT_JUMP:BASIC',
+        'd3^d2d1:SPLIT_JUMP:BASIC',
         'e1c1:QS_CASTLE:BASIC',
     )
     if did_it_move:
@@ -807,7 +806,7 @@ def test_capture_ep():
     """
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     did_it_move = b.perform_moves(
-        'b8a6c6:SPLIT_JUMP:BASIC',
+        'b8^a6c6:SPLIT_JUMP:BASIC',
         'b5a6:PAWN_CAPTURE:BASIC',
         'c7c5:PAWN_TWO_STEP:BASIC',
         'b5c6:PAWN_EP:CAPTURE',
@@ -827,7 +826,7 @@ def test_capture_ep2():
     """
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     did_it_move = b.perform_moves(
-        'b8a6c6:SPLIT_JUMP:BASIC',
+        'b8^a6c6:SPLIT_JUMP:BASIC',
         'c7c5:PAWN_TWO_STEP:BASIC',
         'b5c6:PAWN_EP:CAPTURE',
     )
@@ -847,7 +846,7 @@ def test_blocked_ep():
     """
     b = qb.CirqBoard(u.squares_to_bitboard(['c4', 'c5', 'd7']))
     did_it_move = b.perform_moves(
-        'c4d6b6:SPLIT_JUMP:BASIC',
+        'c4^d6b6:SPLIT_JUMP:BASIC',
         'd7d5:PAWN_TWO_STEP:BASIC',
         'c5d6:PAWN_EP:EXCLUDED',
     )
@@ -865,7 +864,7 @@ def test_blocked_ep():
 def test_basic_ep():
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     assert b.perform_moves(
-        'b8a6c6:SPLIT_JUMP:BASIC',
+        'b8^a6c6:SPLIT_JUMP:BASIC',
         'b5a6:PAWN_CAPTURE:BASIC',
         'c6b8:JUMP:BASIC',
         'c7c5:PAWN_TWO_STEP:BASIC',
@@ -894,7 +893,7 @@ def test_undo_last_move():
 def test_undo_entangled_measurement():
     b = qb.CirqBoard(u.squares_to_bitboard(['a2', 'b1', 'c2', 'd1']))
     assert b.perform_moves(
-        'b1a3c3:SPLIT_JUMP:BASIC',
+        'b1^a3c3:SPLIT_JUMP:BASIC',
         'c2c4:PAWN_TWO_STEP:BASIC'
     )
     probs = b.get_probability_distribution(10000)
@@ -913,7 +912,7 @@ def test_undo_entangled_measurement():
 def test_record_time():
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     assert b.perform_moves(
-        'b8a6c6:SPLIT_JUMP:BASIC',
+        'b8^a6c6:SPLIT_JUMP:BASIC',
         'b5a6:PAWN_CAPTURE:BASIC',
         'c6b8:JUMP:BASIC',
         'c7c5:PAWN_TWO_STEP:BASIC',
@@ -964,3 +963,55 @@ def test_caching_accumulations_same_repetition_cached(board):
     probs1 = b.get_probability_distribution(100)
     probs2 = b.get_probability_distribution(100)
     assert probs1 == probs2
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_split_capture_with_successful_measurement_outcome(board):
+    # Repeat the moves several times because the do_move calls will trigger a
+    # measurement.
+    for i in range(100):
+        b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
+        # a1 splits into a2 + a3
+        b.do_move(
+            move.Move('a1', 'a2', target2='a3',
+                      move_type=enums.MoveType.SPLIT_JUMP,
+                      move_variant=enums.MoveVariant.BASIC))
+        # Then a3 tries to capture c3, which requires measuring a3.
+        # The provided measurement outcome says that there is a piece on a3
+        # after all, so the capture is successful.
+        b.do_move(
+            move.Move('a3', 'c3', move_type=enums.MoveType.JUMP,
+                      move_variant=enums.MoveVariant.CAPTURE,
+                      measurement=1))
+        samples = b.sample(100)
+        # The only possible outcome is successful capture.
+        expected = {'c3'}
+        for sample in samples:
+            assert set(u.bitboard_to_squares(sample)) == expected
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_split_capture_with_failed_measurement_outcome(board):
+    # Repeat the moves several times because the do_move calls will trigger a
+    # measurement.
+    for i in range(100):
+        b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
+        # a1 splits into a2 + a3
+        b.do_move(
+            move.Move('a1', 'a2', target2='a3',
+                      move_type=enums.MoveType.SPLIT_JUMP,
+                      move_variant=enums.MoveVariant.BASIC))
+        # Then a3 tries to capture c3, which requires measuring a3.
+        # The provided measurement outcome says that there is not a piece on a3
+        # after all, so the capture is unsuccessful.
+        b.do_move(
+            move.Move('a3', 'c3',
+                      move_type=enums.MoveType.JUMP,
+                      move_variant=enums.MoveVariant.CAPTURE,
+                      measurement=0))
+        # The only possible outcome is unsuccessful capture -- a1 jumped to a2,
+        # not a3, and the to-be-captured piece on c3 still remains.
+        # However, in the presence of readout error, we may not measure the
+        # piece on either a2 or a3 so post-filtered samples may not contain a2
+        # in rare cases.
+        probs = b.get_probability_distribution(100)
+        assert_prob_about(probs, u.square_to_bit('a2'), 1)
+        assert_prob_about(probs, u.square_to_bit('a3'), 0)
