@@ -15,7 +15,6 @@
 Util functions used for measurement.
 """
 import cirq
-import asyncio, threading
 import numpy as np
 from itertools import product
 from scipy.linalg import kron
