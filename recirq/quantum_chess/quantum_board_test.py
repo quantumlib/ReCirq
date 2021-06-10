@@ -965,6 +965,22 @@ def test_caching_accumulations_same_repetition_cached(board):
     assert probs1 == probs2
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_jump_with_successful_measurement_outcome(board):
+   b = board.with_state(u.squares_to_bitboard(['b1', 'c2']))
+   b.do_move(
+        move.Move('b1', 'a3', target2='c3',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+   b.do_move(
+        move.Move('c2', 'c3',
+                  move_type=enums.MoveType.JUMP,
+                  move_variant=enums.MoveVariant.EXCLUDED,
+                  measurement=1))
+   samples = b.sample(100)
+   assert_samples_in(b, [u.squares_to_bitboard(['c3','a3'])])
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_successful_measurement_outcome(board):
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.

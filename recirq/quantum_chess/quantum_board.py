@@ -479,7 +479,8 @@ class CirqBoard:
                                 b_qubit))
 
     def post_select_on(self, qubit: cirq.Qid,
-                       measurement_outcome: Optional[int] = None) -> bool:
+                       measurement_outcome: Optional[int] = None,
+                       invert: Optional[bool] = False) -> bool:
         """Adds a post-selection requirement to the circuit.
 
         If no measurement_outcome is provided, performs a single sample of the
@@ -493,10 +494,14 @@ class CirqBoard:
             measurement_outcome: the optional measurement outcome. If present,
                 post-selection is conditioned on the qubit having the given
                 outcome. If absent, a single measurement is performed instead.
+            invert: If True and measurement_outcome is set, this will invert
+                the measurement to post-select on the opposite value.
 
         Returns: the measurement outcome or sample result as 1 or 0.
         """
         result = measurement_outcome
+        if invert and measurement_outcome is not None:
+          result = 1 - result
         if 'anc' in qubit.name:
             if result is None:
                 ancilla_result = []
@@ -591,7 +596,9 @@ class CirqBoard:
 
             # Blocked/excluded e.p. post-select on the target
             if m.move_variant == enums.MoveVariant.EXCLUDED:
-                is_there = self.post_select_on(tqubit, m.measurement)
+                # Note that a measurement of 1 means that the move was
+                # successful so that the target square is empty
+                is_there = self.post_select_on(tqubit, m.measurement, invert=True)
                 if is_there:
                     return 0
                 self.add_entangled(tqubit)
@@ -676,7 +683,9 @@ class CirqBoard:
 
             # For excluded case, measure target
             if m.move_variant == enums.MoveVariant.EXCLUDED:
-                is_there = self.post_select_on(tqubit, m.measurement)
+                # Note that a measurement of 1 means that the move was
+                # successful so that the target square is empty
+                is_there = self.post_select_on(tqubit, m.measurement, invert=True)
                 if is_there:
                     return 0
 
@@ -750,7 +759,9 @@ class CirqBoard:
 
             # Measure target for excluded
             if m.move_variant == enums.MoveVariant.EXCLUDED:
-                is_there = self.post_select_on(tqubit, m.measurement)
+                # Note that a measurement of 1 means that the move was
+                # successful so that the target square is empty
+                is_there = self.post_select_on(tqubit, m.measurement, invert=True)
                 if is_there:
                     return 0
 
@@ -837,7 +848,9 @@ class CirqBoard:
             else:
                 measure_qubit = tqubit
                 measure_bit = tbit
-            is_there = self.post_select_on(measure_qubit, m.measurement)
+            # Note that a measurement of 1 means that the move was
+            # successful so that the target square is empty
+            is_there = self.post_select_on(measure_qubit, m.measurement,invert=True)
             if is_there:
                 return 0
             self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
@@ -914,7 +927,9 @@ class CirqBoard:
             else:
                 measure_qubit = tqubit
                 measure_bit = tbit
-            is_there = self.post_select_on(measure_qubit, m.measurement)
+            # Note that a measurement of one means the move was successful
+            # so that the path was clear
+            is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)
             if is_there:
                 return 0
             if b_qubit not in self.entangled_squares:
