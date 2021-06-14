@@ -1,4 +1,4 @@
-# Copyright 2021 Google
+# ACopyright 2021 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 Util functions used for measurement.
 """
 import cirq
+import itertools
 import numpy as np
-from itertools import product
 from scipy.linalg import kron
 from typing import Iterable
 
@@ -24,7 +24,7 @@ def kron_product(Ms):
     """Computes the Kronecker product of a given list of matrices.
     """
     if len(Ms) < 1:
-        raise ValueError("Expect a list of matrices to compute Kronecker product.")
+        raise ValueError("kron_product expects a list of matrices to compute Kronecker product.")
     result = Ms[0]
     for M in Ms[1:]:
         result = kron(result, M)
@@ -36,16 +36,16 @@ def pauli_decomposition(H, qs: Iterable[cirq.Qid]):
     Args:
     H: 2-d matrix with row and column number equals to 2^n (n>0). 
        E.g. H = np.array([[0.5+0.j,  0. +0.5j], [0. -0.5j,  0.5+0.j ]])
-    qs: a list of qubits with size == n.
+ma    qs: a list of qubits with size == n.
        E.g. qs = [a1]
     """
     if H.ndim != 2:
-        raise ValueError("Expect a 2-d matrix.")
+        raise ValueError("pauli_decomposition expects a 2-d matrix.")
     if not all(len(row) == len(H) for row in H):
-        raise ValueError("Expect a matrix with row number equals to column number.")
+        raise ValueError("pauli_decomposition expects a matrix with row number equals to column number.")
     d = len(qs)
     if len(H) != 2**d:
-        raise ValueError("The list size of qubits is x, and the size of matix is y*y. \
+        raise ValueError("pauli_decomposition: The list size of qubits is x, and the size of matix is y*y. \
         Expect that y==2**x.")
     
     s0 = np.array([[1.,0.], [0.,1.]])
@@ -56,10 +56,10 @@ def pauli_decomposition(H, qs: Iterable[cirq.Qid]):
     pauli = np.array([cirq.I, cirq.X, cirq.Y, cirq.Z])
 
     result = 0
-    for ind in product(iter(range(4)), repeat=d):
+    for ind in itertools.product(iter(range(4)), repeat=d):
         ind_int = np.array(ind).astype(int)
         coeff = 0.5**d * np.dot(kron_product(s[ind_int]).T.conj(), H).trace()
-        if coeff != 0.0:
+        if abs(coeff) > 1e-12:
             result = result + cirq.PauliString(coeff, {q: op for q, op in zip(qs, pauli[ind_int])})
     return result
 

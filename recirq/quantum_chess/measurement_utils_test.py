@@ -23,25 +23,31 @@ def test_pauli_decomposition_wrong_inputs():
                        [0. -0.5j,  0.5+0.j ]], dtype="object")
     with pytest.raises(ValueError):
         pauli_decomposition(H_not_2d, [a1])
+
+    with pytest.raises(ValueError):
         pauli_decomposition(H_not_square, [a1])
+        
+    with pytest.raises(ValueError):
         pauli_decomposition(H_good, [a1, a2])
     
 def test_pauli_decomposition_1_qubit():
     H = np.random.rand(2,2)
     decomp_H = pauli_decomposition(H, [a1])
-    np.allclose(H, decomp_H.matrix())
+    assert np.allclose(H, decomp_H.matrix())
 
 def test_pauli_decomposition_2_qubit():
     H = np.random.rand(4,4)
-    decomp_H = pauli_decomposition(H, [a1, a2])
-    np.allclose(H, decomp_H.matrix())
+    decomp_H = pauli_decomposition(H, [c3, a2])
+    print(H)
+    print(decomp_H.matrix())
+    assert np.allclose(H, decomp_H.matrix((c3, a2)))
 
 def test_pauli_decomposition_3_qubit():
     H = np.random.rand(8,8)
-    decomp_H = pauli_decomposition(H, [a1, a2, a3])
-    np.allclose(H, decomp_H.matrix())
+    decomp_H = pauli_decomposition(H, [a2, c1, b3])
+    assert np.allclose(H, decomp_H.matrix([a2, c1, b3]))
 
 def test_pauli_decomposition_4_qubit():
     H = np.random.rand(16,16)
-    decomp_H = pauli_decomposition(H, [a1, a2, a3, b1])
-    np.allclose(H, decomp_H.matrix())
+    decomp_H = pauli_decomposition(H, [c3, b2, a3, b1])
+    assert np.allclose(H, decomp_H.matrix([c3, b2, a3, b1]))
