@@ -40,13 +40,10 @@ ma    qs: a list of qubits with size == n.
        E.g. qs = [a1]
     """
     if H.ndim != 2:
-        raise ValueError("pauli_decomposition expects a 2-d matrix.")
-    if not all(len(row) == len(H) for row in H):
-        raise ValueError("pauli_decomposition expects a matrix with row number equals to column number.")
+        raise ValueError('pauli_decomposition expects a 2-d square matrix.')
     d = len(qs)
     if len(H) != 2**d:
-        raise ValueError("pauli_decomposition: The list size of qubits is x, and the size of matix is y*y. \
-        Expect that y==2**x.")
+        raise ValueError(f'pauli_decomposition: Expect that size_of_matrix==pow(2, number_of_qubits). In your case {len(H)}!=pow(2, {d}).')
     
     s0 = np.array([[1.,0.], [0.,1.]])
     s1 = np.array([[0.,1.], [1.,0.]])
@@ -62,4 +59,3 @@ ma    qs: a list of qubits with size == n.
         if abs(coeff) > 1e-12:
             result = result + cirq.PauliString(coeff, {q: op for q, op in zip(qs, pauli[ind_int])})
     return result
-
