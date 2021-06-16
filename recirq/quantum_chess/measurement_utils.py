@@ -35,10 +35,11 @@ def pauli_decomposition(H, qs: Iterable[cirq.Qid]):
 
     Args:
     H: 2-d matrix with row and column number equals to 2^n (n>0). 
-       E.g. H = np.array([[0.5+0.j,  0. +0.5j], [0. -0.5j,  0.5+0.j ]])
+       E.g. H = [[0.5+0.j,  0. +0.5j], [0. -0.5j,  0.5+0.j]]
 ma    qs: a list of qubits with size == n.
        E.g. qs = [a1]
     """
+    H = np.array(H)
     if H.ndim != 2:
         raise ValueError('pauli_decomposition expects a 2-d square matrix.')
     d = len(qs)
