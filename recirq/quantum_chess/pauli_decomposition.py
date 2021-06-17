@@ -16,6 +16,7 @@ Util functions used for decompose the given measurement matrix into PauliStrings
 """
 import cirq
 import itertools
+import functools
 import numpy as np
 from scipy.linalg import kron
 from typing import Iterable
@@ -25,10 +26,7 @@ def kron_product(Ms):
     """
     if len(Ms) < 1:
         raise ValueError("kron_product expects a list of matrices to compute Kronecker product.")
-    result = Ms[0]
-    for M in Ms[1:]:
-        result = kron(result, M)
-    return result
+    return functools.reduce(lambda a, b: kron(a, b), Ms)
 
 def pauli_decomposition(H, qs: Iterable[cirq.Qid]):
     """Decompose the given measurement matrix into PauliStrings. 
