@@ -1,9 +1,9 @@
-import pytest
+import pytestA
 import cirq
 import numpy as np
 import re
 
-from recirq.quantum_chess.measurement_utils import pauli_decomposition
+from recirq.quantum_chess.pauli_decomposition import pauli_decomposition
 
 def test_pauli_decomposition_wrong_inputs():
     a1 = cirq.NamedQubit('a1')
