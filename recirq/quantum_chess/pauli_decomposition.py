@@ -47,10 +47,14 @@ ma    qs: a list of qubits with size == n.
     pauli = np.array([cirq.I, cirq.X, cirq.Y, cirq.Z])
     s = np.array([cirq.unitary(op) for op in pauli])
 
+    nonzero = False
     result = 0
     for ind in itertools.product(iter(range(4)), repeat=d):
         ind_array = np.array(ind)
         coeff = 0.5**d * np.dot(kron_product(s[ind_array]).T.conj(), H).trace()
         if abs(coeff) > 1e-12:
             result = result + cirq.PauliString(coeff, {q: op for q, op in zip(qs, pauli[ind_array])})
-    return result
+            nonzero = True
+    if nonzero:
+        return result
+    return cirq.PauliString(0., {q: op for q, op in zip(qs, pauli[np.array([0] * d)])})

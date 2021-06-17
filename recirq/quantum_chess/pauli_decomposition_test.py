@@ -5,6 +5,7 @@ import re
 
 from recirq.quantum_chess.pauli_decomposition import pauli_decomposition
 
+
 def test_pauli_decomposition_wrong_inputs():
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
@@ -22,39 +23,67 @@ def test_pauli_decomposition_wrong_inputs():
         
     with pytest.raises(ValueError, match=re.escape('pauli_decomposition: Expect that size_of_matrix==pow(2, number_of_qubits). In your case 2!=pow(2, 2).')):
         pauli_decomposition(H_good, [a1, a2])
-    
-def test_pauli_decomposition_1_qubit():
-    a1 = cirq.NamedQubit('a1')
-    H = np.random.rand(2,2)
-    decomp_H = pauli_decomposition(H, [a1])
-    assert np.allclose(H, decomp_H.matrix())
 
-def test_pauli_decomposition_2_qubit():
+
+@pytest.mark.parametrize(
+    'measurement',
+    (
+        np.random.rand(2,2),
+        np.zeros((2, 2)),
+    ),
+)
+def test_pauli_decomposition_1_qubit(measurement):
+    a1 = cirq.NamedQubit('a1')
+    decomp = pauli_decomposition(measurement, [a1])
+    assert np.allclose(measurement, decomp.matrix())
+
+
+@pytest.mark.parametrize(
+    'measurement',
+    (
+        np.random.rand(4, 4),
+        np.zeros((4, 4)),
+    ),
+)
+def test_pauli_decomposition_2_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
-    H = np.random.rand(4,4)
-    decomp_H = pauli_decomposition(H, [a1, a2])
-    assert np.allclose(H, decomp_H.matrix())
+    decomp = pauli_decomposition(measurement, [a1, a2])
+    assert np.allclose(measurement, decomp.matrix())
 #    decomp_H = pauli_decomposition(H, [a2, a1])
 #    assert np.allclose(H, decomp_H.matrix([a2, a1]))
-    
-def test_pauli_decomposition_3_qubit():
+
+
+@pytest.mark.parametrize(
+    'measurement',
+    (
+        np.random.rand(8, 8),
+        np.zeros((8, 8)),
+    ),
+)
+def test_pauli_decomposition_3_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
     a3 = cirq.NamedQubit('a3')
-    H = np.random.rand(8,8)
-    decomp_H = pauli_decomposition(H, [a1, a2, a3])
-    assert np.allclose(H, decomp_H.matrix())
-#    decomp_H = pauli_decomposition(H, [a3, a1, a2])
+    decomp = pauli_decomposition(measurement, [a1, a2, a3])
+    assert np.allclose(measurement, decomp.matrix())
+    #    decomp_H = pauli_decomposition(H, [a3, a1, a2])
 #    assert np.allclose(H, decomp_H.matrix([a3, a1, a2]))
-    
-def test_pauli_decomposition_4_qubit():
+
+
+@pytest.mark.parametrize(
+    'measurement',
+    (
+        np.random.rand(16, 16),
+        np.zeros((16, 16)),
+    ),
+)
+def test_pauli_decomposition_4_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
     a3 = cirq.NamedQubit('a3')
     b1 = cirq.NamedQubit('b1')
-    H = np.random.rand(16,16)
-    decomp_H = pauli_decomposition(H, [a1, a2, a3, b1])
-    assert np.allclose(H, decomp_H.matrix())
+    decomp = pauli_decomposition(measurement, [a1, a2, a3, b1])
+    assert np.allclose(measurement, decomp.matrix())
 #    decomp_H = pauli_decomposition(H, [a1, b1, a3, a2])
 #    assert np.allclose(H, decomp_H.matrix([a1, b1, a3, a2]))
