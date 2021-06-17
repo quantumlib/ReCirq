@@ -44,12 +44,8 @@ ma    qs: a list of qubits with size == n.
     if len(H) != 2**d:
         raise ValueError(f'pauli_decomposition: Expect that size_of_matrix==pow(2, number_of_qubits). In your case {len(H)}!=pow(2, {d}).')
     
-    s0 = np.array([[1.,0.], [0.,1.]])
-    s1 = np.array([[0.,1.], [1.,0.]])
-    s2 = np.array([[0.,-1.j], [1.j,0.]])
-    s3 = np.array([[1.,0.], [0.,-1.]])
-    s = np.array([s0, s1, s2, s3])
     pauli = np.array([cirq.I, cirq.X, cirq.Y, cirq.Z])
+    s = np.array([cirq.unitary(op) for op in pauli])
 
     result = 0
     for ind in itertools.product(iter(range(4)), repeat=d):
