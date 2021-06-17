@@ -30,7 +30,7 @@ def kron_product(matrices: np.ndarray) -> np.ndarray:
     return functools.reduce(lambda a, b: kron(a, b), matrices)
 
 
-def pauli_decomposition(measurement: list, qubits: Iterable[cirq.Qid]):
+def pauli_decomposition(measurement: list, qubits: Iterable[cirq.Qid]) -> cirq.PauliSum:
     """Decompose the given measurement matrix into PauliStrings. 
 
     Args:
