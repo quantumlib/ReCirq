@@ -24,7 +24,7 @@ This code leverages [Cirq](https://github.com/quantumlib/Cirq) as a
 quantum programming language and SDK.
 For those interested in using quantum computers to solve problems in
 chemistry and materials science, please see
-[OpenFermion-Cirq](https://github.com/quantumlib/openfermion-cirq)
+[OpenFermion](https://github.com/quantumlib/openfermion)
 
 
 ReCirq is not an official Google product. Copyright 2020 Google.
