@@ -69,7 +69,7 @@ def test_pauli_decomposition_3_qubit(measurement):
         print(decomp)
         decomp2 = decomp.with_qubits(*qubits)
         print(decomp2)
-        assert np.allclose(measurement, decomp2.matrix())
+        assert np.allclose(measurement, decomp.matrix())
 
 
 @pytest.mark.parametrize(
