@@ -19,7 +19,7 @@ import itertools
 import functools
 import numpy as np
 from scipy.linalg import kron
-from typing import Iterable
+from typing import List
 
 
 def kron_product(matrices: np.ndarray) -> np.ndarray:
@@ -30,7 +30,7 @@ def kron_product(matrices: np.ndarray) -> np.ndarray:
     return functools.reduce(lambda a, b: kron(a, b), matrices)
 
 
-def pauli_decomposition(measurement: list, qubits: Iterable[cirq.Qid]) -> cirq.PauliSum:
+def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.PauliSum:
     """Decompose the given measurement matrix into PauliStrings. 
 
     Args:
@@ -58,5 +58,5 @@ def pauli_decomposition(measurement: list, qubits: Iterable[cirq.Qid]) -> cirq.P
             result = result + cirq.PauliString(coeff, {q: op for q, op in zip(qubits, pauli[ind_array])})
             nonzero = True
     if nonzero:
-        return result
+        return result.with_qubits(*qubits)
     return cirq.PauliString(0., {q: op for q, op in zip(qubits, pauli[np.array([0] * d)])})
