@@ -48,12 +48,9 @@ def test_pauli_decomposition_1_qubit(measurement):
 def test_pauli_decomposition_2_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
-    decomp = pauli_decomposition(measurement, [a1, a2])
-    print(decomp)
-    assert np.allclose(measurement, decomp.matrix())
-    decomp = pauli_decomposition(measurement, [a2, a1])
-    print(decomp)
-    assert np.allclose(measurement, decomp.matrix())
+    for qubits in [[a1, a2], [a2, a1]]:
+        decomp = pauli_decomposition(measurement, qubits)
+        assert np.allclose(measurement, decomp.matrix())
 
 
 @pytest.mark.parametrize(
@@ -67,10 +64,9 @@ def test_pauli_decomposition_3_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
     a3 = cirq.NamedQubit('a3')
-    decomp = pauli_decomposition(measurement, [a1, a2, a3])
-    assert np.allclose(measurement, decomp.matrix())
-    decomp_H = pauli_decomposition(measurement, [a3, a1, a2])
-    assert np.allclose(measurement, decomp_H.matrix([a3, a1, a2]))
+    for qubits in [[a1, a2, a3], [a3, a1, a2]]:
+        decomp = pauli_decomposition(measurement, qubits)
+        assert np.allclose(measurement, decomp.matrix())
 
 
 @pytest.mark.parametrize(
@@ -85,7 +81,6 @@ def test_pauli_decomposition_4_qubit(measurement):
     a2 = cirq.NamedQubit('a2')
     a3 = cirq.NamedQubit('a3')
     b1 = cirq.NamedQubit('b1')
-    decomp = pauli_decomposition(measurement, [a1, a2, a3, b1])
-    assert np.allclose(measurement, decomp.matrix())
-    decomp_H = pauli_decomposition(measurement, [a1, b1, a3, a2])
-    assert np.allclose(measurement, decomp_H.matrix([a1, b1, a3, a2]))
+    for qubits in [[a1, a2, a3, b1], [a1, b1, a3, a2]]:
+        decomp = pauli_decomposition(measurement, [a1, a2, a3, b1])
+        assert np.allclose(measurement, decomp.matrix())
