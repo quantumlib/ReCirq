@@ -64,10 +64,12 @@ def test_pauli_decomposition_3_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
     a3 = cirq.NamedQubit('a3')
-    for qubits in [[a1, a2, a3], [a3, a1, a2]]:
+    for qubits in [[a3, a1, a2]]:
         decomp = pauli_decomposition(measurement, qubits)
+        print("test1\n")
         print(decomp)
         decomp2 = decomp.with_qubits(*qubits)
+        print("test2\n")
         print(decomp2)
         assert np.allclose(measurement, decomp.matrix())
 
