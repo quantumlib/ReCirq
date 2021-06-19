@@ -60,8 +60,10 @@ def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.Pauli
     if nonzero:
         print("pauli_1\n")
         print(result)
+        print(result.matrix())
         result = result.with_qubits(*qubits)
         print("pauli_2\n")
         print(result)
+        print(result.matrix())
         return result
     return cirq.PauliString(0., {q: op for q, op in zip(qubits, pauli[np.array([0] * d)])})
