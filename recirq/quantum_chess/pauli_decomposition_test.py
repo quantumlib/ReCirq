@@ -49,7 +49,7 @@ def test_pauli_decomposition_wrong_inputs():
 def test_pauli_decomposition_1_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     decomp = pauli_decomposition(measurement, [a1])
-    assert np.allclose(measurement, decomp.matrix())
+    assert np.allclose(measurement, decomp.matrix([a1]))
 
 
 @pytest.mark.parametrize(
@@ -107,13 +107,13 @@ def test_pauli_decomposition_4_qubit(measurement):
     'vector, expected_str',
     (
         ([0., 1., 1., 0.], "0.250*I+0.250*X(a1)*X(a2)+0.250*Y(a1)*Y(a2)-0.250*Z(a1)*Z(a2)"),
-        ([0., 1., -1., 0.], 'x'),
-        ([0., 1., 1.j, 0.], 'x'),
-        ([0., 1., -1.j, 0.], 'x'),
-        ([1., 0., 0., 1.], 'x'),
-        ([1., 0., 0., -1.], 'x'),
-        ([1., 0., 0., 1.j], 'x'),
-        ([1., 0., 0., -1.j], "x"),
+        ([0., 1., -1., 0.], "0.250*I-0.250*X(a1)*X(a2)-0.250*Y(a1)*Y(a2)-0.250*Z(a1)*Z(a2)"),
+        ([0., 1., 1.j, 0.], "0.250*I-0.250*X(a1)*Y(a2)+0.250*Y(a1)*X(a2)-0.250*Z(a1)*Z(a2)"),
+        ([0., 1., -1.j, 0.], "0.250*I+0.250*X(a1)*Y(a2)-0.250*Y(a1)*X(a2)-0.250*Z(a1)*Z(a2)"),
+        ([1., 0., 0., 1.], "0.250*I+0.250*X(a1)*X(a2)-0.250*Y(a1)*Y(a2)+0.250*Z(a1)*Z(a2)"),
+        ([1., 0., 0., -1.], "0.250*I-0.250*X(a1)*X(a2)+0.250*Y(a1)*Y(a2)+0.250*Z(a1)*Z(a2)"),
+        ([1., 0., 0., 1.j], "0.250*I+0.250*X(a1)*Y(a2)+0.250*Y(a1)*X(a2)+0.250*Z(a1)*Z(a2)"),
+        ([1., 0., 0., -1.j], "0.250*I-0.250*X(a1)*Y(a2)-0.250*Y(a1)*X(a2)+0.250*Z(a1)*Z(a2)"),
     ),
 )
 def test_pauli_decomposition_measurement_from_vectors(vector, expected_str):
