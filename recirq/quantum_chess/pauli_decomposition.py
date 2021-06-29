@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Util functions used for decompose the given measurement matrix into PauliStrings.
+Utility functions used for decomposing the given measurement matrix into a PauliSum.
 """
 import cirq
 import itertools
@@ -31,7 +31,7 @@ def kron_product(matrices: np.ndarray) -> np.ndarray:
 
 
 def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.PauliSum:
-    """Decompose the given measurement matrix into PauliStrings. 
+    """Decompose the given measurement matrix into a PauliSum. 
 
     Args:
     measurement: 2-d matrix with row and column number equals to 2^n (n>0). 
@@ -58,12 +58,5 @@ def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.Pauli
             result = result + cirq.PauliString(coeff, {q: op for q, op in zip(qubits, pauli[ind_array])})
             nonzero = True
     if nonzero:
-        print("pauli_1\n")
-        print(result)
-        print(result.matrix())
-#        result = result.with_qubits(*qubits)
-        print("pauli_2\n")
-        print(result)
-        print(result.matrix())
         return result
     return cirq.PauliString(0., {q: op for q, op in zip(qubits, pauli[np.array([0] * d)])})
