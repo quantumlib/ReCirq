@@ -104,23 +104,23 @@ def test_pauli_decomposition_4_qubit(measurement):
 
 
 @pytest.mark.parametrize(
-    'vector, expected_str'
+    'vector, expected_str',
     (
-        ([0., 1., 1., 0.], 'a1'),
-        ([0., 1., -1., 0.], 'a1'),
-        ([0., 1., 1.j, 0.], 'a1'),
-        ([0., 1., -1.j, 0.], 'a1'),
-        ([1., 0., 0., 1.], 'a1'),
-        ([1., 0., 0., -1.], 'a1'),
-        ([1., 0., 0., 1.j], 'a1'),
-        ([1., 0., 0., -1.j], 'a1'),
+        ([0., 1., 1., 0.], "0.250*I+0.250*X(a1)*X(a2)+0.250*Y(a1)*Y(a2)-0.250*Z(a1)*Z(a2)"),
+        ([0., 1., -1., 0.], 'x'),
+        ([0., 1., 1.j, 0.], 'x'),
+        ([0., 1., -1.j, 0.], 'x'),
+        ([1., 0., 0., 1.], 'x'),
+        ([1., 0., 0., -1.], 'x'),
+        ([1., 0., 0., 1.j], 'x'),
+        ([1., 0., 0., -1.j], "x"),
     ),
 )
 def test_pauli_decomposition_measurement_from_vectors(vector, expected_str):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
-    vector = np.sqrt(0.5) * np.array(vector).reshape(4,1)
-    measurement = vector.dot(vector.T.conj())
+    col = np.sqrt(0.5) * np.array(vector).reshape(4,1)
+    measurement = col.dot(col.T.conj())
     for qubits in [[a1, a2], [a2, a1]]:
         decomp = pauli_decomposition(measurement, qubits)
-        assert str(decomp) == expected_str
+        assert f"{decomp:.3f}" == expected_str
