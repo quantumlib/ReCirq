@@ -14,6 +14,7 @@
 import pytest
 import cirq
 import numpy as np
+import re
 
 from recirq.quantum_chess.pauli_decomposition import pauli_decomposition
 
