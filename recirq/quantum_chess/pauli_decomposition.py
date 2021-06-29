@@ -61,7 +61,7 @@ def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.Pauli
         print("pauli_1\n")
         print(result)
         print(result.matrix())
-        result = result.with_qubits(*qubits)
+#        result = result.with_qubits(*qubits)
         print("pauli_2\n")
         print(result)
         print(result.matrix())

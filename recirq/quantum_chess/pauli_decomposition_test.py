@@ -30,6 +30,7 @@ def test_pauli_decomposition_wrong_inputs():
     (
         np.random.rand(2,2),
         np.zeros((2, 2)),
+        np.identity(2),
     ),
 )
 def test_pauli_decomposition_1_qubit(measurement):
@@ -43,6 +44,7 @@ def test_pauli_decomposition_1_qubit(measurement):
     (
         np.random.rand(4, 4),
         np.zeros((4, 4)),
+        np.identity(4),
     ),
 )
 def test_pauli_decomposition_2_qubit(measurement):
@@ -50,7 +52,7 @@ def test_pauli_decomposition_2_qubit(measurement):
     a2 = cirq.NamedQubit('a2')
     for qubits in [[a1, a2], [a2, a1]]:
         decomp = pauli_decomposition(measurement, qubits)
-        assert np.allclose(measurement, decomp.matrix())
+        assert np.allclose(measurement, decomp.matrix(qubits))
 
 
 @pytest.mark.parametrize(
@@ -58,13 +60,14 @@ def test_pauli_decomposition_2_qubit(measurement):
     (
         np.random.rand(8, 8),
         np.zeros((8, 8)),
+        np.identity(8),
     ),
 )
 def test_pauli_decomposition_3_qubit(measurement):
     a1 = cirq.NamedQubit('a1')
     a2 = cirq.NamedQubit('a2')
     a3 = cirq.NamedQubit('a3')
-    for qubits in [[a1, a2, a3], [a3, a1, a2]]:
+    for qubits in [[a1, a2, a3], [a3, a1, a2], [a2, a3, a1]]:
         print(measurement)
         decomp = pauli_decomposition(measurement, qubits)
         print("test1\n")
@@ -74,7 +77,7 @@ def test_pauli_decomposition_3_qubit(measurement):
         print("test2\n")
         print(decomp2)
         print(decomp2.matrix())
-        assert np.allclose(measurement, decomp.matrix())
+        assert np.allclose(measurement, decomp.matrix(qubits))
 
 
 @pytest.mark.parametrize(
@@ -82,6 +85,7 @@ def test_pauli_decomposition_3_qubit(measurement):
     (
         np.random.rand(16, 16),
         np.zeros((16, 16)),
+        np.identity(16),
     ),
 )
 def test_pauli_decomposition_4_qubit(measurement):
@@ -89,6 +93,6 @@ def test_pauli_decomposition_4_qubit(measurement):
     a2 = cirq.NamedQubit('a2')
     a3 = cirq.NamedQubit('a3')
     b1 = cirq.NamedQubit('b1')
-    for qubits in [[a1, a2, a3, b1], [a1, b1, a3, a2]]:
+    for qubits in [[a1, a2, a3, b1], [a2, b1, a1, a3], [b1, a3, a2, a1]]:
         decomp = pauli_decomposition(measurement, qubits)
-        assert np.allclose(measurement, decomp.matrix())
+        assert np.allclose(measurement, decomp.matrix(qubits))
