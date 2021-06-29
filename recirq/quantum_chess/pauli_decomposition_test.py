@@ -121,6 +121,5 @@ def test_pauli_decomposition_measurement_from_vectors(vector, expected_str):
     a2 = cirq.NamedQubit('a2')
     col = np.sqrt(0.5) * np.array(vector).reshape(4,1)
     measurement = col.dot(col.T.conj())
-    for qubits in [[a1, a2], [a2, a1]]:
-        decomp = pauli_decomposition(measurement, qubits)
-        assert f"{decomp:.3f}" == expected_str
+    decomp = pauli_decomposition(measurement, [a1, a2])
+    assert f"{decomp:.3f}" == expected_str
