@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 import numpy as np
 import scipy
 from scipy.optimize import OptimizeResult
-from scipy.optimize.optimize import wrap_function
+import scipy.optimize.optimize as oo
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
@@ -243,7 +243,7 @@ def model_policy_gradient(
         learning_rate, decay_steps=decay_steps, decay_rate=decay_rate, staircase=True
     )
 
-    _, f = wrap_function(f, args)
+    _, f = oo._wrap_function(f, args)
     res = OptimizeResult()
     current_x = np.copy(x0)
     res.x_iters = []  # initializes as lists
