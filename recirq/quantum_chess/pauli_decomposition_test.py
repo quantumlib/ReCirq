@@ -101,3 +101,26 @@ def test_pauli_decomposition_4_qubit(measurement):
     for qubits in [[a1, a2, a3, b1], [a2, b1, a1, a3], [b1, a3, a2, a1]]:
         decomp = pauli_decomposition(measurement, qubits)
         assert np.allclose(measurement, decomp.matrix(qubits))
+
+
+@pytest.mark.parametrize(
+    'vector', 'expected'
+    [
+        ([0., 1., 1., 0.], 'a1'),
+        ([0., 1., -1., 0.], 'a1'),
+        ([0., 1., 1.j, 0.], 'a1'),
+        ([0., 1., -1.j, 0.], 'a1'),
+        ([1., 0., 0., 1.], 'a1'),
+        ([1., 0., 0., -1.], 'a1'),
+        ([1., 0., 0., 1.j], 'a1'),
+        ([1., 0., 0., -1.j], 'a1'),
+    ],
+)
+def test_pauli_decomposition_measurement_from_vectors(vector, expected):
+    a1 = cirq.NamedQubit('a1')
+    a2 = cirq.NamedQubit('a2')
+    vector = np.sqrt(0.5) * np.array(vector).reshape(4,1)
+    measurement = vector.dot(vector.T.conj())
+    for qubits in [[a1, a2], [a2, a1]]:
+        decomp = pauli_decomposition(measurement, qubits)
+        assert str(decomp) == expected
