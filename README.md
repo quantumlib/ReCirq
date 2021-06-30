@@ -13,8 +13,10 @@ also document best practices for setting up robust experimental pipelines.
 Until ReCirq is published to PyPI, please clone this repository and install
 from source:
 
-    cd recirq/
-    pip install .
+```sh
+cd recirq/
+pip install .
+```
 
 Documentation is available at https://quantumai.google/cirq/experiments.
 
@@ -35,7 +37,7 @@ ReCirq is uploaded to Zenodo automatically. Click on this badge [![DOI](https://
 
 An equivalent BibTex format reference is below for all the versions:
 
-```
+```bib
 @software{quantum_ai_team_and_collaborators_2020_4091470,
   author       = {Quantum AI team and collaborators},
   title        = {ReCirq},
