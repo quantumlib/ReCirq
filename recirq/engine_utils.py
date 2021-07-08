@@ -25,7 +25,7 @@ import cirq_google as cg
 import numpy as np
 from cirq import work, study, circuits, ops
 from cirq_google import EngineTimeSlot
-from cirq_google import devices as cg_devices, gate_sets, engine as cg_engine
+from cirq_google import devices as cg_devices, engine as cg_engine
 from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
 from cirq_google.engine.engine_job import TERMINAL_STATES
 
@@ -90,9 +90,9 @@ class EngineSampler(work.Sampler):
         self.engine = engine
         self.processor_id = processor_id
         if gateset == 'sycamore':
-            self.gate_set = gate_sets.SYC_GATESET
+            self.gate_set = cg.SYC_GATESET
         elif gateset == 'sqrt-iswap':
-            self.gate_set = gate_sets.SQRT_ISWAP_GATESET
+            self.gate_set = cg.SQRT_ISWAP_GATESET
         else:
             raise ValueError("Unknown gateset {}".format(gateset))
 
