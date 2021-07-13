@@ -24,6 +24,12 @@ if [[ ! -f dev_tools/nbformat ]]; then
   chmod u+x dev_tools/nbformat
 fi
 
+# Check if cirq/check/nbformat exists, if not grab it.
+if [[ ! -f dev_tools/tensorflow-docs.txt ]]; then
+  wget https://raw.githubusercontent.com/quantumlib/Cirq/master/dev_tools/requirements/deps/tensorflow-docs.txt -P dev_tools/
+  pip install -r dev_tools/tensorflow-docs.txt
+fi
+
 # Run the formatter.
 result=$(dev_tools/nbformat "$@")
 status=$?
