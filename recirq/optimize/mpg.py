@@ -18,12 +18,13 @@ from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 import numpy as np
 import scipy
 from scipy.optimize import OptimizeResult
-from scipy.optimize.optimize import wrap_function
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
 from cirq import value
+
+from recirq.optimize import wrap_function
 
 if TYPE_CHECKING:
     import cirq
@@ -98,6 +99,7 @@ class _ExponentialSchedule:
 
         return self.learning_rate * self.decay_rate ** m
 
+
 def _adam_update(
     grad: np.ndarray,
     x: np.ndarray,
@@ -167,7 +169,6 @@ def model_policy_gradient(
     known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
     max_evaluations: Optional[int] = None
 ) -> scipy.optimize.OptimizeResult:
-
     """Model policy gradient algorithm for black-box optimization.
 
     The idea of this algorithm is to perform policy gradient, but estimate

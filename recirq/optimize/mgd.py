@@ -16,11 +16,12 @@ from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import scipy
-from scipy.optimize.optimize import wrap_function
 from scipy.optimize import OptimizeResult
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
+
+from recirq.optimize import wrap_function
 
 
 def _get_least_squares_model_gradient(
