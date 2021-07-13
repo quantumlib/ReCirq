@@ -405,6 +405,13 @@ def compile_problem_unitary_to_arbitrary_zz(
     return c2
 
 
+def _rx(rads):
+    # Cirq > 0.10 introduced bespoke cirq.Rx gate which is a descendant
+    # of XPowGate. Unfortunately, this has broken pytket which checks
+    # for type equality.
+    return cirq.XPowGate(exponent=rads / np.pi, global_shift=-0.5)
+
+
 class DriverUnitary(cirq.Gate):
     """An N-body gate which applies the QAOA driver unitary with
     parameter `beta` to all qubits."""
@@ -417,7 +424,7 @@ class DriverUnitary(cirq.Gate):
         return self._num_qubits
 
     def _decompose_(self, qubits) -> 'cirq.OP_TREE':
-        yield cirq.rx(2 * self.beta).on_each(*qubits)
+        yield _rx(2 * self.beta).on_each(*qubits)
 
     def _circuit_diagram_info_(
             self,
@@ -446,7 +453,7 @@ class _DriverToRx(cirq.PointOptimizer):
             return cirq.PointOptimizationSummary(
                 clear_span=1,
                 clear_qubits=op.qubits,
-                new_operations=cirq.rx(2 * gate.beta).on_each(op.qubits)
+                new_operations=_rx(2 * gate.beta).on_each(op.qubits)
             )
 
 
