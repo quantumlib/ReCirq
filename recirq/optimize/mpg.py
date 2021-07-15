@@ -24,7 +24,7 @@ from sklearn.preprocessing import PolynomialFeatures
 
 from cirq import value
 
-from recirq.optimize import wrap_function
+from recirq.optimize._util import wrap_function
 
 if TYPE_CHECKING:
     import cirq

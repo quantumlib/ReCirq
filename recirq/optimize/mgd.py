@@ -21,7 +21,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
 
-from recirq.optimize import wrap_function
+from recirq.optimize._util import wrap_function
 
 
 def _get_least_squares_model_gradient(
