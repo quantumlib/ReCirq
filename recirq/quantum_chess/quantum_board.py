@@ -14,6 +14,7 @@
 import time
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
 
 import cirq
 
@@ -31,6 +32,12 @@ import recirq.quantum_chess.circuit_transformer as ct
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
+
+
+@dataclass(frozen=True, eq=True)
+class CacheKey:
+    move_type: enums.MoveType
+    repetitions: int
 
 
 class CirqBoard:
@@ -87,6 +94,8 @@ class CirqBoard:
 
         # None if there is no cache, stores the repetition number if there is a cache.
         self.accumulations_repetitions = None
+        self.cache = {}
+        self.move_history_probabilities_cache = {}
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
@@ -331,16 +340,72 @@ class CirqBoard:
 
         self.accumulations_repetitions = repetitions
 
+    def _get_cache_key(self, m: move.Move, repetitions: int):
+        return CacheKey(m.move_type, repetitions)
+
+    def cache_results(self, cache_key: CacheKey):
+        if cache_key in self.cache:
+            return
+        if cache_key.move_type == enums.MoveType.SPLIT_JUMP:
+            helper_board = CirqBoard(self.init_basis_state, self.sampler,
+                                     self.device, self.error_mitigation,
+                                     self.noise_mitigation,
+                                     self.transformer if self.device else None)
+            sample_jump_move = move.Move('b1',
+                                         'c3',
+                                         target2='a3',
+                                         move_type=enums.MoveType.SPLIT_JUMP,
+                                         move_variant=enums.MoveVariant.BASIC)
+            helper_board.do_move(sample_jump_move)
+            probs = helper_board.get_probability_distribution(
+                cache_key.repetitions, use_cache=False)
+            self.cache[cache_key] = {
+                "source": 0,
+                "target": probs[square_to_bit(sample_jump_move.target)],
+                "target2": probs[square_to_bit(sample_jump_move.target2)]
+            }
+            self.debug_log += helper_board.debug_log
+
+    @staticmethod
+    def _apply_cache(probability, m, cache_value):
+        for k, v in cache_value.items():
+            square = getattr(m, k)
+            probability[square_to_bit(square)] = v
+        return probability
+
     def get_probability_distribution(self,
-                                     repetitions: int = 1000) -> List[float]:
+                                     repetitions: int = 1000,
+                                     use_cache=True) -> List[float]:
         """Returns the probability of a piece being in each square.
 
         The values are returned as a list in the same ordering as a
         bitboard.
         """
+        move_history_cache_key = (tuple(self.move_history), repetitions)
+        move_history_old_cache_key = (tuple(self.move_history[:-1]),
+                                      repetitions)
+        if use_cache and self.move_history:
+            last_move = self.move_history[-1]
+            if move_history_cache_key in self.move_history_probabilities_cache:
+                return self.move_history_probabilities_cache[
+                    move_history_cache_key]
+            cache_key = self._get_cache_key(last_move, repetitions)
+            if move_history_old_cache_key in self.move_history_probabilities_cache and cache_key in self.cache:
+                probs = self._apply_cache(
+                    self.move_history_probabilities_cache[
+                        move_history_old_cache_key], last_move,
+                    self.cache[cache_key])
+                self.probabilities = probs
+                self.move_history_probabilities_cache[
+                    move_history_cache_key] = probs.copy()
+                del self.cache[cache_key]
+                return probs
+
         if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions)
 
+        self.move_history_probabilities_cache[
+            move_history_cache_key] = self.probabilities.copy()
         return self.probabilities
 
     def get_full_squares_bitboard(self, repetitions: int = 1000) -> int:

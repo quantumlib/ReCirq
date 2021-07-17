@@ -794,7 +794,7 @@ def test_classical_ep2(board):
                   move_variant=enums.MoveVariant.BASIC)
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['d3'])])
-    
+
 # Seems to be problematic on real device
 def test_capture_ep():
     """Tests capture en passant.
@@ -963,6 +963,35 @@ def test_caching_accumulations_same_repetition_cached(board):
     probs1 = b.get_probability_distribution(100)
     probs2 = b.get_probability_distribution(100)
     assert probs1 == probs2
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_get_probability_distribution_move_pre_cached(board):
+    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    # Cache a split jump in advance.
+    cache_key = qb.CacheKey(enums.MoveType.SPLIT_JUMP, 100)
+    b.cache_results(cache_key)
+
+    m1 = move.Move('a1',
+                   'a2',
+                   move_type=enums.MoveType.JUMP,
+                   move_variant=enums.MoveVariant.BASIC)
+    m2 = move.Move('b1',
+                   'c1',
+                   target2='d1',
+                   move_type=enums.MoveType.SPLIT_JUMP,
+                   move_variant=enums.MoveVariant.BASIC)
+    b.do_move(m1)
+    probs = b.get_probability_distribution(100)
+    b.do_move(m2)
+    # Expected probability with the cache applied
+    probs[square_to_bit('b1')] = 0
+    probs[square_to_bit('c1')] = b.cache[cache_key]["target"]
+    probs[square_to_bit('d1')] = b.cache[cache_key]["target2"]
+
+    # Get probability distribution should apply the cache without rerunning _generate_accumulations.
+    assert probs == b.get_probability_distribution(100, use_cache=True)
+
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_jump_with_successful_measurement_outcome(board):
