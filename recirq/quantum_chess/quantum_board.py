@@ -14,7 +14,6 @@
 import time
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
 
 import cirq
 
@@ -28,16 +27,11 @@ from recirq.quantum_chess.bit_utils import (
     xy_to_bit,
     bit_ones,
 )
+from recirq.quantum_chess.caching_utils import CacheKey, cache_key_from_move
 import recirq.quantum_chess.circuit_transformer as ct
 import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
-
-
-@dataclass(frozen=True, eq=True)
-class CacheKey:
-    move_type: enums.MoveType
-    repetitions: int
 
 
 class CirqBoard:
@@ -340,8 +334,17 @@ class CirqBoard:
 
         self.accumulations_repetitions = repetitions
 
-    def _get_cache_key(self, m: move.Move, repetitions: int):
-        return CacheKey(m.move_type, repetitions)
+    def _caching_supported(self, m: move.Move):
+        """Checks if caching is supported for this move."""
+
+        # Caching is supported for a split jump from one full square to two empty squares.
+        if m.move_type == enums.MoveType.SPLIT_JUMP and self.probabilities[
+                square_to_bit(
+                    m.source)] == 1 and self.probabilities[square_to_bit(
+                        m.target)] == 0 and self.probabilities[square_to_bit(
+                            m.target2)] == 0:
+            return True
+        return False
 
     def cache_results(self, cache_key: CacheKey):
         if cache_key in self.cache:
@@ -389,7 +392,7 @@ class CirqBoard:
             if move_history_cache_key in self.move_history_probabilities_cache:
                 return self.move_history_probabilities_cache[
                     move_history_cache_key]
-            cache_key = self._get_cache_key(last_move, repetitions)
+            cache_key = cache_key_from_move(last_move, repetitions)
             if move_history_old_cache_key in self.move_history_probabilities_cache and cache_key in self.cache:
                 probs = self._apply_cache(
                     self.move_history_probabilities_cache[

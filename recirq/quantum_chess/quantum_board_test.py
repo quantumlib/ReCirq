@@ -29,6 +29,7 @@ from recirq.quantum_chess.bit_utils import (
     bit_to_qubit,
     square_to_bit,
 )
+from recirq.quantum_chess.caching_utils import CacheKey
 
 BIG_CIRQ_BOARDS = (
     qb.CirqBoard(0, error_mitigation=enums.ErrorMitigation.Error),
