@@ -967,10 +967,10 @@ def test_caching_accumulations_same_repetition_cached(board):
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
-def test_get_probability_distribution_move_pre_cached(board):
+def test_get_probability_distribution_split_jump_pre_cached(board):
     b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
     # Cache a split jump in advance.
-    cache_key = qb.CacheKey(enums.MoveType.SPLIT_JUMP, 100)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 100)
     b.cache_results(cache_key)
 
     m1 = move.Move('a1',
@@ -989,7 +989,6 @@ def test_get_probability_distribution_move_pre_cached(board):
     probs[square_to_bit('b1')] = 0
     probs[square_to_bit('c1')] = b.cache[cache_key]["target"]
     probs[square_to_bit('d1')] = b.cache[cache_key]["target2"]
-
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
     assert probs == b.get_probability_distribution(100, use_cache=True)
 
