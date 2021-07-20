@@ -16,7 +16,7 @@ from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import scipy
-import scipy.optimize.optimize as oo
+from scipy.optimize.optimize import wrap_function
 from scipy.optimize import OptimizeResult
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -157,7 +157,7 @@ def model_gradient_descent(
         n_sample_points = int(
             np.ceil(n_sample_points_ratio * (n + 1) * (n + 2) / 2))
 
-    _, f = oo._wrap_function(f, args)
+    _, f = wrap_function(f, args)
     res = OptimizeResult()
     current_x = np.copy(x0)
     res.x_iters = []  # initializes as lists
