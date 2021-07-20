@@ -349,7 +349,6 @@ class CirqBoard:
         """ Samples the state and generates the accumulated
         probabilities of the whole board.
         """
-        # add
         self.board_probabilities = {}
 
         samples = self.sample(repetitions)
@@ -361,7 +360,7 @@ class CirqBoard:
 
         for board in self.board_probabilities:
             self.board_probabilities[board] = float(self.board_probabilities[board]) / float(repetitions)
-        # add
+
         self.board_accumulations_repetitions = repetitions
 
     def get_board_probability_distribution(self,
