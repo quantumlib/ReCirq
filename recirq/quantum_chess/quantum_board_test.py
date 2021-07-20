@@ -27,7 +27,6 @@ from recirq.quantum_chess.test_utils import (
 )
 from recirq.quantum_chess.bit_utils import (
     bit_to_qubit,
-    set_nth_bit,
     square_to_bit,
 )
 
