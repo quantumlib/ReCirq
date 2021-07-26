@@ -7,7 +7,7 @@ import pytest
 import cirq
 import cirq.contrib.acquaintance as cca
 import cirq.contrib.routing as ccr
-from cirq.google import Sycamore23
+from cirq_google import Sycamore23
 from recirq.qaoa.gates_and_compilation import compile_problem_unitary_to_arbitrary_zz, \
     compile_driver_unitary_to_rx
 from recirq.qaoa.placement import place_line_on_device, place_on_device, \
@@ -38,7 +38,7 @@ def test_place_on_device():
     circuit = compile_problem_unitary_to_arbitrary_zz(circuit)
     circuit = compile_driver_unitary_to_rx(circuit)
 
-    device = cirq.google.Sycamore23
+    device = Sycamore23
     routed_circuit, initial_qubit_map, final_qubit_map = place_on_device(circuit, device)
 
     # Check that constraints are not violated
@@ -112,7 +112,7 @@ def test_min_weight_simple_path_anneal():
 
 
 def _fake_calib_data():
-    err_graph = ccr.xmon_device_to_graph(Sycamore23)
+    err_graph = ccr.gridqubits_to_graph_device(Sycamore23.qubits)
     nx.set_edge_attributes(err_graph, 0.005, 'weight')
     nx.set_node_attributes(err_graph, 0.05, 'weight')
     return err_graph

@@ -24,10 +24,10 @@ import numpy as np
 
 import cirq
 from cirq import work, study, circuits, ops
-from cirq.google import devices as cg_devices, gate_sets, engine as cg_engine
-from cirq.google.engine.engine_job import TERMINAL_STATES
-from cirq.google.engine.client.quantum_v1alpha1.gapic import enums
-from cirq.google import EngineTimeSlot
+from cirq_google import devices as cg_devices, gate_sets, engine as cg_engine
+from cirq_google.engine.engine_job import TERMINAL_STATES
+from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
+from cirq_google import EngineTimeSlot
 
 
 def _get_program_id(program: Any):

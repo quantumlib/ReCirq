@@ -3,6 +3,9 @@ from collections import defaultdict
 from functools import lru_cache
 from typing import Callable, Dict, List, Optional, Tuple
 
+import cirq
+import cirq.contrib.routing as ccr
+import cirq_google
 import networkx as nx
 import numpy as np
 import pytket
@@ -12,8 +15,6 @@ from pytket.passes import SequencePass, RoutingPass, PlacementPass
 from pytket.predicates import CompilationUnit, ConnectivityPredicate
 from pytket.routing import GraphPlacement
 
-import cirq
-import cirq.contrib.routing as ccr
 import recirq
 
 
@@ -40,7 +41,7 @@ def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
 
 def _qubit_index_edges(device):
     """Helper function in `_device_to_tket_device`"""
-    dev_graph = ccr.xmon_device_to_graph(device)
+    dev_graph = ccr.gridqubits_to_graph_device(device.qubit_set())
     for n1, n2 in dev_graph.edges:
         yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
 
@@ -68,7 +69,7 @@ def tk_to_cirq_qubit(tk: Qubit):
 
 
 def place_on_device(circuit: cirq.Circuit,
-                    device: cirq.google.XmonDevice,
+                    device: cirq_google.XmonDevice,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
