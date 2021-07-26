@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import cirq
 import cirq.contrib.routing as ccr
-import cirq_google
+import cirq_google as cg
 import networkx as nx
 import numpy as np
 import pytket
@@ -18,7 +18,7 @@ from pytket.routing import GraphPlacement
 import recirq
 
 
-def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
+def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
     """Take the calibration data in dictionary form and return a graph
     representing the errors.
 
@@ -69,7 +69,7 @@ def tk_to_cirq_qubit(tk: Qubit):
 
 
 def place_on_device(circuit: cirq.Circuit,
-                    device: cirq_google.XmonDevice,
+                    device: cg.XmonDevice,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
@@ -627,8 +627,7 @@ def _get_device_calibration(device_name: str):
         nx.set_edge_attributes(dummy_graph, name='weight', values=0.01)
         return dummy_graph
 
-    engine = cirq.google.Engine(project_id=os.environ['GOOGLE_CLOUD_PROJECT'])
-    calibration = engine.get_latest_calibration(processor_id)
+    calibration = cg.get_engine_calibration(processor_id)
     err_graph = calibration_data_to_graph(calibration)
     return err_graph
 

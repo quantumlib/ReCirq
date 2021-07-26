@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 
 import cirq
-from cirq.google.optimizers.convert_to_sycamore_gates import swap_rzz, rzz
+from cirq_google.optimizers.convert_to_sycamore_gates import swap_rzz, rzz
 from recirq.qaoa.problems import _validate_problem_graph
 
 try:

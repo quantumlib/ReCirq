@@ -15,18 +15,17 @@
 import os
 import uuid
 from datetime import datetime
-
-import pytest
 from unittest.mock import patch
 
-from google.protobuf.timestamp_pb2 import Timestamp
 import cirq
-from cirq.google.engine import EngineTimeSlot
-from cirq.google.engine.client.quantum_v1alpha1.gapic import enums
-from cirq.google.engine.client.quantum_v1alpha1 import types as qtypes
+import cirq_google
+import pytest
+from cirq_google.engine.client.quantum_v1alpha1 import types as qtypes
+from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
+from google.protobuf.timestamp_pb2 import Timestamp
+
 import recirq
 from recirq.engine_utils import _get_program_id
-
 
 
 def test_get_program_id():
@@ -93,8 +92,7 @@ def test_zeros_sampler_many_measure():
 
 
 def test_device_obj():
-    assert recirq.get_device_obj_by_name('Sycamore23') \
-           == cirq.google.Sycamore23
+    assert recirq.get_device_obj_by_name('Sycamore23') == cirq_google.Sycamore23
 
 
 def test_processor_id():

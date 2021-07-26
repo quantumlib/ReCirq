@@ -13,21 +13,21 @@
 # limitations under the License.
 
 import asyncio
+import datetime
 import math
 import os
 import uuid
-import datetime
 from dataclasses import dataclass, field
 from typing import List, Any, Optional, Callable, Dict, Union
 
-import numpy as np
-
 import cirq
+import cirq_google as cg
+import numpy as np
 from cirq import work, study, circuits, ops
-from cirq_google import devices as cg_devices, gate_sets, engine as cg_engine
-from cirq_google.engine.engine_job import TERMINAL_STATES
-from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
 from cirq_google import EngineTimeSlot
+from cirq_google import devices as cg_devices, gate_sets, engine as cg_engine
+from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
+from cirq_google.engine.engine_job import TERMINAL_STATES
 
 
 def _get_program_id(program: Any):
@@ -150,7 +150,7 @@ class EngineSampler(work.Sampler):
         response = engine_job.context.client.get_job_results(
             engine_job.project_id, engine_job.program_id, engine_job.job_id)
         result = response.result
-        v2_parsed_result = cirq.google.api.v2.result_pb2.Result()
+        v2_parsed_result = cg.api.v2.result_pb2.Result()
         v2_parsed_result.ParseFromString(result.value)
         return engine_job._get_job_results_v2(v2_parsed_result)[0]
 
@@ -391,7 +391,7 @@ def get_available_processors(processor_names: List[str]):
         processor_names: A list of processor names which are keys from QUANTUM_PROCESSORS.
     """
     project_id = os.environ['GOOGLE_CLOUD_PROJECT']
-    engine = cirq.google.get_engine()
+    engine = cg.get_engine()
     available_processors = []
     current_time = _get_current_time()
     for processor_name in processor_names:

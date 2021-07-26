@@ -10,7 +10,7 @@ import sympy
 import time
 
 import cirq
-import cirq.google as cg
+import cirq_google as cg
 import numpy as np
 
 
@@ -148,7 +148,7 @@ class RepRateCalculator:
         sampler = engine.sampler(processor_id=processor_id, gate_set=gate_set)
         gate = cirq.ISWAP**0.5
         if gate_set == cg.SYC_GATESET:
-            gate = cirq.google.SYC
+            gate = cg.SYC
         return cls(device, sampler, gate)
 
     def _flush_print_log(self) -> None:
