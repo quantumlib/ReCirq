@@ -50,10 +50,9 @@ def _device_to_tket_device(device):
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
-    arc = pytket.routing.Architecture(
+    return pytket.routing.Architecture(
         list(_qubit_index_edges(device))
     )
-    return pytket.device.Device({}, {}, arc)
 
 
 def tk_to_cirq_qubit(tk: Qubit):
@@ -100,9 +99,9 @@ def place_on_device(circuit: cirq.Circuit,
         raise RuntimeError("Routing failed")
 
     initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                     for n1, n2 in unit.initial_map.items()}
+                   for n1, n2 in unit.initial_map.items()}
     final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-             for n1, n2 in unit.final_map.items()}
+                 for n1, n2 in unit.final_map.items()}
     routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
 
     return routed_circuit, initial_map, final_map
