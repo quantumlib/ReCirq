@@ -21,8 +21,6 @@ Default is the normal classical chess starting position.
 import argparse
 from typing import List
 
-import cirq.google as cg
-
 import recirq.engine_utils as utils
 import recirq.quantum_chess.ascii_board as ab
 import recirq.quantum_chess.enums as enums
