@@ -1,12 +1,11 @@
+import cirq
 import networkx as nx
 import numpy as np
-import pytest
 
-import cirq
 from recirq.qaoa.circuit_structure import validate_well_structured
-from recirq.qaoa.problems import random_plus_minus_1_weights, HardwareGridProblem
 from recirq.qaoa.problem_circuits import get_routed_hardware_grid_circuit, \
     get_compiled_hardware_grid_circuit, get_generic_qaoa_circuit
+from recirq.qaoa.problems import random_plus_minus_1_weights, HardwareGridProblem
 
 
 def test_get_generic_qaoa_circuit():
