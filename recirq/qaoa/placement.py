@@ -3,6 +3,9 @@ from collections import defaultdict
 from functools import lru_cache
 from typing import Callable, Dict, List, Optional, Tuple
 
+import cirq
+import cirq.contrib.routing as ccr
+import cirq_google as cg
 import networkx as nx
 import numpy as np
 import pytket
@@ -12,12 +15,10 @@ from pytket.passes import SequencePass, RoutingPass, PlacementPass
 from pytket.predicates import CompilationUnit, ConnectivityPredicate
 from pytket.routing import GraphPlacement
 
-import cirq
-import cirq.contrib.routing as ccr
 import recirq
 
 
-def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
+def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
     """Take the calibration data in dictionary form and return a graph
     representing the errors.
 
@@ -40,7 +41,7 @@ def calibration_data_to_graph(calib_dict: Dict) -> nx.Graph:
 
 def _qubit_index_edges(device):
     """Helper function in `_device_to_tket_device`"""
-    dev_graph = ccr.xmon_device_to_graph(device)
+    dev_graph = ccr.gridqubits_to_graph_device(device.qubit_set())
     for n1, n2 in dev_graph.edges:
         yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
 
@@ -50,10 +51,9 @@ def _device_to_tket_device(device):
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
-    arc = pytket.routing.Architecture(
+    return pytket.routing.Architecture(
         list(_qubit_index_edges(device))
     )
-    return pytket.device.Device({}, {}, arc)
 
 
 def tk_to_cirq_qubit(tk: Qubit):
@@ -69,7 +69,7 @@ def tk_to_cirq_qubit(tk: Qubit):
 
 
 def place_on_device(circuit: cirq.Circuit,
-                    device: cirq.google.XmonDevice,
+                    device: cg.XmonDevice,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
@@ -100,9 +100,9 @@ def place_on_device(circuit: cirq.Circuit,
         raise RuntimeError("Routing failed")
 
     initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                     for n1, n2 in unit.initial_map.items()}
+                   for n1, n2 in unit.initial_map.items()}
     final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-             for n1, n2 in unit.final_map.items()}
+                 for n1, n2 in unit.final_map.items()}
     routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
 
     return routed_circuit, initial_map, final_map
@@ -627,8 +627,7 @@ def _get_device_calibration(device_name: str):
         nx.set_edge_attributes(dummy_graph, name='weight', values=0.01)
         return dummy_graph
 
-    engine = cirq.google.Engine(project_id=os.environ['GOOGLE_CLOUD_PROJECT'])
-    calibration = engine.get_latest_calibration(processor_id)
+    calibration = cg.get_engine_calibration(processor_id)
     err_graph = calibration_data_to_graph(calibration)
     return err_graph
 

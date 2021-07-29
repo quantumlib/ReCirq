@@ -2,7 +2,7 @@ import re
 from typing import Dict
 
 import cirq
-import cirq.google as cg
+import cirq_google as cg
 import recirq.benchmarks.rep_rate.rep_rate_calculator as rep_rate
 
 
