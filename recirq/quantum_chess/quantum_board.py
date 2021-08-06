@@ -662,6 +662,7 @@ class CirqBoard:
                 return 0
             if tqubit in self.entangled_squares:
                 old_tqubit = self.unhook(tqubit)
+                self.state = set_nth_bit(tbit, self.state, False)
                 self.add_entangled(squbit, tqubit)
 
                 self.circuit.append(
