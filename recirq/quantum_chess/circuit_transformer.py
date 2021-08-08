@@ -391,6 +391,8 @@ class SycamoreDecomposer(cirq.PointOptimizer):
         if op.gate == cirq.SWAP or op.gate == cirq.CNOT:
             new_ops = cirq.google.optimized_for_sycamore(cirq.Circuit(op))
         if isinstance(op, cirq.ControlledOperation):
+            if not all(v == 1 for values in op.control_values for v in values):
+                raise ValueError(f'0-controlled ops not yet supported: {op}')
             qubits = op.sub_operation.qubits
             if op.gate.sub_gate == cirq.ISWAP:
                 new_ops = controlled_iswap.controlled_iswap(
