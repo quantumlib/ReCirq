@@ -55,3 +55,9 @@ toc:
   path: /cirq/experiments/fermi_hubbard/experiment_example
 - title: "Spin-charge separation results"
   path: /cirq/experiments/fermi_hubbard/publication_results
+
+- heading: "Quantum scrambling"
+- title: "Overview"
+  path: /cirq/experiments/otoc
+- title: "Experiment example"
+  path: /cirq/experiments/otoc/otoc_example
