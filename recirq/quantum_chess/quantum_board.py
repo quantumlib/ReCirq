@@ -347,7 +347,7 @@ class CirqBoard:
 
     def _generate_board_accumulations(self, repetitions: int = 1000) -> None:
         """ Samples the state and generates the accumulated
-        probabilities of the whole board.
+        probabilities of each board in the state.
         """
         self.board_probabilities = {}
 
@@ -365,7 +365,7 @@ class CirqBoard:
 
     def get_board_probability_distribution(self,
                                            repetitions: int = 1000) -> Dict[int, float]:
-        """Returns the probability of the whole board being in different states.
+        """Returns the probability distribution for each board found in the sample.
 
         The values are returned as a dict{bitboard(int): prob(float)}.
         """
