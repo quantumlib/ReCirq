@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
+import cirq
 
 import recirq.engine_utils as utils
 import recirq.quantum_chess.bit_utils as u
@@ -1031,3 +1032,129 @@ def test_split_capture_with_failed_measurement_outcome(board):
         probs = b.get_probability_distribution(100)
         assert_prob_about(probs, u.square_to_bit('a2'), 1)
         assert_prob_about(probs, u.square_to_bit('a3'), 0)
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_merge_capture_to_fully_classical_position(board):
+    """Splits piece on d4 to b3 and c2, then merge back and capture piece on a1."""
+    b = board.with_state(u.squares_to_bitboard(['a1','d4']))
+    b.do_move(
+        move.Move('d4',
+                  'b3',
+                  target2='c2',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+
+    b.do_move(
+        move.Move('b3',
+                  'a1',
+                  source2='c2',
+                  move_type=enums.MoveType.MERGE_JUMP,
+                  move_variant=enums.MoveVariant.CAPTURE))
+
+
+    assert b.is_classical()
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_avenge_superposition_capture(board):
+    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6."""
+    b = board.with_state(u.squares_to_bitboard(['f4','f8']))
+    b.do_move(
+        move.Move('f8',
+                  'd6',
+                  target2='h6',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    b.do_move(
+        move.Move('f4', 'd6',
+                  move_type=enums.MoveType.JUMP,
+                    move_variant=enums.MoveVariant.CAPTURE))
+    b.do_move(
+        move.Move('h6', 'd6',
+                  move_type=enums.MoveType.JUMP,
+                    move_variant=enums.MoveVariant.CAPTURE))
+    assert b.is_classical()
+    assert (b.circuit == cirq.Circuit())
+    assert b.ancilla_count == 0
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_undo_to_start_after_measurement(board):
+    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
+    Then does three undo moves to return to initial position."""
+    b = board.with_state(u.squares_to_bitboard(['f4','f8']))
+
+    initial_board = b.get_full_squares_bitboard()
+    b.do_move(
+        move.Move('f8',
+                  'd6',
+                  target2='h6',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    b.do_move(
+        move.Move('f4', 'd6',
+                  move_type=enums.MoveType.JUMP,
+                  move_variant=enums.MoveVariant.CAPTURE))
+    b.do_move(
+        move.Move('h6', 'd6',
+                  move_type=enums.MoveType.JUMP,
+                  move_variant=enums.MoveVariant.CAPTURE))
+    assert b.is_classical()
+    assert (b.circuit == cirq.Circuit())
+
+    assert b.undo_last_move()
+    assert b.undo_last_move()
+    assert b.undo_last_move()
+
+    assert(b.get_full_squares_bitboard() == initial_board)
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_quantum_capture_with_forced_measurement(board):
+    """Splits piece on b1 to a1 and c1. Piece on a1 then captures piece on a5."""
+    b = board.with_state(u.squares_to_bitboard(['b1','a5']))
+    b.do_move(
+        move.Move('b1',
+                  'a1',
+                  target2='c1',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    b.do_move(
+        move.Move('a1', 'a5',
+                  move_type=enums.MoveType.JUMP,
+                  move_variant=enums.MoveVariant.CAPTURE))
+    assert b.is_classical()
+    assert (b.circuit == cirq.Circuit())
+    assert b.ancilla_count == 0
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_consecutive_quantum_captures_with_successful_measurement_outcome(board):
+    """Splits piece on b2 to b8 and h2, then splits piece on e5 to d6 and f4.
+    Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4,
+    also with a successful measurement."""
+    b = board.with_state(u.squares_to_bitboard(['b2','e5']))
+    b.do_move(
+        move.Move('b2',
+                  'b8',
+                  target2='h2',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+
+    b.do_move(
+        move.Move('e5',
+                  'd6',
+                  target2='f4',
+                  move_type=enums.MoveType.SPLIT_JUMP,
+                  move_variant=enums.MoveVariant.BASIC))
+    b.do_move(
+        move.Move('b8', 'd6',
+                  move_type=enums.MoveType.JUMP,
+                  move_variant=enums.MoveVariant.CAPTURE,
+                  measurement = 1))
+
+    b.do_move(
+        move.Move('d6', 'f4',
+                  move_type=enums.MoveType.JUMP,
+                  move_variant=enums.MoveVariant.CAPTURE,
+                  measurement = 1))
+    assert b.is_classical()
+    assert (b.circuit == cirq.Circuit())
+    assert b.ancilla_count == 0
