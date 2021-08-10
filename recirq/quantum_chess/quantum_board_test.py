@@ -192,6 +192,22 @@ def test_split_and_use_same_square(board):
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['a2']))
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['b2']))
 
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_overlapping_splits(board):
+    b = board(u.squares_to_bitboard(['e1', 'g1']))
+    assert b.perform_moves(
+        'e1^d3f3:SPLIT_JUMP:BASIC',
+        'g1^h3f3:SPLIT_JUMP:BASIC',
+    )
+    assert_sample_distribution(b, {
+        u.squares_to_bitboard(['d3', 'f3']): 1 / 4,
+        u.squares_to_bitboard(['d3', 'h3']): 1 / 4,
+        u.squares_to_bitboard(['f3', 'g1']): 1 / 4,
+        u.squares_to_bitboard(['h3', 'g1']): 1 / 4,
+    })
+
+
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_exclusion(board):
     """Splits piece b1 to c1 and d1 then tries a excluded move from a1 to c1."""

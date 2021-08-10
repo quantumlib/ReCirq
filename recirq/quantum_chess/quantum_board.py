@@ -848,8 +848,6 @@ class CirqBoard:
             tqubit2 = bit_to_qubit(tbit2)
             self.add_entangled(squbit, tqubit, tqubit2)
             self.circuit.append(qm.split_move(squbit, tqubit, tqubit2))
-            self.state = set_nth_bit(sbit, self.state, False)
-            self.unhook(squbit)
             return 1
 
         if m.move_type == enums.MoveType.MERGE_JUMP:
