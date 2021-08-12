@@ -17,6 +17,10 @@ import recirq.quantum_chess.enums as enums
 
 def test_equality():
     assert Move('a1', 'b4') == Move('a1', 'b4')
+    assert (Move(source='g3', source2='c3', target='e4', move_type=enums.MoveType.MERGE_JUMP) ==
+            Move(source='g3', source2='c3', target='e4', move_type=enums.MoveType.MERGE_JUMP))
+    assert (Move(source='g3', source2='c3', target='e4', move_type=enums.MoveType.MERGE_JUMP) !=
+            Move(source='g3', source2='d6', target='e4', move_type=enums.MoveType.MERGE_JUMP))
     assert Move('a1', 'b4') != Move('a1', 'b5')
     assert Move('a1', 'b4') != "a1b4"
 
