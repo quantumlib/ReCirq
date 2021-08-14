@@ -147,12 +147,12 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
     yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(ancilla)
     yield (cirq.ISWAP(squbit, tqubit2)).controlled_by(ancilla)
 
-    # Now switch to anti-control of path1
+    # Now switch to anti-control of path2
     yield cirq.X(ancilla).controlled_by(path1)
 
     yield cirq.ISWAP(squbit, tqubit).controlled_by(ancilla)
 
-    # Switch to control of path1 but anti-control of path2
+    # Switch to control of path2 but anti-control of path1
     yield cirq.X(ancilla).controlled_by(path1)
 
     # In order to prevent path2 from needing connectivity to
