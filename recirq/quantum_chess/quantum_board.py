@@ -631,7 +631,11 @@ class CirqBoard:
 
             # Find all the squares on both paths
             path_qubits = self.path_qubits(m.source, m.target)
+            if tqubit2 in path_qubits:
+                path_qubits.remove(tqubit2)
             path_qubits2 = self.path_qubits(m.source, m.target2)
+            if tqubit in path_qubits2:
+                path_qubits2.remove(tqubit)
 
             if len(path_qubits) == 0 and len(path_qubits2) == 0:
                 # No interposing squares, just jump.
@@ -653,7 +657,11 @@ class CirqBoard:
 
             # Find all the squares on both paths
             path_qubits = self.path_qubits(m.source, m.target)
+            if squbit2 in path_qubits:
+                path_qubits.remove(squbit2)
             path_qubits2 = self.path_qubits(m.source2, m.target)
+            if squbit in path_qubits2:
+                path_qubits2.remove(squbit)
             if len(path_qubits) == 0 and len(path_qubits2) == 0:
                 # No interposing squares, just jump.
                 m.move_type = enums.MoveType.MERGE_JUMP

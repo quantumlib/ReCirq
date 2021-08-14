@@ -509,6 +509,17 @@ def test_split_both_sides(board):
     assert_prob_about(probs, qb.square_to_bit('a5'), 0.4375)
 
 
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_split_merge_slide_self_intersecting(board):
+    """Tests merge slide with a source square in the path."""
+    b = board.with_state(u.squares_to_bitboard(['c1']))
+    assert b.perform_moves(
+        'c1^e3g5:SPLIT_SLIDE:BASIC',
+        'e3g5^d2:MERGE_SLIDE:BASIC',
+    )
+    assert_samples_in(b, [u.squares_to_bitboard(['d2'])])
+
+
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_merge_slide_one_side(board):
     """Tests merge slide.
