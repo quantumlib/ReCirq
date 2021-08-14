@@ -378,6 +378,17 @@ def test_slide_with_two_path_qubits_coherence():
     })
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
+def test_split_slide_merge_slide_coherence(board):
+    b = board.with_state(u.squares_to_bitboard(['b4', 'd3']))
+    assert b.perform_moves(
+        'd3^c5e5:SPLIT_JUMP:BASIC',
+        'b4^b8e7:SPLIT_SLIDE:BASIC',
+        'b8e7^b4:MERGE_SLIDE:BASIC',
+        'c5e5^d3:MERGE_JUMP:BASIC',
+    )
+    assert_samples_in(b, [u.squares_to_bitboard(['b4', 'd3'])])
+
+@pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_excluded_slide(board):
     """Test excluded slide.
 

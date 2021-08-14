@@ -163,6 +163,11 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
 
     yield cirq.ISWAP(squbit, tqubit2).controlled_by(ancilla)
 
+    # Zero out ancillas
+    yield cirq.X(ancilla).controlled_by(path1)
+    yield cirq.SWAP(path1, path2)
+    yield cirq.X(ancilla).controlled_by(path2, path1)
+
 
 def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path1, path2)
@@ -183,6 +188,10 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path2)
     yield (cirq.ISWAP(squbit, tqubit) ** -1).controlled_by(ancilla)
 
+    # Zero out ancillas
+    yield cirq.X(ancilla).controlled_by(path2)
+    yield cirq.SWAP(path2, path1)
+    yield cirq.X(ancilla).controlled_by(path1, path2)
 
 def en_passant(squbit, tqubit, epqubit, path, c):
     yield cirq.X(path).controlled_by(squbit, epqubit)

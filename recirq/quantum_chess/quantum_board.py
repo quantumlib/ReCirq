@@ -462,6 +462,14 @@ class CirqBoard:
             qm.controlled_operation(cirq.X, [path_ancilla], [], path_qubits))
         return path_ancilla
 
+    def _clear_path_ancilla(self, path_qubits, ancilla):
+        """Zeroes the path ancilla based on path_qubits.
+
+        This does the inverse operation of _create_path_ancilla.
+        """
+        self.circuit.append(
+            qm.controlled_operation(cirq.X, [ancilla], [], path_qubits))
+
     def set_castle(self, sbit: int, rook_sbit: int, tbit: int,
                    rook_tbit: int) -> None:
         """Adjusts classical bits for a castling operation."""
@@ -648,6 +656,8 @@ class CirqBoard:
                 self.circuit.append(
                     qm.split_slide(squbit, tqubit, tqubit2, path1, path2,
                                    ancilla))
+                self._clear_path_ancilla(path_qubits, path1)
+                self._clear_path_ancilla(path_qubits2, path2)
                 return 1
 
         if m.move_type == enums.MoveType.MERGE_SLIDE:
@@ -672,6 +682,8 @@ class CirqBoard:
                 self.circuit.append(
                     qm.merge_slide(squbit, tqubit, squbit2, path1, path2,
                                    ancilla))
+                self._clear_path_ancilla(path_qubits, path1)
+                self._clear_path_ancilla(path_qubits2, path2)
                 return 1
 
         if (m.move_type == enums.MoveType.SLIDE or
