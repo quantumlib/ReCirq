@@ -96,9 +96,11 @@ def slide_move(s: cirq.Qid,
     for p in path:
         yield cirq.X(p)
     yield cirq.X(ancilla).controlled_by(*path)
+    yield cirq.ISWAP(s, t).controlled_by(ancilla)
+    # Ancilla must be cleaned up, lest it affect the phases of the board state
+    yield cirq.X(ancilla).controlled_by(*path)
     for p in path:
         yield cirq.X(p)
-    yield cirq.ISWAP(s, t).controlled_by(ancilla)
 
 
 def place_piece(s: cirq.Qid):

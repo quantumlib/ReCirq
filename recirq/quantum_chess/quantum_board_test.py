@@ -356,6 +356,26 @@ def test_superposition_slide_move2(board):
     assert_prob_about(probs, u.square_to_bit('a1'), 0.75)
     assert_prob_about(probs, u.square_to_bit('e1'), 0.25)
 
+def test_slide_with_two_path_qubits_coherence():
+    """Tests that a path ancilla does not mess up split/merge coherence.
+
+        Position: Qd1, Bf1, Ng1.
+        See https://github.com/quantumlib/ReCirq/issues/193.
+    """
+    b = qb.CirqBoard(u.squares_to_bitboard(['d1', 'f1', 'g1']))
+    assert b.perform_moves(
+        'g1^h3f3:SPLIT_JUMP:BASIC',
+        'f1^e2b5:SPLIT_SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'h3f3^g1:MERGE_JUMP:BASIC',
+    )
+    assert_sample_distribution(b, {
+        u.squares_to_bitboard(['d1', 'b5', 'g1']): 1 / 2,
+        u.squares_to_bitboard(['d1', 'e2', 'g1']): 1 / 2,
+    })
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_excluded_slide(board):
