@@ -172,7 +172,7 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
 
     # Now switch to anti-control of path1
     yield cirq.X(ancilla).controlled_by(path2)
-    yield cirq.ISWAP(squbit2, tqubit).controlled_by(ancilla)
+    yield (cirq.ISWAP(squbit2, tqubit) ** -1).controlled_by(ancilla)
     # Switch to control of path1 but anti-control of path2
     yield cirq.X(ancilla).controlled_by(path2)
 
@@ -181,7 +181,7 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     # Then do a CNOT on ancilla with the swapped "path2"
     yield cirq.SWAP(path2, path1)
     yield cirq.X(ancilla).controlled_by(path2)
-    yield cirq.ISWAP(squbit, tqubit).controlled_by(ancilla)
+    yield (cirq.ISWAP(squbit, tqubit) ** -1).controlled_by(ancilla)
 
 
 def en_passant(squbit, tqubit, epqubit, path, c):
