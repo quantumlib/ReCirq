@@ -23,6 +23,14 @@ import recirq.quantum_chess.swap_updater as su
 ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 
+class DeviceMappingError(Exception):
+    """Raised when a circuit cannot be mapped onto a device.
+
+    This happens when a suitable mapping of qubits onto the device graph cannot
+    be found, or when an unsupported gate is used.
+    """
+
+
 class CircuitTransformer:
     """Abstract interface for circuit transformations.
 
@@ -273,7 +281,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
                         g[q2].append(q1)
         for q in g:
             if len(g[q]) > 4:
-                raise ValueError(
+                raise DeviceMappingError(
                     f'Qubit {q} needs more than 4 adjacent qubits!')
 
         # Initialize mappings and available qubits
@@ -386,13 +394,13 @@ class SycamoreDecomposer(cirq.PointOptimizer):
             self, circuit: cirq.Circuit, index: int,
             op: cirq.Operation) -> Optional[cirq.PointOptimizationSummary]:
         if len(op.qubits) > 3:
-            raise ValueError(f'Four qubit ops not yet supported: {op}')
+            raise DeviceMappingError(f'Four qubit ops not yet supported: {op}')
         new_ops = None
         if op.gate == cirq.SWAP or op.gate == cirq.CNOT:
             new_ops = cirq.google.optimized_for_sycamore(cirq.Circuit(op))
         if isinstance(op, cirq.ControlledOperation):
             if not all(v == 1 for values in op.control_values for v in values):
-                raise ValueError(f'0-controlled ops not yet supported: {op}')
+                raise DeviceMappingError(f'0-controlled ops not yet supported: {op}')
             qubits = op.sub_operation.qubits
             if op.gate.sub_gate == cirq.ISWAP:
                 new_ops = controlled_iswap.controlled_iswap(
