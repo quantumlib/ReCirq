@@ -454,7 +454,7 @@ class CirqBoard:
                 rtn.append(path_qubit)
         return rtn
 
-    def create_path_ancilla(self, path_qubits: List[cirq.Qid]) -> cirq.Qid:
+    def _create_path_ancilla(self, path_qubits: List[cirq.Qid]) -> cirq.Qid:
         """Creates an ancilla that is anti-controlled by the qubits
         in the path."""
         path_ancilla = self.new_ancilla()
@@ -642,8 +642,8 @@ class CirqBoard:
                 m.move_type = enums.MoveType.SPLIT_JUMP
             else:
                 self.add_entangled(squbit, tqubit, tqubit2)
-                path1 = self.create_path_ancilla(path_qubits)
-                path2 = self.create_path_ancilla(path_qubits2)
+                path1 = self._create_path_ancilla(path_qubits)
+                path2 = self._create_path_ancilla(path_qubits2)
                 ancilla = self.new_ancilla()
                 self.circuit.append(
                     qm.split_slide(squbit, tqubit, tqubit2, path1, path2,
@@ -666,8 +666,8 @@ class CirqBoard:
                 # No interposing squares, just jump.
                 m.move_type = enums.MoveType.MERGE_JUMP
             else:
-                path1 = self.create_path_ancilla(path_qubits)
-                path2 = self.create_path_ancilla(path_qubits2)
+                path1 = self._create_path_ancilla(path_qubits)
+                path2 = self._create_path_ancilla(path_qubits2)
                 ancilla = self.new_ancilla()
                 self.circuit.append(
                     qm.merge_slide(squbit, tqubit, squbit2, path1, path2,
@@ -837,7 +837,7 @@ class CirqBoard:
             # Both intervening squares in superposition
             if (rook_tqubit in self.entangled_squares and
                     tqubit in self.entangled_squares):
-                castle_ancilla = self.create_path_ancilla([rook_tqubit, tqubit])
+                castle_ancilla = self._create_path_ancilla([rook_tqubit, tqubit])
                 self.entangled_squares.add(castle_ancilla)
                 castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
                 if castle_allowed:
@@ -912,7 +912,7 @@ class CirqBoard:
             # Both intervening squares in superposition
             if (rook_tqubit in self.entangled_squares and
                     tqubit in self.entangled_squares):
-                castle_ancilla = self.create_path_ancilla([rook_tqubit, tqubit])
+                castle_ancilla = self._create_path_ancilla([rook_tqubit, tqubit])
                 self.entangled_squares.add(castle_ancilla)
                 castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
                 if castle_allowed:
