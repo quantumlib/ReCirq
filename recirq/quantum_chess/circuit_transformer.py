@@ -83,17 +83,22 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
 
     def find_start_qubit(self,
                          qubit_list: List[cirq.Qid],
-                         depth=3) -> Optional[cirq.GridQubit]:
+                         depth=3) -> cirq.GridQubit:
         """Finds a reasonable starting qubit to start the mapping.
 
-        Uses the heuristic of the most connected qubit. """
-        best = None
+        Uses the heuristic of the most connected qubit.
+
+        Raises:
+            DeviceMappingError: if there are no qubits left to map.
+        """
         best_count = -1
         for q in qubit_list:
             c = self.qubits_within(depth, q, qubit_list, set())
             if c > best_count:
                 best_count = c
                 best = q
+        if best_count == -1:
+            raise DeviceMappingError('Qubits exhausted')
         return best
 
     def edges_within(self, depth: int, node: cirq.Qid,
