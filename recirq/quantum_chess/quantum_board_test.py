@@ -1049,8 +1049,6 @@ def test_split_capture_with_successful_measurement_outcome(board):
         expected = {'c3'}
         for sample in samples:
             assert set(u.bitboard_to_squares(sample)) == expected
-        board_probs = b.get_board_probability_distribution(100)
-        assert_prob_about(board_probs, u.squares_to_bitboard(['c3']), 1.0)
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_failed_measurement_outcome(board):
