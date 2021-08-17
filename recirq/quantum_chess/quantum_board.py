@@ -346,20 +346,19 @@ class CirqBoard:
         return self.probabilities
 
     def _generate_board_accumulations(self, repetitions: int = 1000) -> None:
-        """ Samples the state and generates the accumulated
-        probabilities of each board in the state.
+        """ Samples the state and generates the accumulated probabilities of each board
+        in the state, which will be saved as a map(board->prob.) in self.board_probabilities.
         """
         self.board_probabilities = {}
 
         samples = self.sample(repetitions)
         for sample in samples:
             if sample not in self.board_probabilities:
-                self.board_probabilities[sample] = 1
-            else:
-                self.board_probabilities[sample] += 1
+                self.board_probabilities[sample] = 0
+            self.board_probabilities[sample] += 1
 
         for board in self.board_probabilities:
-            self.board_probabilities[board] = float(self.board_probabilities[board]) / float(repetitions)
+            self.board_probabilities[board] /= repetitions
 
         self.board_accumulations_repetitions = repetitions
 

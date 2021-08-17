@@ -1044,9 +1044,11 @@ def test_split_capture_with_successful_measurement_outcome(board):
             move.Move('a3', 'c3', move_type=enums.MoveType.JUMP,
                       move_variant=enums.MoveVariant.CAPTURE,
                       measurement=1))
+        samples = b.sample(100)
         # The only possible outcome is successful capture.
-        probs = b.get_probability_distribution(100)
-        assert_prob_about(probs, u.square_to_bit('c3'), 1)
+        expected = {'c3'}
+        for sample in samples:
+            assert set(u.bitboard_to_squares(sample)) == expected
         board_probs = b.get_board_probability_distribution(100)
         assert_prob_about(board_probs, u.squares_to_bitboard(['c3']), 1.0)
 
