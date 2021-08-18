@@ -1,4 +1,4 @@
-# Copyright 2020 Google
+A# Copyright 2020 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -376,6 +376,39 @@ def test_superposition_slide_move2(board):
     for possibility in possibilities:
         assert_prob_about(board_probs, possibility, 0.25)
 
+def test_slide_with_two_path_qubits_coherence():
+    """Tests that a path ancilla does not mess up split/merge coherence.
+
+        Position: Qd1, Bf1, Ng1.
+        See https://github.com/quantumlib/ReCirq/issues/193.
+    """
+    b = qb.CirqBoard(u.squares_to_bitboard(['d1', 'f1', 'g1']))
+    assert b.perform_moves(
+        'g1^h3f3:SPLIT_JUMP:BASIC',
+        'f1^e2b5:SPLIT_SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'd1h5:SLIDE:BASIC',
+        'h3f3^g1:MERGE_JUMP:BASIC',
+    )
+    assert_sample_distribution(b, {
+        u.squares_to_bitboard(['d1', 'b5', 'g1']): 1 / 2,
+        u.squares_to_bitboard(['d1', 'e2', 'g1']): 1 / 2,
+    })
+
+@pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
+def test_split_slide_merge_slide_coherence(board):
+    b = board.with_state(u.squares_to_bitboard(['b4', 'd3']))
+    assert b.perform_moves(
+        'd3^c5e5:SPLIT_JUMP:BASIC',
+        'b4^b8e7:SPLIT_SLIDE:BASIC',
+        'b8e7^b4:MERGE_SLIDE:BASIC',
+        'c5e5^d3:MERGE_JUMP:BASIC',
+    )
+    assert_samples_in(b, [u.squares_to_bitboard(['b4', 'd3'])])
+
+
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_excluded_slide(board):
     """Test excluded slide.
@@ -517,6 +550,17 @@ def test_split_both_sides(board):
         assert_prob_about(board_probs, possibility, 0.125)
     for possibility in possibilities[7:]:
         assert_prob_about(board_probs, possibility, 0.0625)
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_split_merge_slide_self_intersecting(board):
+    """Tests merge slide with a source square in the path."""
+    b = board.with_state(u.squares_to_bitboard(['c1']))
+    assert b.perform_moves(
+        'c1^e3g5:SPLIT_SLIDE:BASIC',
+        'e3g5^d2:MERGE_SLIDE:BASIC',
+    )
+    assert_samples_in(b, [u.squares_to_bitboard(['d2'])])
+
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_merge_slide_one_side(board):
