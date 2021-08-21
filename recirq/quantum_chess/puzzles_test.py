@@ -36,7 +36,7 @@ def assert_samples_in(b, possibilities):
 ))
 def test_t1(solution, sq):
     for board in ALL_CIRQ_BOARDS:
-        b = board.with_state(u.squares_to_bitboard(['b5', 'c5', 'd5']))
+        b = board(u.squares_to_bitboard(['b5', 'c5', 'd5']))
         assert b.perform_moves('d5^b3b7:SPLIT_SLIDE:BASIC',
                                f'{solution}:MERGE_SLIDE:BASIC')
         possibilities = [u.squares_to_bitboard(['b5', 'c5', sq])]
@@ -45,7 +45,7 @@ def test_t1(solution, sq):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_t2(board):
-    b = board.with_state(u.squares_to_bitboard(['a7', 'c3', 'g1']))
+    b = board(u.squares_to_bitboard(['a7', 'c3', 'g1']))
     did_it_move = b.perform_moves(
         'c3^b5e2:SPLIT_JUMP:BASIC',
         'a7a8:SLIDE:BASIC',
@@ -60,7 +60,7 @@ def test_t2(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_t3(board):
-    b = board.with_state(u.squares_to_bitboard(['f1', 'd7', 'e8']))
+    b = board(u.squares_to_bitboard(['f1', 'd7', 'e8']))
     did_it_move = b.perform_moves(
         'f1^b5c4:SPLIT_SLIDE:BASIC',
         'd7b5:SLIDE:CAPTURE',
@@ -73,7 +73,7 @@ def test_t3(board):
 # Because of the long decomposition, is flaky with noisy simulator
 @pytest.mark.parametrize('board', quantum_board_test.BIG_CIRQ_BOARDS)
 def test_t4(board):
-    b = board.with_state(u.squares_to_bitboard(['e3', 'e6', 'b6', 'h6']))
+    b = board(u.squares_to_bitboard(['e3', 'e6', 'b6', 'h6']))
     did_it_move = b.perform_moves(
         'e3^d5f5:SPLIT_JUMP:BASIC',
         'e6d5:PAWN_CAPTURE:CAPTURE',
@@ -88,7 +88,7 @@ def test_t4(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_t5(board):
-    b = board.with_state(u.squares_to_bitboard(['d4', 'a6', 'g6']))
+    b = board(u.squares_to_bitboard(['d4', 'a6', 'g6']))
     did_it_move = b.perform_moves(
         'd4^a7g7:SPLIT_SLIDE:BASIC',
         'a6a7:PAWN_STEP:EXCLUDED',
@@ -102,7 +102,7 @@ def test_t5(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_t6(board):
-    b = board.with_state(u.squares_to_bitboard(['h4', 'd5', 'g5']))
+    b = board(u.squares_to_bitboard(['h4', 'd5', 'g5']))
     did_it_move = b.perform_moves(
         'h4^f5g6:SPLIT_JUMP:BASIC',
         'g5g6:PAWN_STEP:EXCLUDED',
@@ -137,7 +137,7 @@ def test_t6(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_t6(board):
-    b = board.with_state(u.squares_to_bitboard(['d4', 'a6', 'g6']))
+    b = board(u.squares_to_bitboard(['d4', 'a6', 'g6']))
     did_it_move = b.perform_moves(
         'd4^a7g7:SPLIT_SLIDE:BASIC',
         'a6a7:PAWN_STEP:EXCLUDED',
@@ -151,7 +151,7 @@ def test_t6(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a1(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard(
             ['a8', 'b8', 'g8', 'f7', 'g7', 'g3', 'f2', 'f3', 'h1']))
     did_it_move = b.perform_moves(
@@ -178,7 +178,7 @@ def test_a1(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a2(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard(
             ['a8', 'b8', 'g8', 'f7', 'g7', 'g3', 'f2', 'f3', 'h1']))
     did_it_move = b.perform_moves(
@@ -201,7 +201,7 @@ def test_a2(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a3(board):
-    b = board.with_state(u.squares_to_bitboard(['f1', 'f2', 'f3']))
+    b = board(u.squares_to_bitboard(['f1', 'f2', 'f3']))
     assert b.perform_moves(
         'f1^e1e2:SPLIT_JUMP:BASIC',
         'f3e2:JUMP:CAPTURE',
@@ -215,7 +215,7 @@ def test_a3(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a4(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard(['g8', 'f7', 'g7', 'h7', 'g6', 'g3', 'g2', 'e1']))
     assert b.perform_moves(
         'e1e8:SLIDE:BASIC',
@@ -232,7 +232,7 @@ def test_a4(board):
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_a5(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard([
             'f2', 'g2', 'h2', 'g3', 'c4', 'c5', 'c6', 'f7', 'g7', 'h7', 'a8',
             'h8'
@@ -252,7 +252,7 @@ def test_a5(board):
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_a6(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard(
             ['a2', 'f2', 'g2', 'h2', 'g3', 'c6', 'h6', 'f7', 'g7', 'h7', 'h8']))
     did_it_move = b.perform_moves(
@@ -272,7 +272,7 @@ def test_a6(board):
 # Works on all cirq boards but is pretty slow.
 @pytest.mark.parametrize('board', quantum_board_test.BIG_CIRQ_BOARDS)
 def test_a6_alternate(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard(
             ['a2', 'f2', 'g2', 'h2', 'g3', 'c6', 'h6', 'f7', 'g7', 'h7', 'h8']))
     did_it_move = b.perform_moves(
@@ -293,7 +293,7 @@ def test_a6_alternate(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a7(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard(
             ['a2', 'c2', 'e2', 'g2', 'h2', 'a3', 'h3', 'f6', 'g7', 'h7', 'h8']))
     did_it_move = b.perform_moves('c2^a1e1:SPLIT_JUMP:BASIC',
@@ -320,7 +320,7 @@ def test_a7(board):
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_a8(board):
-    b = board.with_state(u.squares_to_bitboard(['a1', 'd1', 'c5', 'a7', 'h8']))
+    b = board(u.squares_to_bitboard(['a1', 'd1', 'c5', 'a7', 'h8']))
     did_it_move = b.perform_moves('c5^a4a6:SPLIT_JUMP:BASIC',
                                   'a1a6:SLIDE:CAPTURE')
     if did_it_move:
@@ -332,7 +332,7 @@ def test_a8(board):
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_a9(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard(
             ['h1', 'e2', 'f2', 'g2', 'e3', 'h3', 'g6', 'h6', 'c7']))
     did_it_move = b.perform_moves(
@@ -354,7 +354,7 @@ def test_a9(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a10(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard([
             'd1', 'f1', 'g1', 'f2', 'g2', 'h2', 'd3', 'd4', 'd5', 'd6', 'e6',
             'g6', 'h6', 'g7', 'b8', 'f8'
@@ -378,7 +378,7 @@ def test_a10(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a11(board):
-    b = board.with_state(
+    b = board(
         u.squares_to_bitboard([
             'd1', 'e1', 'h1', 'd2', 'e2', 'f2', 'g2', 'e3', 'e6', 'd7', 'e7',
             'f7'
@@ -407,7 +407,7 @@ def test_a11(board):
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_blocked_split_slide(board):
-    b = board.with_state(u.squares_to_bitboard(['d1', 'g1']))
+    b = board(u.squares_to_bitboard(['d1', 'g1']))
     assert b.perform_moves(
         'g1^e2h3:SPLIT_JUMP:BASIC',
         'd1^b3g4:SPLIT_SLIDE:BASIC',
@@ -421,7 +421,7 @@ def test_blocked_split_slide(board):
 
 
 def test_blocked_split_slide_merge1():
-    b = qb.CirqBoard(u.squares_to_bitboard(['d1', 'g1']))
+    b = quantum_board_test.simulator(u.squares_to_bitboard(['d1', 'g1']))
     assert b.perform_moves(
         'g1^e2h3:SPLIT_JUMP:BASIC',
         'd1^b3g4:SPLIT_SLIDE:BASIC',
@@ -436,7 +436,7 @@ def test_blocked_split_slide_merge1():
 
 
 def test_blocked_split_slide_merge2():
-    b = qb.CirqBoard(u.squares_to_bitboard(['d1', 'g1']))
+    b = quantum_board_test.simulator(u.squares_to_bitboard(['d1', 'g1']))
     assert b.perform_moves(
         'g1^e2h3:SPLIT_JUMP:BASIC',
         'd1^b3g4:SPLIT_SLIDE:BASIC',
