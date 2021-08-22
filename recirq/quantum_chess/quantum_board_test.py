@@ -1066,7 +1066,7 @@ def test_jump_with_successful_measurement_outcome(board):
 def test_split_capture_with_successful_measurement_outcome(board):
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
-    for i in range(100):
+    for i in range(10):
         b = board(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
@@ -1080,7 +1080,7 @@ def test_split_capture_with_successful_measurement_outcome(board):
             move.Move('a3', 'c3', move_type=enums.MoveType.JUMP,
                       move_variant=enums.MoveVariant.CAPTURE,
                       measurement=1))
-        samples = b.sample(100)
+        samples = b.sample(1000)
         # The only possible outcome is successful capture.
         expected = {'c3'}
         for sample in samples:
