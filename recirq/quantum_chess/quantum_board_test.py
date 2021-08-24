@@ -11,6 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import random
+
+import cirq
+import numpy as np
 import pytest
 
 import recirq.engine_utils as utils
@@ -30,29 +35,63 @@ from recirq.quantum_chess.bit_utils import (
     square_to_bit,
 )
 
+
+def get_seed():
+    seed = os.environ.get('RECIRQ_CHESS_TEST_SEED')
+    if seed:
+        seed = int(seed)
+    else:
+        seed = random.randrange(2**32)
+    print('Using seed', seed)
+    return seed
+
+
+# Boards
+
+def syc23_noisy(state):
+    return qb.CirqBoard(
+        state,
+        sampler=cirq.DensityMatrixSimulator(
+            noise=cirq.ConstantQubitNoiseModel(
+                qubit_noise_gate=cirq.DepolarizingChannel(0.005)),
+            seed=get_seed()),
+        device=utils.get_device_obj_by_name('Syc23-simulator'),
+        error_mitigation=enums.ErrorMitigation.Correct,
+        noise_mitigation=0.10)
+
+def syc23_noiseless(state):
+    np.random.seed(get_seed())
+    return qb.CirqBoard(
+        state,
+        device=utils.get_device_obj_by_name('Syc23-noiseless'),
+        error_mitigation=enums.ErrorMitigation.Error)
+
+def syc54_noiseless(state):
+    np.random.seed(get_seed())
+    return qb.CirqBoard(
+        state,
+        device=utils.get_device_obj_by_name('Syc54-noiseless'),
+        error_mitigation=enums.ErrorMitigation.Error)
+
+def simulator(state):
+    np.random.seed(get_seed())
+    return qb.CirqBoard(state, error_mitigation=enums.ErrorMitigation.Error)
+
 BIG_CIRQ_BOARDS = (
-    qb.CirqBoard(0, error_mitigation=enums.ErrorMitigation.Error),
-    qb.CirqBoard(0,
-                 device=utils.get_device_obj_by_name('Syc54-noiseless'),
-                 error_mitigation=enums.ErrorMitigation.Error),
+    simulator,
+    syc54_noiseless,
 )
 
 ALL_CIRQ_BOARDS = BIG_CIRQ_BOARDS + (
-    qb.CirqBoard(0,
-                 device=utils.get_device_obj_by_name('Syc23-noiseless'),
-                 error_mitigation=enums.ErrorMitigation.Error),
-    qb.CirqBoard(0,
-                 sampler=utils.get_sampler_by_name('Syc23-simulator-tester'),
-                 device=utils.get_device_obj_by_name('Syc23-simulator-tester'),
-                 error_mitigation=enums.ErrorMitigation.Correct,
-                 noise_mitigation=0.10),
+    syc23_noiseless,
+    syc23_noisy,
 )
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_initial_state(board):
     """Tests basic functionality of boards and setting an initial state."""
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b1', 'c1']))
+    b = board(u.squares_to_bitboard(['a1', 'b1', 'c1']))
     samples = b.sample(100)
     assert len(samples) == 100
     for x in samples:
@@ -74,7 +113,7 @@ def test_initial_state(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_jump_move(board):
     """Tests a jump move in a classical position."""
-    b = board.with_state(u.squares_to_bitboard(['a1', 'c1']))
+    b = board(u.squares_to_bitboard(['a1', 'c1']))
     m = move.Move('a1',
                   'b1',
                   move_type=enums.MoveType.JUMP,
@@ -98,7 +137,7 @@ def test_path_qubits():
         *[(enums.MoveType.SPLIT_SLIDE, b) for b in ALL_CIRQ_BOARDS],
 ))
 def test_split_move(move_type, board):
-    b = board.with_state(u.squares_to_bitboard(['a1']))
+    b = board(u.squares_to_bitboard(['a1']))
     b.do_move(
         move.Move('a1',
                   'a3',
@@ -128,7 +167,7 @@ def test_split_move(move_type, board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_and_use_same_square(board):
-    b = board.with_state(u.squares_to_bitboard(['a1']))
+    b = board(u.squares_to_bitboard(['a1']))
     assert b.perform_moves(
         'a1^a2b1:SPLIT_JUMP:BASIC',
         'b1b2:JUMP:BASIC',
@@ -144,7 +183,7 @@ def test_split_and_use_same_square(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_exclusion(board):
     """Splits piece b1 to c1 and d1 then tries a excluded move from a1 to c1."""
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b = board(u.squares_to_bitboard(['a1', 'b1']))
     b.do_move(
         move.Move('b1',
                   'c1',
@@ -168,7 +207,7 @@ def test_exclusion(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_capture(board):
     """Splits piece from b1 to c1 and d1 then attempts a capture on a1."""
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b = board(u.squares_to_bitboard(['a1', 'b1']))
     b.do_move(
         move.Move('b1',
                   'c1',
@@ -190,7 +229,7 @@ def test_capture(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_merge_move(board):
     """Splits piece on a1 to b1 and c1 and then merges back to a1."""
-    b = board.with_state(u.squares_to_bitboard(['a1']))
+    b = board(u.squares_to_bitboard(['a1']))
     b.do_move(
         move.Move('a1',
                   'b1',
@@ -210,7 +249,7 @@ def test_merge_move(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_simple_slide_move(board):
     """Tests a basic slide that is totally unblocked."""
-    b = board.with_state(u.squares_to_bitboard(['a1']))
+    b = board(u.squares_to_bitboard(['a1']))
     b.do_move(
         move.Move('a1',
                   'd1',
@@ -226,7 +265,7 @@ def test_blocked_slide_move(board):
 
     Slide from a1 to d1 is blocked by a piece on b1.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b = board(u.squares_to_bitboard(['a1', 'b1']))
     m = move.Move('a1',
                   'd1',
                   move_type=enums.MoveType.SLIDE,
@@ -245,7 +284,7 @@ def test_blocked_slide_clear(board):
 
     Position: Ra1. Moves: Ra1^a3a4 Ra3a8
     """
-    b = board.with_state(u.squares_to_bitboard(['a1']))
+    b = board(u.squares_to_bitboard(['a1']))
     assert b.perform_moves(
         'a1^a3a4:SPLIT_SLIDE:BASIC',
         'a3a8:SLIDE:BASIC',
@@ -264,7 +303,7 @@ def test_blocked_slide_blocked(board):
 
     Position: re5, rf5. Moves: rf5d5
     """
-    b = board.with_state(u.squares_to_bitboard(['e5', 'f5']))
+    b = board(u.squares_to_bitboard(['e5', 'f5']))
     m = move.Move('f5',
                   'd5',
                   move_type=enums.MoveType.SLIDE,
@@ -277,8 +316,9 @@ def test_blocked_slide_blocked(board):
 
 def test_blocked_slide_capture_through():
     success = 0
+    b = simulator(0)
     for trials in range(100):
-        b = qb.CirqBoard(u.squares_to_bitboard(['a8', 'c6']))
+        b.with_state(u.squares_to_bitboard(['a8', 'c6']))
         b.do_move(
             move.Move('c6',
                       'b8',
@@ -306,7 +346,7 @@ def test_superposition_slide_move(board):
     Valid end state should be a1 and c1 (blocked), state = 5, or
     d1 and f1 (unblocked), state = 40.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'e1']))
+    b = board(u.squares_to_bitboard(['a1', 'e1']))
     b.do_move(
         move.Move('e1',
                   'f1',
@@ -334,7 +374,7 @@ def test_superposition_slide_move2(board):
 
     Splits b3 and c3 to b2/b1 and c2/c1 then slides a1 to d1.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b3', 'c3']))
+    b = board(u.squares_to_bitboard(['a1', 'b3', 'c3']))
     assert b.perform_moves(
         'b3^b2b1:SPLIT_JUMP:BASIC',
         'c3^c2c1:SPLIT_JUMP:BASIC',
@@ -362,7 +402,7 @@ def test_slide_with_two_path_qubits_coherence():
         Position: Qd1, Bf1, Ng1.
         See https://github.com/quantumlib/ReCirq/issues/193.
     """
-    b = qb.CirqBoard(u.squares_to_bitboard(['d1', 'f1', 'g1']))
+    b = simulator(u.squares_to_bitboard(['d1', 'f1', 'g1']))
     assert b.perform_moves(
         'g1^h3f3:SPLIT_JUMP:BASIC',
         'f1^e2b5:SPLIT_SLIDE:BASIC',
@@ -379,7 +419,7 @@ def test_slide_with_two_path_qubits_coherence():
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_slide_merge_slide_coherence(board):
-    b = board.with_state(u.squares_to_bitboard(['b4', 'd3']))
+    b = board(u.squares_to_bitboard(['b4', 'd3']))
     assert b.perform_moves(
         'd3^c5e5:SPLIT_JUMP:BASIC',
         'b4^b8e7:SPLIT_SLIDE:BASIC',
@@ -395,7 +435,7 @@ def test_excluded_slide(board):
     Slides from a1 to c1.  b1 will block path in superposition
     and c1 will be blocked/excluded in superposition.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b2', 'c2']))
+    b = board(u.squares_to_bitboard(['a1', 'b2', 'c2']))
     did_it_move = b.perform_moves(
         'b2^b1a2:SPLIT_JUMP:BASIC',
         'c2^c1d2:SPLIT_JUMP:BASIC',
@@ -425,7 +465,7 @@ def test_capture_slide(board):
     Will test most cases, since c1, c2, and c3 will all be in
     superposition.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'a2', 'a3']))
+    b = board(u.squares_to_bitboard(['a1', 'a2', 'a3']))
     did_it_move = b.perform_moves(
         'a1^b1c1:SPLIT_JUMP:BASIC',
         'a2^b2c2:SPLIT_JUMP:BASIC',
@@ -457,7 +497,7 @@ def test_split_one_slide(board):
 
     a1 will split to a3 and c1 with square a2 blocked in superposition.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b2']))
+    b = board(u.squares_to_bitboard(['a1', 'b2']))
     assert b.perform_moves(
         'b2^a2c2:SPLIT_JUMP:BASIC',
         'a1^a3c1:SPLIT_SLIDE:BASIC',
@@ -486,7 +526,7 @@ def test_split_both_sides(board):
 
     This will create a lop-sided distribution to test multi-square paths.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b3', 'c3', 'd3']))
+    b = board(u.squares_to_bitboard(['a1', 'b3', 'c3', 'd3']))
     assert b.perform_moves(
         'b3^a3b4:SPLIT_JUMP:BASIC',
         'c3^c2c1:SPLIT_JUMP:BASIC',
@@ -523,7 +563,7 @@ def test_split_both_sides(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_merge_slide_self_intersecting(board):
     """Tests merge slide with a source square in the path."""
-    b = board.with_state(u.squares_to_bitboard(['c1']))
+    b = board(u.squares_to_bitboard(['c1']))
     assert b.perform_moves(
         'c1^e3g5:SPLIT_SLIDE:BASIC',
         'e3g5^d2:MERGE_SLIDE:BASIC',
@@ -538,7 +578,7 @@ def test_merge_slide_one_side(board):
     Splits a1 to a4 and d1 and then merges to d4.
     The square c4 will block one path of the merge in superposition.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
+    b = board(u.squares_to_bitboard(['a1', 'c3']))
     assert b.perform_moves(
         'a1^a4d1:SPLIT_SLIDE:BASIC',
         'c3^c4c5:SPLIT_JUMP:BASIC',
@@ -564,7 +604,7 @@ def test_merge_slide_both_side(board):
     Splits a1 to a4/d1 and merges back to d4. c4 and d3 will
     block one square on each path.
     """
-    b = board.with_state(u.squares_to_bitboard(['a1', 'c2', 'c3']))
+    b = board(u.squares_to_bitboard(['a1', 'c2', 'c3']))
     assert b.perform_moves(
         'a1^a4d1:SPLIT_SLIDE:BASIC',
         'c3^c4c5:SPLIT_JUMP:BASIC',
@@ -594,7 +634,7 @@ def test_merge_slide_both_side(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unentangled_pawn_capture(board):
     """Classical pawn capture."""
-    b = board.with_state(u.squares_to_bitboard(['a4', 'b3', 'c3']))
+    b = board(u.squares_to_bitboard(['a4', 'b3', 'c3']))
     m = move.Move('b3',
                   'a4',
                   move_type=enums.MoveType.PAWN_CAPTURE,
@@ -612,7 +652,7 @@ def test_pawn_capture(board):
     The first capture should put the pawn in super-position,
     and the second should force a measurement.
     """
-    b = board.with_state(u.squares_to_bitboard(['a3', 'b3', 'c3']))
+    b = board(u.squares_to_bitboard(['a3', 'b3', 'c3']))
     # Capture and put the pawn in superposition
     assert b.perform_moves('a3^a4a5:SPLIT_JUMP:BASIC', 'b3a4:PAWN_CAPTURE:BASIC')
     possibilities = [
@@ -660,7 +700,7 @@ def test_illegal_castle(initial_board, source, target):
         source: king to move (should be e1 or e8)
         target: square to move king to.
     """
-    b = qb.CirqBoard(initial_board)
+    b = simulator(initial_board)
     if target in ['g1', 'g8']:
         move_type = move_type = enums.MoveType.KS_CASTLE
     else:
@@ -676,7 +716,7 @@ def test_illegal_castle(initial_board, source, target):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unblocked_black_castle(board):
     """Tests classical kingside black castling move."""
-    b = board.with_state(u.squares_to_bitboard(['e8', 'h8']))
+    b = board(u.squares_to_bitboard(['e8', 'h8']))
     m = move.Move('e8',
                   'g8',
                   move_type=enums.MoveType.KS_CASTLE,
@@ -688,7 +728,7 @@ def test_unblocked_black_castle(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unblocked_white_castle(board):
     """Tests classical kingside white castling move."""
-    b = board.with_state(u.squares_to_bitboard(['e1', 'h1']))
+    b = board(u.squares_to_bitboard(['e1', 'h1']))
     m = move.Move('e1',
                   'g1',
                   move_type=enums.MoveType.KS_CASTLE,
@@ -700,7 +740,7 @@ def test_unblocked_white_castle(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unblocked_whitequeenside_castle(board):
     """Tests classical queenside white castling move."""
-    b = board.with_state(u.squares_to_bitboard(['e1', 'a1']))
+    b = board(u.squares_to_bitboard(['e1', 'a1']))
     m = move.Move('e1',
                   'c1',
                   move_type=enums.MoveType.QS_CASTLE,
@@ -712,7 +752,7 @@ def test_unblocked_whitequeenside_castle(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unblocked_blackqueenside_castle(board):
     """Tests classical queenside black castling move."""
-    b = board.with_state(u.squares_to_bitboard(['e8', 'a8']))
+    b = board(u.squares_to_bitboard(['e8', 'a8']))
     m = move.Move('e8',
                   'c8',
                   move_type=enums.MoveType.QS_CASTLE,
@@ -724,7 +764,7 @@ def test_unblocked_blackqueenside_castle(board):
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_2block_ks_castle(board):
     """Kingside castling move blocked by 2 pieces in superposition."""
-    b = board.with_state(u.squares_to_bitboard(['e8', 'f6', 'g6', 'h8']))
+    b = board(u.squares_to_bitboard(['e8', 'f6', 'g6', 'h8']))
     did_it_move = b.perform_moves(
         'f6^f7f8:SPLIT_JUMP:BASIC',
         'g6^g7g8:SPLIT_JUMP:BASIC',
@@ -744,7 +784,7 @@ def test_2block_ks_castle(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_1block_ks_castle(board):
     """Kingside castling move blocked by 1 piece in superposition."""
-    b = board.with_state(u.squares_to_bitboard(['e1', 'f3', 'h1']))
+    b = board(u.squares_to_bitboard(['e1', 'f3', 'h1']))
     b.do_move(
         move.Move('f3',
                   'f2',
@@ -769,7 +809,7 @@ def test_entangled_qs_castle(board):
 
     This should entangle the castling rook/king with the piece.
     """
-    b = board.with_state(u.squares_to_bitboard(['e1', 'b3', 'a1']))
+    b = board(u.squares_to_bitboard(['e1', 'b3', 'a1']))
     b.do_move(
         move.Move('b3',
                   'b2',
@@ -791,7 +831,7 @@ def test_entangled_qs_castle(board):
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_entangled_qs_castle2(board):
     """Queenside castling move with all intervening squares blocked."""
-    b = board.with_state(u.squares_to_bitboard(['e1', 'b3', 'c3', 'd3', 'a1']))
+    b = board(u.squares_to_bitboard(['e1', 'b3', 'c3', 'd3', 'a1']))
     did_it_move = b.perform_moves(
         'b3^b2b1:SPLIT_JUMP:BASIC',
         'c3^c2c1:SPLIT_JUMP:BASIC',
@@ -818,7 +858,7 @@ def test_entangled_qs_castle2(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_ep(board):
     """Fully classical en passant."""
-    b = board.with_state(u.squares_to_bitboard(['e5', 'd5']))
+    b = board(u.squares_to_bitboard(['e5', 'd5']))
     m = move.Move('e5',
                   'd6',
                   move_type=enums.MoveType.PAWN_EP,
@@ -829,7 +869,7 @@ def test_classical_ep(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_ep2(board):
     """Fully classical en passant."""
-    b = board.with_state(u.squares_to_bitboard(['e4', 'd4']))
+    b = board(u.squares_to_bitboard(['e4', 'd4']))
     m = move.Move('e4',
                   'd3',
                   move_type=enums.MoveType.PAWN_EP,
@@ -846,7 +886,7 @@ def test_capture_ep():
 
     Finally, move c7 to c5 and perform en passant on c6.
     """
-    b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
+    b = simulator(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     did_it_move = b.perform_moves(
         'b8^a6c6:SPLIT_JUMP:BASIC',
         'b5a6:PAWN_CAPTURE:BASIC',
@@ -866,7 +906,7 @@ def test_capture_ep2():
     Splits b8 to a6/c6. Move c7 to c5 and perform en passant on c6.  This should
     either capture the knight or the pawn.
     """
-    b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
+    b = simulator(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     did_it_move = b.perform_moves(
         'b8^a6c6:SPLIT_JUMP:BASIC',
         'c7c5:PAWN_TWO_STEP:BASIC',
@@ -886,7 +926,7 @@ def test_blocked_ep():
     Splits c4 to b6 and d6.  Moves a pawn through the piece on d6.
     Attempts to en passant the d-pawn using blocked e.p.
     """
-    b = qb.CirqBoard(u.squares_to_bitboard(['c4', 'c5', 'd7']))
+    b = simulator(u.squares_to_bitboard(['c4', 'c5', 'd7']))
     did_it_move = b.perform_moves(
         'c4^d6b6:SPLIT_JUMP:BASIC',
         'd7d5:PAWN_TWO_STEP:BASIC',
@@ -904,7 +944,7 @@ def test_blocked_ep():
 
 
 def test_basic_ep():
-    b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
+    b = simulator(u.squares_to_bitboard(['b8', 'b5', 'c7']))
     assert b.perform_moves(
         'b8^a6c6:SPLIT_JUMP:BASIC',
         'b5a6:PAWN_CAPTURE:BASIC',
@@ -921,7 +961,7 @@ def test_basic_ep():
 
 def test_undo_last_move():
     # TODO  (cantwellc) more comprehensive tests
-    b = qb.CirqBoard(u.squares_to_bitboard(['a2']))
+    b = simulator(u.squares_to_bitboard(['a2']))
     assert b.perform_moves(
         'a2a4:PAWN_TWO_STEP:BASIC'
     )
@@ -933,7 +973,7 @@ def test_undo_last_move():
 
 
 def test_undo_entangled_measurement():
-    b = qb.CirqBoard(u.squares_to_bitboard(['a2', 'b1', 'c2', 'd1']))
+    b = simulator(u.squares_to_bitboard(['a2', 'b1', 'c2', 'd1']))
     assert b.perform_moves(
         'b1^a3c3:SPLIT_JUMP:BASIC',
         'c2c4:PAWN_TWO_STEP:BASIC'
@@ -981,7 +1021,7 @@ def test_record_time():
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_caching_accumulations_different_repetition_not_cached(board):
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b = board(u.squares_to_bitboard(['a1', 'b1']))
     b.do_move(
         move.Move('b1',
                   'c1',
@@ -995,7 +1035,7 @@ def test_caching_accumulations_different_repetition_not_cached(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_caching_accumulations_same_repetition_cached(board):
-    b = board.with_state(u.squares_to_bitboard(['a1', 'b1']))
+    b = board(u.squares_to_bitboard(['a1', 'b1']))
     b.do_move(
         move.Move('b1',
                   'c1',
@@ -1008,7 +1048,7 @@ def test_caching_accumulations_same_repetition_cached(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_jump_with_successful_measurement_outcome(board):
-   b = board.with_state(u.squares_to_bitboard(['b1', 'c2']))
+   b = board(u.squares_to_bitboard(['b1', 'c2']))
    b.do_move(
         move.Move('b1', 'a3', target2='c3',
                   move_type=enums.MoveType.SPLIT_JUMP,
@@ -1026,8 +1066,8 @@ def test_jump_with_successful_measurement_outcome(board):
 def test_split_capture_with_successful_measurement_outcome(board):
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
-    for i in range(100):
-        b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
+    for i in range(10):
+        b = board(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
             move.Move('a1', 'a2', target2='a3',
@@ -1040,7 +1080,7 @@ def test_split_capture_with_successful_measurement_outcome(board):
             move.Move('a3', 'c3', move_type=enums.MoveType.JUMP,
                       move_variant=enums.MoveVariant.CAPTURE,
                       measurement=1))
-        samples = b.sample(100)
+        samples = b.sample(1000)
         # The only possible outcome is successful capture.
         expected = {'c3'}
         for sample in samples:
@@ -1051,7 +1091,7 @@ def test_split_capture_with_failed_measurement_outcome(board):
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
     for i in range(100):
-        b = board.with_state(u.squares_to_bitboard(['a1', 'c3']))
+        b = board(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
             move.Move('a1', 'a2', target2='a3',
