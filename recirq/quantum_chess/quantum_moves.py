@@ -96,9 +96,11 @@ def slide_move(s: cirq.Qid,
     for p in path:
         yield cirq.X(p)
     yield cirq.X(ancilla).controlled_by(*path)
+    yield cirq.ISWAP(s, t).controlled_by(ancilla)
+    # Ancilla must be cleaned up, lest it affect the phases of the board state
+    yield cirq.X(ancilla).controlled_by(*path)
     for p in path:
         yield cirq.X(p)
-    yield cirq.ISWAP(s, t).controlled_by(ancilla)
 
 
 def place_piece(s: cirq.Qid):
@@ -145,12 +147,12 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
     yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(ancilla)
     yield (cirq.ISWAP(squbit, tqubit2)).controlled_by(ancilla)
 
-    # Now switch to anti-control of path1
+    # Now switch to anti-control of path2
     yield cirq.X(ancilla).controlled_by(path1)
 
     yield cirq.ISWAP(squbit, tqubit).controlled_by(ancilla)
 
-    # Switch to control of path1 but anti-control of path2
+    # Switch to control of path2 but anti-control of path1
     yield cirq.X(ancilla).controlled_by(path1)
 
     # In order to prevent path2 from needing connectivity to
@@ -161,6 +163,11 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
 
     yield cirq.ISWAP(squbit, tqubit2).controlled_by(ancilla)
 
+    # Zero out ancillas
+    yield cirq.X(ancilla).controlled_by(path1)
+    yield cirq.SWAP(path1, path2)
+    yield cirq.X(ancilla).controlled_by(path2, path1)
+
 
 def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path1, path2)
@@ -170,7 +177,7 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
 
     # Now switch to anti-control of path1
     yield cirq.X(ancilla).controlled_by(path2)
-    yield cirq.ISWAP(squbit2, tqubit).controlled_by(ancilla)
+    yield (cirq.ISWAP(squbit2, tqubit) ** -1).controlled_by(ancilla)
     # Switch to control of path1 but anti-control of path2
     yield cirq.X(ancilla).controlled_by(path2)
 
@@ -179,8 +186,12 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     # Then do a CNOT on ancilla with the swapped "path2"
     yield cirq.SWAP(path2, path1)
     yield cirq.X(ancilla).controlled_by(path2)
-    yield cirq.ISWAP(squbit, tqubit).controlled_by(ancilla)
+    yield (cirq.ISWAP(squbit, tqubit) ** -1).controlled_by(ancilla)
 
+    # Zero out ancillas
+    yield cirq.X(ancilla).controlled_by(path2)
+    yield cirq.SWAP(path2, path1)
+    yield cirq.X(ancilla).controlled_by(path1, path2)
 
 def en_passant(squbit, tqubit, epqubit, path, c):
     yield cirq.X(path).controlled_by(squbit, epqubit)

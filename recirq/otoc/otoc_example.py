@@ -15,6 +15,7 @@
 """Example for measuring OTOC of several random circuits."""
 
 import cirq
+import cirq_google as cg
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -27,7 +28,7 @@ def main():
 
     # Specify project ID and processor name.
     processor_name = "rainbow"
-    sampler = cirq.google.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim")
+    sampler = cg.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim")
 
     # Specify qubits to measure. The qubits must form a line. The ancilla qubit
     # must be connected to the first qubit.
