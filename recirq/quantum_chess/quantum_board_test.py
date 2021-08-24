@@ -163,7 +163,7 @@ def test_split_move(move_type, board):
                   'd1',
                   move_type=enums.MoveType.JUMP,
                   move_variant=enums.MoveVariant.BASIC)
-    did_it_move = b.do_move(m)
+    assert b.do_move(m)
     samples = b.sample(100)
     assert_this_or_that(samples, u.squares_to_bitboard(['a3']),
                         u.squares_to_bitboard(['d1']))
@@ -183,7 +183,6 @@ def test_split_and_use_same_square(board):
         'b1b2:JUMP:BASIC',
         'b2a2:JUMP:BASIC',
     )
-    probs = b.get_probability_distribution(5000)
     assert_sample_distribution(b, {
         u.squares_to_bitboard(['a2']): 1 / 2,
         u.squares_to_bitboard(['b2']): 1 / 2
@@ -330,7 +329,7 @@ def test_blocked_slide_blocked(board):
 def test_blocked_slide_capture_through():
     success = 0
     b = simulator(0)
-    for trials in range(100):
+    for _ in range(100):
         b.with_state(u.squares_to_bitboard(['a8', 'c6']))
         b.do_move(
             move.Move('c6',
@@ -1121,7 +1120,6 @@ def test_jump_with_successful_measurement_outcome(board):
                   move_type=enums.MoveType.JUMP,
                   move_variant=enums.MoveVariant.EXCLUDED,
                   measurement=1))
-   samples = b.sample(100)
    assert_samples_in(b, [u.squares_to_bitboard(['c3','a3'])])
 
 
@@ -1129,7 +1127,7 @@ def test_jump_with_successful_measurement_outcome(board):
 def test_split_capture_with_successful_measurement_outcome(board):
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
-    for i in range(10):
+    for _ in range(10):
         b = board(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
@@ -1153,7 +1151,7 @@ def test_split_capture_with_successful_measurement_outcome(board):
 def test_split_capture_with_failed_measurement_outcome(board):
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
-    for i in range(100):
+    for _ in range(100):
         b = board(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
