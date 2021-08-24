@@ -1051,3 +1051,4 @@ class CirqBoard:
         for x in range(8):
             s += move.to_rank(x) + "   "
         return s
+    
