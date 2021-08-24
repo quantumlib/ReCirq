@@ -259,9 +259,9 @@ def test_simple_slide_move(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_blocked_slide_move(board):
-    """Tests a basic slide that is blocked. 
- 
-    Slide from a1 to d1 is blocked by a piece on b1. 
+    """Tests a basic slide that is blocked.
+
+    Slide from a1 to d1 is blocked by a piece on b1.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "b1"]))
     m = move.Move(
@@ -275,11 +275,11 @@ def test_blocked_slide_move(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_blocked_slide_clear(board):
-    """Blocked slide with 100% success 
- 
-    Tests a piece "blocked" by itself. 
- 
-    Position: Ra1. Moves: Ra1^a3a4 Ra3a8 
+    """Blocked slide with 100% success
+
+    Tests a piece "blocked" by itself.
+
+    Position: Ra1. Moves: Ra1^a3a4 Ra3a8
     """
     b = board.with_state(u.squares_to_bitboard(["a1"]))
     assert b.perform_moves(
@@ -296,9 +296,9 @@ def test_blocked_slide_clear(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_blocked_slide_blocked(board):
-    """Blocked slide with 0% success 
- 
-    Position: re5, rf5. Moves: rf5d5 
+    """Blocked slide with 0% success
+
+    Position: re5, rf5. Moves: rf5d5
     """
     b = board.with_state(u.squares_to_bitboard(["e5", "f5"]))
     m = move.Move(
@@ -340,12 +340,12 @@ def test_blocked_slide_capture_through():
 # Works on all boards but is really slow
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_superposition_slide_move(board):
-    """Tests a basic slide through a superposition. 
- 
-    Sets up superposition of c1 and f1 with a slide from a1 to d1. 
- 
-    Valid end state should be a1 and c1 (blocked), state = 5, or 
-    d1 and f1 (unblocked), state = 40. 
+    """Tests a basic slide through a superposition.
+
+    Sets up superposition of c1 and f1 with a slide from a1 to d1.
+
+    Valid end state should be a1 and c1 (blocked), state = 5, or
+    d1 and f1 (unblocked), state = 40.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "e1"]))
     b.do_move(
@@ -377,9 +377,9 @@ def test_superposition_slide_move(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_superposition_slide_move2(board):
-    """Tests a basic slide through a superposition of two pieces. 
- 
-    Splits b3 and c3 to b2/b1 and c2/c1 then slides a1 to d1. 
+    """Tests a basic slide through a superposition of two pieces.
+
+    Splits b3 and c3 to b2/b1 and c2/c1 then slides a1 to d1.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "b3", "c3"]))
     assert b.perform_moves(
@@ -406,10 +406,10 @@ def test_superposition_slide_move2(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_excluded_slide(board):
-    """Test excluded slide. 
- 
-    Slides from a1 to c1.  b1 will block path in superposition 
-    and c1 will be blocked/excluded in superposition. 
+    """Test excluded slide.
+
+    Slides from a1 to c1.  b1 will block path in superposition
+    and c1 will be blocked/excluded in superposition.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "b2", "c2"]))
     did_it_move = b.perform_moves(
@@ -435,11 +435,11 @@ def test_excluded_slide(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_capture_slide(board):
-    """Tests a capture slide move. 
- 
-    Splits from a1 to b1/c1 then tries to capture a piece on c3. 
-    Will test most cases, since c1, c2, and c3 will all be in 
-    superposition. 
+    """Tests a capture slide move.
+
+    Splits from a1 to b1/c1 then tries to capture a piece on c3.
+    Will test most cases, since c1, c2, and c3 will all be in
+    superposition.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "a2", "a3"]))
     did_it_move = b.perform_moves(
@@ -469,9 +469,9 @@ def test_capture_slide(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_split_one_slide(board):
-    """Tests a split slide with one blocked path. 
- 
-    a1 will split to a3 and c1 with square a2 blocked in superposition. 
+    """Tests a split slide with one blocked path.
+
+    a1 will split to a3 and c1 with square a2 blocked in superposition.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "b2"]))
     assert b.perform_moves(
@@ -494,14 +494,14 @@ def test_split_one_slide(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_split_both_sides(board):
-    """Tests a split slide move where both paths of the slide 
-    are blocked in superposition. 
- 
-    The piece will split from a1 to a5/e1. 
-    The squares c1 and d1 will block one side of the path in superposition. 
-    The square a3 will be blocked on the other path. 
- 
-    This will create a lop-sided distribution to test multi-square paths. 
+    """Tests a split slide move where both paths of the slide
+    are blocked in superposition.
+
+    The piece will split from a1 to a5/e1.
+    The squares c1 and d1 will block one side of the path in superposition.
+    The square a3 will be blocked on the other path.
+
+    This will create a lop-sided distribution to test multi-square paths.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "b3", "c3", "d3"]))
     assert b.perform_moves(
@@ -539,10 +539,10 @@ def test_split_both_sides(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_merge_slide_one_side(board):
-    """Tests merge slide. 
- 
-    Splits a1 to a4 and d1 and then merges to d4. 
-    The square c4 will block one path of the merge in superposition. 
+    """Tests merge slide.
+
+    Splits a1 to a4 and d1 and then merges to d4.
+    The square c4 will block one path of the merge in superposition.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "c3"]))
     assert b.perform_moves(
@@ -565,10 +565,10 @@ def test_merge_slide_one_side(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_merge_slide_both_side(board):
-    """Tests a merge slide where both paths are blocked. 
- 
-    Splits a1 to a4/d1 and merges back to d4. c4 and d3 will 
-    block one square on each path. 
+    """Tests a merge slide where both paths are blocked.
+
+    Splits a1 to a4/d1 and merges back to d4. c4 and d3 will
+    block one square on each path.
     """
     b = board.with_state(u.squares_to_bitboard(["a1", "c2", "c3"]))
     assert b.perform_moves(
@@ -613,12 +613,12 @@ def test_unentangled_pawn_capture(board):
 
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_pawn_capture(board):
-    """Tests pawn capture with entanglement. 
- 
-    Rook on a3 => a4/a5 and rook on c3 => c4/c5. 
-    Pawn on b3 attempts to capture both rooks. 
-    The first capture should put the pawn in super-position, 
-    and the second should force a measurement. 
+    """Tests pawn capture with entanglement.
+
+    Rook on a3 => a4/a5 and rook on c3 => c4/c5.
+    Pawn on b3 attempts to capture both rooks.
+    The first capture should put the pawn in super-position,
+    and the second should force a measurement.
     """
     b = board.with_state(u.squares_to_bitboard(["a3", "b3", "c3"]))
     # Capture and put the pawn in superposition
@@ -663,12 +663,12 @@ def test_pawn_capture(board):
     ),
 )
 def test_illegal_castle(initial_board, source, target):
-    """Tests various combinations of illegal capture. 
- 
-    Args: 
-        initial_board: bitboard to set up 
-        source: king to move (should be e1 or e8) 
-        target: square to move king to. 
+    """Tests various combinations of illegal capture.
+
+    Args:
+        initial_board: bitboard to set up
+        source: king to move (should be e1 or e8)
+        target: square to move king to.
     """
     b = qb.CirqBoard(initial_board)
     if target in ["g1", "g8"]:
@@ -788,9 +788,9 @@ def test_1block_ks_castle(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_entangled_qs_castle(board):
-    """Queenside castling move with b-square blocked by superposition. 
- 
-    This should entangle the castling rook/king with the piece. 
+    """Queenside castling move with b-square blocked by superposition.
+
+    This should entangle the castling rook/king with the piece.
     """
     b = board.with_state(u.squares_to_bitboard(["e1", "b3", "a1"]))
     b.do_move(
@@ -874,12 +874,12 @@ def test_classical_ep2(board):
 
 # Seems to be problematic on real device
 def test_capture_ep():
-    """Tests capture en passant. 
- 
-    Splits b8 to a6/c6.  Capture a6 with b5 pawn to put the source pawn 
-    into superposition. 
- 
-    Finally, move c7 to c5 and perform en passant on c6. 
+    """Tests capture en passant.
+
+    Splits b8 to a6/c6.  Capture a6 with b5 pawn to put the source pawn
+    into superposition.
+
+    Finally, move c7 to c5 and perform en passant on c6.
     """
     b = qb.CirqBoard(u.squares_to_bitboard(["b8", "b5", "c7"]))
     did_it_move = b.perform_moves(
@@ -896,10 +896,10 @@ def test_capture_ep():
 
 
 def test_capture_ep2():
-    """Tests capture en passant. 
- 
-    Splits b8 to a6/c6. Move c7 to c5 and perform en passant on c6.  This should 
-    either capture the knight or the pawn. 
+    """Tests capture en passant.
+
+    Splits b8 to a6/c6. Move c7 to c5 and perform en passant on c6.  This should
+    either capture the knight or the pawn.
     """
     b = qb.CirqBoard(u.squares_to_bitboard(["b8", "b5", "c7"]))
     did_it_move = b.perform_moves(
@@ -916,10 +916,10 @@ def test_capture_ep2():
 
 
 def test_blocked_ep():
-    """Tests blocked en passant. 
- 
-    Splits c4 to b6 and d6.  Moves a pawn through the piece on d6. 
-    Attempts to en passant the d-pawn using blocked e.p. 
+    """Tests blocked en passant.
+
+    Splits c4 to b6 and d6.  Moves a pawn through the piece on d6.
+    Attempts to en passant the d-pawn using blocked e.p.
     """
     b = qb.CirqBoard(u.squares_to_bitboard(["c4", "c5", "d7"]))
     did_it_move = b.perform_moves(
@@ -1214,7 +1214,7 @@ def test_avenge_superposition_capture(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_undo_to_start_after_measurement(board):
-    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6 
+    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
     Then does three undo moves to return to initial position."""
     b = board.with_state(u.squares_to_bitboard(["f4", "f8"]))
 
@@ -1282,8 +1282,8 @@ def test_quantum_capture_with_forced_measurement(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_consecutive_quantum_captures_with_successful_measurement_outcome(board):
-    """Splits piece on b2 to b8 and h2, then splits piece on e5 to d6 and f4. 
-    Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4, 
+    """Splits piece on b2 to b8 and h2, then splits piece on e5 to d6 and f4.
+    Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4,
     also with a successful measurement."""
     b = board.with_state(u.squares_to_bitboard(["b2", "e5"]))
     b.do_move(
@@ -1331,7 +1331,7 @@ def test_consecutive_quantum_captures_with_successful_measurement_outcome(board)
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_measurement_without_fully_classical_position(board):
-    """Splits piece on d3 to d7 and h3, then splits piece on b5 to b7 and b3. 
+    """Splits piece on d3 to d7 and h3, then splits piece on b5 to b7 and b3.
     Piece on f5 then moves to c8. Piece on c8 then moves to h3, with failed measurement."""
     b = board.with_state(u.squares_to_bitboard(["b5", "f5", "d3"]))
     b.do_move(
@@ -1376,8 +1376,8 @@ def test_measurement_without_fully_classical_position(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_measurement_with_no_classical_board_change(board):
-    """Splits piece on b2 to b7 and g2, then splits piece on d4 to d5 and e4. 
-    Piece on g4 then splits to f3 and e2. Then piece on g2 attempts to capture piece on e4, 
+    """Splits piece on b2 to b7 and g2, then splits piece on d4 to d5 and e4.
+    Piece on g4 then splits to f3 and e2. Then piece on g2 attempts to capture piece on e4,
     with a failed measurement outcome."""
     b = board.with_state(u.squares_to_bitboard(["b2", "d4", "g4"]))
     b.do_move(
