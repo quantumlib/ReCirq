@@ -35,8 +35,8 @@ def test_set_nth_bit():
 
 
 def test_bit_to_qubit():
-    assert u.bit_to_qubit(2) == cirq.NamedQubit("2")
-    assert u.bit_to_qubit(0) == cirq.NamedQubit("0")
+    assert u.bit_to_qubit(2) == cirq.NamedQubit("c1")
+    assert u.bit_to_qubit(63) == cirq.NamedQubit("h8")
 
 
 def test_num_ones():
@@ -50,8 +50,8 @@ def test_bit_ones():
     assert u.bit_ones(int('0111111', 2)) == [0, 1, 2, 3, 4, 5]
 
 def test_qubit_to_bit():
-    assert u.qubit_to_bit(cirq.NamedQubit("2")) == 2
-    assert u.qubit_to_bit(cirq.NamedQubit("0")) == 0
+    assert u.qubit_to_bit(cirq.NamedQubit("c1")) == 2
+    assert u.qubit_to_bit(cirq.NamedQubit("h8")) == 63
 
 
 def test_square_to_bit():
