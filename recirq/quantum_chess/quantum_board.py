@@ -414,9 +414,14 @@ class CirqBoard:
                 if nth_bit_of(qubit_to_bit(qubit), self.state):
                     self.circuit.append(qm.place_piece(qubit))
 
-    def new_ancilla(self) -> cirq.Qid:
-        """Adds a new ancilla to the circuit and returns its value."""
+    def new_ancilla(self, note: str='') -> cirq.Qid:
+        """Adds a new ancilla to the circuit and returns its value.
+
+        `note` is an optional string to include in the ancilla qubit's name.
+        """
         new_name = f'anc{self.ancilla_count}'
+        if note:
+            new_name += '_' + note
         new_qubit = cirq.NamedQubit(new_name)
         self.ancilla_count += 1
         return new_qubit
@@ -432,7 +437,7 @@ class CirqBoard:
             return
 
         # Create a new ancilla qubit to replace the qubit with
-        new_qubit = self.new_ancilla()
+        new_qubit = self.new_ancilla(note=qubit.name)
 
         # Replace operations using the qubit with the ancilla instead
         self.circuit = self.circuit.transform_qubits(lambda q: new_qubit if q == qubit else q)
