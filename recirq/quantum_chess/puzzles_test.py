@@ -33,8 +33,9 @@ def assert_samples_in(b, possibilities):
         ('b3b7^f7', 'f7'),
         ('b7b3^f7', 'f7'),
 ))
-def test_t1(solution, sq):
-    b = quantum_board_test.simulator(u.squares_to_bitboard(['b5', 'c5', 'd5']))
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_t1(solution, sq, board):
+    b = board(u.squares_to_bitboard(['b5', 'c5', 'd5']))
     assert b.perform_moves('d5^b3b7:SPLIT_SLIDE:BASIC',
                            f'{solution}:MERGE_SLIDE:BASIC')
     possibilities = [u.squares_to_bitboard(['b5', 'c5', sq])]
@@ -147,8 +148,7 @@ def test_t6(board):
     assert_samples_in(b, [expected])
 
 
-# The noise is too high on the noisy board
-@pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_a1(board):
     b = board(
         u.squares_to_bitboard(
