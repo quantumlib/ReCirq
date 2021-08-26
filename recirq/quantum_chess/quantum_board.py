@@ -219,7 +219,10 @@ class CirqBoard:
                 measure_circuit = self.transformer.transform(measure_circuit)
 
                 # For debug, ensure that the circuit correctly validates
-                self.device.validate_circuit(measure_circuit)
+                try:
+                    self.device.validate_circuit(measure_circuit)
+                except ValueError as e:
+                    raise ct.DeviceMappingError(str(e))
 
             # Run the circuit using the provided sampler (simulator or hardware)
             results = self.sampler.run(measure_circuit, repetitions=num_reps)
