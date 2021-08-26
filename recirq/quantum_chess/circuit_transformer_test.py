@@ -173,3 +173,10 @@ def test_too_many_qubits():
     t = ct.ConnectivityHeuristicCircuitTransformer(cirq.google.Sycamore23)
     with pytest.raises(ct.DeviceMappingError, match='Qubits exhausted'):
         t.transform(c)
+
+
+def test_sycamore_decomposer_reject_0_controlled():
+    c = cirq.Circuit(cirq.X(a1).controlled_by(a2, control_values=[0]))
+    decomposer = ct.SycamoreDecomposer()
+    with pytest.raises(ct.DeviceMappingError):
+        decomposer.optimize_circuit(c)
