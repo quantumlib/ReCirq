@@ -317,10 +317,42 @@ class CirqBoard:
             rtn = rtn + samples
         return rtn[:num_samples]
 
-    def _generate_accumulations(self, repetitions: int = 1000) -> None:
+    def _set_full_empty_squares_from_probability(self) -> None:
+        self.full_squares = 0
+        self.empty_squares = 0
+        for i, p in enumerate(self.probabilities):
+            if p == 1:
+                self.full_squares = set_nth_bit(i, self.full_squares, True)
+            if p == 0:
+                self.empty_squares = set_nth_bit(i, self.empty_squares, True)
+
+    def _generate_accumulations(self, repetitions: int = 1000, use_cache: bool = False) -> None:
         """ Samples the state and generates the accumulated 
         probabilities, empty_squares, and full_squares.
         """
+        move_history_cache_key = (tuple(self.move_history), repetitions)
+        move_history_old_cache_key = (tuple(self.move_history[:-1]),
+                                      repetitions)
+        if use_cache and self.move_history:
+            last_move = self.move_history[-1]
+            if move_history_cache_key in self.move_history_probabilities_cache:
+                self.probabilities = self.move_history_probabilities_cache[
+                    move_history_cache_key]
+                self._set_full_empty_squares_from_probability()
+                return
+            cache_key = cache_key_from_move(last_move, repetitions)
+            if move_history_old_cache_key in self.move_history_probabilities_cache and self._caching_supported(last_move) and cache_key in self.cache:
+                probs = self._apply_cache(
+                    self.move_history_probabilities_cache[
+                        move_history_old_cache_key], last_move,
+                    self.cache[cache_key])
+                self.probabilities = probs
+                self._set_full_empty_squares_from_probability()
+                self.move_history_probabilities_cache[
+                    move_history_cache_key] = probs.copy()
+                del self.cache[cache_key]
+                return
+
         self.probabilities = [0] * 64
         self.full_squares = (1 << 64) - 1
         self.empty_squares = (1 << 64) - 1
@@ -336,6 +368,16 @@ class CirqBoard:
             self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
 
         self.accumulations_repetitions = repetitions
+
+    def _caching_supported(self, m: move.Move):
+        """Checks if caching is supported for this move."""
+
+        # Caching is supported for a split jump from one full square to two empty squares.
+        if m.move_type == enums.MoveType.SPLIT_JUMP and nth_bit_of(square_to_bit(m.source), self.full_squares)\
+            and nth_bit_of(square_to_bit(m.target), self.empty_squares)\
+            and nth_bit_of(square_to_bit(m.target2), self.empty_squares):
+            return True
+        return False
 
     def cache_results(self, cache_key: CacheKey):
         if cache_key in self.cache:
@@ -376,34 +418,15 @@ class CirqBoard:
         The values are returned as a list in the same ordering as a
         bitboard.
         """
-        move_history_cache_key = (tuple(self.move_history), repetitions)
-        move_history_old_cache_key = (tuple(self.move_history[:-1]),
-                                      repetitions)
-        if use_cache and self.move_history:
-            last_move = self.move_history[-1]
-            if move_history_cache_key in self.move_history_probabilities_cache:
-                return self.move_history_probabilities_cache[
-                    move_history_cache_key]
-            cache_key = cache_key_from_move(last_move, repetitions)
-            if move_history_old_cache_key in self.move_history_probabilities_cache and cache_key in self.cache:
-                probs = self._apply_cache(
-                    self.move_history_probabilities_cache[
-                        move_history_old_cache_key], last_move,
-                    self.cache[cache_key])
-                self.probabilities = probs
-                self.move_history_probabilities_cache[
-                    move_history_cache_key] = probs.copy()
-                del self.cache[cache_key]
-                return probs
-
         if self.accumulations_repetitions != repetitions:
-            self._generate_accumulations(repetitions)
+            self._generate_accumulations(repetitions, use_cache)
 
+        move_history_cache_key = (tuple(self.move_history), repetitions)
         self.move_history_probabilities_cache[
             move_history_cache_key] = self.probabilities.copy()
         return self.probabilities
 
-    def get_full_squares_bitboard(self, repetitions: int = 1000) -> int:
+    def get_full_squares_bitboard(self, repetitions: int = 1000, use_cache = True) -> int:
         """Retrieves which squares are marked as full.
 
         This information is created using a representative set of
@@ -413,11 +436,11 @@ class CirqBoard:
         Returns a bitboard.
         """
         if self.accumulations_repetitions != repetitions:
-            self._generate_accumulations(repetitions)
+            self._generate_accumulations(repetitions, use_cache)
 
         return self.full_squares
 
-    def get_empty_squares_bitboard(self, repetitions: int = 1000) -> int:
+    def get_empty_squares_bitboard(self, repetitions: int = 1000, use_cache = True) -> int:
         """Retrieves which squares are marked as empty.
 
         This information is created using a representative set of
@@ -427,7 +450,7 @@ class CirqBoard:
         Returns a bitboard.
         """
         if self.accumulations_repetitions != repetitions:
-            self._generate_accumulations(repetitions)
+            self._generate_accumulations(repetitions, use_cache)
 
         return self.empty_squares
 

@@ -33,6 +33,7 @@ from recirq.quantum_chess.test_utils import (
 from recirq.quantum_chess.bit_utils import (
     bit_to_qubit,
     square_to_bit,
+    nth_bit_of
 )
 from recirq.quantum_chess.caching_utils import CacheKey
 
@@ -1067,17 +1068,25 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
     b.do_move(m1)
     probs = b.get_probability_distribution(100)
     b.do_move(m2)
-    debug_log_size = len(b.debug_log)
+    b.clear_debug_log()
     # Expected probability with the cache applied
     probs[square_to_bit('b1')] = 0
     probs[square_to_bit('c1')] = b.cache[cache_key]["target"]
     probs[square_to_bit('d1')] = b.cache[cache_key]["target2"]
+
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
     probs2 = b.get_probability_distribution(100, use_cache=True)
+    full_squares = b.get_full_squares_bitboard(100, use_cache=True)
+    empty_squares = b.get_empty_squares_bitboard(100, use_cache=True)
+
     assert probs == probs2
-    # Check that the second run did not trigger any new logs.
-    debug_log_size2 = len(b.debug_log)
-    assert debug_log_size == debug_log_size2
+    # Check that the second run and getting full and empty bitboards did not trigger any new logs.
+    assert len(b.debug_log) == 0
+    # Check bitboard updated correctly
+    assert not nth_bit_of(square_to_bit('b1'), full_squares)
+    assert not nth_bit_of(square_to_bit('c1'), full_squares)
+    assert not nth_bit_of(square_to_bit('d1'), full_squares)
+    assert nth_bit_of(square_to_bit('b1'), empty_squares)
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
