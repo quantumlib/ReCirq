@@ -34,6 +34,9 @@ import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
 
 
+# This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
+DEFAULT_CHESS_INIT_STATE = 18446462598732906495
+
 class CirqBoard:
     """Implementation of Quantum Board API using cirq sampler.
 
@@ -334,23 +337,11 @@ class CirqBoard:
 
         self.accumulations_repetitions = repetitions
 
-    def _caching_supported(self, m: move.Move):
-        """Checks if caching is supported for this move."""
-
-        # Caching is supported for a split jump from one full square to two empty squares.
-        if m.move_type == enums.MoveType.SPLIT_JUMP and self.probabilities[
-                square_to_bit(
-                    m.source)] == 1 and self.probabilities[square_to_bit(
-                        m.target)] == 0 and self.probabilities[square_to_bit(
-                            m.target2)] == 0:
-            return True
-        return False
-
     def cache_results(self, cache_key: CacheKey):
         if cache_key in self.cache:
             return
         if cache_key.move_type == enums.MoveType.SPLIT_JUMP:
-            helper_board = CirqBoard(self.init_basis_state, self.sampler,
+            helper_board = CirqBoard(DEFAULT_CHESS_INIT_STATE, self.sampler,
                                      self.device, self.error_mitigation,
                                      self.noise_mitigation,
                                      self.transformer if self.device else None)
@@ -371,10 +362,11 @@ class CirqBoard:
 
     @staticmethod
     def _apply_cache(probability, m, cache_value):
+        new_probability = probability.copy()
         for k, v in cache_value.items():
             square = getattr(m, k)
-            probability[square_to_bit(square)] = v
-        return probability
+            new_probability[square_to_bit(square)] = v
+        return new_probability
 
     def get_probability_distribution(self,
                                      repetitions: int = 1000,
