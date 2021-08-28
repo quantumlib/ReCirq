@@ -218,8 +218,7 @@ class CirqBoard:
             noise_threshold = self.noise_mitigation * num_samples
 
             self.debug_log += (f'Running circuit with {num_reps} reps '
-                               f'to get {num_samples} samples:\n'
-                               f'{str(measure_circuit)}\n')
+                               f'to get {num_samples} samples\n')
 
             # Translate circuit to grid qubits and sqrtISWAP gates
             if self.device is not None:
