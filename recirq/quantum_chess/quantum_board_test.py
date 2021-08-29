@@ -1125,10 +1125,11 @@ def test_jump_with_successful_measurement_outcome(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_successful_measurement_outcome(board):
+    b = board(0)
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
     for _ in range(10):
-        b = board(u.squares_to_bitboard(['a1', 'c3']))
+        b.with_state(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
             move.Move('a1', 'a2', target2='a3',
@@ -1149,10 +1150,11 @@ def test_split_capture_with_successful_measurement_outcome(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_failed_measurement_outcome(board):
+    b = board(0)
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
     for _ in range(100):
-        b = board(u.squares_to_bitboard(['a1', 'c3']))
+        b.with_state(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
             move.Move('a1', 'a2', target2='a3',
