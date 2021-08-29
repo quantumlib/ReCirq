@@ -1174,7 +1174,5 @@ def test_split_capture_with_failed_measurement_outcome(board):
         # piece on either a2 or a3 so post-filtered samples may not contain a2
         # in rare cases.
         probs = b.get_probability_distribution(100)
-        assert_prob_about(probs, u.square_to_bit('a2'), 1)
-        assert_prob_about(probs, u.square_to_bit('a3'), 0)
-        board_probs = b.get_board_probability_distribution(100)
-        assert_prob_about(board_probs, u.squares_to_bitboard(['a2', 'c3']), 1.0)
+        assert_prob_about(probs, u.square_to_bit('a2'), 1, atol=0.1)
+        assert_prob_about(probs, u.square_to_bit('a3'), 0, atol=0.1)
