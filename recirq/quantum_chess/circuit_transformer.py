@@ -264,26 +264,22 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         # Two qubit gates will turn into edges in the graph
         g = {}
         # Keep track of single qubits that don't interact.
-        sq = []
+        sq = set()
         for m in circuit:
             for op in m:
                 if len(op.qubits) == 1:
-                    if op.qubits[0] not in g:
-                        sq.append(op.qubits[0])
-                if len(op.qubits) == 2:
+                    sq.add(op.qubits[0])
+                else:
                     q1, q2 = op.qubits
                     if q1 not in g:
                         g[q1] = []
                     if q2 not in g:
                         g[q2] = []
-                    if q1 in sq:
-                        sq.remove(q1)
-                    if q2 in sq:
-                        sq.remove(q2)
                     if q2 not in g[q1]:
                         g[q1].append(q2)
                     if q1 not in g[q2]:
                         g[q2].append(q1)
+        sq.difference_update(g)
         for q in g:
             if len(g[q]) > 4:
                 raise DeviceMappingError(
@@ -323,8 +319,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             mapping[cur_node] = start_qubit
             start_list.remove(start_qubit)
 
-        if len(mapping) != len(g):
-            print('Warning: could not map all qubits!')
+        assert len(mapping) == len(g) + len(sq), 'Wrong number of qubits mapped'
         # Sanity check, ensure qubits not mapped twice
         assert len(mapping) == len(set(mapping.values()))
 
