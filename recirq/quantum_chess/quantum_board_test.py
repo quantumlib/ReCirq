@@ -1090,6 +1090,41 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
+    b = board(u.squares_to_bitboard(['a1', 'b1']))
+    # Cache a split jump in advance.
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 100)
+    b.cache_results(cache_key)
+    m1 = move.Move('b1',
+                   'c1',
+                   target2='d1',
+                   move_type=enums.MoveType.SPLIT_JUMP,
+                   move_variant=enums.MoveVariant.BASIC)
+    b.do_move(m1)
+    b.clear_debug_log()
+    # Expected probability with the cache applied
+    expected_probs = [0] * 64
+    expected_probs[square_to_bit('a1')] = 1
+    expected_probs[square_to_bit('b1')] = 0
+    expected_probs[square_to_bit('c1')] = b.cache[cache_key]["target"]
+    expected_probs[square_to_bit('d1')] = b.cache[cache_key]["target2"]
+
+    # Get probability distribution should apply the cache without rerunning _generate_accumulations.
+    probs = b.get_probability_distribution(100, use_cache=True)
+    full_squares = b.get_full_squares_bitboard(100, use_cache=True)
+    empty_squares = b.get_empty_squares_bitboard(100, use_cache=True)
+
+    assert probs == expected_probs
+    # Check that the second run and getting full and empty bitboards did not trigger any new logs.
+    assert len(b.debug_log) == 0
+    # Check bitboard updated correctly
+    assert not nth_bit_of(square_to_bit('b1'), full_squares)
+    assert not nth_bit_of(square_to_bit('c1'), full_squares)
+    assert not nth_bit_of(square_to_bit('d1'), full_squares)
+    assert nth_bit_of(square_to_bit('b1'), empty_squares)
+
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_jump_with_successful_measurement_outcome(board):
    b = board(u.squares_to_bitboard(['b1', 'c2']))
    b.do_move(

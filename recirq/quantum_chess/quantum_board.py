@@ -35,7 +35,7 @@ import recirq.quantum_chess.quantum_moves as qm
 
 
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
-DEFAULT_CHESS_INIT_STATE = 18446462598732906495
+DEFAULT_CHESS_INIT_STATE = 0xffff00000000ffff
 
 class CirqBoard:
     """Implementation of Quantum Board API using cirq sampler.
@@ -92,7 +92,6 @@ class CirqBoard:
         # None if there is no cache, stores the repetition number if there is a cache.
         self.accumulations_repetitions = None
         self.cache = {}
-        self.move_history_probabilities_cache = {}
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
@@ -105,6 +104,11 @@ class CirqBoard:
         self.circuit = cirq.Circuit()
         self.ancilla_count = 0
         self.move_history = []
+        self.full_squares = basis_state
+        self.empty_squares = ~basis_state
+        # Each entry is a 2-tuple of (repetitions, probabilities) corresponding to the probabilities after each move.
+        self.move_history_probabilities_cache = []
+
         # Store the initial basis state so that we can use it for replaying
         # the move-history when undoing moves
         self.init_basis_state = basis_state
@@ -330,42 +334,47 @@ class CirqBoard:
         """ Samples the state and generates the accumulated 
         probabilities, empty_squares, and full_squares.
         """
-        move_history_cache_key = (tuple(self.move_history), repetitions)
-        move_history_old_cache_key = (tuple(self.move_history[:-1]),
-                                      repetitions)
+        current_move_in_cache = len(self.move_history_probabilities_cache) > 0 and\
+                                len(self.move_history_probabilities_cache) >= len(self.move_history) and\
+                                self.move_history_probabilities_cache[-1][0] >= repetitions
+
         if use_cache and self.move_history:
             last_move = self.move_history[-1]
-            if move_history_cache_key in self.move_history_probabilities_cache:
-                self.probabilities = self.move_history_probabilities_cache[
-                    move_history_cache_key]
+            if current_move_in_cache:
+                self.probabilities = self.move_history_probabilities_cache[-1][1].copy()
                 self._set_full_empty_squares_from_probability()
                 return
+            previous_move_in_cache = len(self.move_history_probabilities_cache) > 0 and\
+                                     len(self.move_history_probabilities_cache) == len(self.move_history) - 1 and\
+                                     self.move_history_probabilities_cache[len(self.move_history) - 2][0] >= repetitions
+            is_first_move = len(self.move_history) == 1 and len(self.move_history_probabilities_cache) == 0
             cache_key = cache_key_from_move(last_move, repetitions)
-            if move_history_old_cache_key in self.move_history_probabilities_cache and self._caching_supported(last_move) and cache_key in self.cache:
-                probs = self._apply_cache(
-                    self.move_history_probabilities_cache[
-                        move_history_old_cache_key], last_move,
+            if (previous_move_in_cache or is_first_move) and self._caching_supported(last_move) and cache_key in self.cache:
+                if previous_move_in_cache:
+                    previous_probability = self.move_history_probabilities_cache[len(self.move_history) - 2][1]
+                else:
+                    previous_probability = [0] * 64
+                    for i in range(64):
+                        # Assume initial state is classical
+                        previous_probability[i] = nth_bit_of(i, self.state)
+
+                probs = self._apply_cache(previous_probability, last_move,
                     self.cache[cache_key])
                 self.probabilities = probs
                 self._set_full_empty_squares_from_probability()
-                self.move_history_probabilities_cache[
-                    move_history_cache_key] = probs.copy()
+                self.move_history_probabilities_cache.append((repetitions, probs.copy()))
                 del self.cache[cache_key]
                 return
 
         self.probabilities = [0] * 64
-        self.full_squares = (1 << 64) - 1
-        self.empty_squares = (1 << 64) - 1
-
         samples = self.sample(repetitions)
         for sample in samples:
-            self.full_squares &= sample
-            self.empty_squares &= ~sample
             for bit in bit_ones(sample):
                 self.probabilities[bit] += 1
 
         for bit in range(64):
             self.probabilities[bit] = float(self.probabilities[bit]) / float(repetitions)
+        self._set_full_empty_squares_from_probability()
 
         self.accumulations_repetitions = repetitions
 
@@ -421,9 +430,11 @@ class CirqBoard:
         if self.accumulations_repetitions != repetitions:
             self._generate_accumulations(repetitions, use_cache)
 
-        move_history_cache_key = (tuple(self.move_history), repetitions)
-        self.move_history_probabilities_cache[
-            move_history_cache_key] = self.probabilities.copy()
+        # Cache the repetiion and probability corresponding to this move history.
+        if len(self.move_history_probabilities_cache) < len(self.move_history):
+            self.move_history_probabilities_cache.extend([(-1, None)] * (len(self.move_history) - len(self.move_history_probabilities_cache)))
+        if self.move_history_probabilities_cache:
+            self.move_history_probabilities_cache[len(self.move_history) - 1] = (repetitions, self.probabilities.copy())
         return self.probabilities
 
     def get_full_squares_bitboard(self, repetitions: int = 1000, use_cache = True) -> int:
