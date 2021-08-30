@@ -105,7 +105,9 @@ class CirqBoard:
         self.ancilla_count = 0
         self.move_history = []
         self.full_squares = basis_state
-        self.empty_squares = ~basis_state
+        self.empty_squares = 0
+        for i in range(64):
+            self.empty_squares = set_nth_bit(i, self.empty_squares, not nth_bit_of(i, self.full_squares))
         # Each entry is a 2-tuple of (repetitions, probabilities) corresponding to the probabilities after each move.
         self.move_history_probabilities_cache = []
 
