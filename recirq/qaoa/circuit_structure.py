@@ -18,7 +18,7 @@ from typing import Callable
 import numpy as np
 
 import cirq
-import cirq.google as cg
+import cirq_google as cg
 
 try:
     from cirq.interop.quirk import QuirkQubitPermutationGate
