@@ -87,10 +87,12 @@ class CirqBoard:
 
         # None if there is no cache, stores the repetition number if there is a cache.
         self.accumulations_repetitions = None
+        self.board_accumulations_repetitions = None
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
         self.accumulations_repetitions = None
+        self.board_accumulations_repetitions = None
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -316,7 +318,7 @@ class CirqBoard:
 
     def _generate_accumulations(self, repetitions: int = 1000) -> None:
         """ Samples the state and generates the accumulated 
-        probabilities, empty_squares, and full_squares.
+        probabilities of each square, empty_squares, and full_squares.
         """
         self.probabilities = [0] * 64
         self.full_squares = (1 << 64) - 1
@@ -345,6 +347,34 @@ class CirqBoard:
             self._generate_accumulations(repetitions)
 
         return self.probabilities
+
+    def _generate_board_accumulations(self, repetitions: int = 1000) -> None:
+        """ Samples the state and generates the accumulated probabilities of each board
+        in the state, which will be saved as a map(board->prob.) in self.board_probabilities.
+        """
+        self.board_probabilities = {}
+
+        samples = self.sample(repetitions)
+        for sample in samples:
+            if sample not in self.board_probabilities:
+                self.board_probabilities[sample] = 0
+            self.board_probabilities[sample] += 1
+
+        for board in self.board_probabilities:
+            self.board_probabilities[board] /= repetitions
+
+        self.board_accumulations_repetitions = repetitions
+
+    def get_board_probability_distribution(self,
+                                           repetitions: int = 1000) -> Dict[int, float]:
+        """Returns the probability distribution for each board found in the sample.
+
+        The values are returned as a dict{bitboard(int): prob(float)}.
+        """
+        if self.board_accumulations_repetitions != repetitions:
+            self._generate_board_accumulations(repetitions)
+
+        return self.board_probabilities
 
     def get_full_squares_bitboard(self, repetitions: int = 1000) -> int:
         """Retrieves which squares are marked as full.
@@ -555,6 +585,7 @@ class CirqBoard:
 
         # Reset accumulations here because function has conditional return branches
         self.accumulations_repetitions = None
+        self.board_accumulations_repetitions = None
 
         # Add move to move_history
         self.move_history.append(m)

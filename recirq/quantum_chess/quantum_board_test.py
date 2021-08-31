@@ -98,6 +98,9 @@ def test_initial_state(board):
         assert x == 7
     probs = b.get_probability_distribution(100)
     assert len(probs) == 64
+    board_probs = b.get_board_probability_distribution(100)
+    assert len(board_probs) == 1
+    assert board_probs[7] == 1.0
     full_squares = b.get_full_squares_bitboard()
     empty_squares = b.get_empty_squares_bitboard()
     for bit in range(3):
@@ -150,6 +153,10 @@ def test_split_move(move_type, board):
     probs = b.get_probability_distribution(5000)
     assert_fifty_fifty(probs, qb.square_to_bit('a3'))
     assert_fifty_fifty(probs, qb.square_to_bit('c1'))
+    board_probs = b.get_board_probability_distribution(5000)
+    assert len(board_probs) == 2
+    assert_fifty_fifty(board_probs, u.squares_to_bitboard(['a3']))
+    assert_fifty_fifty(board_probs, u.squares_to_bitboard(['c1']))
 
     # Test doing a jump after a split move
     m = move.Move('c1',
@@ -163,7 +170,10 @@ def test_split_move(move_type, board):
     probs = b.get_probability_distribution(5000)
     assert_fifty_fifty(probs, u.square_to_bit('a3'))
     assert_fifty_fifty(probs, u.square_to_bit('d1'))
-
+    board_probs = b.get_board_probability_distribution(5000)
+    assert len(board_probs) == 2
+    assert_fifty_fifty(board_probs, u.squares_to_bitboard(['a3']))
+    assert_fifty_fifty(board_probs, u.squares_to_bitboard(['d1']))
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_and_use_same_square(board):
@@ -178,7 +188,10 @@ def test_split_and_use_same_square(board):
         u.squares_to_bitboard(['a2']): 1 / 2,
         u.squares_to_bitboard(['b2']): 1 / 2
     })
-
+    board_probs = b.get_board_probability_distribution(5000)
+    assert len(board_probs) == 2
+    assert_fifty_fifty(board_probs, u.squares_to_bitboard(['a2']))
+    assert_fifty_fifty(board_probs, u.squares_to_bitboard(['b2']))
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_exclusion(board):
@@ -366,7 +379,10 @@ def test_superposition_slide_move(board):
     assert_fifty_fifty(probs, 2)
     assert_fifty_fifty(probs, 3)
     assert_fifty_fifty(probs, 5)
-
+    board_probs = b.get_board_probability_distribution(5000)
+    assert len(board_probs) == 2
+    assert_fifty_fifty(board_probs, blocked)
+    assert_fifty_fifty(board_probs, moved)
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_superposition_slide_move2(board):
@@ -395,6 +411,10 @@ def test_superposition_slide_move2(board):
     assert_fifty_fifty(probs, u.square_to_bit('c1'))
     assert_prob_about(probs, u.square_to_bit('a1'), 0.75)
     assert_prob_about(probs, u.square_to_bit('e1'), 0.25)
+    board_probs = b.get_board_probability_distribution(10000)
+    assert len(board_probs) == len(possibilities)
+    for possibility in possibilities:
+        assert_prob_about(board_probs, possibility, 0.25)
 
 def test_slide_with_two_path_qubits_coherence():
     """Tests that a path ancilla does not mess up split/merge coherence.
@@ -514,6 +534,11 @@ def test_split_one_slide(board):
     assert_fifty_fifty(probs, qb.square_to_bit('c2'))
     assert_prob_about(probs, qb.square_to_bit('a3'), 0.25)
     assert_prob_about(probs, qb.square_to_bit('c1'), 0.75)
+    board_probs = b.get_board_probability_distribution(10000)
+    assert len(board_probs) == len(possibilities)
+    assert_prob_about(board_probs, possibilities[0], 0.5)
+    assert_prob_about(board_probs, possibilities[1], 0.25)
+    assert_prob_about(board_probs, possibilities[2], 0.25)
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_both_sides(board):
@@ -558,7 +583,12 @@ def test_split_both_sides(board):
     assert_prob_about(probs, qb.square_to_bit('a1'), 0.375)
     assert_prob_about(probs, qb.square_to_bit('e1'), 0.1875)
     assert_prob_about(probs, qb.square_to_bit('a5'), 0.4375)
-
+    board_probs = b.get_board_probability_distribution(25000)
+    assert len(board_probs) == len(possibilities)
+    for possibility in possibilities[:7]:
+        assert_prob_about(board_probs, possibility, 0.125)
+    for possibility in possibilities[7:]:
+        assert_prob_about(board_probs, possibility, 0.0625)
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_merge_slide_self_intersecting(board):
@@ -595,7 +625,11 @@ def test_merge_slide_one_side(board):
     assert_fifty_fifty(probs, qb.square_to_bit('c5'))
     assert_prob_about(probs, qb.square_to_bit('a4'), 0.25)
     assert_prob_about(probs, qb.square_to_bit('d4'), 0.75)
-
+    board_probs = b.get_board_probability_distribution(20000)
+    assert len(board_probs) == len(possibilities)
+    assert_prob_about(board_probs, possibilities[0], 0.25)
+    assert_prob_about(board_probs, possibilities[1], 0.25)
+    assert_prob_about(board_probs, possibilities[2], 0.5)
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_merge_slide_both_side(board):
@@ -629,7 +663,11 @@ def test_merge_slide_both_side(board):
     assert_fifty_fifty(probs, qb.square_to_bit('d4'))
     assert_prob_about(probs, qb.square_to_bit('a4'), 0.25)
     assert_prob_about(probs, qb.square_to_bit('d1'), 0.25)
-
+    board_probs = b.get_board_probability_distribution(20000)
+    assert len(board_probs) == len(possibilities)
+    for possibility in possibilities[:6]:
+        assert_prob_about(board_probs, possibility, 0.125)
+    assert_prob_about(board_probs, possibilities[6], 0.25)
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unentangled_pawn_capture(board):
@@ -664,6 +702,10 @@ def test_pawn_capture(board):
     assert_fifty_fifty(probs, qb.square_to_bit('a5'))
     assert_fifty_fifty(probs, qb.square_to_bit('a4'))
     assert_fifty_fifty(probs, qb.square_to_bit('b3'))
+    board_probs = b.get_board_probability_distribution(5000)
+    assert len(board_probs) == len(possibilities)
+    assert_fifty_fifty(board_probs, possibilities[0])
+    assert_fifty_fifty(board_probs, possibilities[1])
 
     did_it_move = b.perform_moves('c3^c4c5:SPLIT_JUMP:BASIC',
                                   'b3c4:PAWN_CAPTURE:BASIC')
@@ -678,7 +720,10 @@ def test_pawn_capture(board):
             u.squares_to_bitboard(['a4', 'c5']),
         ]
     assert_samples_in(b, possibilities)
-
+    board_probs = b.get_board_probability_distribution(5000)
+    assert len(board_probs) == 2
+    assert_fifty_fifty(board_probs, possibilities[0])
+    assert_fifty_fifty(board_probs, possibilities[1])
 
 @pytest.mark.parametrize('initial_board,source,target', (
         (u.squares_to_bitboard(['e1', 'f1', 'h1']), 'e1', 'g1'),
@@ -967,10 +1012,15 @@ def test_undo_last_move():
     )
     probs = b.get_probability_distribution(1000)
     assert_prob_about(probs, qb.square_to_bit('a4'), 1.0)
+    board_probs = b.get_board_probability_distribution(1000)
+    assert len(board_probs) == 1
+    assert_prob_about(board_probs, u.squares_to_bitboard(['a4']), 1.0)
     assert b.undo_last_move()
     probs = b.get_probability_distribution(1000)
     assert_prob_about(probs, qb.square_to_bit('a2'), 1.0)
-
+    board_probs = b.get_board_probability_distribution(1000)
+    assert len(board_probs) == 1
+    assert_prob_about(board_probs, u.squares_to_bitboard(['a2']), 1.0)
 
 def test_undo_entangled_measurement():
     b = simulator(u.squares_to_bitboard(['a2', 'b1', 'c2', 'd1']))
@@ -983,6 +1033,10 @@ def test_undo_entangled_measurement():
     assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
+    board_probs = b.get_board_probability_distribution(10000)
+    assert len(board_probs) == 2
+    assert_prob_about(board_probs, u.squares_to_bitboard(['a3', 'c4', 'a2', 'd1']), 0.5)
+    assert_prob_about(board_probs, u.squares_to_bitboard(['c3', 'c2', 'a2', 'd1']), 0.5)
     b.perform_moves('d1c2:JUMP:EXCLUDED')
     assert b.undo_last_move()
     probs = b.get_probability_distribution(10000)
@@ -990,6 +1044,10 @@ def test_undo_entangled_measurement():
     assert_prob_about(probs, qb.square_to_bit('c2'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c3'), 0.5)
     assert_prob_about(probs, qb.square_to_bit('c4'), 0.5)
+    board_probs = b.get_board_probability_distribution(10000)
+    assert len(board_probs) == 2
+    assert_prob_about(board_probs, u.squares_to_bitboard(['a3', 'c4', 'a2', 'd1']), 0.5)
+    assert_prob_about(board_probs, u.squares_to_bitboard(['c3', 'c2', 'a2', 'd1']), 0.5)
 
 def test_record_time():
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
@@ -1031,7 +1089,9 @@ def test_caching_accumulations_different_repetition_not_cached(board):
     probs1 = b.get_probability_distribution(1)
     probs2 = b.get_probability_distribution(100)
     assert probs1 != probs2
-
+    board_probs1 = b.get_board_probability_distribution(1)
+    board_probs2 = b.get_board_probability_distribution(100)
+    assert board_probs1 != board_probs2
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_caching_accumulations_same_repetition_cached(board):
@@ -1045,6 +1105,9 @@ def test_caching_accumulations_same_repetition_cached(board):
     probs1 = b.get_probability_distribution(100)
     probs2 = b.get_probability_distribution(100)
     assert probs1 == probs2
+    board_probs1 = b.get_board_probability_distribution(100)
+    board_probs2 = b.get_board_probability_distribution(100)
+    assert board_probs1 == board_probs2
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_jump_with_successful_measurement_outcome(board):
@@ -1113,3 +1176,5 @@ def test_split_capture_with_failed_measurement_outcome(board):
         probs = b.get_probability_distribution(100)
         assert_prob_about(probs, u.square_to_bit('a2'), 1)
         assert_prob_about(probs, u.square_to_bit('a3'), 0)
+        board_probs = b.get_board_probability_distribution(100)
+        assert_prob_about(board_probs, u.squares_to_bitboard(['a2', 'c3']), 1.0)
