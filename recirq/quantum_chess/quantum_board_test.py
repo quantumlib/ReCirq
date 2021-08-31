@@ -163,7 +163,7 @@ def test_split_move(move_type, board):
                   'd1',
                   move_type=enums.MoveType.JUMP,
                   move_variant=enums.MoveVariant.BASIC)
-    did_it_move = b.do_move(m)
+    assert b.do_move(m)
     samples = b.sample(100)
     assert_this_or_that(samples, u.squares_to_bitboard(['a3']),
                         u.squares_to_bitboard(['d1']))
@@ -183,7 +183,6 @@ def test_split_and_use_same_square(board):
         'b1b2:JUMP:BASIC',
         'b2a2:JUMP:BASIC',
     )
-    probs = b.get_probability_distribution(5000)
     assert_sample_distribution(b, {
         u.squares_to_bitboard(['a2']): 1 / 2,
         u.squares_to_bitboard(['b2']): 1 / 2
@@ -330,7 +329,7 @@ def test_blocked_slide_blocked(board):
 def test_blocked_slide_capture_through():
     success = 0
     b = simulator(0)
-    for trials in range(100):
+    for _ in range(100):
         b.with_state(u.squares_to_bitboard(['a8', 'c6']))
         b.do_move(
             move.Move('c6',
@@ -1121,16 +1120,16 @@ def test_jump_with_successful_measurement_outcome(board):
                   move_type=enums.MoveType.JUMP,
                   move_variant=enums.MoveVariant.EXCLUDED,
                   measurement=1))
-   samples = b.sample(100)
    assert_samples_in(b, [u.squares_to_bitboard(['c3','a3'])])
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_successful_measurement_outcome(board):
+    b = board(0)
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
-    for i in range(10):
-        b = board(u.squares_to_bitboard(['a1', 'c3']))
+    for _ in range(10):
+        b.with_state(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
             move.Move('a1', 'a2', target2='a3',
@@ -1151,10 +1150,11 @@ def test_split_capture_with_successful_measurement_outcome(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_failed_measurement_outcome(board):
+    b = board(0)
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
-    for i in range(100):
-        b = board(u.squares_to_bitboard(['a1', 'c3']))
+    for _ in range(100):
+        b.with_state(u.squares_to_bitboard(['a1', 'c3']))
         # a1 splits into a2 + a3
         b.do_move(
             move.Move('a1', 'a2', target2='a3',
@@ -1174,7 +1174,5 @@ def test_split_capture_with_failed_measurement_outcome(board):
         # piece on either a2 or a3 so post-filtered samples may not contain a2
         # in rare cases.
         probs = b.get_probability_distribution(100)
-        assert_prob_about(probs, u.square_to_bit('a2'), 1)
-        assert_prob_about(probs, u.square_to_bit('a3'), 0)
-        board_probs = b.get_board_probability_distribution(100)
-        assert_prob_about(board_probs, u.squares_to_bitboard(['a2', 'c3']), 1.0)
+        assert_prob_about(probs, u.square_to_bit('a2'), 1, atol=0.1)
+        assert_prob_about(probs, u.square_to_bit('a3'), 0, atol=0.1)

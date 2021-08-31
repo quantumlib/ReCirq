@@ -115,7 +115,7 @@ class AsciiBoard:
         return self._pieces[y * self.size + x]
 
     @staticmethod
-    def _ep_flag(move: 'Move', piece_type: int):
+    def _ep_flag(move: Move, piece_type: int):
         if abs(piece_type) != c.PAWN:
             return None
         if abs(y_of(move.target) - y_of(move.source)) == 2:
@@ -149,11 +149,10 @@ class AsciiBoard:
                     rtn.append(path)
         return rtn
 
-    def apply(self, move: 'Move'):
+    def apply(self, move: Move):
         """Applies a move to the board."""
 
         s = self._pieces[move.source]
-        t = self._pieces[move.target]
 
         # Defaults to a BASIC JUMP move if not specified
         if not move.move_type:

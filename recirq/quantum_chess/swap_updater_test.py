@@ -1,7 +1,6 @@
 import pytest
 import cirq
 
-import recirq.quantum_chess.mcpe_utils as mcpe
 from recirq.quantum_chess.swap_updater import SwapUpdater, generate_decomposed_swap
 import recirq.quantum_chess.quantum_moves as qm
 
@@ -64,8 +63,6 @@ def test_example_9_iterations():
 def test_example_9():
     Q = FIGURE_9A_PHYSICAL_QUBITS
     initial_mapping = dict(zip(q, Q))
-    updater = SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping,
-                          lambda q1, q2: [cirq.SWAP(q1, q2)])
     updated_circuit = cirq.Circuit(
         SwapUpdater(FIGURE_9A_CIRCUIT, Q, initial_mapping,
                     lambda q1, q2: [cirq.SWAP(q1, q2)]).add_swaps())

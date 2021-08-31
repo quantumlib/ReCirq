@@ -904,10 +904,8 @@ class CirqBoard:
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
                 measure_qubit = rook_tqubit
-                measure_bit = rook_tbit
             else:
                 measure_qubit = tqubit
-                measure_bit = tbit
             # Note that a measurement of 1 means that the move was
             # successful so that the target square is empty
             is_there = self.post_select_on(measure_qubit, m.measurement,invert=True)
@@ -983,10 +981,8 @@ class CirqBoard:
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
                 measure_qubit = rook_tqubit
-                measure_bit = rook_tbit
             else:
                 measure_qubit = tqubit
-                measure_bit = tbit
             # Note that a measurement of one means the move was successful
             # so that the path was clear
             is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)

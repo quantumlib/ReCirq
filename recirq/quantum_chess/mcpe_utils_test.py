@@ -1,5 +1,3 @@
-from collections import deque
-
 import pytest
 import cirq
 import numpy as np
