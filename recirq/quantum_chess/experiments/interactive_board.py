@@ -60,6 +60,7 @@ def main_loop(args):
             in_str = in_str + ':JUMP:BASIC'
         in_move = m.Move.from_string(in_str)
         meas = b.apply(in_move)
+        print(b.board.circuit)
         b.board.print_debug_log()
         print(f'Measurement outcome = {meas}')
         print('')
