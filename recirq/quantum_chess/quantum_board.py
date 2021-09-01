@@ -662,6 +662,7 @@ class CirqBoard:
                 return 0
             if tqubit in self.entangled_squares:
                 old_tqubit = self.unhook(tqubit)
+                self.state = set_nth_bit(tbit, self.state, False)
                 self.add_entangled(squbit, tqubit)
 
                 self.circuit.append(
@@ -845,10 +846,17 @@ class CirqBoard:
         if m.move_type == enums.MoveType.SPLIT_JUMP:
             tbit2 = square_to_bit(m.target2)
             tqubit2 = bit_to_qubit(tbit2)
+            is_basic_case = (squbit not in self.entangled_squares
+                             and tqubit not in self.entangled_squares
+                             and tqubit2 not in self.entangled_squares
+                             and nth_bit_of(sbit, self.state)
+                             and not nth_bit_of(tbit, self.state)
+                             and not nth_bit_of(tbit2, self.state))
             self.add_entangled(squbit, tqubit, tqubit2)
             self.circuit.append(qm.split_move(squbit, tqubit, tqubit2))
-            self.state = set_nth_bit(sbit, self.state, False)
-            self.unhook(squbit)
+            if is_basic_case:
+                self.state = set_nth_bit(sbit, self.state, False)
+                self.unhook(squbit)
             return 1
 
         if m.move_type == enums.MoveType.MERGE_JUMP:

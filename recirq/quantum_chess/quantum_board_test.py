@@ -192,6 +192,22 @@ def test_split_and_use_same_square(board):
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['a2']))
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['b2']))
 
+
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_overlapping_splits(board):
+    b = board(u.squares_to_bitboard(['e1', 'g1']))
+    assert b.perform_moves(
+        'e1^d3f3:SPLIT_JUMP:BASIC',
+        'g1^h3f3:SPLIT_JUMP:BASIC',
+    )
+    assert_sample_distribution(b, {
+        u.squares_to_bitboard(['d3', 'f3']): 1 / 4,
+        u.squares_to_bitboard(['d3', 'h3']): 1 / 4,
+        u.squares_to_bitboard(['f3', 'g1']): 1 / 4,
+        u.squares_to_bitboard(['h3', 'g1']): 1 / 4,
+    })
+
+
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_exclusion(board):
     """Splits piece b1 to c1 and d1 then tries a excluded move from a1 to c1."""
@@ -723,6 +739,20 @@ def test_pawn_capture(board):
     assert len(board_probs) == 2
     assert_fifty_fifty(board_probs, possibilities[0])
     assert_fifty_fifty(board_probs, possibilities[1])
+
+
+@pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
+def test_pawn_capture_bits(board):
+    """Tests correctly setting the classical bits with pawn capture.
+
+    White: Nb4
+    Black: Pa7, Pb7
+    """
+    b = board(u.squares_to_bitboard(['c2', 'a6', 'b7']))
+    assert b.perform_moves('c2^b4a1:SPLIT_JUMP:BASIC', 'b4a6.m1:JUMP:CAPTURE',
+                           'b7a6:PAWN_CAPTURE:CAPTURE')
+    assert_samples_in(b, [u.squares_to_bitboard(['a6'])])
+
 
 @pytest.mark.parametrize('initial_board,source,target', (
         (u.squares_to_bitboard(['e1', 'f1', 'h1']), 'e1', 'g1'),

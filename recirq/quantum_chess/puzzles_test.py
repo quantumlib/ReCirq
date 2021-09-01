@@ -33,13 +33,13 @@ def assert_samples_in(b, possibilities):
         ('b3b7^f7', 'f7'),
         ('b7b3^f7', 'f7'),
 ))
-def test_t1(solution, sq):
-    for board in ALL_CIRQ_BOARDS:
-        b = board(u.squares_to_bitboard(['b5', 'c5', 'd5']))
-        assert b.perform_moves('d5^b3b7:SPLIT_SLIDE:BASIC',
-                               f'{solution}:MERGE_SLIDE:BASIC')
-        possibilities = [u.squares_to_bitboard(['b5', 'c5', sq])]
-        assert_samples_in(b, possibilities)
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_t1(solution, sq, board):
+    b = board(u.squares_to_bitboard(['b5', 'c5', 'd5']))
+    assert b.perform_moves('d5^b3b7:SPLIT_SLIDE:BASIC',
+                           f'{solution}:MERGE_SLIDE:BASIC')
+    possibilities = [u.squares_to_bitboard(['b5', 'c5', sq])]
+    assert_samples_in(b, possibilities)
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
