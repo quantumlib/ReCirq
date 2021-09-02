@@ -14,7 +14,6 @@
 import pytest
 
 import recirq.quantum_chess.bit_utils as u
-import recirq.quantum_chess.quantum_board as qb
 import recirq.quantum_chess.quantum_board_test as quantum_board_test
 import recirq.quantum_chess.test_utils as test_utils
 
@@ -34,13 +33,13 @@ def assert_samples_in(b, possibilities):
         ('b3b7^f7', 'f7'),
         ('b7b3^f7', 'f7'),
 ))
-def test_t1(solution, sq):
-    for board in ALL_CIRQ_BOARDS:
-        b = board(u.squares_to_bitboard(['b5', 'c5', 'd5']))
-        assert b.perform_moves('d5^b3b7:SPLIT_SLIDE:BASIC',
-                               f'{solution}:MERGE_SLIDE:BASIC')
-        possibilities = [u.squares_to_bitboard(['b5', 'c5', sq])]
-        assert_samples_in(b, possibilities)
+@pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
+def test_t1(solution, sq, board):
+    b = board(u.squares_to_bitboard(['b5', 'c5', 'd5']))
+    assert b.perform_moves('d5^b3b7:SPLIT_SLIDE:BASIC',
+                           f'{solution}:MERGE_SLIDE:BASIC')
+    possibilities = [u.squares_to_bitboard(['b5', 'c5', sq])]
+    assert_samples_in(b, possibilities)
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
@@ -61,7 +60,7 @@ def test_t2(board):
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_t3(board):
     b = board(u.squares_to_bitboard(['f1', 'd7', 'e8']))
-    did_it_move = b.perform_moves(
+    b.perform_moves(
         'f1^b5c4:SPLIT_SLIDE:BASIC',
         'd7b5:SLIDE:CAPTURE',
         'c4b5:SLIDE:CAPTURE',

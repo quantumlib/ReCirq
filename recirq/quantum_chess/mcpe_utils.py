@@ -20,7 +20,7 @@ NISQ Computers'
 (https://ieeexplore.ieee.org/abstract/document/8976109).
 """
 from collections import defaultdict, deque
-from typing import Callable, Dict, Generator, Iterable, List, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, Tuple
 
 import cirq
 

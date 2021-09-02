@@ -65,7 +65,9 @@ class Move:
 
     def __eq__(self, other):
         if isinstance(other, Move):
-            return (self.source == other.source and self.target == other.target
+            return (self.source == other.source
+                    and self.source2 == other.source2
+                    and self.target == other.target
                     and self.target2 == other.target2
                     and self.move_type == other.move_type
                     and self.move_variant == other.move_variant

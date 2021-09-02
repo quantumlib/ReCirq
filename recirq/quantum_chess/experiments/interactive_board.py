@@ -50,6 +50,7 @@ def main_loop(args):
     else:
         b.reset()
     print(b)
+    b.board.clear_debug_log()
     for in_str in sys.stdin:
         in_str = in_str.strip()
         if in_str == 'exit':
@@ -60,6 +61,7 @@ def main_loop(args):
             in_str = in_str + ':JUMP:BASIC'
         in_move = m.Move.from_string(in_str)
         meas = b.apply(in_move)
+        print(b.board.circuit)
         b.board.print_debug_log()
         print(f'Measurement outcome = {meas}')
         print('')

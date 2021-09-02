@@ -23,6 +23,14 @@ import recirq.quantum_chess.swap_updater as su
 ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 
+class DeviceMappingError(Exception):
+    """Raised when a circuit cannot be mapped onto a device.
+
+    This happens when a suitable mapping of qubits onto the device graph cannot
+    be found, or when an unsupported gate is used.
+    """
+
+
 class CircuitTransformer:
     """Abstract interface for circuit transformations.
 
@@ -75,17 +83,22 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
 
     def find_start_qubit(self,
                          qubit_list: List[cirq.Qid],
-                         depth=3) -> Optional[cirq.GridQubit]:
+                         depth=3) -> cirq.GridQubit:
         """Finds a reasonable starting qubit to start the mapping.
 
-        Uses the heuristic of the most connected qubit. """
-        best = None
+        Uses the heuristic of the most connected qubit.
+
+        Raises:
+            DeviceMappingError: if there are no qubits left to map.
+        """
         best_count = -1
         for q in qubit_list:
             c = self.qubits_within(depth, q, qubit_list, set())
             if c > best_count:
                 best_count = c
                 best = q
+        if best_count == -1:
+            raise DeviceMappingError('Qubits exhausted')
         return best
 
     def edges_within(self, depth: int, node: cirq.Qid,
@@ -251,29 +264,25 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         # Two qubit gates will turn into edges in the graph
         g = {}
         # Keep track of single qubits that don't interact.
-        sq = []
+        sq = set()
         for m in circuit:
             for op in m:
                 if len(op.qubits) == 1:
-                    if op.qubits[0] not in g:
-                        sq.append(op.qubits[0])
-                if len(op.qubits) == 2:
+                    sq.add(op.qubits[0])
+                else:
                     q1, q2 = op.qubits
                     if q1 not in g:
                         g[q1] = []
                     if q2 not in g:
                         g[q2] = []
-                    if q1 in sq:
-                        sq.remove(q1)
-                    if q2 in sq:
-                        sq.remove(q2)
                     if q2 not in g[q1]:
                         g[q1].append(q2)
                     if q1 not in g[q2]:
                         g[q2].append(q1)
+        sq.difference_update(g)
         for q in g:
             if len(g[q]) > 4:
-                raise ValueError(
+                raise DeviceMappingError(
                     f'Qubit {q} needs more than 4 adjacent qubits!')
 
         # Initialize mappings and available qubits
@@ -310,8 +319,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             mapping[cur_node] = start_qubit
             start_list.remove(start_qubit)
 
-        if len(mapping) != len(g):
-            print('Warning: could not map all qubits!')
+        assert len(mapping) == len(g) + len(sq), 'Wrong number of qubits mapped'
         # Sanity check, ensure qubits not mapped twice
         assert len(mapping) == len(set(mapping.values()))
 
@@ -386,11 +394,13 @@ class SycamoreDecomposer(cirq.PointOptimizer):
             self, circuit: cirq.Circuit, index: int,
             op: cirq.Operation) -> Optional[cirq.PointOptimizationSummary]:
         if len(op.qubits) > 3:
-            raise ValueError(f'Four qubit ops not yet supported: {op}')
+            raise DeviceMappingError(f'Four qubit ops not yet supported: {op}')
         new_ops = None
         if op.gate == cirq.SWAP or op.gate == cirq.CNOT:
             new_ops = cirq.google.optimized_for_sycamore(cirq.Circuit(op))
         if isinstance(op, cirq.ControlledOperation):
+            if not all(v == 1 for values in op.control_values for v in values):
+                raise DeviceMappingError(f'0-controlled ops not yet supported: {op}')
             qubits = op.sub_operation.qubits
             if op.gate.sub_gate == cirq.ISWAP:
                 new_ops = controlled_iswap.controlled_iswap(

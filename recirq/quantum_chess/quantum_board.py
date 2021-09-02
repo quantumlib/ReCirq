@@ -91,11 +91,13 @@ class CirqBoard:
 
         # None if there is no cache, stores the repetition number if there is a cache.
         self.accumulations_repetitions = None
+        self.board_accumulations_repetitions = None
         self.cache = {}
 
     def with_state(self, basis_state: int) -> 'CirqBoard':
         """Resets the board with a specific classical state."""
         self.accumulations_repetitions = None
+        self.board_accumulations_repetitions = None
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -177,12 +179,34 @@ class CirqBoard:
         self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
         self.timing_stats[action].append(t1 - t0)
 
-    def sample_with_ancilla(self, num_samples: int
-                            ) -> Tuple[List[int], List[Dict[str, int]]]:
+    def suggest_num_reps(self, sample_size: int) -> int:
+        """Guess the number of raw samples needed to get sample_size results.
+
+        Assume that each post-selection is about 50/50.
+        Noise and error mitigation will discard reps, so increase the total
+        number of repetitions to compensate.
+        """
+        if len(self.post_selection) > 1:
+            sample_size *= 2 ** (len(self.post_selection) + 1)
+        if self.error_mitigation == enums.ErrorMitigation.Correct:
+            sample_size *= 2
+        if self.noise_mitigation > 0:
+            sample_size *= 3
+        if sample_size < 100:
+            sample_size = 100
+        return sample_size
+
+    def sample_with_ancilla(
+            self,
+            num_samples: int,
+            num_reps: Optional[int] = None,
+    ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
 
         Sends the current circuit to the sampler then retrieves the results.
-        May return less samples than num_samples due to post-selection.
+        May return less samples than num_samples due to post-selection. The
+        number of raw results from the sampler is determined by num_reps if
+        provided, or automatically otherwise.
 
         Returns the results as a tuple.  The first entry is the list of
         measured squares, as represented by a 64-bit int bitboard.
@@ -190,6 +214,8 @@ class CirqBoard:
         dictionary from ancilla name to value (0 or 1).
         """
         t0 = time.perf_counter()
+        if num_reps is None:
+            num_reps = self.suggest_num_reps(num_samples)
         measure_circuit = self.circuit.copy()
         ancilla = []
         error_count = 0
@@ -201,25 +227,10 @@ class CirqBoard:
                 cirq.measure(q, key=q.name) for q in qubits)
             measure_circuit.append(measure_moment)
 
-            # Try to guess the appropriate number of repetitions needed
-            # Assume that each post_selection is about 50/50
-            # Noise and error mitigation will discard reps, so increase
-            # the total number of repetitions to compensate
-            if len(self.post_selection) > 1:
-                num_reps = num_samples * (2 ** (len(self.post_selection) + 1))
-            else:
-                num_reps = num_samples
-            if self.error_mitigation == enums.ErrorMitigation.Correct:
-                num_reps *= 2
             noise_threshold = self.noise_mitigation * num_samples
-            if self.noise_mitigation > 0:
-                num_reps *= 3
-            if num_reps < 100:
-                num_reps = 100
 
             self.debug_log += (f'Running circuit with {num_reps} reps '
-                               f'to get {num_samples} samples:\n'
-                               f'{str(measure_circuit)}\n')
+                               f'to get {num_samples} samples\n')
 
             # Translate circuit to grid qubits and sqrtISWAP gates
             if self.device is not None:
@@ -229,7 +240,10 @@ class CirqBoard:
                 measure_circuit = self.transformer.transform(measure_circuit)
 
                 # For debug, ensure that the circuit correctly validates
-                self.device.validate_circuit(measure_circuit)
+                try:
+                    self.device.validate_circuit(measure_circuit)
+                except ValueError as e:
+                    raise ct.DeviceMappingError(str(e))
 
             # Run the circuit using the provided sampler (simulator or hardware)
             results = self.sampler.run(measure_circuit, repetitions=num_reps)
@@ -334,7 +348,7 @@ class CirqBoard:
 
     def _generate_accumulations(self, repetitions: int = 1000, use_cache: bool = False) -> None:
         """ Samples the state and generates the accumulated 
-        probabilities, empty_squares, and full_squares.
+        probabilities of each square, empty_squares, and full_squares.
         """
 
         if use_cache and self.move_history:
@@ -432,6 +446,35 @@ class CirqBoard:
             self.move_history_probabilities_cache[len(self.move_history) - 1] = (repetitions, self.probabilities.copy())
         return self.probabilities
 
+    def _generate_board_accumulations(self, repetitions: int = 1000) -> None:
+        """ Samples the state and generates the accumulated probabilities of each board
+        in the state, which will be saved as a map(board->prob.) in self.board_probabilities.
+        """
+        self.board_probabilities = {}
+
+        samples = self.sample(repetitions)
+        for sample in samples:
+            if sample not in self.board_probabilities:
+                self.board_probabilities[sample] = 0
+            self.board_probabilities[sample] += 1
+
+        for board in self.board_probabilities:
+            self.board_probabilities[board] /= repetitions
+
+        self.board_accumulations_repetitions = repetitions
+
+    def get_board_probability_distribution(self,
+                                           repetitions: int = 1000) -> Dict[int, float]:
+        """Returns the probability distribution for each board found in the sample.
+
+        The values are returned as a dict{bitboard(int): prob(float)}.
+        """
+        if self.board_accumulations_repetitions != repetitions:
+            self._generate_board_accumulations(repetitions)
+
+        return self.board_probabilities
+
+
     def get_full_squares_bitboard(self, repetitions: int = 1000, use_cache = True) -> int:
         """Retrieves which squares are marked as full.
 
@@ -473,9 +516,14 @@ class CirqBoard:
                 if nth_bit_of(qubit_to_bit(qubit), self.state):
                     self.circuit.append(qm.place_piece(qubit))
 
-    def new_ancilla(self) -> cirq.Qid:
-        """Adds a new ancilla to the circuit and returns its value."""
+    def new_ancilla(self, note: str='') -> cirq.Qid:
+        """Adds a new ancilla to the circuit and returns its value.
+
+        `note` is an optional string to include in the ancilla qubit's name.
+        """
         new_name = f'anc{self.ancilla_count}'
+        if note:
+            new_name += '_' + note
         new_qubit = cirq.NamedQubit(new_name)
         self.ancilla_count += 1
         return new_qubit
@@ -491,7 +539,7 @@ class CirqBoard:
             return
 
         # Create a new ancilla qubit to replace the qubit with
-        new_qubit = self.new_ancilla()
+        new_qubit = self.new_ancilla(note=qubit.name)
 
         # Replace operations using the qubit with the ancilla instead
         self.circuit = self.circuit.transform_qubits(lambda q: new_qubit if q == qubit else q)
@@ -636,6 +684,7 @@ class CirqBoard:
 
         # Reset accumulations here because function has conditional return branches
         self.accumulations_repetitions = None
+        self.board_accumulations_repetitions = None
 
         # Add move to move_history
         self.move_history.append(m)
@@ -713,6 +762,7 @@ class CirqBoard:
                 return 0
             if tqubit in self.entangled_squares:
                 old_tqubit = self.unhook(tqubit)
+                self.state = set_nth_bit(tbit, self.state, False)
                 self.add_entangled(squbit, tqubit)
 
                 self.circuit.append(
@@ -896,10 +946,17 @@ class CirqBoard:
         if m.move_type == enums.MoveType.SPLIT_JUMP:
             tbit2 = square_to_bit(m.target2)
             tqubit2 = bit_to_qubit(tbit2)
+            is_basic_case = (squbit not in self.entangled_squares
+                             and tqubit not in self.entangled_squares
+                             and tqubit2 not in self.entangled_squares
+                             and nth_bit_of(sbit, self.state)
+                             and not nth_bit_of(tbit, self.state)
+                             and not nth_bit_of(tbit2, self.state))
             self.add_entangled(squbit, tqubit, tqubit2)
             self.circuit.append(qm.split_move(squbit, tqubit, tqubit2))
-            self.state = set_nth_bit(sbit, self.state, False)
-            self.unhook(squbit)
+            if is_basic_case:
+                self.state = set_nth_bit(sbit, self.state, False)
+                self.unhook(squbit)
             return 1
 
         if m.move_type == enums.MoveType.MERGE_JUMP:
@@ -955,10 +1012,8 @@ class CirqBoard:
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
                 measure_qubit = rook_tqubit
-                measure_bit = rook_tbit
             else:
                 measure_qubit = tqubit
-                measure_bit = tbit
             # Note that a measurement of 1 means that the move was
             # successful so that the target square is empty
             is_there = self.post_select_on(measure_qubit, m.measurement,invert=True)
@@ -1034,10 +1089,8 @@ class CirqBoard:
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
                 measure_qubit = rook_tqubit
-                measure_bit = rook_tbit
             else:
                 measure_qubit = tqubit
-                measure_bit = tbit
             # Note that a measurement of one means the move was successful
             # so that the path was clear
             is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)

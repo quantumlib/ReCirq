@@ -51,7 +51,8 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest
-        pytest -v
+        # RECIRQ_CHESS_TEST_SEED: make quantum_chess tests determnistic
+        RECIRQ_CHESS_TEST_SEED=789 pytest -v
 
   nbformat:
     name: Notebook formatting

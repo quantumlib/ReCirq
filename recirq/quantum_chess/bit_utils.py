@@ -33,7 +33,7 @@ def set_nth_bit(n: int, bit_board: int, val: bool) -> int:
 
 def bit_to_qubit(n: int) -> cirq.Qid:
     """Turns a number into a cirq Qubit."""
-    return cirq.NamedQubit(str(n))
+    return cirq.NamedQubit(bit_to_square(n))
 
 
 def num_ones(n: int) -> int:
@@ -61,7 +61,7 @@ def qubit_to_bit(q: cirq.LineQubit) -> int:
 
     Does not work for ancilla Qubits.
     """
-    return int(q.name)
+    return square_to_bit(q.name)
 
 
 def xy_to_bit(x: int, y: int) -> int:

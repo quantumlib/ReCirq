@@ -14,7 +14,7 @@
 import cirq
 
 PIECES = {
-    0: '.',
+    0: '?',  # Shown if there is nonzero probability where a piece was not expected
     1: 'P',
     -1: 'p',
     2: 'N',
