@@ -50,6 +50,7 @@ def main_loop(args):
     else:
         b.reset()
     print(b)
+    b.board.clear_debug_log()
     for in_str in sys.stdin:
         in_str = in_str.strip()
         if in_str == 'exit':
