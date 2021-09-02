@@ -336,20 +336,15 @@ class CirqBoard:
         """ Samples the state and generates the accumulated 
         probabilities, empty_squares, and full_squares.
         """
-        current_move_in_cache = len(self.move_history_probabilities_cache) > 0 and\
-                                len(self.move_history_probabilities_cache) >= len(self.move_history) and\
-                                self.move_history_probabilities_cache[-1][0] >= repetitions
 
         if use_cache and self.move_history:
             last_move = self.move_history[-1]
-            if current_move_in_cache:
+            if self.move_history_probabilities_cache[-1][0] >= repetitions:
                 self.probabilities = self.move_history_probabilities_cache[-1][1].copy()
                 self._set_full_empty_squares_from_probability()
                 return
-            previous_move_in_cache = len(self.move_history_probabilities_cache) > 0 and\
-                                     len(self.move_history_probabilities_cache) == len(self.move_history) - 1 and\
-                                     self.move_history_probabilities_cache[len(self.move_history) - 2][0] >= repetitions
-            is_first_move = len(self.move_history) == 1 and len(self.move_history_probabilities_cache) == 0
+            previous_move_in_cache = len(self.move_history) > 1 and self.move_history_probabilities_cache[-2][0] >= repetitions
+            is_first_move = len(self.move_history) == 1
             cache_key = cache_key_from_move(last_move, repetitions)
             if (previous_move_in_cache or is_first_move) and self._caching_supported(last_move) and cache_key in self.cache:
                 if previous_move_in_cache:
@@ -433,8 +428,6 @@ class CirqBoard:
             self._generate_accumulations(repetitions, use_cache)
 
         # Cache the repetiion and probability corresponding to this move history.
-        if len(self.move_history_probabilities_cache) < len(self.move_history):
-            self.move_history_probabilities_cache.extend([(-1, None)] * (len(self.move_history) - len(self.move_history_probabilities_cache)))
         if self.move_history_probabilities_cache:
             self.move_history_probabilities_cache[len(self.move_history) - 1] = (repetitions, self.probabilities.copy())
         return self.probabilities
@@ -646,6 +639,7 @@ class CirqBoard:
 
         # Add move to move_history
         self.move_history.append(m)
+        self.move_history_probabilities_cache.append((-1, None))
 
         sbit = square_to_bit(m.source)
         tbit = square_to_bit(m.target)

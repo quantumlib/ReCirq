@@ -72,9 +72,6 @@ class Move:
                     and self.measurement == other.measurement)
         return False
 
-    def __hash__(self):
-        return hash(self.to_string(include_type=True))
-
     @classmethod
     def from_string(cls, str_to_parse: str):
         """Creates a move from a string shorthand for tests.
