@@ -374,6 +374,7 @@ class CirqBoard:
                 self.probabilities = probs
                 self._set_full_empty_squares_from_probability()
                 self.move_history_probabilities_cache.append((repetitions, probs.copy()))
+                # Remove entry from cached since it has been consumed.
                 del self.cache[cache_key]
                 return
 
