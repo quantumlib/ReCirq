@@ -1419,3 +1419,5 @@ def test_measurement_with_no_classical_board_change(board):
         )
     )
     assert not b.is_classical()
+
+    
