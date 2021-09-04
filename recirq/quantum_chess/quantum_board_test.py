@@ -1381,7 +1381,7 @@ def test_measurement_without_fully_classical_position(board):
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_measurement_with_no_classical_board_change(board):
-    """Splits piece on b2 to b7 and g2, then splits piece on d4 to d5 and e4.
+    """Splits piece on b2 to b7 and g2, then will split piece on d4 to d5 and e4.
     Piece on g4 then splits to f3 and e2. Then piece on g2 attempts to capture piece on e4,
     with a failed measurement outcome."""
     b = board.with_state(u.squares_to_bitboard(["b2", "d4", "g4"]))
