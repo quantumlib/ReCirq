@@ -80,6 +80,7 @@ class CirqBoard:
         ] = enums.ErrorMitigation.Nothing,
         noise_mitigation: Optional[float] = 0.0,
         transformer: Optional[ct.CircuitTransformer] = None,
+        reset_starting_states = False,
     ):
         self.device = device
         self.sampler = sampler
@@ -93,6 +94,10 @@ class CirqBoard:
 
         # None if there is no cache, stores the repetition number if there is a cache.
         self.accumulations_repetitions = None
+
+        # Will only be turned on if user specifies
+        self.reset_starting_states = reset_starting_states
+
 
     def with_state(self, basis_state: int, reset_move_history=True) -> "CirqBoard":
         """Resets the board with a specific classical state. reset_move_history indicates
@@ -402,7 +407,8 @@ class CirqBoard:
         """Calls reset_if_classical() if the board is in a fully classical position and
         return what do_move() wanted to return. Should only be called if the move may have
         resulted in a fully classical position."""
-        self.reset_if_classical()
+        if self.reset_starting_states:
+            self.reset_if_classical()
         return return_value
 
     def add_entangled(self, *qubits):
