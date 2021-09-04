@@ -1155,6 +1155,7 @@ def test_split_capture_with_failed_measurement_outcome(board):
 def test_merge_capture_to_fully_classical_position(board):
     """Splits piece on d4 to b3 and c2, then merge back and capture piece on a1."""
     b = board.with_state(u.squares_to_bitboard(["d4"]))
+    b.reset_starting_states = True
     b.do_move(
         move.Move(
             "d4",
@@ -1182,6 +1183,7 @@ def test_merge_capture_to_fully_classical_position(board):
 def test_avenge_superposition_capture(board):
     """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6."""
     b = board.with_state(u.squares_to_bitboard(["f4", "f8"]))
+    b.reset_starting_states = True
     b.do_move(
         move.Move(
             "f8",
@@ -1217,6 +1219,7 @@ def test_undo_to_start_after_measurement(board):
     """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
     Then does three undo moves to return to initial position."""
     b = board.with_state(u.squares_to_bitboard(["f4", "f8"]))
+    b.reset_starting_states = True
 
     initial_board = b.get_full_squares_bitboard()
     b.do_move(
@@ -1258,6 +1261,7 @@ def test_undo_to_start_after_measurement(board):
 def test_quantum_capture_with_forced_measurement(board):
     """Splits piece on b1 to a1 and c1. Piece on a1 then captures piece on a5."""
     b = board.with_state(u.squares_to_bitboard(["b1", "a5"]))
+    b.reset_starting_states = True
     b.do_move(
         move.Move(
             "b1",
@@ -1286,6 +1290,7 @@ def test_consecutive_quantum_captures_with_successful_measurement_outcome(board)
     Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4,
     also with a successful measurement."""
     b = board.with_state(u.squares_to_bitboard(["b2", "e5"]))
+    b.reset_starting_states = True
     b.do_move(
         move.Move(
             "b2",
@@ -1419,5 +1424,3 @@ def test_measurement_with_no_classical_board_change(board):
         )
     )
     assert not b.is_classical()
-
-    
