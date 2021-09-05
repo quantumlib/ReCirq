@@ -167,12 +167,34 @@ class CirqBoard:
         self.debug_log += (f"{action} takes {t1 - t0:0.4f} seconds.\n")
         self.timing_stats[action].append(t1 - t0)
 
-    def sample_with_ancilla(self, num_samples: int
-                            ) -> Tuple[List[int], List[Dict[str, int]]]:
+    def suggest_num_reps(self, sample_size: int) -> int:
+        """Guess the number of raw samples needed to get sample_size results.
+
+        Assume that each post-selection is about 50/50.
+        Noise and error mitigation will discard reps, so increase the total
+        number of repetitions to compensate.
+        """
+        if len(self.post_selection) > 1:
+            sample_size *= 2 ** (len(self.post_selection) + 1)
+        if self.error_mitigation == enums.ErrorMitigation.Correct:
+            sample_size *= 2
+        if self.noise_mitigation > 0:
+            sample_size *= 3
+        if sample_size < 100:
+            sample_size = 100
+        return sample_size
+
+    def sample_with_ancilla(
+            self,
+            num_samples: int,
+            num_reps: Optional[int] = None,
+    ) -> Tuple[List[int], List[Dict[str, int]]]:
         """Samples the board and returns square and ancilla measurements.
 
         Sends the current circuit to the sampler then retrieves the results.
-        May return less samples than num_samples due to post-selection.
+        May return less samples than num_samples due to post-selection. The
+        number of raw results from the sampler is determined by num_reps if
+        provided, or automatically otherwise.
 
         Returns the results as a tuple.  The first entry is the list of
         measured squares, as represented by a 64-bit int bitboard.
@@ -180,6 +202,8 @@ class CirqBoard:
         dictionary from ancilla name to value (0 or 1).
         """
         t0 = time.perf_counter()
+        if num_reps is None:
+            num_reps = self.suggest_num_reps(num_samples)
         measure_circuit = self.circuit.copy()
         ancilla = []
         error_count = 0
@@ -191,25 +215,10 @@ class CirqBoard:
                 cirq.measure(q, key=q.name) for q in qubits)
             measure_circuit.append(measure_moment)
 
-            # Try to guess the appropriate number of repetitions needed
-            # Assume that each post_selection is about 50/50
-            # Noise and error mitigation will discard reps, so increase
-            # the total number of repetitions to compensate
-            if len(self.post_selection) > 1:
-                num_reps = num_samples * (2 ** (len(self.post_selection) + 1))
-            else:
-                num_reps = num_samples
-            if self.error_mitigation == enums.ErrorMitigation.Correct:
-                num_reps *= 2
             noise_threshold = self.noise_mitigation * num_samples
-            if self.noise_mitigation > 0:
-                num_reps *= 3
-            if num_reps < 100:
-                num_reps = 100
 
             self.debug_log += (f'Running circuit with {num_reps} reps '
-                               f'to get {num_samples} samples:\n'
-                               f'{str(measure_circuit)}\n')
+                               f'to get {num_samples} samples\n')
 
             # Translate circuit to grid qubits and sqrtISWAP gates
             if self.device is not None:
@@ -662,6 +671,7 @@ class CirqBoard:
                 return 0
             if tqubit in self.entangled_squares:
                 old_tqubit = self.unhook(tqubit)
+                self.state = set_nth_bit(tbit, self.state, False)
                 self.add_entangled(squbit, tqubit)
 
                 self.circuit.append(
@@ -690,14 +700,28 @@ class CirqBoard:
                 m.move_type = enums.MoveType.SPLIT_JUMP
             else:
                 self.add_entangled(squbit, tqubit, tqubit2)
-                path1 = self._create_path_ancilla(path_qubits)
-                path2 = self._create_path_ancilla(path_qubits2)
+                if len(path_qubits) == 1:
+                    yield cirq.X(path_qubits[0])
+                    path1 = path_qubits[0]
+                else:
+                    path1 = self._create_path_ancilla(path_qubits)
+                if len(path_qubits2) == 1:
+                    yield cirq.X(path_qubits2[0])
+                    path2 = path_qubits2[0]
+                else:
+                    path2 = self._create_path_ancilla(path_qubits2)
                 ancilla = self.new_ancilla()
                 self.circuit.append(
                     qm.split_slide(squbit, tqubit, tqubit2, path1, path2,
                                    ancilla))
-                self._clear_path_ancilla(path_qubits, path1)
-                self._clear_path_ancilla(path_qubits2, path2)
+                if len(path_qubits) == 1:
+                    yield cirq.X(path_qubits[0])
+                else:
+                    self._clear_path_ancilla(path_qubits, path1)
+                if len(path_qubits2) == 1:
+                    yield cirq.X(path_qubits2[0])
+                else:
+                    self._clear_path_ancilla(path_qubits2, path2)
                 return 1
 
         if m.move_type == enums.MoveType.MERGE_SLIDE:
@@ -845,10 +869,17 @@ class CirqBoard:
         if m.move_type == enums.MoveType.SPLIT_JUMP:
             tbit2 = square_to_bit(m.target2)
             tqubit2 = bit_to_qubit(tbit2)
+            is_basic_case = (squbit not in self.entangled_squares
+                             and tqubit not in self.entangled_squares
+                             and tqubit2 not in self.entangled_squares
+                             and nth_bit_of(sbit, self.state)
+                             and not nth_bit_of(tbit, self.state)
+                             and not nth_bit_of(tbit2, self.state))
             self.add_entangled(squbit, tqubit, tqubit2)
             self.circuit.append(qm.split_move(squbit, tqubit, tqubit2))
-            self.state = set_nth_bit(sbit, self.state, False)
-            self.unhook(squbit)
+            if is_basic_case:
+                self.state = set_nth_bit(sbit, self.state, False)
+                self.unhook(squbit)
             return 1
 
         if m.move_type == enums.MoveType.MERGE_JUMP:
@@ -904,10 +935,8 @@ class CirqBoard:
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
                 measure_qubit = rook_tqubit
-                measure_bit = rook_tbit
             else:
                 measure_qubit = tqubit
-                measure_bit = tbit
             # Note that a measurement of 1 means that the move was
             # successful so that the target square is empty
             is_there = self.post_select_on(measure_qubit, m.measurement,invert=True)
@@ -983,10 +1012,8 @@ class CirqBoard:
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
                 measure_qubit = rook_tqubit
-                measure_bit = rook_tbit
             else:
                 measure_qubit = tqubit
-                measure_bit = tbit
             # Note that a measurement of one means the move was successful
             # so that the path was clear
             is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)
