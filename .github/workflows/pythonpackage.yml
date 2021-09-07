@@ -13,7 +13,11 @@
 # limitations under the License.
 
 name: Python package
-on: [push, pull_request]
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   build:
