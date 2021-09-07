@@ -10,20 +10,20 @@ def test_manhattan_distance():
     assert mcpe.manhattan_dist(cirq.GridQubit(1, 2), cirq.GridQubit(1, 2)) == 0
     assert mcpe.manhattan_dist(cirq.GridQubit(1, 2), cirq.GridQubit(3, 4)) == 4
     assert mcpe.manhattan_dist(cirq.GridQubit(3, 4), cirq.GridQubit(1, 2)) == 4
-    assert mcpe.manhattan_dist(cirq.GridQubit(-1, 2), cirq.GridQubit(3,
-                                                                     -4)) == 10
+    assert mcpe.manhattan_dist(cirq.GridQubit(-1, 2), cirq.GridQubit(3, -4)) == 10
 
 
 def test_swap_map_fn():
-    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    x, y, z = (cirq.NamedQubit(f"q{i}") for i in range(3))
     swap = mcpe.swap_map_fn(x, y)
     assert swap(x) == y
     assert swap(y) == x
     assert swap(z) == z
-    assert cirq.Circuit(cirq.ISWAP(x, z), cirq.ISWAP(y, z), cirq.ISWAP(
-        x, y)).transform_qubits(swap) == cirq.Circuit(cirq.ISWAP(y, z),
-                                                      cirq.ISWAP(x, z),
-                                                      cirq.ISWAP(y, x))
+    assert cirq.Circuit(
+        cirq.ISWAP(x, z), cirq.ISWAP(y, z), cirq.ISWAP(x, y)
+    ).transform_qubits(swap) == cirq.Circuit(
+        cirq.ISWAP(y, z), cirq.ISWAP(x, z), cirq.ISWAP(y, x)
+    )
 
 
 def test_effect_of_swap():
@@ -53,6 +53,7 @@ def test_distance_fn():
 
     def euclidean_dist(q1, q2):
         return ((q1.row - q2.row) ** 2 + (q1.col - q2.col) ** 2) ** 0.5
+
     # Before, the gate qubits (a1, b2) are sqrt(2) units apart from each other
     # by euclidean distance.
     # After swapping a1 and a2, they'd only be 1 unit apart, so things improve
@@ -62,7 +63,7 @@ def test_distance_fn():
 
 
 def test_peek():
-    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    x, y, z = (cirq.NamedQubit(f"q{i}") for i in range(3))
     g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]
     dlists = mcpe.DependencyLists(cirq.Circuit(g))
     assert dlists.peek_front(x) == g[0]
@@ -71,7 +72,7 @@ def test_peek():
 
 
 def test_pop():
-    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    x, y, z = (cirq.NamedQubit(f"q{i}") for i in range(3))
     g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]
     dlists = mcpe.DependencyLists(cirq.Circuit(g))
 
@@ -85,7 +86,7 @@ def test_pop():
 
 
 def test_pop_non_active():
-    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    x, y, z = (cirq.NamedQubit(f"q{i}") for i in range(3))
     g = [cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)]
     dlists = mcpe.DependencyLists(cirq.Circuit(g))
 
@@ -98,9 +99,10 @@ def test_pop_non_active():
 
 
 def test_empty():
-    x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(3))
+    x, y, z = (cirq.NamedQubit(f"q{i}") for i in range(3))
     dlists = mcpe.DependencyLists(
-        cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z)))
+        cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(x, z), cirq.ISWAP(y, z))
+    )
 
     assert not dlists.empty(x)
     dlists.pop_active(dlists.peek_front(x))
@@ -114,25 +116,26 @@ def test_empty():
 
 
 def test_active_gates():
-    w, x, y, z = (cirq.NamedQubit(f'q{i}') for i in range(4))
+    w, x, y, z = (cirq.NamedQubit(f"q{i}") for i in range(4))
     dlists = mcpe.DependencyLists(
-        cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(y, z), cirq.X(w)))
+        cirq.Circuit(cirq.ISWAP(x, y), cirq.ISWAP(y, z), cirq.X(w))
+    )
 
     assert dlists.active_gates == {cirq.ISWAP(x, y), cirq.X(w)}
 
 
 def test_physical_mapping():
-    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    q = list(cirq.NamedQubit(f"q{i}") for i in range(6))
     Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
     mapping = mcpe.QubitMapping(dict(zip(q, Q)))
     assert list(map(mapping.physical, q)) == Q
-    assert cirq.ISWAP(q[1],
-                      q[5]).transform_qubits(mapping.physical) == cirq.ISWAP(
-                          Q[1], Q[5])
+    assert cirq.ISWAP(q[1], q[5]).transform_qubits(mapping.physical) == cirq.ISWAP(
+        Q[1], Q[5]
+    )
 
 
 def test_swap():
-    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    q = list(cirq.NamedQubit(f"q{i}") for i in range(6))
     Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
     mapping = mcpe.QubitMapping(dict(zip(q, Q)))
 
@@ -148,14 +151,20 @@ def test_swap():
 def test_mcpe_example_8():
     # This test is example 8 from the circuit in figure 9 of
     # https://ieeexplore.ieee.org/abstract/document/8976109.
-    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    q = list(cirq.NamedQubit(f"q{i}") for i in range(6))
     Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
     mapping = mcpe.QubitMapping(dict(zip(q, Q)))
     dlists = mcpe.DependencyLists(
-        cirq.Circuit(cirq.CNOT(q[0], q[2]), cirq.CNOT(q[5], q[2]),
-                     cirq.CNOT(q[0], q[5]), cirq.CNOT(q[4], q[0]),
-                     cirq.CNOT(q[0], q[3]), cirq.CNOT(q[5], q[0]),
-                     cirq.CNOT(q[3], q[1])))
+        cirq.Circuit(
+            cirq.CNOT(q[0], q[2]),
+            cirq.CNOT(q[5], q[2]),
+            cirq.CNOT(q[0], q[5]),
+            cirq.CNOT(q[4], q[0]),
+            cirq.CNOT(q[0], q[3]),
+            cirq.CNOT(q[5], q[0]),
+            cirq.CNOT(q[3], q[1]),
+        )
+    )
 
     assert dlists.maximum_consecutive_positive_effect(Q[0], Q[1], mapping) == 4
 
@@ -163,14 +172,20 @@ def test_mcpe_example_8():
 def test_mcpe_example_9():
     # This test is example 9 from the circuit in figures 9 and 10 of
     # https://ieeexplore.ieee.org/abstract/document/8976109.
-    q = list(cirq.NamedQubit(f'q{i}') for i in range(6))
+    q = list(cirq.NamedQubit(f"q{i}") for i in range(6))
     Q = list(cirq.GridQubit(row, col) for row in range(2) for col in range(3))
     mapping = mcpe.QubitMapping(dict(zip(q, Q)))
     dlists = mcpe.DependencyLists(
-        cirq.Circuit(cirq.CNOT(q[0], q[2]), cirq.CNOT(q[5], q[2]),
-                     cirq.CNOT(q[0], q[5]), cirq.CNOT(q[4], q[0]),
-                     cirq.CNOT(q[0], q[3]), cirq.CNOT(q[5], q[0]),
-                     cirq.CNOT(q[3], q[1])))
+        cirq.Circuit(
+            cirq.CNOT(q[0], q[2]),
+            cirq.CNOT(q[5], q[2]),
+            cirq.CNOT(q[0], q[5]),
+            cirq.CNOT(q[4], q[0]),
+            cirq.CNOT(q[0], q[3]),
+            cirq.CNOT(q[5], q[0]),
+            cirq.CNOT(q[3], q[1]),
+        )
+    )
 
     # At first CNOT(q0, q2) is the active gate.
     assert dlists.active_gates == {cirq.CNOT(q[0], q[2])}

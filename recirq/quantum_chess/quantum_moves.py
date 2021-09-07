@@ -18,22 +18,22 @@ import cirq
 
 
 def normal_move(s: cirq.Qid, t: cirq.Qid):
-    """ A normal move in quantum chess.
+    """A normal move in quantum chess.
 
-  This function takes two qubits and returns a generator
-  that performs a normal move that moves a piece from the
-  source square to the target square.
+    This function takes two qubits and returns a generator
+    that performs a normal move that moves a piece from the
+    source square to the target square.
 
-  Args:
-    s: source qubit (square where piece starts)
-    t: target qubit (square to move piece to)
-  """
+    Args:
+      s: source qubit (square where piece starts)
+      t: target qubit (square to move piece to)
+    """
     yield cirq.ISWAP(s, t) ** 0.5
     yield cirq.ISWAP(s, t) ** 0.5
 
 
 def split_move(s: cirq.Qid, t1: cirq.Qid, t2: cirq.Qid):
-    """ A Split move in quantum chess.
+    """A Split move in quantum chess.
 
     This function takes three qubits and returns a generator
     that performs a split move from the source qubit to the
@@ -50,7 +50,7 @@ def split_move(s: cirq.Qid, t1: cirq.Qid, t2: cirq.Qid):
 
 
 def merge_move(s1: cirq.Qid, s2: cirq.Qid, t: cirq.Qid):
-    """ A Merge move in quantum chess.
+    """A Merge move in quantum chess.
 
     This function takes three qubits and returns a generator
     that performs a merge move from two source qubits to the
@@ -66,10 +66,9 @@ def merge_move(s1: cirq.Qid, s2: cirq.Qid, t: cirq.Qid):
     yield cirq.ISWAP(s2, t) ** -0.5
 
 
-def slide_move(s: cirq.Qid,
-               t: cirq.Qid,
-               path: List[cirq.Qid],
-               ancilla: cirq.Qid = None):
+def slide_move(
+    s: cirq.Qid, t: cirq.Qid, path: List[cirq.Qid], ancilla: cirq.Qid = None
+):
     """A Slide move in quantum chess.
 
     This function takes three qubits and returns a generator
@@ -92,7 +91,7 @@ def slide_move(s: cirq.Qid,
         yield cirq.X(p)
         return
     if ancilla is None:
-        raise ValueError('Must specify ancilla for path greater than 1.')
+        raise ValueError("Must specify ancilla for path greater than 1.")
     for p in path:
         yield cirq.X(p)
     yield cirq.X(ancilla).controlled_by(*path)
@@ -114,7 +113,7 @@ def place_piece(s: cirq.Qid):
 
 
 def controlled_operation(gate, qubits, path_qubits, anti_qubits):
-    """Apply gate on qubits, controlled by path_qubits and 
+    """Apply gate on qubits, controlled by path_qubits and
     anti-controlled by anti_qubits.
     """
     for p in anti_qubits:
@@ -192,6 +191,7 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path2)
     yield cirq.SWAP(path2, path1)
     yield cirq.X(ancilla).controlled_by(path1, path2)
+
 
 def en_passant(squbit, tqubit, epqubit, path, c):
     yield cirq.X(path).controlled_by(squbit, epqubit)

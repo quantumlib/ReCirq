@@ -85,7 +85,7 @@ def build_logical_qubits_graph(
                 if q1 not in q2_neighbors:
                     g[q2].append((q1, i))
             else:
-                raise ValueError(f'Operation {op} has more than 2 qubits!')
+                raise ValueError(f"Operation {op} has more than 2 qubits!")
 
     # Find the connected components in the graph.
     components = deque()
@@ -348,7 +348,9 @@ def calculate_initial_mapping(
             continue
         pq = None
         reference_qubits = find_reference_qubits(mapping, lg, lq)
-        candidate_qubits = find_candidate_qubits(mapping.values(), pg, reference_qubits[0])
+        candidate_qubits = find_candidate_qubits(
+            mapping.values(), pg, reference_qubits[0]
+        )
         if len(reference_qubits) > 1:
             # For each reference location, find the shortest path distance
             # to each of the candidate qubits. Only keep the nearest
