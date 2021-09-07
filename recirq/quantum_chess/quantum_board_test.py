@@ -20,8 +20,8 @@ import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_board as qb
 from recirq.quantum_chess.test_utils import (
-    assert_sample_distribution,
     assert_samples_in,
+    assert_sample_distribution,
     assert_this_or_that,
     assert_prob_about,
     assert_fifty_fifty,
