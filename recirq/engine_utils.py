@@ -24,8 +24,6 @@ import cirq
 import cirq_google as cg
 import numpy as np
 from cirq import work, study, circuits, ops
-from cirq_google import EngineTimeSlot
-from cirq_google import devices as cg_devices, gate_sets, engine as cg_engine
 from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
 from cirq_google.engine.engine_job import TERMINAL_STATES
 
@@ -85,14 +83,14 @@ class EngineSampler(work.Sampler):
 
     def __init__(self, processor_id: str, gateset: str):
         project_id = os.environ['GOOGLE_CLOUD_PROJECT']
-        engine = cg_engine.Engine(project_id=project_id,
-                                  proto_version=cg_engine.ProtoVersion.V2)
+        engine = cg.Engine(project_id=project_id,
+                           proto_version=cg.ProtoVersion.V2)
         self.engine = engine
         self.processor_id = processor_id
         if gateset == 'sycamore':
-            self.gate_set = gate_sets.SYC_GATESET
+            self.gate_set = cg.SYC_GATESET
         elif gateset == 'sqrt-iswap':
-            self.gate_set = gate_sets.SQRT_ISWAP_GATESET
+            self.gate_set = cg.SQRT_ISWAP_GATESET
         else:
             raise ValueError("Unknown gateset {}".format(gateset))
 
@@ -243,16 +241,16 @@ class EngineQuantumProcessor:
     def engine(self):
         if self._engine is None:
             project_id = os.environ['GOOGLE_CLOUD_PROJECT']
-            engine = cg_engine.Engine(project_id=project_id,
-                                      proto_version=cg_engine.ProtoVersion.V2)
+            engine = cg.Engine(project_id=project_id,
+                               proto_version=cg.ProtoVersion.V2)
             self._engine = engine
         return self._engine
 
     def get_sampler(self, gateset: str = None):
         if gateset == 'sycamore':
-            gateset = gate_sets.SYC_GATESET
+            gateset = cg.SYC_GATESET
         elif gateset == 'sqrt-iswap':
-            gateset = gate_sets.SQRT_ISWAP_GATESET
+            gateset = cg.SQRT_ISWAP_GATESET
         else:
             raise ValueError("Unknown gateset {}".format(gateset))
         return self.engine.sampler(processor_id=self.processor_id, gate_set=gateset)
@@ -260,14 +258,14 @@ class EngineQuantumProcessor:
     @property
     def device_obj(self):
         dspec = self.engine.get_processor(self.processor_id).get_device_specification()
-        device = cg_devices.SerializableDevice.from_proto(proto=dspec, gate_sets=[])
+        device = cg.SerializableDevice.from_proto(proto=dspec, gate_sets=[])
         return device
 
 
 QUANTUM_PROCESSORS = {
     'Sycamore23': QuantumProcessor(
         name='Sycamore23',
-        device_obj=cg_devices.Sycamore23,
+        device_obj=cg.Sycamore23,
         processor_id='rainbow',
         is_simulator=False,
         _get_sampler_func=lambda x, gs: EngineSampler(
@@ -275,14 +273,14 @@ QUANTUM_PROCESSORS = {
     ),
     'Syc23-noiseless': QuantumProcessor(
         name='Syc23-noiseless',
-        device_obj=cg_devices.Sycamore23,
+        device_obj=cg.Sycamore23,
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: cirq.Simulator(),
     ),
     'Syc23-simulator': QuantumProcessor(
         name='Syc23-simulator',
-        device_obj=cg_devices.Sycamore23,
+        device_obj=cg.Sycamore23,
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: cirq.DensityMatrixSimulator(
@@ -293,7 +291,7 @@ QUANTUM_PROCESSORS = {
     'Syc23-simulator-tester': QuantumProcessor(
         # This simulator has a constant seed for consistent testing
         name='Syc23-simulator-tester',
-        device_obj=cg_devices.Sycamore23,
+        device_obj=cg.Sycamore23,
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: cirq.DensityMatrixSimulator(
@@ -303,21 +301,21 @@ QUANTUM_PROCESSORS = {
     ),
     'Syc23-zeros': QuantumProcessor(
         name='Syc23-zeros',
-        device_obj=cg_devices.Sycamore23,
+        device_obj=cg.Sycamore23,
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: ZerosSampler()
     ),
     'Syc54-noiseless': QuantumProcessor(
         name='Syc54-noiseless',
-        device_obj=cg_devices.Sycamore,
+        device_obj=cg.Sycamore,
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: cirq.Simulator(),
     ),
     'Syc54-simulator': QuantumProcessor(
         name='Syc54-simulator',
-        device_obj=cg_devices.Sycamore,
+        device_obj=cg.Sycamore,
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: cirq.DensityMatrixSimulator(
@@ -327,7 +325,7 @@ QUANTUM_PROCESSORS = {
     ),
     'Syc54-zeros': QuantumProcessor(
         name='Syc54-zeros',
-        device_obj=cg_devices.Sycamore,
+        device_obj=cg.Sycamore,
         processor_id=None,
         is_simulator=True,
         _get_sampler_func=lambda x, gs: ZerosSampler()
@@ -402,7 +400,7 @@ def get_available_processors(processor_names: List[str]):
         processor = engine.get_processor(processor_id)
         for time_slot in processor.get_schedule():
             try:
-                time_slot = EngineTimeSlot.from_proto(time_slot)
+                time_slot = cg.EngineTimeSlot.from_proto(time_slot)
             # Parsing the end_time of the last time range in the schedule might give throw an error.
             # TODO: remove this check once it is fixed in cirq.
             except ValueError as e:
@@ -412,9 +410,9 @@ def get_available_processors(processor_names: List[str]):
                 # Time slots need to be either in OPEN_SWIM or reserved by the
                 # current project to be considered available.
                 if (time_slot.slot_type
-                        == enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM
-                   ) or (time_slot.slot_type
-                         == enums.QuantumTimeSlot.TimeSlotType.RESERVATION and
-                         time_slot.project_id == project_id):
+                    == enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM
+                ) or (time_slot.slot_type
+                      == enums.QuantumTimeSlot.TimeSlotType.RESERVATION and
+                      time_slot.project_id == project_id):
                     available_processors.append(processor_name)
     return available_processors
