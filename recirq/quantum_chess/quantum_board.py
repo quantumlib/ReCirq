@@ -709,10 +709,10 @@ class CirqBoard:
         result = measurement_outcome
         if invert and measurement_outcome is not None:
             result = 1 - result
-        sample_size = 100 if self.noise_mitigation else 1
         if "anc" in qubit.name:
             if result is None:
                 ancilla_result = []
+                sample_size = 100 if self.noise_mitigation else 1
                 while len(ancilla_result) == 0:
                     _, ancilla_result = self.sample_with_ancilla(sample_size)
                 result = ancilla_result[0][qubit.name]
@@ -720,7 +720,7 @@ class CirqBoard:
         else:
             bit = qubit_to_bit(qubit)
             if result is None:
-                result = nth_bit_of(bit, self.sample(sample_size)[0])
+                result = nth_bit_of(bit, self.sample(1)[0])
             if qubit in self.entangled_squares:
                 ancillary = self.unhook(qubit)
                 self.post_selection[ancillary] = result
