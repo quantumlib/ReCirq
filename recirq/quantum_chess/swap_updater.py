@@ -23,7 +23,7 @@ from typing import Callable, Dict, Generator, Iterable, List, Optional, Tuple
 import cirq
 
 import recirq.quantum_chess.mcpe_utils as mcpe
-from cirq.google.optimizers.convert_to_sqrt_iswap import swap_to_sqrt_iswap
+from cirq_google.optimizers.convert_to_sqrt_iswap import swap_to_sqrt_iswap
 
 
 def _satisfies_adjacency(gate: cirq.Operation) -> bool:
