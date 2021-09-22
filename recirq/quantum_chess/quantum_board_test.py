@@ -43,7 +43,7 @@ def get_seed():
     if seed:
         seed = int(seed)
     else:
-        seed = random.randrange(2**32)
+        seed = random.randrange(2 ** 32)
     print('Using seed', seed)
     return seed
 
@@ -61,12 +61,14 @@ def syc23_noisy(state):
         error_mitigation=enums.ErrorMitigation.Correct,
         noise_mitigation=0.10)
 
+
 def syc23_noiseless(state):
     np.random.seed(get_seed())
     return qb.CirqBoard(
         state,
         device=utils.get_device_obj_by_name('Syc23-noiseless'),
         error_mitigation=enums.ErrorMitigation.Error)
+
 
 def syc54_noiseless(state):
     np.random.seed(get_seed())
@@ -75,9 +77,11 @@ def syc54_noiseless(state):
         device=utils.get_device_obj_by_name('Syc54-noiseless'),
         error_mitigation=enums.ErrorMitigation.Error)
 
+
 def simulator(state):
     np.random.seed(get_seed())
     return qb.CirqBoard(state, error_mitigation=enums.ErrorMitigation.Error)
+
 
 BIG_CIRQ_BOARDS = (
     simulator,
@@ -126,6 +130,7 @@ def test_classical_jump_move(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['b1', 'c1'])])
 
+
 def test_path_qubits():
     """Source and target should be in the same line, otherwise ValueError should be returned."""
     b = qb.CirqBoard(u.squares_to_bitboard(['a1', 'b3', 'c4', 'd5', 'e6', 'f7']))
@@ -136,6 +141,7 @@ def test_path_qubits():
         b.path_qubits("a1", "b3")
     with pytest.raises(ValueError):
         b.path_qubits("c4", "a1")
+
 
 @pytest.mark.parametrize('move_type,board', (
         *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
@@ -176,6 +182,7 @@ def test_split_move(move_type, board):
     assert len(board_probs) == 2
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['a3']))
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['d1']))
+
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_and_use_same_square(board):
@@ -401,6 +408,7 @@ def test_superposition_slide_move(board):
     assert_fifty_fifty(board_probs, blocked)
     assert_fifty_fifty(board_probs, moved)
 
+
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_superposition_slide_move2(board):
     """Tests a basic slide through a superposition of two pieces.
@@ -433,6 +441,7 @@ def test_superposition_slide_move2(board):
     for possibility in possibilities:
         assert_prob_about(board_probs, possibility, 0.25)
 
+
 def test_slide_with_two_path_qubits_coherence():
     """Tests that a path ancilla does not mess up split/merge coherence.
 
@@ -454,6 +463,7 @@ def test_slide_with_two_path_qubits_coherence():
         u.squares_to_bitboard(['d1', 'e2', 'g1']): 1 / 2,
     })
 
+
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_slide_merge_slide_coherence(board):
     b = board(u.squares_to_bitboard(['b4', 'd3']))
@@ -464,6 +474,7 @@ def test_split_slide_merge_slide_coherence(board):
         'c5e5^d3:MERGE_JUMP:BASIC',
     )
     assert_samples_in(b, [u.squares_to_bitboard(['b4', 'd3'])])
+
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_excluded_slide(board):
@@ -557,6 +568,7 @@ def test_split_one_slide(board):
     assert_prob_about(board_probs, possibilities[1], 0.25)
     assert_prob_about(board_probs, possibilities[2], 0.25)
 
+
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_both_sides(board):
     """ Tests a split slide move where both paths of the slide
@@ -607,6 +619,7 @@ def test_split_both_sides(board):
     for possibility in possibilities[7:]:
         assert_prob_about(board_probs, possibility, 0.0625)
 
+
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_merge_slide_self_intersecting(board):
     """Tests merge slide with a source square in the path."""
@@ -648,6 +661,7 @@ def test_merge_slide_one_side(board):
     assert_prob_about(board_probs, possibilities[1], 0.25)
     assert_prob_about(board_probs, possibilities[2], 0.5)
 
+
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_merge_slide_both_side(board):
     """Tests a merge slide where both paths are blocked.
@@ -685,6 +699,7 @@ def test_merge_slide_both_side(board):
     for possibility in possibilities[:6]:
         assert_prob_about(board_probs, possibility, 0.125)
     assert_prob_about(board_probs, possibilities[6], 0.25)
+
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unentangled_pawn_capture(board):
@@ -942,6 +957,7 @@ def test_classical_ep(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['d6'])])
 
+
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_ep2(board):
     """Fully classical en passant."""
@@ -952,6 +968,7 @@ def test_classical_ep2(board):
                   move_variant=enums.MoveVariant.BASIC)
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['d3'])])
+
 
 # Seems to be problematic on real device
 def test_capture_ep():
@@ -1053,6 +1070,7 @@ def test_undo_last_move():
     assert len(board_probs) == 1
     assert_prob_about(board_probs, u.squares_to_bitboard(['a2']), 1.0)
 
+
 def test_undo_entangled_measurement():
     b = simulator(u.squares_to_bitboard(['a2', 'b1', 'c2', 'd1']))
     assert b.perform_moves(
@@ -1079,6 +1097,7 @@ def test_undo_entangled_measurement():
     assert len(board_probs) == 2
     assert_prob_about(board_probs, u.squares_to_bitboard(['a3', 'c4', 'a2', 'd1']), 0.5)
     assert_prob_about(board_probs, u.squares_to_bitboard(['c3', 'c2', 'a2', 'd1']), 0.5)
+
 
 def test_record_time():
     b = qb.CirqBoard(u.squares_to_bitboard(['b8', 'b5', 'c7']))
@@ -1123,6 +1142,7 @@ def test_caching_accumulations_different_repetition_not_cached(board):
     board_probs1 = b.get_board_probability_distribution(1)
     board_probs2 = b.get_board_probability_distribution(100)
     assert board_probs1 != board_probs2
+
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_caching_accumulations_same_repetition_cached(board):
@@ -1218,17 +1238,17 @@ def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_jump_with_successful_measurement_outcome(board):
-   b = board(u.squares_to_bitboard(['b1', 'c2']))
-   b.do_move(
+    b = board(u.squares_to_bitboard(['b1', 'c2']))
+    b.do_move(
         move.Move('b1', 'a3', target2='c3',
                   move_type=enums.MoveType.SPLIT_JUMP,
                   move_variant=enums.MoveVariant.BASIC))
-   b.do_move(
+    b.do_move(
         move.Move('c2', 'c3',
                   move_type=enums.MoveType.JUMP,
                   move_variant=enums.MoveVariant.EXCLUDED,
                   measurement=1))
-   assert_samples_in(b, [u.squares_to_bitboard(['c3','a3'])])
+    assert_samples_in(b, [u.squares_to_bitboard(['c3', 'a3'])])
 
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
@@ -1255,6 +1275,7 @@ def test_split_capture_with_successful_measurement_outcome(board):
         expected = {'c3'}
         for sample in samples:
             assert set(u.bitboard_to_squares(sample)) == expected
+
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_capture_with_failed_measurement_outcome(board):
@@ -1284,3 +1305,278 @@ def test_split_capture_with_failed_measurement_outcome(board):
         probs = b.get_probability_distribution(100)
         assert_prob_about(probs, u.square_to_bit('a2'), 1, atol=0.1)
         assert_prob_about(probs, u.square_to_bit('a3'), 0, atol=0.1)
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_merge_capture_to_fully_classical_position(board):
+    """Splits piece on d4 to b3 and c2, then merge back and capture piece on a1."""
+    b = board(u.squares_to_bitboard(["d4"]))
+    b.reset_starting_states = True
+    b.do_move(
+        move.Move(
+            "d4",
+            "b3",
+            target2="c2",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+
+    b.do_move(
+        move.Move(
+            "b3",
+            "a1",
+            source2="c2",
+            move_type=enums.MoveType.MERGE_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+
+    assert b.is_classical()
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_avenge_superposition_capture(board):
+    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6."""
+    b = board(u.squares_to_bitboard(["f4", "f8"]))
+    b.reset_starting_states = True
+    b.do_move(
+        move.Move(
+            "f8",
+            "d6",
+            target2="h6",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "f4",
+            "d6",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "h6",
+            "d6",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+        )
+    )
+    assert b.is_classical()
+    assert b.circuit == cirq.Circuit()
+    assert b.ancilla_count == 0
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_undo_to_start_after_measurement(board):
+    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
+   Then does three undo moves to return to initial position."""
+    b = board(u.squares_to_bitboard(["f4", "f8"]))
+    b.reset_starting_states = True
+
+    initial_board = b.get_full_squares_bitboard()
+    b.do_move(
+        move.Move(
+            "f8",
+            "d6",
+            target2="h6",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "f4",
+            "d6",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "h6",
+            "d6",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+        )
+    )
+    assert b.is_classical()
+    assert b.circuit == cirq.Circuit()
+
+    assert b.undo_last_move()
+    assert b.undo_last_move()
+    assert b.undo_last_move()
+
+    assert b.get_full_squares_bitboard() == initial_board
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_quantum_capture_with_forced_measurement(board):
+    """Splits piece on b1 to a1 and c1. Piece on a1 then captures piece on a5."""
+    b = board(u.squares_to_bitboard(["b1", "a5"]))
+    b.reset_starting_states = True
+    b.do_move(
+        move.Move(
+            "b1",
+            "a1",
+            target2="c1",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "a1",
+            "a5",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+        )
+    )
+    assert b.is_classical()
+    assert b.circuit == cirq.Circuit()
+    assert b.ancilla_count == 0
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_consecutive_quantum_captures_with_successful_measurement_outcome(board):
+    """Splits piece on b2 to b8 and h2, then splits piece on e5 to d6 and f4.
+   Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4,
+   also with a successful measurement."""
+    b = board(u.squares_to_bitboard(["b2", "e5"]))
+    b.reset_starting_states = True
+    b.do_move(
+        move.Move(
+            "b2",
+            "b8",
+            target2="h2",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+
+    b.do_move(
+        move.Move(
+            "e5",
+            "d6",
+            target2="f4",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "b8",
+            "d6",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+            measurement=1,
+        )
+    )
+
+    b.do_move(
+        move.Move(
+            "d6",
+            "f4",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+            measurement=1,
+        )
+    )
+    assert b.is_classical()
+    assert b.circuit == cirq.Circuit()
+    assert b.ancilla_count == 0
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_measurement_without_fully_classical_position(board):
+    """Splits piece on d3 to d7 and h3, then splits piece on b5 to b7 and b3.
+   Piece on f5 then moves to c8. Piece on c8 then moves to h3, with failed measurement."""
+    b = board(u.squares_to_bitboard(["b5", "f5", "d3"]))
+    b.do_move(
+        move.Move(
+            "d3",
+            "d7",
+            target2="h3",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+
+    b.do_move(
+        move.Move(
+            "b5",
+            "b7",
+            target2="b3",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "f5",
+            "c8",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+
+    b.do_move(
+        move.Move(
+            "c8",
+            "h3",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+            measurement=0,
+        )
+    )
+    assert not b.is_classical()
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_measurement_with_no_classical_board_change(board):
+    """Splits piece on b2 to b7 and g2, then will split piece on d4 to d5 and e4.
+   Piece on g4 then splits to f3 and e2. Then piece on g2 attempts to capture piece on e4,
+   with a failed measurement outcome."""
+    b = board(u.squares_to_bitboard(["b2", "d4", "g4"]))
+    b.do_move(
+        move.Move(
+            "b2",
+            "b7",
+            target2="g2",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+
+    b.do_move(
+        move.Move(
+            "d4",
+            "d5",
+            target2="e4",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+
+    b.do_move(
+        move.Move(
+            "g4",
+            "f3",
+            target2="e2",
+            move_type=enums.MoveType.SPLIT_JUMP,
+            move_variant=enums.MoveVariant.BASIC,
+        )
+    )
+    b.do_move(
+        move.Move(
+            "g2",
+            "e4",
+            move_type=enums.MoveType.JUMP,
+            move_variant=enums.MoveVariant.CAPTURE,
+            measurement=0,
+        )
+    )
+    assert not b.is_classical()

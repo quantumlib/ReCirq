@@ -33,6 +33,7 @@ import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
 
+CLASSICAL_BITBOARD = 2 ** 64 - 1
 
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
 DEFAULT_CHESS_INIT_STATE = 0xffff00000000ffff
@@ -78,7 +79,9 @@ class CirqBoard:
                  error_mitigation: Optional[
                      enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
                  noise_mitigation: Optional[float] = 0.0,
-                 transformer: Optional[ct.CircuitTransformer] = None):
+                 transformer: Optional[ct.CircuitTransformer] = None,
+                 reset_starting_states=False,
+    ):
         self.device = device
         self.sampler = sampler
         if device is not None:
@@ -94,8 +97,13 @@ class CirqBoard:
         self.board_accumulations_repetitions = None
         self.cache = {}
 
-    def with_state(self, basis_state: int) -> 'CirqBoard':
-        """Resets the board with a specific classical state."""
+        # Will only be turned on if user specifies
+        self.reset_starting_states = reset_starting_states
+
+    def with_state(self, basis_state: int, reset_move_history=True) -> 'CirqBoard':
+        """Resets the board with a specific classical state. reset_move_history indicates
+        whether to reset the entire move history of the game. It will only be set to false
+        if we are calling this function after the board has returned to a fully classical position"""
         self.accumulations_repetitions = None
         self.board_accumulations_repetitions = None
         self.state = basis_state
@@ -105,17 +113,19 @@ class CirqBoard:
         self.post_selection = {}
         self.circuit = cirq.Circuit()
         self.ancilla_count = 0
-        self.move_history = []
+
+        if reset_move_history:
+            self.move_history = []
+            # Store the initial basis state so that we can use it for replaying
+            # the move-history when undoing moves
+            self.init_basis_state = basis_state
+            self.move_history_probabilities_cache = []
+
         self.full_squares = basis_state
         self.empty_squares = 0
         for i in range(64):
             self.empty_squares = set_nth_bit(i, self.empty_squares, not nth_bit_of(i, self.full_squares))
         # Each entry is a 2-tuple of (repetitions, probabilities) corresponding to the probabilities after each move.
-        self.move_history_probabilities_cache = []
-
-        # Store the initial basis state so that we can use it for replaying
-        # the move-history when undoing moves
-        self.init_basis_state = basis_state
         self.clear_debug_log()
         self.timing_stats = defaultdict(list)
         return self
@@ -504,6 +514,27 @@ class CirqBoard:
 
         return self.empty_squares
 
+    def is_classical(self, repetitions=1000) -> bool:
+        """Returns true if the board is in a fully classical position, and false otherwise."""
+        empty_squares = self.get_empty_squares_bitboard(repetitions)
+        full_squares = self.get_full_squares_bitboard(repetitions)
+        actual = empty_squares | full_squares
+        return CLASSICAL_BITBOARD == actual
+
+    def reset_if_classical(self) -> None:
+        """If the position is fully classical, calls with_state with current position
+        and with reset_move_history set to false."""
+        if self.is_classical():
+            self.with_state(self.get_full_squares_bitboard(), False)
+
+    def reset_if_classical_and_return(self, return_value) -> int:
+        """Calls reset_if_classical() if the board is in a fully classical position and
+        return what do_move() wanted to return. Should only be called if the move may have
+        resulted in a fully classical position."""
+        if self.reset_starting_states:
+            self.reset_if_classical()
+        return return_value
+
     def add_entangled(self, *qubits):
         """Adds squares as entangled.
 
@@ -676,6 +707,9 @@ class CirqBoard:
         Returns:  The measurement that was performed, or 1 if
             no measurement was required.
         """
+
+        self.reset_if_classical()
+
         if not m.move_type:
             raise ValueError('No Move defined')
         if m.move_type == enums.MoveType.NULL_TYPE:
@@ -726,7 +760,7 @@ class CirqBoard:
                 self.state = set_nth_bit(epbit, self.state, False)
                 self.state = set_nth_bit(sbit, self.state, False)
                 self.state = set_nth_bit(tbit, self.state, True)
-                return 1
+                return self.reset_if_classical_and_return(1)
 
             # If any squares are quantum, it's a quantum move
             self.add_entangled(squbit, tqubit, epqubit)
@@ -735,13 +769,13 @@ class CirqBoard:
             if m.move_variant == enums.MoveVariant.CAPTURE:
                 is_there = self.post_select_on(squbit, m.measurement)
                 if not is_there:
-                    return 0
+                    return self.reset_if_classical_and_return(0)
                 self.add_entangled(squbit)
                 # capture e.p. has a special circuit
                 self.circuit.append(
                     qm.capture_ep(squbit, tqubit, epqubit, self.new_ancilla(),
                                   self.new_ancilla(), self.new_ancilla()))
-                return 1
+                return self.reset_if_classical_and_return(1)
 
             # Blocked/excluded e.p. post-select on the target
             if m.move_variant == enums.MoveVariant.EXCLUDED:
@@ -749,18 +783,18 @@ class CirqBoard:
                 # successful so that the target square is empty
                 is_there = self.post_select_on(tqubit, m.measurement, invert=True)
                 if is_there:
-                    return 0
+                    return self.reset_if_classical_and_return(0)
                 self.add_entangled(tqubit)
             self.circuit.append(
                 qm.en_passant(squbit, tqubit, epqubit, self.new_ancilla(),
                               self.new_ancilla()))
-            return 1
+            return self.reset_if_classical_and_return(1)
 
         if m.move_type == enums.MoveType.PAWN_CAPTURE:
             # For pawn capture, first measure source.
             is_there = self.post_select_on(squbit, m.measurement)
             if not is_there:
-                return 0
+                return self.reset_if_classical_and_return(0)
             if tqubit in self.entangled_squares:
                 old_tqubit = self.unhook(tqubit)
                 self.state = set_nth_bit(tbit, self.state, False)
@@ -773,7 +807,7 @@ class CirqBoard:
                 # Classical case
                 self.state = set_nth_bit(sbit, self.state, False)
                 self.state = set_nth_bit(tbit, self.state, True)
-            return 1
+            return self.reset_if_classical_and_return(1)
 
         if m.move_type == enums.MoveType.SPLIT_SLIDE:
             tbit2 = square_to_bit(m.target2)
@@ -826,7 +860,7 @@ class CirqBoard:
                                    ancilla))
                 self._clear_path_ancilla(path_qubits, path1)
                 self._clear_path_ancilla(path_qubits2, path2)
-                return 1
+                return self.reset_if_classical_and_return(1)
 
         if (m.move_type == enums.MoveType.SLIDE or
                 m.move_type == enums.MoveType.PAWN_TWO_STEP):
@@ -841,7 +875,7 @@ class CirqBoard:
                 if (p not in self.entangled_squares and
                         nth_bit_of(qubit_to_bit(p), self.state)):
                     # Classical piece in the way
-                    return 0
+                    return self.reset_if_classical_and_return(0)
 
             # For excluded case, measure target
             if m.move_variant == enums.MoveVariant.EXCLUDED:
@@ -849,7 +883,7 @@ class CirqBoard:
                 # successful so that the target square is empty
                 is_there = self.post_select_on(tqubit, m.measurement, invert=True)
                 if is_there:
-                    return 0
+                    return self.reset_if_classical_and_return(0)
 
             self.add_entangled(squbit, tqubit)
             if m.move_variant == enums.MoveVariant.CAPTURE:
@@ -864,7 +898,7 @@ class CirqBoard:
                 capture_allowed = self.post_select_on(capture_ancilla, m.measurement)
 
                 if not capture_allowed:
-                    return 0
+                    return self.reset_if_classical_and_return(0)
                 else:
                     # Perform the captured slide
                     self.add_entangled(squbit)
@@ -887,7 +921,7 @@ class CirqBoard:
                     for p in path_qubits:
                         self.state = set_nth_bit(qubit_to_bit(p), self.state, False)
                         self.unhook(p)
-                    return 1
+                    return self.reset_if_classical_and_return(1)
             # Basic slide (or successful excluded slide)
 
             # Add all involved squares into entanglement
@@ -896,12 +930,12 @@ class CirqBoard:
             if len(path_qubits) == 1:
                 # For path of one, no ancilla needed
                 self.circuit.append(qm.slide_move(squbit, tqubit, path_qubits))
-                return 1
+                return self.reset_if_classical_and_return(1)
             # Longer paths require a path ancilla
             ancilla = self.new_ancilla()
             self.circuit.append(
                 qm.slide_move(squbit, tqubit, path_qubits, ancilla))
-            return 1
+            return self.reset_if_classical_and_return(1)
 
         if (m.move_type == enums.MoveType.JUMP or
                 m.move_type == enums.MoveType.PAWN_STEP):
@@ -910,13 +944,13 @@ class CirqBoard:
                 # Classical version
                 self.state = set_nth_bit(sbit, self.state, False)
                 self.state = set_nth_bit(tbit, self.state, True)
-                return 1
+                return self.reset_if_classical_and_return(1)
 
             # Measure source for capture
             if m.move_variant == enums.MoveVariant.CAPTURE:
                 is_there = self.post_select_on(squbit, m.measurement)
                 if not is_there:
-                    return 0
+                    return self.reset_if_classical_and_return(0)
                 self.unhook(tqubit)
 
             # Measure target for excluded
@@ -925,7 +959,7 @@ class CirqBoard:
                 # successful so that the target square is empty
                 is_there = self.post_select_on(tqubit, m.measurement, invert=True)
                 if is_there:
-                    return 0
+                    return self.reset_if_classical_and_return(0)
 
             # Only convert source qubit to ancilla if target
             # is empty
@@ -942,7 +976,7 @@ class CirqBoard:
                 self.state = set_nth_bit(sbit, self.state, False)
                 self.unhook(squbit)
 
-            return 1
+            return self.reset_if_classical_and_return(1)
 
         if m.move_type == enums.MoveType.SPLIT_JUMP:
             tbit2 = square_to_bit(m.target2)
@@ -966,7 +1000,7 @@ class CirqBoard:
             self.add_entangled(squbit, squbit2, tqubit)
             self.circuit.append(qm.merge_move(squbit, squbit2, tqubit))
             # TODO: should the source qubit be 'unhooked'?
-            return 1
+            return self.reset_if_classical_and_return(1)
 
         if m.move_type == enums.MoveType.KS_CASTLE:
             # Figure out the rook squares
@@ -984,16 +1018,16 @@ class CirqBoard:
             # Piece in non-superposition in the way, not legal
             if (nth_bit_of(rook_tbit, self.state) and
                     rook_tqubit not in self.entangled_squares):
-                return 0
+                return self.reset_if_classical_and_return(0)
             if (nth_bit_of(tbit, self.state) and
                     tqubit not in self.entangled_squares):
-                return 0
+                return self.reset_if_classical_and_return(0)
 
             # Not in superposition, just castle
             if (rook_tqubit not in self.entangled_squares and
                     tqubit not in self.entangled_squares):
                 self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-                return 1
+                return self.reset_if_classical_and_return(1)
 
             # Both intervening squares in superposition
             if (rook_tqubit in self.entangled_squares and
@@ -1005,10 +1039,10 @@ class CirqBoard:
                     self.unhook(rook_tqubit)
                     self.unhook(tqubit)
                     self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-                    return 1
+                    return self.reset_if_classical_and_return(1)
                 else:
                     self.post_selection[castle_ancilla] = castle_allowed
-                    return 0
+                    return self.reset_if_classical_and_return(0)
 
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
@@ -1019,9 +1053,9 @@ class CirqBoard:
             # successful so that the target square is empty
             is_there = self.post_select_on(measure_qubit, m.measurement,invert=True)
             if is_there:
-                return 0
+                return self.reset_if_classical_and_return(0)
             self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-            return 1
+            return self.reset_if_classical_and_return(1)
 
         if m.move_type == enums.MoveType.QS_CASTLE:
 
@@ -1043,20 +1077,20 @@ class CirqBoard:
             # Piece in non-superposition in the way, not legal
             if (nth_bit_of(rook_tbit, self.state) and
                     rook_tqubit not in self.entangled_squares):
-                return 0
+                return self.reset_if_classical_and_return(0)
             if (nth_bit_of(tbit, self.state) and
                     tqubit not in self.entangled_squares):
-                return 0
+                return self.reset_if_classical_and_return(0)
             if (b_bit is not None and nth_bit_of(b_bit, self.state) and
                     b_qubit not in self.entangled_squares):
-                return 0
+                return self.reset_if_classical_and_return(0)
 
             # Not in superposition, just castle
             if (rook_tqubit not in self.entangled_squares and
                     tqubit not in self.entangled_squares and
                     b_qubit not in self.entangled_squares):
                 self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-                return 1
+                return self.reset_if_classical_and_return(1)
 
             # Neither intervening squares in superposition
             if (rook_tqubit not in self.entangled_squares and
@@ -1066,7 +1100,7 @@ class CirqBoard:
                 else:
                     self.queenside_castle(squbit, rook_squbit, tqubit,
                                           rook_tqubit, b_qubit)
-                return 1
+                return self.reset_if_classical_and_return(1)
 
             # Both intervening squares in superposition
             if (rook_tqubit in self.entangled_squares and
@@ -1082,10 +1116,10 @@ class CirqBoard:
                     else:
                         self.queenside_castle(squbit, rook_squbit, tqubit,
                                               rook_tqubit, b_qubit)
-                    return 1
+                    return self.reset_if_classical_and_return(1)
                 else:
                     self.post_selection[castle_ancilla] = castle_allowed
-                    return 0
+                    return self.reset_if_classical_and_return(0)
 
             # One intervening square in superposition
             if rook_tqubit in self.entangled_squares:
@@ -1096,13 +1130,13 @@ class CirqBoard:
             # so that the path was clear
             is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)
             if is_there:
-                return 0
+                return self.reset_if_classical_and_return(0)
             if b_qubit not in self.entangled_squares:
                 self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
             else:
                 self.queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit,
                                       b_qubit)
-            return 1
+            return self.reset_if_classical_and_return(1)
 
         raise ValueError(f'Move type {m.move_type} not supported')
 
