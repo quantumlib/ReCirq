@@ -33,7 +33,8 @@ def _satisfies_adjacency(gate: cirq.Operation) -> bool:
     """
     if len(gate.qubits) > 2:
         raise ValueError(
-            "Cannot determine physical adjacency for gates with > 2 qubits")
+            "Cannot determine physical adjacency for gates with > 2 qubits"
+        )
     if len(gate.qubits) < 2:
         return True
     q1, q2 = gate.qubits
@@ -78,7 +79,8 @@ def _pairwise_shortest_distances(
 
 
 def generate_decomposed_swap(
-        q1: cirq.Qid, q2: cirq.Qid) -> Generator[cirq.Operation, None, None]:
+    q1: cirq.Qid, q2: cirq.Qid
+) -> Generator[cirq.Operation, None, None]:
     """Generates a SWAP operation using sqrt-iswap gates."""
     yield from swap_to_sqrt_iswap(q1, q2, 1.0)
 
@@ -97,13 +99,16 @@ class SwapUpdater:
       swap_factory: the factory used to produce operations representing a swap
         of two qubits
     """
-    def __init__(self,
-                 circuit: cirq.Circuit,
-                 device_qubits: Optional[Iterable[cirq.GridQubit]],
-                 initial_mapping: Dict[cirq.Qid, cirq.GridQubit] = {},
-                 swap_factory: Callable[
-                     [cirq.Qid, cirq.Qid],
-                     List[cirq.Operation]] = generate_decomposed_swap):
+
+    def __init__(
+        self,
+        circuit: cirq.Circuit,
+        device_qubits: Optional[Iterable[cirq.GridQubit]],
+        initial_mapping: Dict[cirq.Qid, cirq.GridQubit] = {},
+        swap_factory: Callable[
+            [cirq.Qid, cirq.Qid], List[cirq.Operation]
+        ] = generate_decomposed_swap,
+    ):
         self.device_qubits = device_qubits
         self.dlists = mcpe.DependencyLists(circuit)
         self.mapping = mcpe.QubitMapping(initial_mapping)
@@ -131,15 +136,17 @@ class SwapUpdater:
             for gate_q in gate.qubits:
                 for swap_q in gate_q.neighbors(self.device_qubits):
                     swap_qubits = (gate_q, swap_q)
-                    effect = mcpe.effect_of_swap(swap_qubits, gate.qubits,
-                                                 self._distance_between)
+                    effect = mcpe.effect_of_swap(
+                        swap_qubits, gate.qubits, self._distance_between
+                    )
                     if swap_qubits not in self.prev_swaps and effect > 0:
                         yield swap_qubits
 
     def _mcpe(self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit) -> int:
         """Returns the maximum consecutive positive effect of swapping two qubits."""
         return self.dlists.maximum_consecutive_positive_effect(
-            swap_q1, swap_q2, self.mapping, self._distance_between)
+            swap_q1, swap_q2, self.mapping, self._distance_between
+        )
 
     def update_iteration(self) -> Generator[cirq.Operation, None, None]:
         """Runs one iteration of the swap update algorithm and updates internal

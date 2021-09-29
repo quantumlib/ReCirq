@@ -27,19 +27,21 @@ import cirq
 class ReadoutTester:
     """Simple sanity test of readout values.
 
-  Initialize with a sampler and device, then use test_qubits
-  to test P11 and P00 readout errors just to make sure qubits
-  are correctly working.
+    Initialize with a sampler and device, then use test_qubits
+    to test P11 and P00 readout errors just to make sure qubits
+    are correctly working.
 
-  Repetitions and the threshold for being correct can also be
-  adjusted.
-  """
+    Repetitions and the threshold for being correct can also be
+    adjusted.
+    """
 
-    def __init__(self,
-                 sampler: cirq.Sampler = cirq.Simulator(),
-                 device: cirq.Device = None,
-                 repetitions: int = 10000,
-                 threshold: float = 0.9):
+    def __init__(
+        self,
+        sampler: cirq.Sampler = cirq.Simulator(),
+        device: cirq.Device = None,
+        repetitions: int = 10000,
+        threshold: float = 0.9,
+    ):
         self.sampler = sampler
         self.device = device
         self.qubits = device.qubits
@@ -49,12 +51,12 @@ class ReadoutTester:
     def test_qubits(self, p11=True) -> Dict[cirq.Qid, bool]:
         """Tests qubits to make sure readout is sane.
 
-    With True, P11, Prepare |1>, measure |1> is tested.
-    With False, P00, Prepare |0>, measure |0> is tested.
+        With True, P11, Prepare |1>, measure |1> is tested.
+        With False, P00, Prepare |0>, measure |0> is tested.
 
-    Returns a dict of qubit to boolean, where True means passed,
-    and False means failed.
-    """
+        Returns a dict of qubit to boolean, where True means passed,
+        and False means failed.
+        """
         qubit_ok = {}
         circuit = cirq.Circuit()
         if p11:
@@ -69,6 +71,6 @@ class ReadoutTester:
             prob = count / self.repetitions
             is_ok = "OK" if prob > self.threshold else "PROBLEM!"
             qubit_ok[q] = True if prob > self.threshold else False
-            print(f'Qubit {q}: {count} correct, {prob} {is_ok}')
+            print(f"Qubit {q}: {count} correct, {prob} {is_ok}")
 
         return qubit_ok

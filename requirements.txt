@@ -3,6 +3,7 @@ cirq-google~=0.11.0
 seaborn
 sphinx
 ipython
+black
 
 # optimize
 scikit-learn
