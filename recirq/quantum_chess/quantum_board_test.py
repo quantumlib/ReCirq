@@ -149,8 +149,8 @@ def test_path_qubits():
 @pytest.mark.parametrize(
     "move_type,board",
     (
-        *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
-        *[(enums.MoveType.SPLIT_SLIDE, b) for b in ALL_CIRQ_BOARDS],
+        *[(enums.MoveType.SPLIT_JUMP, b) for b in BIG_CIRQ_BOARDS],
+        *[(enums.MoveType.SPLIT_SLIDE, b) for b in BIG_CIRQ_BOARDS],
     ),
 )
 def test_split_move(move_type, board):
@@ -452,13 +452,12 @@ def test_superposition_slide_move(board):
     assert_fifty_fifty(board_probs, moved)
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_superposition_slide_move2(board):
+def test_superposition_slide_move2():
     """Tests a basic slide through a superposition of two pieces.
 
     Splits b3 and c3 to b2/b1 and c2/c1 then slides a1 to d1.
     """
-    b = board(u.squares_to_bitboard(["a1", "b3", "c3"]))
+    b = simulator(u.squares_to_bitboard(["a1", "b3", "c3"]))
     assert b.perform_moves(
         "b3^b2b1:SPLIT_JUMP:BASIC",
         "c3^c2c1:SPLIT_JUMP:BASIC",
@@ -510,9 +509,8 @@ def test_slide_with_two_path_qubits_coherence():
     )
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_split_slide_merge_slide_coherence(board):
-    b = board(u.squares_to_bitboard(["b4", "d3"]))
+def test_split_slide_merge_slide_coherence():
+    b = simulator(u.squares_to_bitboard(["b4", "d3"]))
     assert b.perform_moves(
         "d3^c5e5:SPLIT_JUMP:BASIC",
         "b4^b8e7:SPLIT_SLIDE:BASIC",
@@ -585,13 +583,12 @@ def test_capture_slide(board):
         assert all(sample in possibilities for sample in samples)
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_split_one_slide(board):
+def test_split_one_slide():
     """Tests a split slide with one blocked path.
 
     a1 will split to a3 and c1 with square a2 blocked in superposition.
     """
-    b = board(u.squares_to_bitboard(["a1", "b2"]))
+    b = simulator(u.squares_to_bitboard(["a1", "b2"]))
     assert b.perform_moves(
         "b2^a2c2:SPLIT_JUMP:BASIC",
         "a1^a3c1:SPLIT_SLIDE:BASIC",
@@ -615,8 +612,7 @@ def test_split_one_slide(board):
     assert_prob_about(board_probs, possibilities[2], 0.25)
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_split_both_sides(board):
+def test_split_both_sides():
     """Tests a split slide move where both paths of the slide
     are blocked in superposition.
 
@@ -626,7 +622,7 @@ def test_split_both_sides(board):
 
     This will create a lop-sided distribution to test multi-square paths.
     """
-    b = board(u.squares_to_bitboard(["a1", "b3", "c3", "d3"]))
+    b = simulator(u.squares_to_bitboard(["a1", "b3", "c3", "d3"]))
     assert b.perform_moves(
         "b3^a3b4:SPLIT_JUMP:BASIC",
         "c3^c2c1:SPLIT_JUMP:BASIC",
@@ -677,14 +673,13 @@ def test_split_merge_slide_self_intersecting(board):
     assert_samples_in(b, [u.squares_to_bitboard(["d2"])])
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_merge_slide_one_side(board):
+def test_merge_slide_one_side():
     """Tests merge slide.
 
     Splits a1 to a4 and d1 and then merges to d4.
     The square c4 will block one path of the merge in superposition.
     """
-    b = board(u.squares_to_bitboard(["a1", "c3"]))
+    b = simulator(u.squares_to_bitboard(["a1", "c3"]))
     assert b.perform_moves(
         "a1^a4d1:SPLIT_SLIDE:BASIC",
         "c3^c4c5:SPLIT_JUMP:BASIC",
@@ -708,14 +703,13 @@ def test_merge_slide_one_side(board):
     assert_prob_about(board_probs, possibilities[2], 0.5)
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_merge_slide_both_side(board):
+def test_merge_slide_both_side():
     """Tests a merge slide where both paths are blocked.
 
     Splits a1 to a4/d1 and merges back to d4. c4 and d3 will
     block one square on each path.
     """
-    b = board(u.squares_to_bitboard(["a1", "c2", "c3"]))
+    b = simulator(u.squares_to_bitboard(["a1", "c2", "c3"]))
     assert b.perform_moves(
         "a1^a4d1:SPLIT_SLIDE:BASIC",
         "c3^c4c5:SPLIT_JUMP:BASIC",
@@ -761,8 +755,7 @@ def test_unentangled_pawn_capture(board):
     assert_samples_in(b, [u.squares_to_bitboard(["a4", "c3"])])
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_pawn_capture(board):
+def test_pawn_capture():
     """Tests pawn capture with entanglement.
 
     Rook on a3 => a4/a5 and rook on c3 => c4/c5.
@@ -770,7 +763,7 @@ def test_pawn_capture(board):
     The first capture should put the pawn in super-position,
     and the second should force a measurement.
     """
-    b = board(u.squares_to_bitboard(["a3", "b3", "c3"]))
+    b = simulator(u.squares_to_bitboard(["a3", "b3", "c3"]))
     # Capture and put the pawn in superposition
     assert b.perform_moves("a3^a4a5:SPLIT_JUMP:BASIC", "b3a4:PAWN_CAPTURE:BASIC")
     possibilities = [
@@ -1347,9 +1340,8 @@ def test_jump_with_successful_measurement_outcome(board):
     assert_samples_in(b, [u.squares_to_bitboard(["c3", "a3"])])
 
 
-@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
-def test_split_capture_with_successful_measurement_outcome(board):
-    b = board(0)
+def test_split_capture_with_successful_measurement_outcome():
+    b = simulator(0)
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
     for _ in range(10):
@@ -1388,7 +1380,7 @@ def test_split_capture_with_failed_measurement_outcome(board):
     b = board(0)
     # Repeat the moves several times because the do_move calls will trigger a
     # measurement.
-    for _ in range(100):
+    for _ in range(20):
         b.with_state(u.squares_to_bitboard(["a1", "c3"]))
         # a1 splits into a2 + a3
         b.do_move(
