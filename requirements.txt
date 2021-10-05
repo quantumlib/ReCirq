@@ -1,21 +1,25 @@
-cirq~=0.10.0
+cirq-core~=0.11.1
+cirq-google~=0.11.0
 seaborn
 sphinx
 ipython
+black
 
 # optimize
 scikit-learn
 
 # qaoa
 networkx
-pytket~=0.7.1
-pytket-cirq~=0.7.0
+pytket~=0.13.0
+pytket-cirq~=0.14.0
 
 # quantum chess, only needed for tests
 scipy
 
 # hfvqe
-openfermion~=1.0.0
+openfermion~=1.1.0
+# fix bug with openfermionpyscf https://github.com/quantumlib/ReCirq/issues/200#issuecomment-923203883
+h5py~=3.2.1
 
 # fermi_hubbard
 tqdm  # notebook progress bars

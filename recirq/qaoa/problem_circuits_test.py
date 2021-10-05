@@ -1,12 +1,11 @@
+import cirq
 import networkx as nx
 import numpy as np
-import pytest
 
-import cirq
 from recirq.qaoa.circuit_structure import validate_well_structured
-from recirq.qaoa.problems import random_plus_minus_1_weights, HardwareGridProblem
 from recirq.qaoa.problem_circuits import get_routed_hardware_grid_circuit, \
     get_compiled_hardware_grid_circuit, get_generic_qaoa_circuit
+from recirq.qaoa.problems import random_plus_minus_1_weights, HardwareGridProblem
 
 
 def test_get_generic_qaoa_circuit():
@@ -42,38 +41,38 @@ def test_get_routed_grid_model_circuit():
     )
 
     cirq.testing.assert_has_diagram(circuit, """
-  (0, 0)   (0, 1)   (0, 2)   (1, 0)   (1, 1)   (1, 2)
-  │        │        │        │        │        │
-  H        H        H        H        H        H
-  │        │        │        │        │        │
-  ZZ───────ZZ       │        ZZ───────ZZ       │
-  │        │        │        │        │        │
-  │        ZZ───────ZZ       │        ZZ───────ZZ
-  │        │        │        │        │        │
-┌╴│        │        │        │        │        │       ╶┐
-│ ZZ───────┼────────┼────────ZZ       │        │        │
-│ │        ZZ───────┼────────┼────────ZZ       │        │
-│ │        │        ZZ───────┼────────┼────────ZZ       │
-└╴│        │        │        │        │        │       ╶┘
-  │        │        │        │        │        │
-  │        │        │        │        │        │
-  │        │        │        │        │        │
-  Rx(π)    Rx(π)    Rx(π)    Rx(π)    Rx(π)    Rx(π)
-  │        │        │        │        │        │
-  ZZ───────ZZ^0.5   │        ZZ───────ZZ^0.5   │
-  │        │        │        │        │        │
-  │        ZZ───────ZZ^-0.5  │        ZZ───────ZZ^0.5
-  │        │        │        │        │        │
-┌╴│        │        │        │        │        │       ╶┐
-│ ZZ───────┼────────┼────────ZZ^-0.5  │        │        │
-│ │        ZZ───────┼────────┼────────ZZ^0.5   │        │
-│ │        │        ZZ───────┼────────┼────────ZZ^0.5   │
-└╴│        │        │        │        │        │       ╶┘
-  │        │        │        │        │        │
-  │        │        │        │        │        │
-  │        │        │        │        │        │
-  Rx(0.5π) Rx(0.5π) Rx(0.5π) Rx(0.5π) Rx(0.5π) Rx(0.5π)
-  │        │        │        │        │        │
+  (0, 0) (0, 1) (0, 2)  (1, 0)  (1, 1) (1, 2)
+  │      │      │       │       │      │
+  H      H      H       H       H      H
+  │      │      │       │       │      │
+  ZZ─────ZZ     │       ZZ──────ZZ     │
+  │      │      │       │       │      │
+  │      ZZ─────ZZ      │       ZZ─────ZZ
+  │      │      │       │       │      │
+┌╴│      │      │       │       │      │     ╶┐
+│ ZZ─────┼──────┼───────ZZ      │      │      │
+│ │      ZZ─────┼───────┼───────ZZ     │      │
+│ │      │      ZZ──────┼───────┼──────ZZ     │
+└╴│      │      │       │       │      │     ╶┘
+  │      │      │       │       │      │
+  │      │      │       │       │      │
+  │      │      │       │       │      │
+  X      X      X       X       X      X
+  │      │      │       │       │      │
+  ZZ─────ZZ^0.5 │       ZZ──────ZZ^0.5 │
+  │      │      │       │       │      │
+  │      ZZ─────ZZ^-0.5 │       ZZ─────ZZ^0.5
+  │      │      │       │       │      │
+┌╴│      │      │       │       │      │     ╶┐
+│ ZZ─────┼──────┼───────ZZ^-0.5 │      │      │
+│ │      ZZ─────┼───────┼───────ZZ^0.5 │      │
+│ │      │      ZZ──────┼───────┼──────ZZ^0.5 │
+└╴│      │      │       │       │      │     ╶┘
+  │      │      │       │       │      │
+  │      │      │       │       │      │
+  │      │      │       │       │      │
+  X^0.5  X^0.5  X^0.5   X^0.5   X^0.5  X^0.5
+  │      │      │       │       │      │
 """, transpose=True)
 
 

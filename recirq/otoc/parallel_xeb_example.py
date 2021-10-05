@@ -16,6 +16,7 @@
 import os
 
 import cirq
+import cirq_google as cg
 import numpy as np
 
 from recirq.otoc.parallel_xeb import build_xeb_circuits, parallel_xeb_fidelities, plot_xeb_results
@@ -26,7 +27,7 @@ def main():
     # Specify a working directory, project ID and processor name.
     dir_str = os.getcwd()
     processor_name = "rainbow"
-    sampler = cirq.google.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim")
+    sampler = cg.get_engine_sampler(processor_id=processor_name, gate_set_name="fsim")
 
     # Specify qubits to measure. Here we choose the qubits to be on a line.
     qubit_locs = [(3, 3), (2, 3), (2, 4), (2, 5), (1, 5), (0, 5), (0, 6), (1, 6)]

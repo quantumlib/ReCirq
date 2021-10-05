@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import math
 import pytest
 from collections import deque
 
@@ -19,129 +18,125 @@ import cirq
 
 import recirq.quantum_chess.initial_mapping_utils as imu
 
-a0 = cirq.NamedQubit('a0')
-a1 = cirq.NamedQubit('a1')
-a2 = cirq.NamedQubit('a2')
-a3 = cirq.NamedQubit('a3')
-a4 = cirq.NamedQubit('a4')
-a5 = cirq.NamedQubit('a5')
-a6 = cirq.NamedQubit('a6')
-a7 = cirq.NamedQubit('a7')
+a0 = cirq.NamedQubit("a0")
+a1 = cirq.NamedQubit("a1")
+a2 = cirq.NamedQubit("a2")
+a3 = cirq.NamedQubit("a3")
+a4 = cirq.NamedQubit("a4")
+a5 = cirq.NamedQubit("a5")
+a6 = cirq.NamedQubit("a6")
+a7 = cirq.NamedQubit("a7")
 
 grid_qubits = dict(
-    (f'{row}_{col}', cirq.GridQubit(row, col))
-    for row in range(2) for col in range(11)
+    (f"{row}_{col}", cirq.GridQubit(row, col)) for row in range(2) for col in range(11)
 )
 
 
 def test_build_physical_qubits_graph():
     g = imu.build_physical_qubits_graph(cirq.google.Foxtail)
     expected = {
-        grid_qubits['0_0']: [
-            grid_qubits['0_1'],
-            grid_qubits['1_0']
+        grid_qubits["0_0"]: [grid_qubits["0_1"], grid_qubits["1_0"]],
+        grid_qubits["0_1"]: [
+            grid_qubits["0_0"],
+            grid_qubits["1_1"],
+            grid_qubits["0_2"],
         ],
-        grid_qubits['0_1']: [
-            grid_qubits['0_0'],
-            grid_qubits['1_1'],
-            grid_qubits['0_2'],
+        grid_qubits["0_2"]: [
+            grid_qubits["0_1"],
+            grid_qubits["1_2"],
+            grid_qubits["0_3"],
         ],
-        grid_qubits['0_2']: [
-            grid_qubits['0_1'],
-            grid_qubits['1_2'],
-            grid_qubits['0_3'],
+        grid_qubits["0_3"]: [
+            grid_qubits["0_2"],
+            grid_qubits["1_3"],
+            grid_qubits["0_4"],
         ],
-        grid_qubits['0_3']: [
-            grid_qubits['0_2'],
-            grid_qubits['1_3'],
-            grid_qubits['0_4'],
+        grid_qubits["0_4"]: [
+            grid_qubits["0_3"],
+            grid_qubits["1_4"],
+            grid_qubits["0_5"],
         ],
-        grid_qubits['0_4']: [
-            grid_qubits['0_3'],
-            grid_qubits['1_4'],
-            grid_qubits['0_5'],
+        grid_qubits["0_5"]: [
+            grid_qubits["0_4"],
+            grid_qubits["1_5"],
+            grid_qubits["0_6"],
         ],
-        grid_qubits['0_5']: [
-            grid_qubits['0_4'],
-            grid_qubits['1_5'],
-            grid_qubits['0_6'],
+        grid_qubits["0_6"]: [
+            grid_qubits["0_5"],
+            grid_qubits["1_6"],
+            grid_qubits["0_7"],
         ],
-        grid_qubits['0_6']: [
-            grid_qubits['0_5'],
-            grid_qubits['1_6'],
-            grid_qubits['0_7'],
+        grid_qubits["0_7"]: [
+            grid_qubits["0_6"],
+            grid_qubits["1_7"],
+            grid_qubits["0_8"],
         ],
-        grid_qubits['0_7']: [
-            grid_qubits['0_6'],
-            grid_qubits['1_7'],
-            grid_qubits['0_8'],
+        grid_qubits["0_8"]: [
+            grid_qubits["0_7"],
+            grid_qubits["1_8"],
+            grid_qubits["0_9"],
         ],
-        grid_qubits['0_8']: [
-            grid_qubits['0_7'],
-            grid_qubits['1_8'],
-            grid_qubits['0_9'],
+        grid_qubits["0_9"]: [
+            grid_qubits["0_8"],
+            grid_qubits["1_9"],
+            grid_qubits["0_10"],
         ],
-        grid_qubits['0_9']: [
-            grid_qubits['0_8'],
-            grid_qubits['1_9'],
-            grid_qubits['0_10'],
+        grid_qubits["0_10"]: [
+            grid_qubits["0_9"],
+            grid_qubits["1_10"],
         ],
-        grid_qubits['0_10']: [
-            grid_qubits['0_9'],
-            grid_qubits['1_10'],
+        grid_qubits["1_0"]: [
+            grid_qubits["1_1"],
+            grid_qubits["0_0"],
         ],
-        grid_qubits['1_0']: [
-            grid_qubits['1_1'],
-            grid_qubits['0_0'],
+        grid_qubits["1_1"]: [
+            grid_qubits["1_0"],
+            grid_qubits["0_1"],
+            grid_qubits["1_2"],
         ],
-        grid_qubits['1_1']: [
-            grid_qubits['1_0'],
-            grid_qubits['0_1'],
-            grid_qubits['1_2'],
+        grid_qubits["1_2"]: [
+            grid_qubits["1_1"],
+            grid_qubits["0_2"],
+            grid_qubits["1_3"],
         ],
-        grid_qubits['1_2']: [
-            grid_qubits['1_1'],
-            grid_qubits['0_2'],
-            grid_qubits['1_3'],
+        grid_qubits["1_3"]: [
+            grid_qubits["1_2"],
+            grid_qubits["0_3"],
+            grid_qubits["1_4"],
         ],
-        grid_qubits['1_3']: [
-            grid_qubits['1_2'],
-            grid_qubits['0_3'],
-            grid_qubits['1_4'],
+        grid_qubits["1_4"]: [
+            grid_qubits["1_3"],
+            grid_qubits["0_4"],
+            grid_qubits["1_5"],
         ],
-        grid_qubits['1_4']: [
-            grid_qubits['1_3'],
-            grid_qubits['0_4'],
-            grid_qubits['1_5'],
+        grid_qubits["1_5"]: [
+            grid_qubits["1_4"],
+            grid_qubits["0_5"],
+            grid_qubits["1_6"],
         ],
-        grid_qubits['1_5']: [
-            grid_qubits['1_4'],
-            grid_qubits['0_5'],
-            grid_qubits['1_6'],
+        grid_qubits["1_6"]: [
+            grid_qubits["1_5"],
+            grid_qubits["0_6"],
+            grid_qubits["1_7"],
         ],
-        grid_qubits['1_6']: [
-            grid_qubits['1_5'],
-            grid_qubits['0_6'],
-            grid_qubits['1_7'],
+        grid_qubits["1_7"]: [
+            grid_qubits["1_6"],
+            grid_qubits["0_7"],
+            grid_qubits["1_8"],
         ],
-        grid_qubits['1_7']: [
-            grid_qubits['1_6'],
-            grid_qubits['0_7'],
-            grid_qubits['1_8'],
+        grid_qubits["1_8"]: [
+            grid_qubits["1_7"],
+            grid_qubits["0_8"],
+            grid_qubits["1_9"],
         ],
-        grid_qubits['1_8']: [
-            grid_qubits['1_7'],
-            grid_qubits['0_8'],
-            grid_qubits['1_9'],
+        grid_qubits["1_9"]: [
+            grid_qubits["1_8"],
+            grid_qubits["0_9"],
+            grid_qubits["1_10"],
         ],
-        grid_qubits['1_9']: [
-            grid_qubits['1_8'],
-            grid_qubits['0_9'],
-            grid_qubits['1_10'],
-        ],
-        grid_qubits['1_10']: [
-            grid_qubits['1_9'],
-            grid_qubits['0_10'],
+        grid_qubits["1_10"]: [
+            grid_qubits["1_9"],
+            grid_qubits["0_10"],
         ],
     }
     assert len(g) == len(expected)
@@ -217,31 +212,34 @@ def test_build_logical_qubits_graph():
         a3: [(a2, 2), (a1, 3)],
     }
     # One connected component with an invalid gate.
-    with pytest.raises(ValueError, match='Operation.*has more than 2 qubits!'):
+    with pytest.raises(ValueError, match="Operation.*has more than 2 qubits!"):
         c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.CCNOT(a1, a2, a3))
         imu.build_logical_qubits_graph(c)
 
 
-@pytest.mark.parametrize('g', [
-    {
-        0: [1],
-        1: [0, 2],
-        2: [1, 3, 5],
-        3: [2, 4, 6],
-        4: [3, 5],
-        5: [2],
-        6: [3],
-    },
-    {
-        0: [(1,)],
-        1: [(0,), (2,)],
-        2: [(1,), (3,), (5,)],
-        3: [(2,), (4,), (6,)],
-        4: [(3,), (5,)],
-        5: [(2,)],
-        6: [(3,)],
-    },
-])
+@pytest.mark.parametrize(
+    "g",
+    [
+        {
+            0: [1],
+            1: [0, 2],
+            2: [1, 3, 5],
+            3: [2, 4, 6],
+            4: [3, 5],
+            5: [2],
+            6: [3],
+        },
+        {
+            0: [(1,)],
+            1: [(0,), (2,)],
+            2: [(1,), (3,), (5,)],
+            3: [(2,), (4,), (6,)],
+            4: [(3,), (5,)],
+            5: [(2,)],
+            6: [(3,)],
+        },
+    ],
+)
 def test_find_all_pairs_shortest_paths(g):
     expected = {
         (0, 0): 0,
@@ -342,18 +340,18 @@ def test_find_reference_qubits():
         a3: [(a2, 5)],
     }
     mapping = {
-        a0: grid_qubits['0_5'],
+        a0: grid_qubits["0_5"],
     }
     assert set(imu.find_reference_qubits(mapping, g, a2)) == {
-        grid_qubits['0_5'],
+        grid_qubits["0_5"],
     }
     mapping = {
-        a0: grid_qubits['0_5'],
-        a2: grid_qubits['1_5'],
+        a0: grid_qubits["0_5"],
+        a2: grid_qubits["1_5"],
     }
     assert set(imu.find_reference_qubits(mapping, g, a1)) == {
-        grid_qubits['0_5'],
-        grid_qubits['1_5'],
+        grid_qubits["0_5"],
+        grid_qubits["1_5"],
     }
 
 
@@ -361,21 +359,21 @@ def test_find_candidate_qubits():
     g = imu.build_physical_qubits_graph(cirq.google.Foxtail)
     # First level has free qubits.
     mapped = {
-        grid_qubits['0_5'],
+        grid_qubits["0_5"],
     }
-    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
+    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits["0_5"])) == {
         cirq.GridQubit(0, 4),
         cirq.GridQubit(1, 5),
         cirq.GridQubit(0, 6),
     }
     # Second level has free qubits.
     mapped = {
-        grid_qubits['0_4'],
-        grid_qubits['0_5'],
-        grid_qubits['0_6'],
-        grid_qubits['1_5'],
+        grid_qubits["0_4"],
+        grid_qubits["0_5"],
+        grid_qubits["0_6"],
+        grid_qubits["1_5"],
     }
-    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
+    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits["0_5"])) == {
         cirq.GridQubit(0, 3),
         cirq.GridQubit(1, 4),
         cirq.GridQubit(1, 6),
@@ -383,16 +381,16 @@ def test_find_candidate_qubits():
     }
     # Third level has free qubits.
     mapped = {
-        grid_qubits['0_3'],
-        grid_qubits['0_4'],
-        grid_qubits['0_5'],
-        grid_qubits['0_6'],
-        grid_qubits['0_7'],
-        grid_qubits['1_4'],
-        grid_qubits['1_5'],
-        grid_qubits['1_6'],
+        grid_qubits["0_3"],
+        grid_qubits["0_4"],
+        grid_qubits["0_5"],
+        grid_qubits["0_6"],
+        grid_qubits["0_7"],
+        grid_qubits["1_4"],
+        grid_qubits["1_5"],
+        grid_qubits["1_6"],
     }
-    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits['0_5'])) == {
+    assert set(imu.find_candidate_qubits(mapped, g, grid_qubits["0_5"])) == {
         cirq.GridQubit(0, 2),
         cirq.GridQubit(1, 3),
         cirq.GridQubit(1, 7),
@@ -417,10 +415,13 @@ def test_find_shortest_path():
     assert imu.find_shortest_path(g, 4, 7) == 3
 
 
-@pytest.mark.parametrize('device', [
-    cirq.google.Sycamore23,
-    cirq.google.Sycamore,
-])
+@pytest.mark.parametrize(
+    "device",
+    [
+        cirq.google.Sycamore23,
+        cirq.google.Sycamore,
+    ],
+)
 def test_calculate_initial_mapping(device):
     c = cirq.Circuit(
         cirq.X(a1),

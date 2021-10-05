@@ -35,38 +35,40 @@ def test_set_nth_bit():
 
 
 def test_bit_to_qubit():
-    assert u.bit_to_qubit(2) == cirq.NamedQubit("2")
-    assert u.bit_to_qubit(0) == cirq.NamedQubit("0")
+    assert u.bit_to_qubit(2) == cirq.NamedQubit("c1")
+    assert u.bit_to_qubit(63) == cirq.NamedQubit("h8")
 
 
 def test_num_ones():
-    assert u.num_ones(int('1000101', 2)) == 3
-    assert u.num_ones(int('0000000', 2)) == 0
-    assert u.num_ones(int('0111111', 2)) == 6
-        
+    assert u.num_ones(int("1000101", 2)) == 3
+    assert u.num_ones(int("0000000", 2)) == 0
+    assert u.num_ones(int("0111111", 2)) == 6
+
+
 def test_bit_ones():
-    assert u.bit_ones(int('1000101', 2)) == [0, 2, 6]
-    assert u.bit_ones(int('0000000', 2)) == []
-    assert u.bit_ones(int('0111111', 2)) == [0, 1, 2, 3, 4, 5]
+    assert u.bit_ones(int("1000101", 2)) == [0, 2, 6]
+    assert u.bit_ones(int("0000000", 2)) == []
+    assert u.bit_ones(int("0111111", 2)) == [0, 1, 2, 3, 4, 5]
+
 
 def test_qubit_to_bit():
-    assert u.qubit_to_bit(cirq.NamedQubit("2")) == 2
-    assert u.qubit_to_bit(cirq.NamedQubit("0")) == 0
+    assert u.qubit_to_bit(cirq.NamedQubit("c1")) == 2
+    assert u.qubit_to_bit(cirq.NamedQubit("h8")) == 63
 
 
 def test_square_to_bit():
-    assert u.square_to_bit('a1') == 0
-    assert u.square_to_bit('a2') == 8
-    assert u.square_to_bit('b2') == 9
-    assert u.square_to_bit('b1') == 1
-    assert u.square_to_bit('h8') == 63
+    assert u.square_to_bit("a1") == 0
+    assert u.square_to_bit("a2") == 8
+    assert u.square_to_bit("b2") == 9
+    assert u.square_to_bit("b1") == 1
+    assert u.square_to_bit("h8") == 63
 
 
 def test_squares_to_bitboard():
-    assert u.squares_to_bitboard(['a1', 'a2']) == 257
-    assert u.squares_to_bitboard(['a1', 'c1']) == 5
+    assert u.squares_to_bitboard(["a1", "a2"]) == 257
+    assert u.squares_to_bitboard(["a1", "c1"]) == 5
 
 
 def test_bitboard_to_squares():
-    assert u.bitboard_to_squares(257) == ['a1', 'a2']
-    assert u.bitboard_to_squares(5) == ['a1', 'c1']
+    assert u.bitboard_to_squares(257) == ["a1", "a2"]
+    assert u.bitboard_to_squares(5) == ["a1", "c1"]

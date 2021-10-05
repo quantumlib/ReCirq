@@ -15,10 +15,7 @@ class AsciiBoard:
     so use with caution.
     """
 
-    def __init__(self,
-                 size: Optional[int] = 8,
-                 reps: Optional[int] = 1000,
-                 board=None):
+    def __init__(self, size: Optional[int] = 8, reps: Optional[int] = 1000, board=None):
 
         self.size = size
         self.reps = reps
@@ -27,7 +24,7 @@ class AsciiBoard:
         self._reset_state()
 
     def _reset_state(self):
-        """Resets all the values that represent the state to default values. """
+        """Resets all the values that represent the state to default values."""
         self._pieces = {}
         self._sampled = {}
 
@@ -39,10 +36,10 @@ class AsciiBoard:
         self.ep_flag = None
         self.white_moves = True
         self.castling_flags = {
-            'o-o': True,
-            'o-o-o': True,
-            'O-O': True,
-            'O-O-O': True,
+            "o-o": True,
+            "o-o-o": True,
+            "O-O": True,
+            "O-O-O": True,
         }
 
     def _bit_board(self) -> int:
@@ -57,11 +54,11 @@ class AsciiBoard:
     def load_fen(self, fen):
         """Sets up a position from the first component of a FEN string."""
         y = self.size
-        for row in fen.split('/'):
+        for row in fen.split("/"):
             y -= 1
             x = 0
             for char in row:
-                if '1' <= char <= '9':
+                if "1" <= char <= "9":
                     x += int(char)
                 else:
                     piece = c.REV_PIECES[char]
@@ -75,39 +72,39 @@ class AsciiBoard:
         """Resets to initial classical chess starting position."""
         self._reset_state()
         if self.size != 8:
-            raise ValueError('board size must be 8 for standard chess position')
-        self.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR')
+            raise ValueError("board size must be 8 for standard chess position")
+        self.load_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 
     def __str__(self):
         """Renders a ASCII diagram showing the board position."""
-        s = ''
-        s += ' +-------------------------+\n'
+        s = ""
+        s += " +-------------------------+\n"
         for y in reversed(range(self.size)):
-            s += str(y + 1) + '| '
+            s += str(y + 1) + "| "
             for x in range(self.size):
                 piece = c.PIECES[self._pieces[to_square(x, y)]]
                 bit = bu.xy_to_bit(x, y)
                 p = self._probs[bit]
                 if p < 0.01:
-                    piece = '.'
-                s += piece + '  '
-            s += '|\n |'
+                    piece = "."
+                s += piece + "  "
+            s += "|\n |"
             for x in range(self.size):
                 bit = bu.xy_to_bit(x, y)
                 p = self._probs[bit]
                 if 0.01 < p < 0.99:
                     prob = str(int(100 * p))
                     if len(prob) <= 2:
-                        s += ' '
+                        s += " "
                     s += prob
                     if len(prob) < 2:
-                        s += ' '
+                        s += " "
                 else:
-                    s += '   '
-            s += ' |\n'
-        s += ' +-------------------------+\n   '
+                    s += "   "
+            s += " |\n"
+        s += " +-------------------------+\n   "
         for x in range(self.size):
-            s += to_rank(x) + '  '
+            s += to_rank(x) + "  "
         return s
 
     def piece(self, x: int, y: int):
@@ -115,7 +112,7 @@ class AsciiBoard:
         return self._pieces[y * self.size + x]
 
     @staticmethod
-    def _ep_flag(move: 'Move', piece_type: int):
+    def _ep_flag(move: Move, piece_type: int):
         if abs(piece_type) != c.PAWN:
             return None
         if abs(y_of(move.target) - y_of(move.source)) == 2:
@@ -149,11 +146,10 @@ class AsciiBoard:
                     rtn.append(path)
         return rtn
 
-    def apply(self, move: 'Move'):
+    def apply(self, move: Move):
         """Applies a move to the board."""
 
         s = self._pieces[move.source]
-        t = self._pieces[move.target]
 
         # Defaults to a BASIC JUMP move if not specified
         if not move.move_type:
@@ -189,18 +185,18 @@ class AsciiBoard:
         # Update en passant and castling flags
         self.ep_flag = self._ep_flag(move, s)
         if s == c.KING:
-            self.castling_flags['O-O'] = False
-            self.castling_flags['O-O-O'] = False
+            self.castling_flags["O-O"] = False
+            self.castling_flags["O-O-O"] = False
         if s == -c.KING:
-            self.castling_flags['o-o'] = False
-            self.castling_flags['o-o-o'] = False
-        if move.source == 'a1' or move.target == 'a1':
-            self.castling_flags['O-O-O'] = False
-        if move.source == 'a8' or move.target == 'a8':
-            self.castling_flags['o-o-o'] = False
-        if move.source == 'h1' or move.target == 'h1':
-            self.castling_flags['O-O'] = False
-        if move.source == 'h8' or move.target == 'h8':
-            self.castling_flags['o-o'] = False
+            self.castling_flags["o-o"] = False
+            self.castling_flags["o-o-o"] = False
+        if move.source == "a1" or move.target == "a1":
+            self.castling_flags["O-O-O"] = False
+        if move.source == "a8" or move.target == "a8":
+            self.castling_flags["o-o-o"] = False
+        if move.source == "h1" or move.target == "h1":
+            self.castling_flags["O-O"] = False
+        if move.source == "h8" or move.target == "h8":
+            self.castling_flags["o-o"] = False
 
         return meas

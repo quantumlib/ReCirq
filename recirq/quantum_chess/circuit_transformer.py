@@ -23,11 +23,20 @@ import recirq.quantum_chess.swap_updater as su
 ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
 
+class DeviceMappingError(Exception):
+    """Raised when a circuit cannot be mapped onto a device.
+
+    This happens when a suitable mapping of qubits onto the device graph cannot
+    be found, or when an unsupported gate is used.
+    """
+
+
 class CircuitTransformer:
     """Abstract interface for circuit transformations.
 
     For example: NamedQubit -> GridQubit transformations.
     """
+
     def __init__(self):
         pass
 
@@ -43,6 +52,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
 
     It will then transform all operations to use the new qubits.
     """
+
     def __init__(self, device: cirq.Device):
         super().__init__()
         self.device = device
@@ -50,9 +60,13 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         self.starting_qubit = self.find_start_qubit(device.qubits)
         self.qubit_list = device.qubits
 
-    def qubits_within(self, depth: int, qubit: cirq.GridQubit,
-                      qubit_list: Iterable[cirq.GridQubit],
-                      visited: Set[cirq.GridQubit]) -> int:
+    def qubits_within(
+        self,
+        depth: int,
+        qubit: cirq.GridQubit,
+        qubit_list: Iterable[cirq.GridQubit],
+        visited: Set[cirq.GridQubit],
+    ) -> int:
         """Returns the number of qubits within `depth` of the input `qubit`.
 
         Args:
@@ -73,24 +87,31 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             c += self.qubits_within(depth - 1, qubit + diff, qubit_list, visited)
         return c
 
-    def find_start_qubit(self,
-                         qubit_list: List[cirq.Qid],
-                         depth=3) -> Optional[cirq.GridQubit]:
+    def find_start_qubit(self, qubit_list: List[cirq.Qid], depth=3) -> cirq.GridQubit:
         """Finds a reasonable starting qubit to start the mapping.
 
-        Uses the heuristic of the most connected qubit. """
-        best = None
+        Uses the heuristic of the most connected qubit.
+
+        Raises:
+            DeviceMappingError: if there are no qubits left to map.
+        """
         best_count = -1
         for q in qubit_list:
             c = self.qubits_within(depth, q, qubit_list, set())
             if c > best_count:
                 best_count = c
                 best = q
+        if best_count == -1:
+            raise DeviceMappingError("Qubits exhausted")
         return best
 
-    def edges_within(self, depth: int, node: cirq.Qid,
-                     graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
-                     visited: Set[cirq.Qid]) -> int:
+    def edges_within(
+        self,
+        depth: int,
+        node: cirq.Qid,
+        graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
+        visited: Set[cirq.Qid],
+    ) -> int:
         """Returns the number of qubits within `depth` of the specified `node`.
 
         Args:
@@ -110,8 +131,11 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             c += self.edges_within(depth - 1, adj_node, graph, visited)
         return c
 
-    def find_start_node(self, graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
-                        mapping: Dict[cirq.Qid, cirq.GridQubit]) -> cirq.Qid:
+    def find_start_node(
+        self,
+        graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
+        mapping: Dict[cirq.Qid, cirq.GridQubit],
+    ) -> cirq.Qid:
         """Finds a reasonable starting qubit from an adjacency graph.
 
         Args:
@@ -131,13 +155,15 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
                 best = node
         return best
 
-    def map_helper(self,
-                   cur_node: cirq.Qid,
-                   mapping: Dict[cirq.Qid, cirq.GridQubit],
-                   available_qubits: Set[cirq.GridQubit],
-                   graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
-                   nodes_trying: List[cirq.Qid],
-                   print_debug: bool = False) -> bool:
+    def map_helper(
+        self,
+        cur_node: cirq.Qid,
+        mapping: Dict[cirq.Qid, cirq.GridQubit],
+        available_qubits: Set[cirq.GridQubit],
+        graph: Dict[cirq.Qid, Iterable[cirq.Qid]],
+        nodes_trying: List[cirq.Qid],
+        print_debug: bool = False,
+    ) -> bool:
         """Helper function to construct mapping.
 
         Traverses a graph and performs recursive depth-first
@@ -161,7 +187,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         # cur_qubit is the currently assigned GridQubit
         cur_qubit = mapping[cur_node]
         if print_debug:
-            print(f'{cur_node} -> {cur_qubit}')
+            print(f"{cur_node} -> {cur_qubit}")
 
         # Determine the list of adjacent nodes that still need to be mapped
         nodes_to_map = []
@@ -174,7 +200,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
                 # Verify that the previous mapping is adjacent in the Grid.
                 if not mapping[node].is_adjacent(cur_qubit):
                     if print_debug:
-                        print(f'Not adjacent {node} and {cur_node}')
+                        print(f"Not adjacent {node} and {cur_node}")
                     return False
         if not nodes_to_map:
             # All done with this node.
@@ -190,13 +216,12 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         # Not enough adjacent qubits to map all qubits
         if len(valid_adjacent_qubits) < len(nodes_to_map):
             if print_debug:
-                print(f'Cannot fit adjacent nodes into {cur_node}')
+                print(f"Cannot fit adjacent nodes into {cur_node}")
             return False
 
         # Only map one qubit at a time
         # This makes back-tracking easier.
         node_to_map = nodes_to_map[0]
-
 
         for node_to_try in valid_adjacent_qubits:
             # Add proposed qubit to the mapping
@@ -214,17 +239,19 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             # 2nd run (i.e. nodes saved in the stack nodes_trying, down to
             # node_to_map) are supposed to be reversed in mapping and
             # available_qubits.
-            
-            success = self.map_helper(node_to_map, mapping, available_qubits,
-                                      graph, nodes_trying)
+
+            success = self.map_helper(
+                node_to_map, mapping, available_qubits, graph, nodes_trying
+            )
             if success:
-                success = self.map_helper(cur_node, mapping, available_qubits,
-                                          graph, nodes_trying)
+                success = self.map_helper(
+                    cur_node, mapping, available_qubits, graph, nodes_trying
+                )
 
             if not success:
                 # We have failed.  Undo this mapping and try another one.
                 while True:
-                    named_qubit =  nodes_trying.pop()
+                    named_qubit = nodes_trying.pop()
                     available_qubits.add(mapping[named_qubit])
                     del mapping[named_qubit]
                     if named_qubit == node_to_map:
@@ -236,45 +263,41 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         # All available qubits were not valid.
         # Fail upwards and back-track if possible.
         if print_debug:
-            print('Warning: could not map all qubits!')
+            print("Warning: could not map all qubits!")
         return False
 
-    def qubit_mapping(self,
-                      circuit: cirq.Circuit) -> Dict[cirq.Qid, cirq.GridQubit]:
+    def qubit_mapping(self, circuit: cirq.Circuit) -> Dict[cirq.Qid, cirq.GridQubit]:
         """Create a mapping from NamedQubits to Grid Qubits
 
-       This function analyzes the circuit to determine which
-       qubits need to be adjacent, then maps to the grid of the device
-       based on the generated mapping.
-       """
+        This function analyzes the circuit to determine which
+        qubits need to be adjacent, then maps to the grid of the device
+        based on the generated mapping.
+        """
         # Build up an adjacency graph based on the circuits.
         # Two qubit gates will turn into edges in the graph
         g = {}
         # Keep track of single qubits that don't interact.
-        sq = []
+        sq = set()
         for m in circuit:
             for op in m:
                 if len(op.qubits) == 1:
-                    if op.qubits[0] not in g:
-                        sq.append(op.qubits[0])
-                if len(op.qubits) == 2:
+                    sq.add(op.qubits[0])
+                else:
                     q1, q2 = op.qubits
                     if q1 not in g:
                         g[q1] = []
                     if q2 not in g:
                         g[q2] = []
-                    if q1 in sq:
-                        sq.remove(q1)
-                    if q2 in sq:
-                        sq.remove(q2)
                     if q2 not in g[q1]:
                         g[q1].append(q2)
                     if q1 not in g[q2]:
                         g[q2].append(q1)
+        sq.difference_update(g)
         for q in g:
             if len(g[q]) > 4:
-                raise ValueError(
-                    f'Qubit {q} needs more than 4 adjacent qubits!')
+                raise DeviceMappingError(
+                    f"Qubit {q} needs more than 4 adjacent qubits!"
+                )
 
         # Initialize mappings and available qubits
         start_qubit = self.starting_qubit
@@ -310,8 +333,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
             mapping[cur_node] = start_qubit
             start_list.remove(start_qubit)
 
-        if len(mapping) != len(g):
-            print('Warning: could not map all qubits!')
+        assert len(mapping) == len(g) + len(sq), "Wrong number of qubits mapped"
         # Sanity check, ensure qubits not mapped twice
         assert len(mapping) == len(set(mapping.values()))
 
@@ -319,7 +341,7 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         return mapping
 
     def transform(self, circuit: cirq.Circuit) -> cirq.Circuit:
-        """ Creates a new qubit mapping for a circuit and transforms it.
+        """Creates a new qubit mapping for a circuit and transforms it.
 
         This uses `qubit_mapping` to create a mapping from the qubits
         in the circuit to the qubits on the device, then substitutes
@@ -358,6 +380,7 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
     Aided Design of Integrated Circuits and Systems, vol. 39, no. 12, pp. 4721-
     4735, Dec. 2020, doi: 10.1109/TCAD.2020.2970594.
     """
+
     def __init__(self, device: cirq.Device):
         super().__init__()
         self.device = device
@@ -375,6 +398,7 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         updater = su.SwapUpdater(circuit, self.device.qubit_set(), initial_mapping)
         return cirq.Circuit(updater.add_swaps())
 
+
 class SycamoreDecomposer(cirq.PointOptimizer):
     """Optimizer that decomposes all three qubit operations into
     sqrt-ISWAPs.
@@ -382,37 +406,41 @@ class SycamoreDecomposer(cirq.PointOptimizer):
     Currently supported are controlled ISWAPs with a single control
     and control-X gates with multiple controls (TOFFOLI gates).:w
     """
+
     def optimization_at(
-            self, circuit: cirq.Circuit, index: int,
-            op: cirq.Operation) -> Optional[cirq.PointOptimizationSummary]:
+        self, circuit: cirq.Circuit, index: int, op: cirq.Operation
+    ) -> Optional[cirq.PointOptimizationSummary]:
         if len(op.qubits) > 3:
-            raise ValueError(f'Four qubit ops not yet supported: {op}')
+            raise DeviceMappingError(f"Four qubit ops not yet supported: {op}")
         new_ops = None
         if op.gate == cirq.SWAP or op.gate == cirq.CNOT:
             new_ops = cirq.google.optimized_for_sycamore(cirq.Circuit(op))
         if isinstance(op, cirq.ControlledOperation):
+            if not all(v == 1 for values in op.control_values for v in values):
+                raise DeviceMappingError(f"0-controlled ops not yet supported: {op}")
             qubits = op.sub_operation.qubits
             if op.gate.sub_gate == cirq.ISWAP:
-                new_ops = controlled_iswap.controlled_iswap(
-                    *qubits, *op.controls)
+                new_ops = controlled_iswap.controlled_iswap(*qubits, *op.controls)
             if op.gate.sub_gate == cirq.ISWAP ** -1:
-                new_ops = controlled_iswap.controlled_iswap(*qubits,
-                                                            *op.controls,
-                                                            inverse=True)
+                new_ops = controlled_iswap.controlled_iswap(
+                    *qubits, *op.controls, inverse=True
+                )
             if op.gate.sub_gate == cirq.ISWAP ** 0.5:
-                new_ops = controlled_iswap.controlled_sqrt_iswap(
-                    *qubits, *op.controls)
+                new_ops = controlled_iswap.controlled_sqrt_iswap(*qubits, *op.controls)
             if op.gate.sub_gate == cirq.ISWAP ** -0.5:
                 new_ops = controlled_iswap.controlled_inv_sqrt_iswap(
-                    *qubits, *op.controls)
+                    *qubits, *op.controls
+                )
             if op.gate.sub_gate == cirq.X:
                 if len(op.qubits) == 2:
                     new_ops = cirq.google.optimized_for_sycamore(
-                        cirq.Circuit(cirq.CNOT(*op.controls, *qubits)))
+                        cirq.Circuit(cirq.CNOT(*op.controls, *qubits))
+                    )
                 if len(op.qubits) == 3:
                     new_ops = cirq.google.optimized_for_sycamore(
-                        cirq.Circuit(cirq.TOFFOLI(*op.controls, *qubits)))
+                        cirq.Circuit(cirq.TOFFOLI(*op.controls, *qubits))
+                    )
         if new_ops:
-            return cirq.PointOptimizationSummary(clear_span=1,
-                                                 clear_qubits=op.qubits,
-                                                 new_operations=new_ops)
+            return cirq.PointOptimizationSummary(
+                clear_span=1, clear_qubits=op.qubits, new_operations=new_ops
+            )

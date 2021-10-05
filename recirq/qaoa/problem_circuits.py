@@ -3,6 +3,7 @@ from typing import Sequence, Tuple, List
 import networkx as nx
 
 import cirq
+import cirq_google as cg
 from recirq.qaoa.gates_and_compilation import (
     ProblemUnitary,
     DriverUnitary,
@@ -180,7 +181,7 @@ def get_compiled_sk_model_circuit(
 
 def get_routed_3_regular_maxcut_circuit(
         problem_graph: nx.Graph,
-        device: cirq.google.XmonDevice,
+        device: cg.XmonDevice,
         gammas: Sequence[float],
         betas: Sequence[float],
 ) -> Tuple[List[cirq.Qid], cirq.Circuit, List[cirq.Qid]]:
@@ -212,7 +213,7 @@ def get_routed_3_regular_maxcut_circuit(
 
 def get_compiled_3_regular_maxcut_circuit(
         problem: ThreeRegularProblem,
-        device: cirq.google.XmonDevice,
+        device: cg.XmonDevice,
         gammas: Sequence[float],
         betas: Sequence[float],
 ) -> Tuple[List[cirq.Qid], cirq.Circuit, List[cirq.Qid]]:
@@ -231,7 +232,6 @@ def get_compiled_3_regular_maxcut_circuit(
         final_qubits: The qubits in their final logical order.
     """
     # TODO: explicitly compile gates, avoid optimized_for_sycamore, make structured circuits
-    import cirq.google as cg
     initial_qubits, circuit, final_qubits = get_routed_3_regular_maxcut_circuit(
         problem_graph=problem.graph,
         device=device,

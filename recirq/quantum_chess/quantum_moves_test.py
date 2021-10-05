@@ -63,12 +63,17 @@ def test_merge():
 def test_merge_slide():
     s = cirq.Simulator()
     s1, s2, t, p1, p2, a = cirq.LineQubit.range(6)
-    measure = cirq.Moment(cirq.measure(s1, key='s1'), cirq.measure(s2,
-                                                                   key='s2'),
-                          cirq.measure(t, key='t'))
+    measure = cirq.Moment(
+        cirq.measure(s1, key="s1"), cirq.measure(s2, key="s2"), cirq.measure(t, key="t")
+    )
 
     # If both paths are clear, the first source square should always be empty.
-    c = cirq.Circuit(cirq.X(p1), cirq.X(p2), cirq.X(s1),
-                     qm.merge_slide(s1, t, s2, p1, p2, a), measure)
+    c = cirq.Circuit(
+        cirq.X(p1),
+        cirq.X(p2),
+        cirq.X(s1),
+        qm.merge_slide(s1, t, s2, p1, p2, a),
+        measure,
+    )
     results = s.run(c, repetitions=100)
-    assert all(r == [0] for r in results.measurements['s1'])
+    assert all(r == [0] for r in results.measurements["s1"])

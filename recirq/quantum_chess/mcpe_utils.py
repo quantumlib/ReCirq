@@ -20,7 +20,7 @@ NISQ Computers'
 (https://ieeexplore.ieee.org/abstract/document/8976109).
 """
 from collections import defaultdict, deque
-from typing import Callable, Dict, Generator, Iterable, List, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, Tuple
 
 import cirq
 
@@ -42,8 +42,7 @@ def swap_map_fn(q1: cirq.Qid, q2: cirq.Qid) -> Callable[[cirq.Qid], cirq.Qid]:
 def effect_of_swap(
     swap_qubits: Tuple[cirq.GridQubit, cirq.GridQubit],
     gate_qubits: Tuple[cirq.GridQubit, cirq.GridQubit],
-    distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit],
-                          int] = manhattan_dist
+    distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit], int] = manhattan_dist,
 ) -> int:
     """Returns the net effect of a swap on the distance between a gate's qubits.
 
@@ -65,6 +64,7 @@ class QubitMapping:
     Args:
       initial_mapping: initial logical-to-physical qubit map.
     """
+
     def __init__(self, initial_mapping: Dict[cirq.Qid, cirq.GridQubit] = {}):
         self.logical_to_physical = initial_mapping
         self.physical_to_logical = {v: k for k, v in initial_mapping.items()}
@@ -73,10 +73,14 @@ class QubitMapping:
         """Updates the mapping by swapping two physical qubits."""
         logical_q1 = self.physical_to_logical.get(q1)
         logical_q2 = self.physical_to_logical.get(q2)
-        self.physical_to_logical[q1], self.physical_to_logical[
-            q2] = logical_q2, logical_q1
-        self.logical_to_physical[logical_q1], self.logical_to_physical[
-            logical_q2] = q2, q1
+        self.physical_to_logical[q1], self.physical_to_logical[q2] = (
+            logical_q2,
+            logical_q1,
+        )
+        self.logical_to_physical[logical_q1], self.logical_to_physical[logical_q2] = (
+            q2,
+            q1,
+        )
 
     def logical(self, qubit: cirq.GridQubit) -> cirq.Qid:
         """Returns the logical qubit for a given physical qubit."""
@@ -96,6 +100,7 @@ class DependencyLists:
     Additionally, the DependencyLists can compute the MCPE heuristic cost
     function for candidate qubit swaps.
     """
+
     def __init__(self, circuit: cirq.Circuit):
         self.dependencies = defaultdict(deque)
         for moment in circuit:
@@ -117,8 +122,10 @@ class DependencyLists:
         if not self.dependencies[qubit]:
             return
         gate = self.dependencies[qubit][0]
-        if all(self.dependencies[i] and self.dependencies[i][0] == gate
-               for i in gate.qubits):
+        if all(
+            self.dependencies[i] and self.dependencies[i][0] == gate
+            for i in gate.qubits
+        ):
             self.active_gates.add(gate)
 
     def peek_front(self, qubit: cirq.Qid) -> Iterable[cirq.Operation]:
@@ -146,10 +153,13 @@ class DependencyLists:
         return all(len(dlist) == 0 for dlist in self.dependencies.values())
 
     def _maximum_consecutive_positive_effect_impl(
-            self, swap_q1: cirq.GridQubit, swap_q2: cirq.GridQubit,
-            gates: Iterable[cirq.Operation], mapping: QubitMapping,
-            distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit],
-                                  int]) -> int:
+        self,
+        swap_q1: cirq.GridQubit,
+        swap_q2: cirq.GridQubit,
+        gates: Iterable[cirq.Operation],
+        mapping: QubitMapping,
+        distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit], int],
+    ) -> int:
         """Computes the MCPE contribution from a single qubit's dependency list.
 
         This is where the dynamic look-ahead window is applied -- the window of
@@ -175,8 +185,9 @@ class DependencyLists:
                 # treat the change in cost as 0 for those.
                 continue
             physical_gate_qubits = tuple(map(mapping.physical, gate.qubits))
-            swap_cost = effect_of_swap((swap_q1, swap_q2),
-                                       physical_gate_qubits, distance_fn)
+            swap_cost = effect_of_swap(
+                (swap_q1, swap_q2), physical_gate_qubits, distance_fn
+            )
             if swap_cost < 0:
                 break
             total_cost += swap_cost
@@ -187,8 +198,7 @@ class DependencyLists:
         swap_q1: cirq.GridQubit,
         swap_q2: cirq.GridQubit,
         mapping: QubitMapping,
-        distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit],
-                              int] = manhattan_dist
+        distance_fn: Callable[[cirq.GridQubit, cirq.GridQubit], int] = manhattan_dist,
     ) -> int:
         """Computes the MCPE heuristic cost function of applying the swap to the
         circuit represented by this set of DependencyLists.
@@ -201,5 +211,11 @@ class DependencyLists:
         """
         return sum(
             self._maximum_consecutive_positive_effect_impl(
-                swap_q1, swap_q2, self.dependencies[mapping.logical(q)],
-                mapping, distance_fn) for q in (swap_q1, swap_q2))
+                swap_q1,
+                swap_q2,
+                self.dependencies[mapping.logical(q)],
+                mapping,
+                distance_fn,
+            )
+            for q in (swap_q1, swap_q2)
+        )

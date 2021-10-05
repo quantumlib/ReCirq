@@ -48,17 +48,17 @@ def print_stats(time_sec: float, circuit: cirq.Circuit) -> None:
         circuit: print stats about this circuit
     """
     n_ops = len(list(circuit.all_operations()))
-    print(f' qubits={len(circuit.all_qubits())}')
-    print(f'    ops={n_ops}')
-    print(f'moments={len(circuit.moments)}', flush=True)
-    print(f'   time={time_sec:0.3f}s ({time_sec * 1e6 / n_ops :0.1f}us/op)')
+    print(f" qubits={len(circuit.all_qubits())}")
+    print(f"    ops={n_ops}")
+    print(f"moments={len(circuit.moments)}", flush=True)
+    print(f"   time={time_sec:0.3f}s ({time_sec * 1e6 / n_ops :0.1f}us/op)")
 
 
 def load_circuit_file(input_path: str) -> cirq.Circuit:
     """Reads a QASM circuit file and returns it as a cirq Circuit."""
-    print(f'reading: {input_path}', flush=True)
+    print(f"reading: {input_path}", flush=True)
     start = timer()
-    with open(input_path, 'r') as handle:
+    with open(input_path, "r") as handle:
         contents = handle.read()
     circuit = circuit_from_qasm(contents)
     stop = timer()
@@ -73,7 +73,7 @@ def optimize(name: str, circuit: cirq.Circuit) -> cirq.Circuit:
         name: the name of the circuit for printing messages
         circuit: the circuit to optimize_for_sycamore
     """
-    print(f'optimizing: {name}', flush=True)
+    print(f"optimizing: {name}", flush=True)
     start = timer()
     optimized = cirq.google.optimized_for_sycamore(circuit)
     stop = timer()
@@ -81,8 +81,9 @@ def optimize(name: str, circuit: cirq.Circuit) -> cirq.Circuit:
     return optimized
 
 
-def benchmark_transform(name: str, circuit: cirq.Circuit,
-                        transformer: ct.CircuitTransformer) -> cirq.Circuit:
+def benchmark_transform(
+    name: str, circuit: cirq.Circuit, transformer: ct.CircuitTransformer
+) -> cirq.Circuit:
     """Applies a transformation with profiling.
 
     Prints the (truncated) profile and some statistics about the size of the
@@ -99,27 +100,27 @@ def benchmark_transform(name: str, circuit: cirq.Circuit,
     moments_before = len(circuit.moments)
     qubits_before = len(circuit.all_qubits())
 
-    print(f'transforming: {name}', flush=True)
+    print(f"transforming: {name}", flush=True)
     start = timer()
     profile = cProfile.Profile()
     profile.enable()
     transformed = transformer.transform(circuit)
     profile.disable()
     stop = timer()
-    print(f'finished: {name}', flush=True)
+    print(f"finished: {name}", flush=True)
     print_stats(stop - start, transformed)
 
     ops_after = len(list(transformed.all_operations()))
     moments_after = len(transformed.moments)
     qubits_after = len(transformed.all_qubits())
-    print('overhead:')
-    print(f' qubits={qubits_after/qubits_before:0.3f}x')
-    print(f'    ops={ops_after/ops_before:0.3f}x')
-    print(f'moments={moments_after/moments_before:0.3f}x')
-    print('profile:')
+    print("overhead:")
+    print(f" qubits={qubits_after/qubits_before:0.3f}x")
+    print(f"    ops={ops_after/ops_before:0.3f}x")
+    print(f"moments={moments_after/moments_before:0.3f}x")
+    print("profile:")
     stats = pstats.Stats(profile)
     stats.strip_dirs()
-    stats.sort_stats('cumtime')
+    stats.sort_stats("cumtime")
     stats.print_stats(40)
     sys.stdout.flush()
     return transformed
@@ -128,26 +129,25 @@ def benchmark_transform(name: str, circuit: cirq.Circuit,
 def main(input_files: List[str]) -> None:
     device = cirq.google.Sycamore
     transformers = {
-        'dynamic look-ahead placement':
-        ct.DynamicLookAheadHeuristicCircuitTransformer(device),
-        'middle-out placement':
-        ct.ConnectivityHeuristicCircuitTransformer(device),
+        "dynamic look-ahead placement": ct.DynamicLookAheadHeuristicCircuitTransformer(
+            device
+        ),
+        "middle-out placement": ct.ConnectivityHeuristicCircuitTransformer(device),
     }
     for input_file in input_files:
         circuit = load_circuit_file(input_file)
         optimized = optimize(input_file, circuit)
         for name, transformer in transformers.items():
-            suffix = f'{input_file} with {name}'
+            suffix = f"{input_file} with {name}"
             try:
-                transformed = benchmark_transform(suffix, optimized,
-                                                  transformer)
+                transformed = benchmark_transform(suffix, optimized, transformer)
                 device.validate_circuit(transformed)
             except Exception as e:
-                print(f'failed: {suffix}')
+                print(f"failed: {suffix}")
                 print(e)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     inputs = sys.argv[1:]
     inputs.sort()
     main(inputs)
