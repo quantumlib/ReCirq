@@ -707,9 +707,6 @@ class CirqBoard:
         Returns:  The measurement that was performed, or 1 if
             no measurement was required.
         """
-
-        self.reset_if_classical()
-
         if not m.move_type:
             raise ValueError('No Move defined')
         if m.move_type == enums.MoveType.NULL_TYPE:

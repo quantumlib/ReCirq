@@ -61,14 +61,12 @@ def syc23_noisy(state):
         error_mitigation=enums.ErrorMitigation.Correct,
         noise_mitigation=0.10)
 
-
 def syc23_noiseless(state):
     np.random.seed(get_seed())
     return qb.CirqBoard(
         state,
         device=utils.get_device_obj_by_name('Syc23-noiseless'),
         error_mitigation=enums.ErrorMitigation.Error)
-
 
 def syc54_noiseless(state):
     np.random.seed(get_seed())
@@ -77,11 +75,9 @@ def syc54_noiseless(state):
         device=utils.get_device_obj_by_name('Syc54-noiseless'),
         error_mitigation=enums.ErrorMitigation.Error)
 
-
 def simulator(state):
     np.random.seed(get_seed())
     return qb.CirqBoard(state, error_mitigation=enums.ErrorMitigation.Error)
-
 
 BIG_CIRQ_BOARDS = (
     simulator,
@@ -130,7 +126,6 @@ def test_classical_jump_move(board):
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['b1', 'c1'])])
 
-
 def test_path_qubits():
     """Source and target should be in the same line, otherwise ValueError should be returned."""
     b = qb.CirqBoard(u.squares_to_bitboard(['a1', 'b3', 'c4', 'd5', 'e6', 'f7']))
@@ -141,7 +136,6 @@ def test_path_qubits():
         b.path_qubits("a1", "b3")
     with pytest.raises(ValueError):
         b.path_qubits("c4", "a1")
-
 
 @pytest.mark.parametrize('move_type,board', (
         *[(enums.MoveType.SPLIT_JUMP, b) for b in ALL_CIRQ_BOARDS],
@@ -182,7 +176,6 @@ def test_split_move(move_type, board):
     assert len(board_probs) == 2
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['a3']))
     assert_fifty_fifty(board_probs, u.squares_to_bitboard(['d1']))
-
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_and_use_same_square(board):
@@ -408,7 +401,6 @@ def test_superposition_slide_move(board):
     assert_fifty_fifty(board_probs, blocked)
     assert_fifty_fifty(board_probs, moved)
 
-
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_superposition_slide_move2(board):
     """Tests a basic slide through a superposition of two pieces.
@@ -441,7 +433,6 @@ def test_superposition_slide_move2(board):
     for possibility in possibilities:
         assert_prob_about(board_probs, possibility, 0.25)
 
-
 def test_slide_with_two_path_qubits_coherence():
     """Tests that a path ancilla does not mess up split/merge coherence.
 
@@ -463,7 +454,6 @@ def test_slide_with_two_path_qubits_coherence():
         u.squares_to_bitboard(['d1', 'e2', 'g1']): 1 / 2,
     })
 
-
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_slide_merge_slide_coherence(board):
     b = board(u.squares_to_bitboard(['b4', 'd3']))
@@ -474,7 +464,6 @@ def test_split_slide_merge_slide_coherence(board):
         'c5e5^d3:MERGE_JUMP:BASIC',
     )
     assert_samples_in(b, [u.squares_to_bitboard(['b4', 'd3'])])
-
 
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_excluded_slide(board):
@@ -568,7 +557,6 @@ def test_split_one_slide(board):
     assert_prob_about(board_probs, possibilities[1], 0.25)
     assert_prob_about(board_probs, possibilities[2], 0.25)
 
-
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_split_both_sides(board):
     """ Tests a split slide move where both paths of the slide
@@ -619,7 +607,6 @@ def test_split_both_sides(board):
     for possibility in possibilities[7:]:
         assert_prob_about(board_probs, possibility, 0.0625)
 
-
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_split_merge_slide_self_intersecting(board):
     """Tests merge slide with a source square in the path."""
@@ -661,7 +648,6 @@ def test_merge_slide_one_side(board):
     assert_prob_about(board_probs, possibilities[1], 0.25)
     assert_prob_about(board_probs, possibilities[2], 0.5)
 
-
 @pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
 def test_merge_slide_both_side(board):
     """Tests a merge slide where both paths are blocked.
@@ -699,7 +685,6 @@ def test_merge_slide_both_side(board):
     for possibility in possibilities[:6]:
         assert_prob_about(board_probs, possibility, 0.125)
     assert_prob_about(board_probs, possibilities[6], 0.25)
-
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_unentangled_pawn_capture(board):
@@ -945,7 +930,6 @@ def test_entangled_qs_castle2(board):
         ]
     assert_samples_in(b, possibilities)
 
-
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_ep(board):
     """Fully classical en passant."""
@@ -956,7 +940,6 @@ def test_classical_ep(board):
                   move_variant=enums.MoveVariant.BASIC)
     b.do_move(m)
     assert_samples_in(b, [u.squares_to_bitboard(['d6'])])
-
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_classical_ep2(board):
@@ -1051,7 +1034,6 @@ def test_basic_ep():
     ]
     assert_samples_in(b, possibilities)
 
-
 def test_undo_last_move():
     # TODO  (cantwellc) more comprehensive tests
     b = simulator(u.squares_to_bitboard(['a2']))
@@ -1143,7 +1125,6 @@ def test_caching_accumulations_different_repetition_not_cached(board):
     board_probs2 = b.get_board_probability_distribution(100)
     assert board_probs1 != board_probs2
 
-
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_caching_accumulations_same_repetition_cached(board):
     b = board(u.squares_to_bitboard(['a1', 'b1']))
@@ -1159,7 +1140,6 @@ def test_caching_accumulations_same_repetition_cached(board):
     board_probs1 = b.get_board_probability_distribution(100)
     board_probs2 = b.get_board_probability_distribution(100)
     assert board_probs1 == board_probs2
-
 
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_get_probability_distribution_split_jump_pre_cached(board):
@@ -1308,8 +1288,8 @@ def test_split_capture_with_failed_measurement_outcome(board):
 
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
-def test_merge_capture_to_fully_classical_position(board):
-    """Splits piece on d4 to b3 and c2, then merge back and capture piece on a1."""
+def test_merge_to_fully_classical_position(board):
+    """Splits piece on d4 to b3 and c2, then merge back to fully classical position on a1."""
     b = board(u.squares_to_bitboard(["d4"]))
     b.reset_starting_states = True
     b.do_move(
