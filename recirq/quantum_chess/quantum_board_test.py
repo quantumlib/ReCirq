@@ -520,6 +520,88 @@ def test_split_slide_merge_slide_coherence():
     assert_samples_in(b, [u.squares_to_bitboard(["b4", "d3"])])
 
 
+def test_split_slide_zero_one():
+    b = simulator(u.squares_to_bitboard(["a1", "d3"]))
+    assert b.perform_moves(
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "a1^a4f1:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["d1", "a4"]): 1 / 2,
+            u.squares_to_bitboard(["c3", "f1"]): 1 / 4,
+            u.squares_to_bitboard(["c3", "a4"]): 1 / 4,
+        },
+    )
+
+
+def test_split_slide_zero_multiple():
+    b = simulator(u.squares_to_bitboard(["a1", "d3"]))
+    assert b.perform_moves(
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "a1^e1f1:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["d1", "a1"]): 1 / 2,
+            u.squares_to_bitboard(["c3", "e1"]): 1 / 4,
+            u.squares_to_bitboard(["c3", "f1"]): 1 / 4,
+        },
+    )
+
+
+def test_split_slide_one_one_same_qubit():
+    b = simulator(u.squares_to_bitboard(["a1", "d3"]))
+    assert b.perform_moves(
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "a1^e1f1:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["d1", "a1"]): 1 / 2,
+            u.squares_to_bitboard(["c3", "e1"]): 1 / 4,
+            u.squares_to_bitboard(["c3", "f1"]): 1 / 4,
+        },
+    )
+
+
+def test_split_slide_one_one_diff_qubits():
+    b = simulator(u.squares_to_bitboard(["c1", "d3"]))
+    assert b.perform_moves(
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "c1^c5f1:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["f1", "c3"]): 1 / 2,
+            u.squares_to_bitboard(["c5", "d1"]): 1 / 2,
+        },
+    )
+
+
+def test_split_slide_one_multiple():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
+    assert b.perform_moves(
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "f2^e2f1:SPLIT_SLIDE:BASIC",
+        "a1^e1g1:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["c3", "e2", "e1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "e2", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "f1", "e1"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "e2", "a1"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "f1", "a1"]): 1 / 4,
+        },
+    )
+
+
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_excluded_slide(board):
     """Test excluded slide.

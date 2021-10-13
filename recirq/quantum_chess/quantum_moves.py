@@ -168,7 +168,85 @@ def split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path2, path1)
 
 
+def split_slide_zero_one(squbit, tqubit_clear, tqubit, qubit):
+    """Performs a split slide from squbit to two target qubits.
+    The path from squbit to tqubit_clear is clear.
+
+    Only 1 qubit is in the path from squbit to tqubit, and it's used
+    as control.
+    """
+    yield cirq.ISWAP(squbit, tqubit_clear).controlled_by(qubit)
+
+    yield cirq.X(qubit)
+    yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(qubit)
+    yield (cirq.ISWAP(squbit, tqubit_clear)).controlled_by(qubit)
+    yield cirq.X(qubit)
+
+
+def split_slide_zero_multiple(squbit, tqubit_clear, tqubit, path):
+    """Performs a split slide from squbit to two target qubits.
+    The path from squbit to tqubit_clear is clear.
+
+    Multiple qubits are in the path from squbit to tqubit. Its corresponding
+    path ancilla qubit is needed as control.
+    """
+    yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(path)
+    # Note that the following steps are equivalent to
+    # ISWAP(squbit, tqubit_clear).controlled_by(path)
+    # ISWAP(squbit, tqubit_clear).anti_controlled_by(path)
+    yield cirq.ISWAP(squbit, tqubit_clear) ** 0.5
+    yield cirq.ISWAP(squbit, tqubit_clear) ** 0.5
+
+
+def split_slide_one_one_same_qubit(squbit, tqubit, tqubit2, qubit):
+    """Performs a split slide from squbit to two target qubits. Two target
+    qubits are in the same direction relative to squbit, and they share
+    one same qubit in the path.
+
+    That single qubit in the path is used as control.
+    """
+    yield cirq.X(qubit)
+    yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(qubit)
+    yield (cirq.ISWAP(squbit, tqubit2)).controlled_by(qubit)
+    yield cirq.X(qubit)
+
+
+def split_slide_one_one_diff_qubits(squbit, tqubit, tqubit2, qubit1, qubit2, ancilla):
+    """Performs a split slide from squbit to two target qubits. One qubit (i.e. qubit1)
+    is in the way from squbit to tqubit. One qubit (i.e. qubit2) is in the way from
+    squbit to tqubit2. qubit1 and qubit2 are different qubits.
+
+    qubit1, qubit2, and one ancilla qubit are needed as control.
+    """
+    yield cirq.X(qubit1)
+    yield cirq.X(qubit2)
+    yield split_slide(squbit, tqubit, tqubit2, qubit1, qubit2, ancilla)
+    yield cirq.X(qubit2)
+    yield cirq.X(qubit1)
+
+
+def split_slide_one_multiple(squbit, tqubit_one, tqubit_multiple, qubit, path, ancilla):
+    """Performs a split slide from squbit to two target qubits. One qubit (i.e. qubit)
+    is in the way from squbit to tqubit_one, while multiple qubits (whose correponding
+    path ancilla is path) are in the way from squbit to tqubit_multiple.
+
+    qubit, path, and one ancilla qubit are needed as control.
+    """
+    yield cirq.X(qubit)
+    yield split_slide(squbit, tqubit_one, tqubit_multiple, qubit, path, ancilla)
+    yield cirq.X(qubit)
+
+
 def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
+    """Performs a merge slide from two source qubits to tqubit.
+
+    2 path qubits are needed as controls.  An additional ancilla
+    is needed to transform the double controlled iSWAPs into
+    single controlled iSWAPs.
+    """
+    # Set up the ancilla which will act as a control
+    # This essentially takes ISWAP.controlled_by(path1, path2)
+    # and turns it into ISWAP.controlled_by(ancilla)
     yield cirq.X(ancilla).controlled_by(path1, path2)
 
     yield (cirq.ISWAP(squbit, tqubit) ** -1.0).controlled_by(ancilla)

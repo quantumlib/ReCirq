@@ -850,9 +850,88 @@ class CirqBoard:
             if tqubit in path_qubits2:
                 path_qubits2.remove(tqubit)
 
+            # (0, 0): No interposing squares, just jump. 0 ancilla needed.
             if len(path_qubits) == 0 and len(path_qubits2) == 0:
-                # No interposing squares, just jump.
                 m.move_type = enums.MoveType.SPLIT_JUMP
+            elif len(path_qubits) == 0:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                # (0, 1): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+                if len(path_qubits2) == 1:
+                    self.circuit.append(
+                        qm.split_slide_zero_one(
+                            squbit, tqubit, tqubit2, path_qubits2[0]
+                        )
+                    )
+                # (0, 2+): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                else:
+                    path2 = self._create_path_ancilla(path_qubits2)
+                    self.circuit.append(
+                        qm.split_slide_zero_multiple(squbit, tqubit, tqubit2, path2)
+                    )
+                    self._clear_path_ancilla(path_qubits2, path2)
+                return 1
+            elif len(path_qubits2) == 0:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                # (1, 0): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+                if len(path_qubits) == 1:
+                    self.circuit.append(
+                        qm.split_slide_zero_one(squbit, tqubit2, tqubit, path_qubits[0])
+                    )
+                # (2+, 0): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                else:
+                    path1 = self._create_path_ancilla(path_qubits)
+                    self.circuit.append(
+                        qm.split_slide_zero_multiple(squbit, tqubit2, tqubit, path1)
+                    )
+                    self._clear_path_ancilla(path_qubits, path1)
+                return 1
+            elif len(path_qubits) == 1:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                # (1, 1): One qubit in one arm, one qubit in the other.
+                if len(path_qubits2) == 1:
+                    # If both arms share the same qubit in path. 0 ancilla needed.
+                    if qubit_to_bit(path_qubits[0]) == qubit_to_bit(path_qubits2[0]):
+                        self.circuit.append(
+                            qm.split_slide_one_one_same_qubit(
+                                squbit, tqubit, tqubit2, path_qubits[0]
+                            )
+                        )
+                    # Otherwise 1 ancilla needed.
+                    else:
+                        ancilla = self.new_ancilla()
+                        self.circuit.append(
+                            qm.split_slide_one_one_diff_qubits(
+                                squbit,
+                                tqubit,
+                                tqubit2,
+                                path_qubits[0],
+                                path_qubits2[0],
+                                ancilla,
+                            )
+                        )
+                # (1, 2+): One qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+                else:
+                    path2 = self._create_path_ancilla(path_qubits2)
+                    ancilla = self.new_ancilla()
+                    self.circuit.append(
+                        qm.split_slide_one_multiple(
+                            squbit, tqubit, tqubit2, path_qubits[0], path2, ancilla
+                        )
+                    )
+                    self._clear_path_ancilla(path_qubits2, path2)
+                return 1
+            # (2+, 1): one qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+            elif len(path_qubits2) == 1:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                path1 = self._create_path_ancilla(path_qubits)
+                ancilla = self.new_ancilla()
+                self.circuit.append(
+                    qm.split_slide_one_multiple(
+                        squbit, tqubit2, tqubit, path_qubits2[0], path1, ancilla
+                    )
+                )
+                self._clear_path_ancilla(path_qubits, path1)
+            # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
             else:
                 self.add_entangled(squbit, tqubit, tqubit2)
                 path1 = self._create_path_ancilla(path_qubits)
@@ -919,19 +998,31 @@ class CirqBoard:
                 if is_there:
                     return 0
 
-            self.add_entangled(squbit, tqubit)
             if m.move_variant == enums.MoveVariant.CAPTURE:
-                capture_ancilla = self.new_ancilla()
-                self.circuit.append(
-                    qm.controlled_operation(
-                        cirq.X, [capture_ancilla], [squbit], path_qubits
+                if (
+                    squbit not in self.entangled_squares
+                    and nth_bit_of(qubit_to_bit(squbit), self.state)
+                    and len(path_qubits) == 1
+                ):
+                    # squbit is classically true and there is only one path_qubit
+                    capture_allowed = 1 - self.post_select_on(
+                        path_qubits[0], m.measurement
                     )
-                )
+                else:
+                    self.add_entangled(squbit, tqubit)
+                    capture_ancilla = self.new_ancilla()
+                    self.circuit.append(
+                        qm.controlled_operation(
+                            cirq.X, [capture_ancilla], [squbit], path_qubits
+                        )
+                    )
 
-                # We need to add the captured_ancilla to entangled squares
-                # So that we measure it
-                self.entangled_squares.add(capture_ancilla)
-                capture_allowed = self.post_select_on(capture_ancilla, m.measurement)
+                    # We need to add the captured_ancilla to entangled squares
+                    # So that we measure it
+                    self.entangled_squares.add(capture_ancilla)
+                    capture_allowed = self.post_select_on(
+                        capture_ancilla, m.measurement
+                    )
 
                 if not capture_allowed:
                     return 0
