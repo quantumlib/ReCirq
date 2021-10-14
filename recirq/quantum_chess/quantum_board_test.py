@@ -537,7 +537,7 @@ def test_split_slide_zero_one():
 
 
 def test_split_slide_zero_multiple():
-    b = simulator(u.squares_to_bitboard(["a1", "d3"]))
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
     assert b.perform_moves(
         "d3^c3d1:SPLIT_SLIDE:BASIC",
         "f2^e2f1:SPLIT_SLIDE:BASIC",

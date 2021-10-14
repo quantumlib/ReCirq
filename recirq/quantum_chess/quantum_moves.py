@@ -172,7 +172,7 @@ def split_slide_zero_one(squbit, tqubit_clear, tqubit, path_qubit):
     """Performs a split slide from squbit to two target qubits.
     The path from squbit to tqubit_clear is clear.
 
-    path_qubit is the only qubit in the path from squbit to tqubit, 
+    path_qubit is the only qubit in the path from squbit to tqubit,
     and it's used as control.
     """
     yield cirq.X(path_qubit)
@@ -180,7 +180,7 @@ def split_slide_zero_one(squbit, tqubit_clear, tqubit, path_qubit):
     yield cirq.X(path_qubit)
     # Note that the following steps are equivalent to
     # ISWAP(squbit, tqubit_clear).controlled_by(path_qubit)
-    # ISWAP(squbit, tqubit_clear).anti_controlled_by(path_qubit)     
+    # ISWAP(squbit, tqubit_clear).anti_controlled_by(path_qubit)
     yield cirq.ISWAP(squbit, tqubit_clear) ** 0.5
     yield cirq.ISWAP(squbit, tqubit_clear) ** 0.5
 
@@ -213,10 +213,12 @@ def split_slide_one_one_same_qubit(squbit, tqubit, tqubit2, path_qubit):
     yield cirq.X(path_qubit)
 
 
-def split_slide_one_one_diff_qubits(squbit, tqubit, tqubit2, path_qubit1, path_qubit2, ancilla):
+def split_slide_one_one_diff_qubits(
+        squbit, tqubit, tqubit2, path_qubit1, path_qubit2, ancilla
+):
     """Performs a split slide from squbit to two target qubits. Only one qubit
-    (i.e. path_qubit1) is in the way from squbit to tqubit. Only one qubit 
-    (i.e. path_qubit2) is in the way from squbit to tqubit2. path_qubit1 and 
+    (i.e. path_qubit1) is in the way from squbit to tqubit. Only one qubit
+    (i.e. path_qubit2) is in the way from squbit to tqubit2. path_qubit1 and
     path_qubit2 are different qubits.
 
     path_qubit1, path_qubit2, and one more ancilla qubit are needed as control.
@@ -228,16 +230,20 @@ def split_slide_one_one_diff_qubits(squbit, tqubit, tqubit2, path_qubit1, path_q
     yield cirq.X(path_qubit1)
 
 
-def split_slide_one_multiple(squbit, tqubit_one, tqubit_multiple, path_qubit, path_ancilla, ancilla):
+def split_slide_one_multiple(
+        squbit, tqubit_one, tqubit_multiple, path_qubit, path_ancilla, ancilla
+):
     """Performs a split slide from squbit to two target qubits. Only one qubit
     (i.e. path_qubit) is in the way from squbit to tqubit_one, while multiple
-    qubits (whose corresponding path ancilla is path_ancilla) are in the way 
+    qubits (whose corresponding path ancilla is path_ancilla) are in the way
     from squbit to tqubit_multiple.
 
     path_qubit, path_ancilla, and one more ancilla qubit are needed as control.
     """
     yield cirq.X(path_qubit)
-    yield split_slide(squbit, tqubit_one, tqubit_multiple, path_qubit, path_ancilla, ancilla)
+    yield split_slide(
+        squbit, tqubit_one, tqubit_multiple, path_qubit, path_ancilla, ancilla
+    )
     yield cirq.X(path_qubit)
 
 
