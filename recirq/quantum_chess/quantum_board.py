@@ -720,7 +720,7 @@ class CirqBoard:
             no measurement was required.
         """
 
-        initial_circuit = self.circuit
+        initial_circuit = self.circuit.copy()
 
         if not m.move_type:
             raise ValueError('No Move defined')

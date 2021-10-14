@@ -93,6 +93,7 @@ ALL_CIRQ_BOARDS = BIG_CIRQ_BOARDS + (
 @pytest.mark.parametrize('board', ALL_CIRQ_BOARDS)
 def test_initial_state(board):
     """Tests basic functionality of boards and setting an initial state."""
+    print('hi')
     b = board(u.squares_to_bitboard(['a1', 'b1', 'c1']))
     samples = b.sample(100)
     assert len(samples) == 100
