@@ -214,7 +214,7 @@ def split_slide_one_one_same_qubit(squbit, tqubit, tqubit2, path_qubit):
 
 
 def split_slide_one_one_diff_qubits(
-        squbit, tqubit, tqubit2, path_qubit1, path_qubit2, ancilla
+    squbit, tqubit, tqubit2, path_qubit1, path_qubit2, ancilla
 ):
     """Performs a split slide from squbit to two target qubits. Only one qubit
     (i.e. path_qubit1) is in the way from squbit to tqubit. Only one qubit
@@ -231,7 +231,7 @@ def split_slide_one_one_diff_qubits(
 
 
 def split_slide_one_multiple(
-        squbit, tqubit_one, tqubit_multiple, path_qubit, path_ancilla, ancilla
+    squbit, tqubit_one, tqubit_multiple, path_qubit, path_ancilla, ancilla
 ):
     """Performs a split slide from squbit to two target qubits. Only one qubit
     (i.e. path_qubit) is in the way from squbit to tqubit_one, while multiple
