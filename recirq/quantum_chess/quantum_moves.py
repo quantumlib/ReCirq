@@ -223,7 +223,7 @@ def split_slide_one_one_diff_qubits(squbit, tqubit, tqubit2, path_qubit1, path_q
     """
     yield cirq.X(path_qubit1)
     yield cirq.X(path_qubit2)
-    yield split_slide(squbit, tqubit, tqubit2, path_qubit1, path_qubit2, path_ancilla)
+    yield split_slide(squbit, tqubit, tqubit2, path_qubit1, path_qubit2, ancilla)
     yield cirq.X(path_qubit2)
     yield cirq.X(path_qubit1)
 
