@@ -175,12 +175,14 @@ def split_slide_zero_one(squbit, tqubit_clear, tqubit, path_qubit):
     path_qubit is the only qubit in the path from squbit to tqubit, 
     and it's used as control.
     """
-    yield cirq.ISWAP(squbit, tqubit_clear).controlled_by(path_qubit)
-
-    yield cirq.X(qubit)
-    yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(path_qubit)
-    yield (cirq.ISWAP(squbit, tqubit_clear)).controlled_by(path_qubit)
     yield cirq.X(path_qubit)
+    yield (cirq.ISWAP(squbit, tqubit) ** 0.5).controlled_by(path_qubit)
+    yield cirq.X(path_qubit)
+    # Note that the following steps are equivalent to
+    # ISWAP(squbit, tqubit_clear).controlled_by(path_qubit)
+    # ISWAP(squbit, tqubit_clear).anti_controlled_by(path_qubit)     
+    yield cirq.ISWAP(squbit, tqubit_clear) ** 0.5
+    yield cirq.ISWAP(squbit, tqubit_clear) ** 0.5
 
 
 def split_slide_zero_multiple(squbit, tqubit_clear, tqubit, path_ancilla):
