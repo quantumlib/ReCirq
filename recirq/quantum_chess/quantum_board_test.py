@@ -540,14 +540,17 @@ def test_split_slide_zero_multiple():
     b = simulator(u.squares_to_bitboard(["a1", "d3"]))
     assert b.perform_moves(
         "d3^c3d1:SPLIT_SLIDE:BASIC",
-        "a1^e1f1:SPLIT_SLIDE:BASIC",
+        "f2^e2f1:SPLIT_SLIDE:BASIC",
+        "a1^a5g1:SPLIT_SLIDE:BASIC",
     )
     assert_sample_distribution(
         b,
         {
-            u.squares_to_bitboard(["d1", "a1"]): 1 / 2,
-            u.squares_to_bitboard(["c3", "e1"]): 1 / 4,
-            u.squares_to_bitboard(["c3", "f1"]): 1 / 4,
+            u.squares_to_bitboard(["c3", "e2", "a5"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "e2", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "f1", "a5"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "e2", "a5"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "f1", "a5"]): 1 / 4,
         },
     )
 
