@@ -312,7 +312,7 @@ def merge_slide_zero_multiple(squbit_clear, tqubit, squbit, path_ancilla):
     yield cirq.ISWAP(squbit_clear, tqubit) ** -0.5
     yield cirq.ISWAP(squbit_clear, tqubit) ** -0.5
 
-    yield (cirq.ISWAP(squbit, tqubit) ** -0.5).controlled_by(path_qubit)
+    yield (cirq.ISWAP(squbit, tqubit) ** -0.5).controlled_by(path_ancilla)
 
 
 def merge_slide_one_one_same_qubit(squbit, tqubit, squbit2, path_qubit):
