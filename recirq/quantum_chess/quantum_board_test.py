@@ -876,7 +876,7 @@ def test_merge_slide_one_one_same_qubit():
         b,
         {
             u.squares_to_bitboard(["d1", "e1"]): 1 / 4,
-            u.squares_to_bitboard(["d1", "e1"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "f1"]): 1 / 4,
             u.squares_to_bitboard(["c3", "a1"]): 1 / 2,
         },
     )
@@ -911,9 +911,9 @@ def test_merge_slide_one_multiple():
     assert_sample_distribution(
         b,
         {
-            u.squares_to_bitboard(["c3", "e2", "c1"]): 1 / 4,
+            u.squares_to_bitboard(["c3", "e2", "a1"]): 1 / 4,
             u.squares_to_bitboard(["c3", "f1", "g1"]): 1 / 8,
-            u.squares_to_bitboard(["c3", "f1", "c1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "f1", "a1"]): 1 / 8,
             u.squares_to_bitboard(["d1", "e2", "e1"]): 1 / 8,
             u.squares_to_bitboard(["d1", "e2", "g1"]): 1 / 8,
             u.squares_to_bitboard(["d1", "f1", "e1"]): 1 / 8,
