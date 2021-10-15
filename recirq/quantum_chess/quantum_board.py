@@ -84,6 +84,7 @@ class CirqBoard:
         ] = enums.ErrorMitigation.Nothing,
         noise_mitigation: Optional[float] = 0.0,
         transformer: Optional[ct.CircuitTransformer] = None,
+        reset_starting_states = False
     ):
         self.device = device
         self.sampler = sampler
