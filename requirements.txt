@@ -4,6 +4,7 @@ seaborn
 sphinx
 ipython
 black
+gitpython
 
 # optimize
 scikit-learn
