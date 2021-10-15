@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import git
 import pytest
 import sys
