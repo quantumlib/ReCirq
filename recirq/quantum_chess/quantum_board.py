@@ -33,11 +33,11 @@ import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
 
-
 CLASSICAL_BITBOARD = 2 ** 64 - 1
 
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
 DEFAULT_CHESS_INIT_STATE = 0xffff00000000ffff
+
 
 class CirqBoard:
     """Implementation of Quantum Board API using cirq sampler.
@@ -73,22 +73,23 @@ class CirqBoard:
             NamedQubit circuit into a GridQubit circuit.
     """
 
-    def __init__(self,
-                 init_basis_state: int,
-                 sampler: cirq.Sampler = cirq.Simulator(),
-                 device: Optional[cirq.Device] = None,
-                 error_mitigation: Optional[
-                     enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
-                 noise_mitigation: Optional[float] = 0.0,
-                 transformer: Optional[ct.CircuitTransformer] = None,
-                 reset_starting_states=False,
+    def __init__(
+            self,
+            init_basis_state: int,
+            sampler: cirq.Sampler = cirq.Simulator(),
+            device: Optional[cirq.Device] = None,
+            error_mitigation: Optional[
+                enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
+            noise_mitigation: Optional[float] = 0.0,
+            transformer: Optional[ct.CircuitTransformer] = None,
+            reset_starting_states=False,
     ):
         self.device = device
         self.sampler = sampler
         if device is not None:
             self.transformer = (
-                transformer
-                or ct.ConnectivityHeuristicCircuitTransformer(device))
+                    transformer
+                    or ct.ConnectivityHeuristicCircuitTransformer(device))
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
@@ -368,10 +369,12 @@ class CirqBoard:
                 self.probabilities = self.move_history_probabilities_cache[-1][1].copy()
                 self._set_full_empty_squares_from_probability()
                 return
-            previous_move_in_cache = len(self.move_history) > 1 and self.move_history_probabilities_cache[-2][0] >= repetitions
+            previous_move_in_cache = len(self.move_history) > 1 and self.move_history_probabilities_cache[-2][
+                0] >= repetitions
             is_first_move = len(self.move_history) == 1
             cache_key = cache_key_from_move(last_move, repetitions)
-            if (previous_move_in_cache or is_first_move) and self._caching_supported(last_move) and cache_key in self.cache:
+            if (previous_move_in_cache or is_first_move) and self._caching_supported(
+                    last_move) and cache_key in self.cache:
                 if previous_move_in_cache:
                     previous_probability = self.move_history_probabilities_cache[len(self.move_history) - 2][1]
                 else:
@@ -381,7 +384,7 @@ class CirqBoard:
                         previous_probability[i] = nth_bit_of(i, self.state)
 
                 probs = self._apply_cache(previous_probability, last_move,
-                    self.cache[cache_key])
+                                          self.cache[cache_key])
                 self.probabilities = probs
                 self._set_full_empty_squares_from_probability()
                 self.move_history_probabilities_cache.append((repetitions, probs.copy()))
@@ -405,9 +408,9 @@ class CirqBoard:
         """Checks if caching is supported for this move."""
 
         # Caching is supported for a split jump from one full square to two empty squares.
-        if m.move_type == enums.MoveType.SPLIT_JUMP and nth_bit_of(square_to_bit(m.source), self.full_squares)\
-            and nth_bit_of(square_to_bit(m.target), self.empty_squares)\
-            and nth_bit_of(square_to_bit(m.target2), self.empty_squares):
+        if m.move_type == enums.MoveType.SPLIT_JUMP and nth_bit_of(square_to_bit(m.source), self.full_squares) \
+                and nth_bit_of(square_to_bit(m.target), self.empty_squares) \
+                and nth_bit_of(square_to_bit(m.target2), self.empty_squares):
             return True
         return False
 
@@ -486,8 +489,7 @@ class CirqBoard:
 
         return self.board_probabilities
 
-
-    def get_full_squares_bitboard(self, repetitions: int = 1000, use_cache = True) -> int:
+    def get_full_squares_bitboard(self, repetitions: int = 1000, use_cache=True) -> int:
         """Retrieves which squares are marked as full.
 
         This information is created using a representative set of
@@ -501,7 +503,7 @@ class CirqBoard:
 
         return self.full_squares
 
-    def get_empty_squares_bitboard(self, repetitions: int = 1000, use_cache = True) -> int:
+    def get_empty_squares_bitboard(self, repetitions: int = 1000, use_cache=True) -> int:
         """Retrieves which squares are marked as empty.
 
         This information is created using a representative set of
@@ -515,14 +517,12 @@ class CirqBoard:
 
         return self.empty_squares
 
-
     def is_classical(self, repetitions=1000) -> bool:
         """Returns true if the board is in a fully classical position, and false otherwise."""
         empty_squares = self.get_empty_squares_bitboard(repetitions)
         full_squares = self.get_full_squares_bitboard(repetitions)
         actual = empty_squares | full_squares
         return CLASSICAL_BITBOARD == actual
-
 
     def reset_if_classical(self) -> None:
         """If the position is fully classical, calls with_state with current position
@@ -543,7 +543,7 @@ class CirqBoard:
                 if nth_bit_of(qubit_to_bit(qubit), self.state):
                     self.circuit.append(qm.place_piece(qubit))
 
-    def new_ancilla(self, note: str='') -> cirq.Qid:
+    def new_ancilla(self, note: str = '') -> cirq.Qid:
         """Adds a new ancilla to the circuit and returns its value.
 
         `note` is an optional string to include in the ancilla qubit's name.
@@ -614,7 +614,7 @@ class CirqBoard:
             path_bit = xy_to_bit(xs + dx * t, ys + dy * t)
             path_qubit = bit_to_qubit(path_bit)
             if (path_qubit in self.entangled_squares or
-                nth_bit_of(path_bit, self.state)):
+                    nth_bit_of(path_bit, self.state)):
                 rtn.append(path_qubit)
         return rtn
 
@@ -673,7 +673,7 @@ class CirqBoard:
         """
         result = measurement_outcome
         if invert and measurement_outcome is not None:
-          result = 1 - result
+            result = 1 - result
         sample_size = 100 if self.noise_mitigation else 1
         if 'anc' in qubit.name:
             if result is None:
