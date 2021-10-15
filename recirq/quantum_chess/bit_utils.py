@@ -1,5 +1,5 @@
 # Copyright 2020 Google
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -45,6 +45,7 @@ def num_ones(n: int) -> int:
         n = n // 2
     return count
 
+
 def bit_ones(n: int) -> List[int]:
     """Indices of ones in the binary representation of n."""
     indices = []
@@ -55,6 +56,7 @@ def bit_ones(n: int) -> List[int]:
         n >>= 1
         index += 1
     return indices
+
 
 def qubit_to_bit(q: cirq.LineQubit) -> int:
     """Retrieves the number from a cirq Qubit's name.
