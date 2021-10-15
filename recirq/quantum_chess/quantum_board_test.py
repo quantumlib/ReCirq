@@ -1037,7 +1037,6 @@ def test_classical_ep2(board):
     assert_samples_in(b, [u.squares_to_bitboard(["d3"])])
 
 
-
 # Seems to be problematic on real device
 def test_capture_ep():
     """Tests capture en passant.
@@ -1119,6 +1118,7 @@ def test_basic_ep():
     ]
     assert_samples_in(b, possibilities)
 
+
 def test_undo_last_move():
     # TODO  (cantwellc) more comprehensive tests
     b = simulator(u.squares_to_bitboard(["a2"]))
@@ -1134,7 +1134,6 @@ def test_undo_last_move():
     board_probs = b.get_board_probability_distribution(1000)
     assert len(board_probs) == 1
     assert_prob_about(board_probs, u.squares_to_bitboard(["a2"]), 1.0)
-
 
 
 def test_undo_entangled_measurement():
@@ -1160,7 +1159,6 @@ def test_undo_entangled_measurement():
     assert len(board_probs) == 2
     assert_prob_about(board_probs, u.squares_to_bitboard(["a3", "c4", "a2", "d1"]), 0.5)
     assert_prob_about(board_probs, u.squares_to_bitboard(["c3", "c2", "a2", "d1"]), 0.5)
-
 
 
 def test_record_time():
@@ -1482,7 +1480,7 @@ def test_avenge_superposition_capture(board):
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_undo_to_start_after_measurement(board):
     """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
-   Then does three undo moves to return to initial position."""
+    Then does three undo moves to return to initial position."""
     b = board(u.squares_to_bitboard(["f4", "f8"]))
     b.reset_starting_states = True
 
@@ -1552,8 +1550,8 @@ def test_quantum_capture_with_forced_measurement(board):
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_consecutive_quantum_captures_with_successful_measurement_outcome(board):
     """Splits piece on b2 to b8 and h2, then splits piece on e5 to d6 and f4.
-   Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4,
-   also with a successful measurement."""
+    Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4,
+    also with a successful measurement."""
     b = board(u.squares_to_bitboard(["b2", "e5"]))
     b.reset_starting_states = True
     b.do_move(
@@ -1602,7 +1600,7 @@ def test_consecutive_quantum_captures_with_successful_measurement_outcome(board)
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_measurement_without_fully_classical_position(board):
     """Splits piece on d3 to d7 and h3, then splits piece on b5 to b7 and b3.
-   Piece on f5 then moves to c8. Piece on c8 then moves to h3, with failed measurement."""
+    Piece on f5 then moves to c8. Piece on c8 then moves to h3, with failed measurement."""
     b = board(u.squares_to_bitboard(["b5", "f5", "d3"]))
     b.do_move(
         move.Move(
@@ -1647,8 +1645,8 @@ def test_measurement_without_fully_classical_position(board):
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_measurement_with_no_classical_board_change(board):
     """Splits piece on b2 to b7 and g2, then will split piece on d4 to d5 and e4.
-   Piece on g4 then splits to f3 and e2. Then piece on g2 attempts to capture piece on e4,
-   with a failed measurement outcome."""
+    Piece on g4 then splits to f3 and e2. Then piece on g2 attempts to capture piece on e4,
+    with a failed measurement outcome."""
     b = board(u.squares_to_bitboard(["b2", "d4", "g4"]))
     b.do_move(
         move.Move(
