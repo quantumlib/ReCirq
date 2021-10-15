@@ -31,9 +31,6 @@ jobs:
       with:
         ref: ${{ github.head_ref }}
 
-    - name: Add PR base ref
-      run: git fetch --depth=1 origin +refs/heads/${{github.base_ref}}:refs/remotes/origin/${{github.base_ref}}
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -56,14 +53,17 @@ jobs:
     - name: Install pytest
       run: pip install pytest
 
-    - name: Test modified subdirectories with pytest
+    - name: Test PR modified subdirectories with pytest
       if: github.event_name == 'pull_request'
-      # RECIRQ_CHESS_TEST_SEED: make quantum_chess tests deterministic
-      run: RECIRQ_CHESS_TEST_SEED=789 python dev_tools/pytest_modified.py refs/remotes/origin/${{github.base_ref}} -v
+      run: |
+        # Ensure the base ref has been fetched locally.
+        git fetch --depth=1 origin +refs/heads/${{github.base_ref}}:refs/remotes/origin/${{github.base_ref}}
+        # RECIRQ_CHESS_TEST_SEED: make quantum_chess tests deterministic.
+        RECIRQ_CHESS_TEST_SEED=789 python dev_tools/pytest_modified.py refs/remotes/origin/${{github.base_ref}} -v
 
     - name: Test with pytest
       if: github.event_name != 'pull_request' || github.event.pull_request.merged == 'true'
-      # RECIRQ_CHESS_TEST_SEED: make quantum_chess tests deterministic
+      # RECIRQ_CHESS_TEST_SEED: make quantum_chess tests deterministic.
       run: RECIRQ_CHESS_TEST_SEED=789 pytest -v
 
   nbformat:
