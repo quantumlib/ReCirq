@@ -10,7 +10,7 @@ def get_subdir_for_pytest(path):
     # path is something inside of one of the subdirectories under 'recirq/'
     # return the top-level subdirectory inside of 'recirq'
     # For example, if path is 'recirq/foo/bar.txt' return 'recirq/foo'.
-    return str(Path(path.parts[0:2]))
+    return str(Path(*path.parts[0:2]))
   if len(path.parts) == 2 and path.parts[0] == 'recirq':
     # path is something inside 'recirq', ex 'recirq/foo.txt'.
     # Conservatively assume all 'recirq' code may depend on the changes and run
