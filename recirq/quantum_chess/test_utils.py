@@ -25,7 +25,7 @@ def print_samples(samples):
             sample_dict[sample] = 0
         sample_dict[sample] += 1
     for key in sample_dict:
-        print(f'{u.bitboard_to_squares(key)}: {sample_dict[key]}')
+        print(f"{u.bitboard_to_squares(key)}: {sample_dict[key]}")
 
 
 def assert_samples_in(b, possibilities):
@@ -62,9 +62,10 @@ def assert_sample_distribution(b, probability_map, p_significant=1e-6):
         observed.append(counts[position])
         expected.append(500 * probability)
     p = chisquare(observed, expected).pvalue
-    print(observed, expected, 'p =', p)
-    assert p > p_significant, (
-        f'Observed {observed} far from expected {expected} (p = {p})')
+    print(observed, expected, "p =", p)
+    assert (
+        p > p_significant
+    ), f"Observed {observed} far from expected {expected} (p = {p})"
 
 
 def assert_this_or_that(samples, this, that):
@@ -73,8 +74,9 @@ def assert_this_or_that(samples, this, that):
     """
     assert any(sample == this for sample in samples)
     assert any(sample == that for sample in samples)
-    assert all(sample == this or sample == that
-               for sample in samples), print_samples(samples)
+    assert all(sample == this or sample == that for sample in samples), print_samples(
+        samples
+    )
 
 
 def assert_prob_about(probs, that, expected, atol=0.04):

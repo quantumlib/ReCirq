@@ -53,30 +53,29 @@ def main_loop(args):
     b.board.clear_debug_log()
     for in_str in sys.stdin:
         in_str = in_str.strip()
-        if in_str == 'exit':
+        if in_str == "exit":
             return
         if not in_str:
             continue
-        if ':' not in in_str:
-            in_str = in_str + ':JUMP:BASIC'
+        if ":" not in in_str:
+            in_str = in_str + ":JUMP:BASIC"
         in_move = m.Move.from_string(in_str)
         meas = b.apply(in_move)
         print(b.board.circuit)
         b.board.print_debug_log()
-        print(f'Measurement outcome = {meas}')
-        print('')
+        print(f"Measurement outcome = {meas}")
+        print("")
         print(b)
-        print('')
+        print("")
 
 
 def parse():
-    parser = argparse.ArgumentParser(
-        description='Interactive quantum chess board.')
-    parser.add_argument('--position',
-                        type=str,
-                        help='FEN representation of the initial position')
+    parser = argparse.ArgumentParser(description="Interactive quantum chess board.")
+    parser.add_argument(
+        "--position", type=str, help="FEN representation of the initial position"
+    )
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main_loop(parse())

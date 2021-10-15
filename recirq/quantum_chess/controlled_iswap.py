@@ -15,18 +15,18 @@ from typing import Sequence, Union, Optional
 
 import cirq
 import numpy as np
-from cirq.optimizers.two_qubit_to_fsim import \
-    _decompose_xx_yy_into_two_fsims_ignoring_single_qubit_ops, \
-    _fix_single_qubit_gates_around_kak_interaction
+from cirq.optimizers.two_qubit_to_fsim import (
+    _decompose_xx_yy_into_two_fsims_ignoring_single_qubit_ops,
+    _fix_single_qubit_gates_around_kak_interaction,
+)
 
 
 def _decompose_xx_yy(
-        desired_interaction: Union[cirq.Operation, np.
-            ndarray, 'cirq.SupportsUnitary'],
-        *,
-        available_gate: cirq.Gate,
-        atol: float = 1e-8,
-        qubits: Optional[Sequence[cirq.Qid]] = None,
+    desired_interaction: Union[cirq.Operation, np.ndarray, "cirq.SupportsUnitary"],
+    *,
+    available_gate: cirq.Gate,
+    atol: float = 1e-8,
+    qubits: Optional[Sequence[cirq.Qid]] = None,
 ) -> cirq.Circuit:
     if qubits is None:
         if isinstance(desired_interaction, cirq.Operation):
@@ -37,22 +37,26 @@ def _decompose_xx_yy(
 
     x, y, z = kak.interaction_coefficients
     if abs(z) > atol:
-        raise ValueError(f'zz term present in {desired_interaction!r} -> {kak}')
+        raise ValueError(f"zz term present in {desired_interaction!r} -> {kak}")
 
     if isinstance(available_gate, cirq.ISwapPowGate):
         available_gate = cirq.FSimGate(-np.pi / 2 * available_gate.exponent, 0)
 
-    if min(x, y) > np.pi / 4 - atol and abs(
-            available_gate.phi) < atol and abs(available_gate.theta -
-                                               np.pi / 4) < atol:
+    if (
+        min(x, y) > np.pi / 4 - atol
+        and abs(available_gate.phi) < atol
+        and abs(available_gate.theta - np.pi / 4) < atol
+    ):
         ops = [
             available_gate(*qubits),
             cirq.Y.on_each(*qubits),
             available_gate(*qubits),
         ]
-    elif min(x, y) > np.pi / 4 - atol and abs(
-            available_gate.phi) < atol and abs(available_gate.theta +
-                                               np.pi / 4) < atol:
+    elif (
+        min(x, y) > np.pi / 4 - atol
+        and abs(available_gate.phi) < atol
+        and abs(available_gate.theta + np.pi / 4) < atol
+    ):
         ops = [
             available_gate(*qubits),
             available_gate(*qubits),
@@ -71,16 +75,14 @@ def _decompose_xx_yy(
     )
     output = cirq.Circuit(result)
     cirq.testing.assert_allclose_up_to_global_phase(
-        output.unitary(qubit_order=qubits),
-        cirq.unitary(desired_interaction),
-        atol=1e-4)
+        output.unitary(qubit_order=qubits), cirq.unitary(desired_interaction), atol=1e-4
+    )
     return output
 
 
-def controlled_iswap(a: cirq.Qid,
-                     b: cirq.Qid,
-                     c: cirq.Qid,
-                     inverse: Optional[bool] = False):
+def controlled_iswap(
+    a: cirq.Qid, b: cirq.Qid, c: cirq.Qid, inverse: Optional[bool] = False
+):
     """Performs ISWAP(a,b).controlled_by(c).
 
     Returns a generator of cirq.Operations.
@@ -98,8 +100,7 @@ def controlled_iswap(a: cirq.Qid,
 
     def simplify_op(op: cirq.Operation) -> cirq.Operation:
         if len(op.qubits) == 1:
-            return cirq.PhasedXZGate.from_matrix(
-                cirq.unitary(op)).on(*op.qubits)
+            return cirq.PhasedXZGate.from_matrix(cirq.unitary(op)).on(*op.qubits)
         if op.gate == cirq.FSimGate(-np.pi / 4, 0):
             return cirq.ISWAP(*op.qubits) ** 0.5
         return op
@@ -113,25 +114,31 @@ def controlled_iswap(a: cirq.Qid,
         cirq.S(b) ** -1,
     )
 
-    converted_ops = cirq.Circuit(
-        convert_op(op) for op in circuit.all_operations())
+    converted_ops = cirq.Circuit(convert_op(op) for op in circuit.all_operations())
     cirq.optimizers.MergeSingleQubitGates().optimize_circuit(converted_ops)
     cirq.optimizers.DropNegligible().optimize_circuit(converted_ops)
-    return cirq.Circuit(
-        simplify_op(op) for op in converted_ops.all_operations())
+    return cirq.Circuit(simplify_op(op) for op in converted_ops.all_operations())
 
 
 def controlled_sqrt_iswap(a: cirq.Qid, b: cirq.Qid, c: cirq.Qid):
     """Performs (ISWAP(a,b)i**0.5).controlled_by(c)"""
     return cirq.google.optimized_for_sycamore(
-        cirq.Circuit(cirq.CNOT(a, b),
-                     cirq.TOFFOLI(c, b, a) ** -0.5,
-                     cirq.CZ(c, b) ** 0.25, cirq.CNOT(a, b)))
+        cirq.Circuit(
+            cirq.CNOT(a, b),
+            cirq.TOFFOLI(c, b, a) ** -0.5,
+            cirq.CZ(c, b) ** 0.25,
+            cirq.CNOT(a, b),
+        )
+    )
 
 
 def controlled_inv_sqrt_iswap(a: cirq.Qid, b: cirq.Qid, c: cirq.Qid):
     """Performs (ISWAP(a,b)i**0.5).controlled_by(c)"""
     return cirq.google.optimized_for_sycamore(
-        cirq.Circuit(cirq.CNOT(a, b),
-                     cirq.TOFFOLI(c, b, a) ** 0.5,
-                     cirq.CZ(c, b) ** -0.25, cirq.CNOT(a, b)))
+        cirq.Circuit(
+            cirq.CNOT(a, b),
+            cirq.TOFFOLI(c, b, a) ** 0.5,
+            cirq.CZ(c, b) ** -0.25,
+            cirq.CNOT(a, b),
+        )
+    )
