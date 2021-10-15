@@ -28,6 +28,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: Add PR base ref
+      run: git fetch --depth=1 origin +refs/heads/${{github.base_ref}}:refs/remotes/origin/${{github.base_ref}}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
@@ -54,7 +59,7 @@ jobs:
     - name: Test modified subdirectories with pytest
       if: github.event_name == 'pull_request'
       # RECIRQ_CHESS_TEST_SEED: make quantum_chess tests deterministic
-      run: RECIRQ_CHESS_TEST_SEED=789 python dev_tools/pytest_modified.py ${{ github.event.pull_request.base.sha }} -v
+      run: RECIRQ_CHESS_TEST_SEED=789 python dev_tools/pytest_modified.py ${{ github.base_ref }} -v
 
     - name: Test with pytest
       if: github.event_name != 'pull_request' || github.event.pull_request.merged == 'true'

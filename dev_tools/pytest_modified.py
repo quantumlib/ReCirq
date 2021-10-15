@@ -3,7 +3,7 @@ import pytest
 import sys
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 
 def get_subdir_for_pytest(path: Path) -> str:
@@ -30,7 +30,7 @@ def get_subdir_for_pytest(path: Path) -> str:
 
 
 def get_modified_subdirs_for_pytest(
-    repo_path: str = ".", base_sha: Optional[str] = None
+    repo_path: str = ".", base_ref: str = "HEAD"
 ) -> List[str]:
     """Returns subdirectories for pytesting that contain git modifications.
 
@@ -41,14 +41,14 @@ def get_modified_subdirs_for_pytest(
       a (possibly empty) list of subdirectory strings containing modifications
     """
     repo = git.Repo(repo_path)
-    modified_paths = list(Path(item.a_path) for item in repo.index.diff(base_sha or "HEAD"))
+    modified_paths = list(Path(item.a_path) for item in repo.index.diff(base_ref))
     modified_dirs = set(get_subdir_for_pytest(f) for f in modified_paths)
     return list(modified_dirs)
 
 
 if __name__ == "__main__":
-    base_sha, extra_argv = sys.argv[1], sys.argv[2:]
-    modified_subdirs = get_modified_subdirs_for_pytest(base_sha=base_sha)
+    base_ref, extra_argv = sys.argv[1], sys.argv[2:]
+    modified_subdirs = get_modified_subdirs_for_pytest(base_ref=base_ref)
     if modified_subdirs:
         # Allow passing through additional argv to pytest.
         pytest_args = modified_subdirs + extra_argv
