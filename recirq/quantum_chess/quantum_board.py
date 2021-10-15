@@ -74,22 +74,21 @@ class CirqBoard:
     """
 
     def __init__(
-            self,
-            init_basis_state: int,
-            sampler: cirq.Sampler = cirq.Simulator(),
-            device: Optional[cirq.Device] = None,
-            error_mitigation: Optional[
-                enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
-            noise_mitigation: Optional[float] = 0.0,
-            transformer: Optional[ct.CircuitTransformer] = None,
-            reset_starting_states=False,
+        self,
+        init_basis_state: int,
+        sampler: cirq.Sampler = cirq.Simulator(),
+        device: Optional[cirq.Device] = None,
+        error_mitigation: Optional[
+            enums.ErrorMitigation] = enums.ErrorMitigation.Nothing,
+        noise_mitigation: Optional[float] = 0.0,
+        transformer: Optional[ct.CircuitTransformer] = None,
+        reset_starting_states=False,
     ):
         self.device = device
         self.sampler = sampler
         if device is not None:
             self.transformer = (
-                    transformer
-                    or ct.ConnectivityHeuristicCircuitTransformer(device))
+                transformer or ct.ConnectivityHeuristicCircuitTransformer(device))
         self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
