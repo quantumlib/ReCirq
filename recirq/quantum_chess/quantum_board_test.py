@@ -509,11 +509,8 @@ def test_slide_with_two_path_qubits_coherence():
     )
 
 
-@pytest.mark.parametrize('board', BIG_CIRQ_BOARDS)
-def test_split_slide_merge_slide_coherence(board):
-    b = board(u.squares_to_bitboard(['b4', 'd3']))
-    #def test_split_slide_merge_slide_coherence():
-    #b = simulator(u.squares_to_bitboard(["b4", "d3"]))
+def test_split_slide_merge_slide_coherence():
+    b = simulator(u.squares_to_bitboard(["b4", "d3"]))
     assert b.perform_moves(
         "d3^c5e5:SPLIT_JUMP:BASIC",
         "b4^b8e7:SPLIT_SLIDE:BASIC",
