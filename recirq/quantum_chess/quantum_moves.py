@@ -281,6 +281,87 @@ def merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla):
     yield cirq.X(ancilla).controlled_by(path1, path2)
 
 
+def merge_slide_zero_one(squbit_clear, tqubit, squbit, path_qubit):
+    """Performs a merge slide from two source qubits to tqubit.
+    The path from squbit_clear to tqubit is clear.
+
+    path_qubit is the only qubit in the path from squbit to tqubit,
+    and it's used as control.
+    """
+    # Note that the following unconditional ISWAPs are equivalent to
+    # (ISWAP(squbit_clear, tqubit) ** -1).controlled_by(path_qubit)
+    # (ISWAP(squbit_clear, tqubit) ** -1).anti_controlled_by(path_qubit)
+    yield cirq.ISWAP(squbit_clear, tqubit) ** -0.5
+    yield cirq.ISWAP(squbit_clear, tqubit) ** -0.5
+
+    yield cirq.X(path_qubit)
+    yield (cirq.ISWAP(squbit, tqubit) ** -0.5).controlled_by(path_qubit)
+    yield cirq.X(path_qubit)
+
+
+def merge_slide_zero_multiple(squbit_clear, tqubit, squbit, path_ancilla):
+    """Performs a merge slide from two source qubits to tqubit.
+    The path from squbit_clear to tqubit is clear.
+
+    Multiple qubits are in the path from squbit to tqubit. Its corresponding
+    path ancilla path_ancilla is needed as control.
+    """
+    # Note that the following unconditional ISWAPs are equivalent to
+    # (ISWAP(squbit_clear, tqubit) ** -1).controlled_by(path_ancilla)
+    # (ISWAP(squbit_clear, tqubit) ** -1).anti_controlled_by(path_ancilla)
+    yield cirq.ISWAP(squbit_clear, tqubit) ** -0.5
+    yield cirq.ISWAP(squbit_clear, tqubit) ** -0.5
+
+    yield (cirq.ISWAP(squbit, tqubit) ** -0.5).controlled_by(path_qubit)
+
+
+def merge_slide_one_one_same_qubit(squbit, tqubit, squbit2, path_qubit):
+    """Performs a merge slide from two source qubits to tqubit. Two source
+    qubits are in the same direction relative to tqubit, and they share
+    one same qubit in the path.
+
+    That single qubit (i.e. path_qubit) in the path is used as control.
+    """
+    yield cirq.X(path_qubit)
+    yield (cirq.ISWAP(squbit, tqubit) ** -1.0).controlled_by(path_qubit)
+    yield (cirq.ISWAP(squbit2, tqubit) ** -0.5).controlled_by(path_qubit)
+    yield cirq.X(path_qubit)
+
+
+def merge_slide_one_one_diff_qubits(
+    squbit, tqubit, squbit2, path_qubit1, path_qubit2, ancilla
+):
+    """Performs a merge slide from two source qubits to tqubit. Only one qubit
+    (i.e. path_qubit1) is in the way from squbit to tqubit. Only one qubit
+    (i.e. path_qubit2) is in the way from squbit2 to tqubit. path_qubit1 and
+    path_qubit2 are different qubits.
+
+    path_qubit1, path_qubit2, and one more ancilla qubit are needed as control.
+    """
+    yield cirq.X(path_qubit1)
+    yield cirq.X(path_qubit2)
+    yield merge_slide(squbit, tqubit, squbit2, path_qubit1, path_qubit2, ancilla)
+    yield cirq.X(path_qubit2)
+    yield cirq.X(path_qubit1)
+
+
+def merge_slide_one_multiple(
+    squbit_one, tqubit, squbit_multiple, path_qubit, path_ancilla, ancilla
+):
+    """Performs a merge slide from two source qubits to tqubit. Only one qubit
+    (i.e. path_qubit) is in the way from squbit_one to tqubit, while multiple
+    qubits (whose corresponding path ancilla is path_ancilla) are in the way
+    from squbit_multiple to tqubit.
+
+    path_qubit, path_ancilla, and one more ancilla qubit are needed as control.
+    """
+    yield cirq.X(path_qubit)
+    yield merge_slide(
+        squbit_one, tqubit, squbit_multiple, path_qubit, path_ancilla, ancilla
+    )
+    yield cirq.X(path_qubit)
+
+
 def en_passant(squbit, tqubit, epqubit, path, c):
     yield cirq.X(path).controlled_by(squbit, epqubit)
     yield cirq.ISWAP(epqubit, c).controlled_by(path)
