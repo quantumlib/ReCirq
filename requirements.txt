@@ -1,3 +1,7 @@
+
+# We'd like to only depend on cirq-core and cirq-google, but pip's dependency resolver
+# chokes since pytket depends on the cirq metapackage.
+cirq~=0.12.0
 cirq-core~=0.12.0
 cirq-google~=0.12.0
 seaborn
@@ -10,14 +14,13 @@ scikit-learn
 
 # qaoa
 networkx
-pytket~=0.13.0
-pytket-cirq~=0.14.0
+pytket-cirq~=0.16.0
 
 # quantum chess, only needed for tests
 scipy
 
 # hfvqe
-openfermion~=1.1.0
+openfermion~=1.2.0
 # fix bug with openfermionpyscf https://github.com/quantumlib/ReCirq/issues/200#issuecomment-923203883
 h5py~=3.2.1
 
