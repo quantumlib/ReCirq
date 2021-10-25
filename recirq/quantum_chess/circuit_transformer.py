@@ -413,9 +413,9 @@ class SycamoreDecomposer(cirq.PointOptimizer):
         if len(op.qubits) > 3:
             raise DeviceMappingError(f"Four qubit ops not yet supported: {op}")
         new_ops = None
-        if op.gate == cirq.SWAP or op.gate == cirq.CNOT:
+        if op.gate == cirq.SWAP or op.gate == cirq.CNOT or op.gate == cirq.TOFFOLI:
             new_ops = cirq.google.optimized_for_sycamore(cirq.Circuit(op))
-        if isinstance(op, cirq.ControlledOperation):
+        elif isinstance(op, cirq.ControlledOperation):
             if not all(v == 1 for values in op.control_values for v in values):
                 raise DeviceMappingError(f"0-controlled ops not yet supported: {op}")
             qubits = op.sub_operation.qubits
