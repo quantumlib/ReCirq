@@ -220,7 +220,7 @@ class CirqBoard:
         number of repetitions to compensate.
         """
         if len(self.post_selection) > 1:
-            sample_size *= 2 ** (len(self.post_selection) + 1)
+            sample_size <<= len(self.post_selection) + 1
         if self.error_mitigation == enums.ErrorMitigation.Correct:
             sample_size *= 2
         if self.noise_mitigation > 0:
@@ -706,11 +706,13 @@ class CirqBoard:
 
         Returns: the measurement outcome or sample result as 1 or 0.
         """
-        result = measurement_outcome
-        if invert and measurement_outcome is not None:
-            result = 1 - result
+        if measurement_outcome is not None:
+            if invert:
+                result = 1 - measurement_outcome
+            else:
+                result = measurement_outcome
         if "anc" in qubit.name:
-            if result is None:
+            if measurement_outcome is None:
                 ancilla_result = []
                 sample_size = 100 if self.noise_mitigation else 1
                 while len(ancilla_result) == 0:
@@ -719,7 +721,7 @@ class CirqBoard:
             self.post_selection[qubit] = result
         else:
             bit = qubit_to_bit(qubit)
-            if result is None:
+            if measurement_outcome is None:
                 result = nth_bit_of(bit, self.sample(1)[0])
             if qubit in self.entangled_squares:
                 ancillary = self.unhook(qubit)
