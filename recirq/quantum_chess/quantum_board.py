@@ -97,13 +97,14 @@ class CirqBoard:
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
 
-        # None if there is no cache, stores the repetition number if there is a cache.
-        self.board_accumulations_repetitions = None
+        # Stores the repetition number if there is a cache.
+        self.board_accumulations_repetitions = -1
+
         self.cache = {}
 
     def with_state(self, basis_state: int) -> "CirqBoard":
         """Resets the board with a specific classical state."""
-        self.board_accumulations_repetitions = None
+        self.board_accumulations_repetitions = -1
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -489,7 +490,7 @@ class CirqBoard:
 
         The values are returned as a dict{bitboard(int): prob(float)}.
         """
-        if self.board_accumulations_repetitions != repetitions:
+        if self.board_accumulations_repetitions < repetitions:
             self._generate_board_accumulations(repetitions)
 
         return self.board_probabilities
@@ -704,7 +705,7 @@ class CirqBoard:
             raise ValueError("Move type is unspecified")
 
         # Reset accumulations here because function has conditional return branches
-        self.board_accumulations_repetitions = None
+        self.board_accumulations_repetitions = -1
 
         # Add move to move_history
         self.move_history.append(m)
