@@ -672,7 +672,7 @@ class CirqBoard:
         qubit: cirq.Qid,
         measurement_outcome: Optional[int] = None,
         invert: Optional[bool] = False,
-    ) -> bool:
+    ) -> int:
         """Adds a post-selection requirement to the circuit.
 
         If no measurement_outcome is provided, performs a single sample of the
