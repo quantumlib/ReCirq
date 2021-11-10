@@ -16,6 +16,8 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import cirq
+from cirq.experiments.n_qubit_tomography import StateTomographyExperiment
+import numpy as np
 
 from recirq.quantum_chess.bit_utils import (
     bit_to_qubit,
@@ -359,6 +361,95 @@ class CirqBoard:
             )
         self.record_time("sample_with_ancilla", t0)
         return (rtn, ancilla)
+
+    def _get_state_tomography_data(self, qubits, rot_circuit, sweep, repetitions):
+        """Adapted form of get_state_tomography_data from
+        cirq.experiments.n_qubit_tomography.
+
+        This effectively samples from the circuit 9 times, but without error
+        correction or noise mitigation.
+        """
+        assert not (set(self.post_selection) & set(qubits))
+        assert len(sweep) == 9
+        batch_size = repetitions * 2  # TODO
+        classical_ones = [
+            q
+            for q in qubits
+            if q not in self.entangled_squares
+            and nth_bit_of(qubit_to_bit(q), self.state)
+        ]
+        init_classical = cirq.Moment(qm.place_piece(q) for q in classical_ones)
+        post_moment = cirq.Moment(
+            cirq.measure(q, key=q.name) for q in self.post_selection
+        )
+        circuit = (
+            self.circuit
+            + [init_classical]
+            + rot_circuit
+            + [post_moment, cirq.measure(*qubits, key="z")]
+        )
+
+        # Translate circuit to grid qubits and sqrtISWAP gates
+        if self.device is not None:
+            # Decompose 3-qubit operations
+            ct.SycamoreDecomposer().optimize_circuit(circuit)
+            # Create NamedQubit to GridQubit mapping and transform
+            circuit = self.transformer.transform(circuit)
+
+            # For debug, ensure that the circuit correctly validates
+            try:
+                self.device.validate_circuit(circuit)
+            except ValueError as e:
+                raise ct.DeviceMappingError(str(e))
+
+        self.debug_log += (
+            f"Running tomography circuits with {batch_size} reps "
+            f"to get {repetitions} samples. Error and noise mitigation are disabled.\n"
+        )
+        probs = np.zeros((9, 4))
+        while any(sum(counts) < repetitions for counts in probs):
+            self.debug_log += f"Post-selection accepted/total:"
+            # TODO: drop parameter sets with enough reps from sweep
+            results = self.sampler.run_sweep(
+                circuit, params=sweep, repetitions=batch_size
+            )
+            for probs_row, result in zip(probs, results):
+                accepted_count = 0
+                for _, row in result.data.iterrows():
+                    # Go through the results and discard any results
+                    # that disagree with our pre-defined post-selection criteria
+                    post_selected = True
+                    for qubit in self.post_selection.keys():
+                        key = qubit.name
+                        if getattr(row, key) != self.post_selection[qubit]:
+                            post_selected = False
+                            break
+                    if post_selected:
+                        big_endian_measurement = row.z
+                        probs_row[big_endian_measurement] += 1
+                        accepted_count += 1
+                self.debug_log += f" {accepted_count}/{batch_size}"
+            self.debug_log += "\n"
+
+        for row in probs:
+            row /= sum(row)
+        return probs
+
+    def two_square_density_matrix(
+        self,
+        square1: str,
+        square2: str,
+        repetitions: int,
+    ):
+        qubits = [
+            bit_to_qubit(square_to_bit(square1)),
+            bit_to_qubit(square_to_bit(square2)),
+        ]
+        exp = StateTomographyExperiment(qubits)
+        probs = self._get_state_tomography_data(
+            qubits, exp.rot_circuit, exp.rot_sweep, repetitions
+        )
+        return exp.fit_density_matrix(probs)
 
     def sample(self, num_samples: int) -> List[int]:
         """Samples the board and returns square and ancilla measurements.

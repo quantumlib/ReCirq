@@ -1795,3 +1795,45 @@ def test_measurement_without_fully_classical_position(board):
         "f5^b3:JUMP:CAPTURE",
     )
     assert not b.is_classical()
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_tomography(board):
+    b = board(u.squares_to_bitboard(["c1"]))
+
+    # Test trivial case with pure |01> state
+    expected_01 = [[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    density_matrix = b.two_square_density_matrix("b1", "c1", 200).data
+    assert np.allclose(density_matrix, expected_01, atol=0.1)
+
+    # Test case with entanglement and a mixed state
+    b.perform_moves(
+        "c1^d2g5:SPLIT_JUMP:BASIC",
+        "g5^e3c1:SPLIT_JUMP:BASIC",
+    )
+    density_matrix = b.two_square_density_matrix("d2", "e3", 500).data
+    expected = [
+        [0.25, 0, 0, 0],
+        [0, 0.25, 0.3536j, 0],
+        [0, -0.3536j, 0.5, 0],
+        [0, 0, 0, 0],
+    ]
+    assert np.allclose(density_matrix, expected, atol=0.1), np.round(density_matrix, 3)
+
+
+def test_tomography_with_postselection():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "d7"]))
+    b.perform_moves(
+        "d3^d5f3:SPLIT_SLIDE:BASIC",
+        "f3f5^d5:MERGE_SLIDE:BASIC",
+        "a1^b1d1:SPLIT_SLIDE:BASIC",
+        "d1d7.m0:SLIDE:CAPTURE",
+    )
+    density_matrix = b.two_square_density_matrix("f3", "f5", 1000).data
+    expected = [
+        [0.4, 0, 0, 0],
+        [0, 0.2, -0.2828j, 0],
+        [0, 0.2828j, 0.4, 0],
+        [0, 0, 0, 0],
+    ]
+    assert np.allclose(density_matrix, expected, atol=0.1), np.round(density_matrix, 3)

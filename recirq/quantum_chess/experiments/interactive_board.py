@@ -55,6 +55,12 @@ def main_loop(args):
         in_str = in_str.strip()
         if in_str == "exit":
             return
+        elif in_str.startswith("density"):
+            _, square1, square2 = in_str.split()
+            density = b.board.two_square_density_matrix(square1, square2, 2000).data
+            b.board.print_debug_log()
+            print(density.round(3))
+            continue
         if not in_str:
             continue
         if ":" not in in_str:
