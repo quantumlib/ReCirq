@@ -33,7 +33,7 @@ def kron_product(matrices: np.ndarray) -> np.ndarray:
 def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.PauliSum:
     """Decompose the given measurement matrix into a PauliSum. 
 
-    Args:2
+    Args:
     measurement: 2-d matrix with row and column number equals to 2^n (n>0). 
        E.g. measurement = [[0.5+0.j,  0. +0.5j], [0. -0.5j,  0.5+0.j]]
     qubits: a list of qubits with size == n.
