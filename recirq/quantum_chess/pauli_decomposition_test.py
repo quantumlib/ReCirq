@@ -34,7 +34,7 @@ def test_pauli_decomposition_wrong_inputs():
         ValueError, match="pauli_decomposition expects a 2-d square matrix."
     ):
         pauli_decomposition(H_not_square, [a1])
-        
+
     with pytest.raises(
         ValueError,
         match=re.escape(
