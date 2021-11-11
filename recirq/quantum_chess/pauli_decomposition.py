@@ -23,28 +23,31 @@ from typing import List
 
 
 def kron_product(matrices: np.ndarray) -> np.ndarray:
-    """Computes the Kronecker product of a given list of matrices.
-    """
+    """Computes the Kronecker product of a given list of matrices."""
     if len(matrices) < 1:
-        raise ValueError("kron_product expects a list of matrices to compute Kronecker product.")
+        raise ValueError(
+            "kron_product expects a list of matrices to compute Kronecker product."
+        )
     return functools.reduce(lambda a, b: kron(a, b), matrices)
 
 
 def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.PauliSum:
-    """Decompose the given measurement matrix into a PauliSum. 
+    """Decompose the given measurement matrix into a PauliSum.
 
     Args:
-    measurement: 2-d matrix with row and column number equals to 2^n (n>0). 
+    measurement: 2-d matrix with row and column number equals to 2^n (n>0).
        E.g. measurement = [[0.5+0.j,  0. +0.5j], [0. -0.5j,  0.5+0.j]]
     qubits: a list of qubits with size == n.
        E.g. qubits = [a1]
     """
     measurement = np.array(measurement)
     if measurement.ndim != 2:
-        raise ValueError('pauli_decomposition expects a 2-d square matrix.')
+        raise ValueError("pauli_decomposition expects a 2-d square matrix.")
     d = len(qubits)
-    if len(measurement) != 2**d:
-        raise ValueError(f'pauli_decomposition: Expect that size_of_matrix==pow(2, number_of_qubits). In your case {len(measurement)}!=pow(2, {d}).')
+    if len(measurement) != 2 ** d:
+        raise ValueError(
+            f"pauli_decomposition: Expect that size_of_matrix==pow(2, number_of_qubits). In your case {len(measurement)}!=pow(2, {d})."
+        )
     
     pauli = np.array([cirq.I, cirq.X, cirq.Y, cirq.Z])
     s = np.array([cirq.unitary(op) for op in pauli])
@@ -53,10 +56,16 @@ def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.Pauli
     result = 0
     for ind in itertools.product(iter(range(4)), repeat=d):
         ind_array = np.array(ind)
-        coeff = 0.5**d * np.dot(kron_product(s[ind_array]).T.conj(), measurement).trace()
+        coeff = (
+            0.5 ** d * np.dot(kron_product(s[ind_array]).T.conj(), measurement).trace()
+        )
         if abs(coeff) > 1e-12:
-            result = result + cirq.PauliString(coeff, {q: op for q, op in zip(qubits, pauli[ind_array])})
+            result = result + cirq.PauliString(
+                coeff, {q: op for q, op in zip(qubits, pauli[ind_array])}
+            )
             nonzero = True
     if nonzero:
         return result
-    return cirq.PauliString(0., {q: op for q, op in zip(qubits, pauli[np.array([0] * d)])})
+    return cirq.PauliString(
+        0.0, {q: op for q, op in zip(qubits, pauli[np.array([0] * d)])}
+    )
