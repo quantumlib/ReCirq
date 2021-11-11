@@ -48,7 +48,7 @@ def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.Pauli
         raise ValueError(
             f"pauli_decomposition: Expect that size_of_matrix==pow(2, number_of_qubits). In your case {len(measurement)}!=pow(2, {d})."
         )
-    
+
     pauli = np.array([cirq.I, cirq.X, cirq.Y, cirq.Z])
     s = np.array([cirq.unitary(op) for op in pauli])
 
