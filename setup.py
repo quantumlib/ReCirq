@@ -13,22 +13,41 @@
 # limitations under the License.
 
 import pathlib
+import functools
+import operator
+
 from setuptools import find_packages, setup
 
 __version__ = ''
 exec(open('recirq/_version.py').read())
 assert __version__, 'Version string cannot be empty'
 
-required_packages = pathlib.Path('requirements.txt').read_text().split('\n')
-INSTALL_PACKAGES = [pkg for pkg in required_packages if pkg and not pkg.startswith('#')]
+
+def _parse_requirements(path: pathlib.Path):
+    lines = [line.strip() for line in path.read_text().splitlines() if line]
+    return [line for line in lines if not line.startswith('#')]
+
+
+install_requires = _parse_requirements(pathlib.Path('requirements.txt'))
+extras_require = [
+    'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard'
+]
+extras_require = {
+    r: _parse_requirements(pathlib.Path(f'recirq/{r}/extra-requirements.txt'))
+    for r in extras_require
+}
+
+# TODO: remove and require users to install via extras_require.
+install_requires = functools.reduce(operator.add, extras_require.values(), install_requires)
 
 setup(name='recirq',
       version=__version__,
-      url='http://github.com/quantumlib/cirq',
-      author='The Cirq Developers',
+      url='http://github.com/quantumlib/recirq',
+      author='Quantum AI team and collaborators',
       author_email='cirq@googlegroups.com',
       python_requires='>=3.6.0',
-      install_requires=INSTALL_PACKAGES,
+      install_requires=install_requires,
+      extras_require=extras_require,
       license='Apache 2',
       description="",
       long_description=open('README.md', encoding='utf-8').read(),
