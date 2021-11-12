@@ -37,7 +37,7 @@ extras_require = {
     for r in extras_require
 }
 
-# TODO: remove and require users to install via extras_require.
+# TODO(gh-231): remove and require users to install via extras_require.
 install_requires = functools.reduce(operator.add, extras_require.values(), install_requires)
 
 setup(name='recirq',
