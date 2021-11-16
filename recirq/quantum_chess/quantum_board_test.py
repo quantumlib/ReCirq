@@ -1426,6 +1426,7 @@ def test_merge_to_fully_classical_position(board):
 
     assert b.is_classical()
 
+
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_undo_to_start_after_measurement(board):
     """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
@@ -1465,8 +1466,6 @@ def test_quantum_capture_with_forced_measurement(board):
     assert b.ancilla_count == 0
 
 
-
-
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_measurement_without_fully_classical_position(board):
     """Splits piece on d3 to d7 and h3, then splits piece on b5 to b7 and b3.
@@ -1477,6 +1476,6 @@ def test_measurement_without_fully_classical_position(board):
         "d3^d7h3:SPLIT_JUMP:BASIC",
         "b5^b7b3:SPLIT_JUMP:BASIC",
         "f5^c8:JUMP:BASIC",
-        "c8^h3:JUMP:BASIC"
+        "c8^h3:JUMP:BASIC",
     )
     assert not b.is_classical()
