@@ -1242,7 +1242,7 @@ def test_caching_accumulations_same_repetition_cached(board):
 def test_get_probability_distribution_split_jump_pre_cached(board):
     b = board(u.squares_to_bitboard(["a1", "b1"]))
     # Cache a split jump in advance.
-    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 100)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 1000)
     b.cache_results(cache_key)
 
     m1 = move.Move(
@@ -1256,7 +1256,7 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
         move_variant=enums.MoveVariant.BASIC,
     )
     b.do_move(m1)
-    probs = b.get_probability_distribution(100)
+    probs = b.get_probability_distribution(1000)
     b.do_move(m2)
     b.clear_debug_log()
     # Expected probability with the cache applied
@@ -1265,9 +1265,9 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
     probs[square_to_bit("d1")] = b.cache[cache_key]["target2"]
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
-    probs2 = b.get_probability_distribution(100, use_cache=True)
-    full_squares = b.get_full_squares_bitboard(100, use_cache=True)
-    empty_squares = b.get_empty_squares_bitboard(100, use_cache=True)
+    probs2 = b.get_probability_distribution(1000, use_cache=True)
+    full_squares = b.get_full_squares_bitboard(1000, use_cache=True)
+    empty_squares = b.get_empty_squares_bitboard(1000, use_cache=True)
 
     assert probs == probs2
     # Check that the second run and getting full and empty bitboards did not trigger any new logs.
@@ -1417,99 +1417,28 @@ def test_split_capture_with_failed_measurement_outcome(board):
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_merge_to_fully_classical_position(board):
     """Splits piece on d4 to b3 and c2, then merge back to fully classical position on a1."""
-    b = board(u.squares_to_bitboard(["d4"]))
+    b = simulator(u.squares_to_bitboard(["d4"]))
     b.reset_starting_states = True
-    b.do_move(
-        move.Move(
-            "d4",
-            "b3",
-            target2="c2",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-
-    b.do_move(
-        move.Move(
-            "b3",
-            "a1",
-            source2="c2",
-            move_type=enums.MoveType.MERGE_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
+    assert b.perform_moves(
+        "d4^b3c2:SPLIT_JUMP:BASIC",
+        "b3c2^a1:MERGE_JUMP:BASIC",
     )
 
     assert b.is_classical()
-
-
-@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
-def test_avenge_superposition_capture(board):
-    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6."""
-    b = board(u.squares_to_bitboard(["f4", "f8"]))
-    b.reset_starting_states = True
-    b.do_move(
-        move.Move(
-            "f8",
-            "d6",
-            target2="h6",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-    b.do_move(
-        move.Move(
-            "f4",
-            "d6",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-        )
-    )
-    b.do_move(
-        move.Move(
-            "h6",
-            "d6",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-        )
-    )
-    assert b.is_classical()
-    assert b.circuit == cirq.Circuit()
-    assert b.ancilla_count == 0
-
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_undo_to_start_after_measurement(board):
     """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
     Then does three undo moves to return to initial position."""
-    b = board(u.squares_to_bitboard(["f4", "f8"]))
+    b = simulator(u.squares_to_bitboard(["f4", "f8", "f2"]))
     b.reset_starting_states = True
-
     initial_board = b.get_full_squares_bitboard()
-    b.do_move(
-        move.Move(
-            "f8",
-            "d6",
-            target2="h6",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
+    assert b.perform_moves(
+        "f8^d6h6:SPLIT_JUMP:BASIC",
+        "f4^d6:JUMP:CAPTURE",
+        "f2^h6:JUMP:CAPTURE",
     )
-    b.do_move(
-        move.Move(
-            "f4",
-            "d6",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-        )
-    )
-    b.do_move(
-        move.Move(
-            "h6",
-            "d6",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-        )
-    )
+
     assert b.is_classical()
     assert b.circuit == cirq.Circuit()
 
@@ -1523,167 +1452,31 @@ def test_undo_to_start_after_measurement(board):
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_quantum_capture_with_forced_measurement(board):
     """Splits piece on b1 to a1 and c1. Piece on a1 then captures piece on a5."""
-    b = board(u.squares_to_bitboard(["b1", "a5"]))
+    b = simulator(u.squares_to_bitboard(["b1", "a5"]))
     b.reset_starting_states = True
-    b.do_move(
-        move.Move(
-            "b1",
-            "a1",
-            target2="c1",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
+
+    b.perform_moves(
+        "b1^a1c1:SPLIT_JUMP:BASIC",
+        "a1^a5:JUMP:CAPTURE",
     )
-    b.do_move(
-        move.Move(
-            "a1",
-            "a5",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-        )
-    )
+
     assert b.is_classical()
     assert b.circuit == cirq.Circuit()
     assert b.ancilla_count == 0
 
 
-@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
-def test_consecutive_quantum_captures_with_successful_measurement_outcome(board):
-    """Splits piece on b2 to b8 and h2, then splits piece on e5 to d6 and f4.
-    Piece on b8 then captures piece on d6, with successful measurement. Then piece on d6 captures piece on f4,
-    also with a successful measurement."""
-    b = board(u.squares_to_bitboard(["b2", "e5"]))
-    b.reset_starting_states = True
-    b.do_move(
-        move.Move(
-            "b2",
-            "b8",
-            target2="h2",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-
-    b.do_move(
-        move.Move(
-            "e5",
-            "d6",
-            target2="f4",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-    b.do_move(
-        move.Move(
-            "b8",
-            "d6",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-            measurement=1,
-        )
-    )
-
-    b.do_move(
-        move.Move(
-            "d6",
-            "f4",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-            measurement=1,
-        )
-    )
-    assert b.is_classical()
-    assert b.circuit == cirq.Circuit()
-    assert b.ancilla_count == 0
 
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
 def test_measurement_without_fully_classical_position(board):
     """Splits piece on d3 to d7 and h3, then splits piece on b5 to b7 and b3.
     Piece on f5 then moves to c8. Piece on c8 then moves to h3, with failed measurement."""
-    b = board(u.squares_to_bitboard(["b5", "f5", "d3"]))
-    b.do_move(
-        move.Move(
-            "d3",
-            "d7",
-            target2="h3",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-
-    b.do_move(
-        move.Move(
-            "b5",
-            "b7",
-            target2="b3",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-    b.do_move(
-        move.Move(
-            "f5",
-            "c8",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-
-    b.do_move(
-        move.Move(
-            "c8",
-            "h3",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-            measurement=0,
-        )
-    )
-    assert not b.is_classical()
-
-
-@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
-def test_measurement_with_no_classical_board_change(board):
-    """Splits piece on b2 to b7 and g2, then will split piece on d4 to d5 and e4.
-    Piece on g4 then splits to f3 and e2. Then piece on g2 attempts to capture piece on e4,
-    with a failed measurement outcome."""
-    b = board(u.squares_to_bitboard(["b2", "d4", "g4"]))
-    b.do_move(
-        move.Move(
-            "b2",
-            "b7",
-            target2="g2",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-
-    b.do_move(
-        move.Move(
-            "d4",
-            "d5",
-            target2="e4",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-
-    b.do_move(
-        move.Move(
-            "g4",
-            "f3",
-            target2="e2",
-            move_type=enums.MoveType.SPLIT_JUMP,
-            move_variant=enums.MoveVariant.BASIC,
-        )
-    )
-    b.do_move(
-        move.Move(
-            "g2",
-            "e4",
-            move_type=enums.MoveType.JUMP,
-            move_variant=enums.MoveVariant.CAPTURE,
-            measurement=0,
-        )
+    b = simulator(u.squares_to_bitboard(["b5", "f5", "d3"]))
+    b.reset_starting_states = True
+    b.perform_moves(
+        "d3^d7h3:SPLIT_JUMP:BASIC",
+        "b5^b7b3:SPLIT_JUMP:BASIC",
+        "f5^c8:JUMP:BASIC",
+        "c8^h3:JUMP:BASIC"
     )
     assert not b.is_classical()

@@ -91,7 +91,7 @@ class CirqBoard:
             self.transformer = (
                 transformer or ct.ConnectivityHeuristicCircuitTransformer(device)
             )
-        self.with_state(init_basis_state)
+        self.with_state(init_basis_state, True)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
 
@@ -103,7 +103,7 @@ class CirqBoard:
         # Will only be turned on if user specifies
         self.reset_starting_states = reset_starting_states
 
-    def with_state(self, basis_state: int, reset_move_history=True) -> "CirqBoard":
+    def with_state(self, basis_state: int, reset_move_history=False) -> "CirqBoard":
         """Resets the board with a specific classical state. reset_move_history indicates
         whether to reset the entire move history of the game. It will be set to false
         if we are calling this function after the board has returned to a fully classical position"""
@@ -178,7 +178,7 @@ class CirqBoard:
         # Store current move history...
         current_move_history = self.move_history.copy()
         # ...because we'll be resetting it here
-        self.with_state(self.init_basis_state)
+        self.with_state(self.init_basis_state, True)
 
         # Repeat history up to last move
         for m in range(len(current_move_history) - 1):
@@ -442,6 +442,9 @@ class CirqBoard:
     def cache_results(self, cache_key: CacheKey):
         if cache_key in self.cache:
             return
+
+        self.reset_starting_states = False
+
         if cache_key.move_type == enums.MoveType.SPLIT_JUMP:
             helper_board = CirqBoard(
                 DEFAULT_CHESS_INIT_STATE,
@@ -449,6 +452,7 @@ class CirqBoard:
                 self.device,
                 self.error_mitigation,
                 self.noise_mitigation,
+                self.reset_starting_states,
                 self.transformer if self.device else None,
             )
             sample_jump_move = move.Move(
@@ -555,10 +559,10 @@ class CirqBoard:
 
         return self.empty_squares
 
-    def is_classical(self, repetitions=1000) -> bool:
+    def is_classical(self, repetitions=1000, use_cache: bool = False) -> bool:
         """Returns true if the board is in a fully classical position, and false otherwise."""
-        empty_squares = self.get_empty_squares_bitboard(repetitions)
-        full_squares = self.get_full_squares_bitboard(repetitions)
+        empty_squares = self.get_empty_squares_bitboard(repetitions, use_cache)
+        full_squares = self.get_full_squares_bitboard(repetitions, use_cache)
         actual = empty_squares | full_squares
         return CLASSICAL_BITBOARD == actual
 
