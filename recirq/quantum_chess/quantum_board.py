@@ -103,7 +103,7 @@ class CirqBoard:
         # Will only be turned on if user specifies
         self.reset_starting_states = reset_starting_states
 
-    def with_state(self, basis_state: int, reset_move_history=False) -> "CirqBoard":
+    def with_state(self, basis_state: int, reset_move_history=True) -> "CirqBoard":
         """Resets the board with a specific classical state. reset_move_history indicates
         whether to reset the entire move history of the game. It will be set to false
         if we are calling this function after the board has returned to a fully classical position"""
