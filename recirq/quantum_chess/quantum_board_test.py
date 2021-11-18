@@ -1480,5 +1480,3 @@ def test_measurement_without_fully_classical_position(board):
         "c8^h3:JUMP:BASIC",
     )
     assert not b.is_classical()
-
-
