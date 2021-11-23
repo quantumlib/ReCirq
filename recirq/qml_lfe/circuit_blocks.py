@@ -98,6 +98,8 @@ def block_1d_circuit(qubits, depth, block_fn, random_source):
         random_source: Python list or np.ndarray with shape:
             [depth * len(qubits) // 2, n_params_for_block_fn].
 
+    Returns:
+        A 1d block circuit.
     """
     ops = []
     i_random = 0
