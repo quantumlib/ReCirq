@@ -84,7 +84,7 @@ def block_1d_circuit(
     depth: int,
     block_fn: Callable,
     random_source: List[List[Number]],
-):
+) -> cirq.Circuit:
     """Create a 1D block structure circuit using block_fn.
 
     Alternate couplings layer by layer constructing a circuit that
@@ -120,7 +120,7 @@ def block_1d_circuit(
     return cirq.Circuit(ops)
 
 
-def bell_pair_block(qubits: List[cirq.Qid]):
+def bell_pair_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
     """Creates a bell pair on two qubits.
 
     Enacts H(a) + CNOT(a, b) using SycamoreGates and single qubit operations.
@@ -137,7 +137,7 @@ def bell_pair_block(qubits: List[cirq.Qid]):
     return mapped_circuit.all_operations()
 
 
-def un_bell_pair_block(qubits: List[cirq.Qid]):
+def un_bell_pair_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
     """Un compute a bell pair on two qubits.
 
     Enacts CNOT(a, b) + H(a) using SycamoreGates and single qubit operations.
@@ -154,7 +154,7 @@ def un_bell_pair_block(qubits: List[cirq.Qid]):
     return mapped_circuit.all_operations()
 
 
-def swap_block(qubits: List[cirq.Qid]):
+def swap_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
     """Swap two qubits.
 
     Enacts SWAP(a, b) using SycamoreGates and single qubit operations.
