@@ -20,7 +20,7 @@ import cirq_google
 import functools
 
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=128)
 def _load_circuit(fname):
     with open(os.path.join(os.path.dirname(__file__), fname), "r") as f:
         return cirq.read_json(f)
