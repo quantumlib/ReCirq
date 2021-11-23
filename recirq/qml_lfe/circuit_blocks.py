@@ -40,14 +40,14 @@ def tsym_block(qubits: List[cirq.Qid], params: List[Number]) -> List[cirq.Operat
     Returns:
         A list of `cirq.Operations` realizing a tsym block.
     """
-    mapped_circuit = _load_circuit("tsym_permute.txt").transform_qubits(
+    mapped_circuit = _load_circuit("tsym_permute.json").transform_qubits(
         {cirq.GridQubit(0, 0): qubits[0], cirq.GridQubit(0, 1): qubits[1]}
     )
     rots = [cirq.Y(qubits[0]) ** params[0], cirq.Y(qubits[1]) ** params[1]]
     return rots + list(mapped_circuit.all_operations())
 
 
-def _get_op(code: Number) -> cirq.Operation:
+def _get_op(code: Number) -> cirq.Gate:
     if code <= 4 / 3:
         return cirq.X ** 0.5
     elif code <= 2 * (4 / 3):
@@ -131,7 +131,7 @@ def bell_pair_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
     Returns:
          A list of `cirq.Operations` realizing a bell pair.
     """
-    mapped_circuit = _load_circuit("syc_bell_pair.txt").transform_qubits(
+    mapped_circuit = _load_circuit("syc_bell_pair.json").transform_qubits(
         {cirq.GridQubit(0, 0): qubits[0], cirq.GridQubit(0, 1): qubits[1]}
     )
     return mapped_circuit.all_operations()
@@ -148,7 +148,7 @@ def un_bell_pair_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
     Returns:
          A list of `cirq.Operations` realizing the operation.
     """
-    mapped_circuit = _load_circuit("syc_un_bell_pair.txt").transform_qubits(
+    mapped_circuit = _load_circuit("syc_un_bell_pair.json").transform_qubits(
         {cirq.GridQubit(0, 0): qubits[0], cirq.GridQubit(0, 1): qubits[1]}
     )
     return mapped_circuit.all_operations()
@@ -165,7 +165,7 @@ def swap_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
     Returns:
          A list of `cirq.Operations` realizing the swap.
     """
-    mapped_circuit = _load_circuit("syc_swap.txt").transform_qubits(
+    mapped_circuit = _load_circuit("syc_swap.json").transform_qubits(
         {cirq.GridQubit(0, 0): qubits[0], cirq.GridQubit(0, 1): qubits[1]}
     )
     return mapped_circuit.all_operations()
