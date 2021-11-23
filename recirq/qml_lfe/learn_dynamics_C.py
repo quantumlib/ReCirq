@@ -98,7 +98,7 @@ def _engine_sim_workaround(batch):
 
 def main(_):
     logging.info("Beginning conventional circuit generation.")
-    # Choose system pairs extremely carefully!!
+    # Choose system pairs so that they are consecutive neighbors.
     system_pairs = [
         [cirq.GridQubit(1, 5), cirq.GridQubit(0, 5)],
         [cirq.GridQubit(1, 6), cirq.GridQubit(0, 6)],
