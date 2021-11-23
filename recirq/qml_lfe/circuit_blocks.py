@@ -1,4 +1,4 @@
-# Copyright 2020 Google
+# Copyright 2021 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """Sycamore native circuit building blocks."""
+from typing import List, Callable
+from numbers import Number
 
 import os
 import cirq
@@ -21,12 +23,12 @@ import functools
 
 
 @functools.lru_cache(maxsize=128)
-def _load_circuit(fname):
+def _load_circuit(fname: str) -> cirq.Circuit:
     with open(os.path.join(os.path.dirname(__file__), fname), "r") as f:
         return cirq.read_json(f)
 
 
-def tsym_block(qubits, params):
+def tsym_block(qubits: List[cirq.Qid], params: List[Number]) -> List[cirq.Operation]:
     """Create a tsym block.
 
     Y axis rotations followed by a real entried permutation operation.
@@ -45,7 +47,7 @@ def tsym_block(qubits, params):
     return rots + list(mapped_circuit.all_operations())
 
 
-def _get_op(code):
+def _get_op(code: Number) -> cirq.Operation:
     if code <= 4 / 3:
         return cirq.X ** 0.5
     elif code <= 2 * (4 / 3):
@@ -53,10 +55,12 @@ def _get_op(code):
     elif code <= 3 * (4 / 3):
         return cirq.PhasedXZGate(axis_phase_exponent=0.25, x_exponent=0.5, z_exponent=0)
 
-    raise ValueError("panic!")
+    raise ValueError("Random codes must be between 0 and 4.")
 
 
-def scrambling_block(qubits, params):
+def scrambling_block(
+    qubits: List[cirq.Qid], params: List[Number]
+) -> List[cirq.Operation]:
     """Create a scrambling block.
 
     Randomly applies one of sqrt(X), sqrt(Y) and sqrt(W) on qubits followed
@@ -75,7 +79,12 @@ def scrambling_block(qubits, params):
     return [a_op(qubits[0]), b_op(qubits[1]), cirq_google.SycamoreGate()(*qubits)]
 
 
-def block_1d_circuit(qubits, depth, block_fn, random_source):
+def block_1d_circuit(
+    qubits: List[cirq.Qid],
+    depth: int,
+    block_fn: Callable,
+    random_source: List[List[Number]],
+):
     """Create a 1D block structure circuit using block_fn.
 
     Alternate couplings layer by layer constructing a circuit that
@@ -111,8 +120,8 @@ def block_1d_circuit(qubits, depth, block_fn, random_source):
     return cirq.Circuit(ops)
 
 
-def bell_pair_block(qubits):
-    """Creates a bell pair on qubits.
+def bell_pair_block(qubits: List[cirq.Qid]):
+    """Creates a bell pair on two qubits.
 
     Enacts H(a) + CNOT(a, b) using SycamoreGates and single qubit operations.
 
@@ -128,8 +137,8 @@ def bell_pair_block(qubits):
     return mapped_circuit.all_operations()
 
 
-def un_bell_pair_block(qubits):
-    """Un-bell-pair on qubits.
+def un_bell_pair_block(qubits: List[cirq.Qid]):
+    """Un compute a bell pair on two qubits.
 
     Enacts CNOT(a, b) + H(a) using SycamoreGates and single qubit operations.
 
@@ -145,10 +154,10 @@ def un_bell_pair_block(qubits):
     return mapped_circuit.all_operations()
 
 
-def swap_block(qubits):
+def swap_block(qubits: List[cirq.Qid]):
     """Swap two qubits.
 
-    Enacts SWAP(a, b)using SycamoreGates and single qubit operations.
+    Enacts SWAP(a, b) using SycamoreGates and single qubit operations.
 
     Args:
         qubits: The qubits to swap.

@@ -1,4 +1,4 @@
-# Copyright 2020 Google
+# Copyright 2021 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ _qubits = cirq.LineQubit.range(2)
         ),
     ),
 )
-def test_knwon_blocks_equal(known_circuit, compiled_ops):
+def test_known_blocks_equal(known_circuit, compiled_ops):
     desired_u = cirq.unitary(cirq.Circuit(known_circuit))
     actual_u = cirq.unitary(cirq.Circuit(compiled_ops))
     assert cirq.equal_up_to_global_phase(actual_u, desired_u)
