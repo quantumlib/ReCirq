@@ -443,7 +443,6 @@ class CirqBoard:
         if cache_key in self.cache:
             return
 
-
         if cache_key.move_type == enums.MoveType.SPLIT_JUMP:
             helper_board = CirqBoard(
                 DEFAULT_CHESS_INIT_STATE,
@@ -452,7 +451,7 @@ class CirqBoard:
                 self.error_mitigation,
                 self.noise_mitigation,
                 self.transformer if self.device else None,
-                reset_starting_states=False
+                reset_starting_states=False,
             )
             sample_jump_move = move.Move(
                 "b1",
