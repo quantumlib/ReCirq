@@ -41,6 +41,13 @@ import recirq.quantum_chess.quantum_moves as qm
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
 DEFAULT_CHESS_INIT_STATE = 0xFFFF00000000FFFF
 
+# Number less than 0, so that the repetitions count of the cache entry is
+# always considered to be insufficient
+_NO_CACHE_AVAILABLE = -1
+
+# Repetitions count for position which should always use the cache
+_CACHE_ALWAYS_AVAILABLE = 10 ** 9
+
 
 class CirqBoard:
     """Implementation of Quantum Board API using cirq sampler.
@@ -98,13 +105,13 @@ class CirqBoard:
         self.noise_mitigation = noise_mitigation
 
         # Stores the repetition number if there is a cache.
-        self.board_accumulations_repetitions = -1
+        self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
 
         self.cache = {}
 
     def with_state(self, basis_state: int) -> "CirqBoard":
         """Resets the board with a specific classical state."""
-        self.board_accumulations_repetitions = -1
+        self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
         self.state = basis_state
         self.allowed_pieces = set()
         self.allowed_pieces.add(num_ones(self.state))
@@ -117,7 +124,9 @@ class CirqBoard:
         # Invariant: len(self.move_history_probabilities_cache) ==
         #            len(self.move_history) + 1
         self.move_history_probabilities_cache = [
-            self._make_probability_history(10 ** 9, initial_square_probs)
+            self._make_probability_history(
+                _CACHE_ALWAYS_AVAILABLE, initial_square_probs
+            )
         ]
 
         # Store the initial basis state so that we can use it for replaying
@@ -705,11 +714,13 @@ class CirqBoard:
             raise ValueError("Move type is unspecified")
 
         # Reset accumulations here because function has conditional return branches
-        self.board_accumulations_repetitions = -1
+        self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
 
         # Add move to move_history
         self.move_history.append(m)
-        self.move_history_probabilities_cache.append(ProbabilityHistory(-1, (), 0, 0))
+        self.move_history_probabilities_cache.append(
+            ProbabilityHistory(_NO_CACHE_AVAILABLE, (), 0, 0)
+        )
 
         sbit = square_to_bit(m.source)
         tbit = square_to_bit(m.target)
