@@ -116,8 +116,6 @@ def _engine_sim_workaround(batch: List[cirq.Circuit]) -> List[cirq.Result]:
         )
         return job.results()
 
-    # Workaround for simulator.run_batch which doesn't have consistent return
-    # types with engine.run_batch.
     sim = cirq.Simulator()
     return [sim.run(circuit, repetitions=FLAGS.n_shots) for circuit in batch]
 
