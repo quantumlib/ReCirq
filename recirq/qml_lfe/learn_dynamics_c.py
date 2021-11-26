@@ -1,3 +1,32 @@
+# Copyright 2021 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Draw simplified shadows data (Y-basis) from 1D random scrambling or tsym
+style circuits.
+
+learn_dynamics.py --n=6 --depth=5 --n_data=20 --batch_size=5 --n_shots=1000
+
+Will create 40 total circuits, 20 scrambling and 20 tsym circuits all on
+6 qubits with depth 5. Once the circuits are generated, batch_size circuits
+will be sent for simulation/execution, drawing n_shots samples from each
+one using `run_batch` in Cirq. By default the bitstring data will be saved
+in the data folder. One can also set `use_engine` to True in order to
+run this against a processor on quantum engine.
+"""
+
+from typing import List
+
 import os
 import cirq
 import cirq_google
@@ -9,6 +38,7 @@ from absl import flags
 from absl import logging
 
 FLAGS = flags.FLAGS
+
 
 flags.DEFINE_integer("n", None, "System size (total qubits == 2 * n).")
 flags.DEFINE_integer("depth", None, "Circuit depth (block-wise).")
@@ -35,52 +65,48 @@ flags.DEFINE_string(
 flags.DEFINE_bool("use_engine", False, "Whether or not to use quantum engine.")
 
 
-def flatten_circuit(circuit):
+def flatten_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
     """Pack operations in circuit to the left as far as possible."""
     return cirq.Circuit([op for mom in circuit for op in mom])
 
 
-def make_full_circuit(qubit_pairs, tsym, depth):
+def build_circuit(
+    qubit_pairs: List[List[cirq.Qid]], use_tsym: bool, depth: int
+) -> cirq.Circuit:
     """Generate 1D tsym or scrambling circuit with given depth on qubit_pairs."""
-    inter_gen = None
-    if tsym == 1:
+    inter_gen = circuit_blocks.scrambling_block
+    if use_tsym:
         # Use tsym gates.
         inter_gen = circuit_blocks.tsym_block
-    elif tsym == 0:
-        # use scrambling gates.
-        inter_gen = circuit_blocks.scrambling_block
 
     # Random source for circuits.
     random_source = np.random.uniform(0, 4, size=(depth * len(qubit_pairs), 2))
 
-    ret_circuit = cirq.Circuit()
-    tmp = circuit_blocks.block_1d_circuit(
-        [qubit[0] for qubit in qubit_pairs], depth, inter_gen, random_source
+    ret_circuit = circuit_blocks.block_1d_circuit(
+        [qubits[0] for qubits in qubit_pairs], depth, inter_gen, random_source
     )
-    ret_circuit += flatten_circuit(tmp)
-
-    ret_circuit += cirq.Circuit(cirq.S(qubit[0]) for qubit in qubit_pairs)
-    ret_circuit += cirq.Circuit(cirq.H(qubit[0]) for qubit in qubit_pairs)
+    ret_circuit += [cirq.S(qubits[0]) for qubits in qubit_pairs]
+    ret_circuit += [cirq.H(qubits[0]) for qubits in qubit_pairs]
 
     # Merge single qubit gates together and add measurements.
     cirq.optimizers.merge_single_qubit_gates_into_phxz(ret_circuit)
     cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
     ret_circuit = flatten_circuit(ret_circuit)
 
-    for i, qubit in enumerate([sublist[0] for sublist in qubit_pairs]):
-        ret_circuit += cirq.measure(qubit, key="q{}".format(i))
+    for i, qubit in enumerate([qubits[0] for qubits in qubit_pairs]):
+        ret_circuit += cirq.measure(qubit, key=f"q{i}")
 
     cirq.SynchronizeTerminalMeasurements().optimize_circuit(circuit=ret_circuit)
     logging.debug(
-        f"Generated a new circuit w/ tsym={tsym} and depth {len(ret_circuit)}"
+        f"Generated a new circuit w/ tsym={use_tsym} and depth {len(ret_circuit)}"
     )
     return ret_circuit
 
 
-def _engine_sim_workaround(batch):
+def _engine_sim_workaround(batch: List[cirq.Circuit]) -> List[cirq.Result]:
     """Use either simulator or engine."""
     if FLAGS.use_engine:
-        project_id = os.environ["GOOGLE_CLOUD_PROJECT"]  # "quantum-simulation"
+        project_id = os.environ["GOOGLE_CLOUD_PROJECT"]
         engine = cirq_google.Engine(project_id=project_id)
         job = engine.run_batch(
             programs=batch,
@@ -128,10 +154,10 @@ def main(_):
     system_pairs = system_pairs[: FLAGS.n]
 
     to_run_scramb = [
-        make_full_circuit(system_pairs, 0, FLAGS.depth) for _ in range(FLAGS.n_data)
+        build_circuit(system_pairs, False, FLAGS.depth) for _ in range(FLAGS.n_data)
     ]
     to_run_tsym = [
-        make_full_circuit(system_pairs, 1, FLAGS.depth) for _ in range(FLAGS.n_data)
+        build_circuit(system_pairs, True, FLAGS.depth) for _ in range(FLAGS.n_data)
     ]
 
     logging.info(
@@ -143,22 +169,22 @@ def main(_):
 
             # Alternate between scrambling and tsym to
             # mitigate drift related noise artifacts.
-            batch = to_run_tsym[k : k + FLAGS.batch_size]
-            if is_tsym == 0:
-                batch = to_run_scramb[k : k + FLAGS.batch_size]
+            batch = to_run_scramb[k : k + FLAGS.batch_size]
+            if is_tsym:
+                batch = to_run_tsym[k : k + FLAGS.batch_size]
 
             # Upload and run the circuit batch.
             results = _engine_sim_workaround(batch)
 
             for j, single_circuit_samples in enumerate(results):
                 name0 = (
-                    "1D-scramble-C-size-{}-depth-{}-type-{}-batch-{}-number-{}".format(
-                        FLAGS.n, FLAGS.depth, is_tsym, k, j
-                    )
+                    f"1D-scramble-C-size-{FLAGS.n}"
+                    f"-depth-{FLAGS.depth}"
+                    f"-type-{is_tsym}"
+                    f"-batch-{k}-number-{j}"
                 )
-                out0 = single_circuit_samples.data[
-                    ["q{}".format(i) for i in range(FLAGS.n)]
-                ].to_numpy()
+                qubit_order = [f"q{i}" for i in range(FLAGS.n)]
+                out0 = single_circuit_samples.data[qubit_order].to_numpy()
                 np.save(os.path.join(FLAGS.save_dir, name0), out0)
                 logging.debug("Saved: " + name0)
 
