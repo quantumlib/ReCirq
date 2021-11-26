@@ -89,7 +89,7 @@ def build_circuit(
     ret_circuit += [cirq.H(qubits[0]) for qubits in qubit_pairs]
 
     # Merge single qubit gates together and add measurements.
-    cirq.optimizers.merge_single_qubit_gates_into_phxz(ret_circuit)
+    cirq.merge_single_qubit_gates_into_phxz(ret_circuit)
     cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
     ret_circuit = flatten_circuit(ret_circuit)
 
