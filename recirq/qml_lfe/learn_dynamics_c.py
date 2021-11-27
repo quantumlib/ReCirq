@@ -31,7 +31,7 @@ import os
 import cirq
 import cirq_google
 import numpy as np
-import circuit_blocks
+from . import circuit_blocks
 
 from absl import app
 from absl import flags
@@ -65,12 +65,12 @@ flags.DEFINE_string(
 flags.DEFINE_bool("use_engine", False, "Whether or not to use quantum engine.")
 
 
-def flatten_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
+def _flatten_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
     """Pack operations in circuit to the left as far as possible."""
     return cirq.Circuit([op for mom in circuit for op in mom])
 
 
-def build_circuit(
+def _build_circuit(
     qubit_pairs: List[List[cirq.Qid]], use_tsym: bool, depth: int
 ) -> cirq.Circuit:
     """Generate 1D tsym or scrambling circuit with given depth on qubit_pairs."""
@@ -91,7 +91,7 @@ def build_circuit(
     # Merge single qubit gates together and add measurements.
     cirq.merge_single_qubit_gates_into_phxz(ret_circuit)
     cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
-    ret_circuit = flatten_circuit(ret_circuit)
+    ret_circuit = _flatten_circuit(ret_circuit)
 
     for i, qubit in enumerate([qubits[0] for qubits in qubit_pairs]):
         ret_circuit += cirq.measure(qubit, key=f"q{i}")
@@ -103,25 +103,51 @@ def build_circuit(
     return ret_circuit
 
 
-def _engine_sim_workaround(batch: List[cirq.Circuit]) -> List[cirq.Result]:
+def _engine_sim_workaround(
+    batch: List[cirq.Circuit], n_shots, use_engine: bool
+) -> List[cirq.Result]:
     """Use either simulator or engine."""
-    if FLAGS.use_engine:
+    if use_engine:
         project_id = os.environ["GOOGLE_CLOUD_PROJECT"]
         engine = cirq_google.Engine(project_id=project_id)
         job = engine.run_batch(
             programs=batch,
             gate_set=cirq_google.SYC_GATESET,
             processor_ids=["weber"],
-            repetitions=FLAGS.n_shots,
+            repetitions=n_shots,
         )
         return job.results()
 
     sim = cirq.Simulator()
-    return [sim.run(circuit, repetitions=FLAGS.n_shots) for circuit in batch]
+    return [sim.run(circuit, repetitions=n_shots) for circuit in batch]
 
 
-def main(_):
-    logging.info("Beginning conventional circuit generation.")
+def run_and_save(
+    n: int,
+    depth: int,
+    n_data: int,
+    batch_size: int,
+    n_shots: int,
+    save_dir: str,
+    use_engine: bool,
+) -> None:
+    """Run and save bitstring data for tsym vs scrambling experiment w/ shadows.
+
+    Note: uses qubit layouts native to a Sycamore device (Weber).
+
+    Args:
+        n: Number of system qubits to use.
+        depth: Number of tsym or scrambling blocks.
+        n_data: Number of tsym and scrambling circuits to generate.
+        batch_size: The number of circuits to send off for execution in
+            a single payload (Does not affect experimental resluts).
+        save_dir: str or Path to directory where data is saved.
+        use_engine: Whether or not to make use of quantum engine and the
+            weber processor. Note this requires the GOOGLE_CLOUD_PROJECT
+            environment variable to be set, along with the required cloud
+            permissions.
+    """
+    logging.info("Beginning conventional circuit generation for Weber.")
     # Choose system pairs so that they are consecutive neighbors.
     system_pairs = [
         [cirq.GridQubit(1, 5), cirq.GridQubit(0, 5)],
@@ -149,42 +175,50 @@ def main(_):
         [cirq.GridQubit(3, 5), cirq.GridQubit(4, 5)],
         [cirq.GridQubit(2, 5), cirq.GridQubit(2, 4)],
     ]
-    system_pairs = system_pairs[: FLAGS.n]
+    system_pairs = system_pairs[:n]
 
-    to_run_scramb = [
-        build_circuit(system_pairs, False, FLAGS.depth) for _ in range(FLAGS.n_data)
-    ]
-    to_run_tsym = [
-        build_circuit(system_pairs, True, FLAGS.depth) for _ in range(FLAGS.n_data)
-    ]
+    to_run_scramb = [_build_circuit(system_pairs, False, depth) for _ in range(n_data)]
+    to_run_tsym = [_build_circuit(system_pairs, True, depth) for _ in range(n_data)]
 
     logging.info(
         f"Circuit generation complete. Generated {len(to_run_tsym) + len(to_run_scramb)} total circuits"
     )
-    for k in range(0, FLAGS.n_data, FLAGS.batch_size):
-        logging.info(f"Running batch: [{k}-{k + FLAGS.batch_size}) / {FLAGS.n_data}")
+    for k in range(0, n_data, batch_size):
+        logging.info(f"Running batch: [{k}-{k + batch_size}) / {n_data}")
         for is_tsym in [0, 1]:
 
             # Alternate between scrambling and tsym to
             # mitigate drift related noise artifacts.
-            batch = to_run_scramb[k : k + FLAGS.batch_size]
+            batch = to_run_scramb[k : k + batch_size]
             if is_tsym:
-                batch = to_run_tsym[k : k + FLAGS.batch_size]
+                batch = to_run_tsym[k : k + batch_size]
 
             # Upload and run the circuit batch.
-            results = _engine_sim_workaround(batch)
+            results = _engine_sim_workaround(batch, n_shots, use_engine)
 
             for j, single_circuit_samples in enumerate(results):
                 name0 = (
-                    f"1D-scramble-C-size-{FLAGS.n}"
-                    f"-depth-{FLAGS.depth}"
+                    f"1D-scramble-C-size-{n}"
+                    f"-depth-{depth}"
                     f"-type-{is_tsym}"
                     f"-batch-{k}-number-{j}"
                 )
-                qubit_order = [f"q{i}" for i in range(FLAGS.n)]
+                qubit_order = [f"q{i}" for i in range(n)]
                 out0 = single_circuit_samples.data[qubit_order].to_numpy()
-                np.save(os.path.join(FLAGS.save_dir, name0), out0)
+                np.save(os.path.join(save_dir, name0), out0)
                 logging.debug("Saved: " + name0)
+
+
+def main(_):
+    run_and_save(
+        FLAGS.n,
+        FLAGS.depth,
+        FLAGS.n_data,
+        FLAGS.batch_size,
+        FLAGS.n_shots,
+        FLAGS.save_dir,
+        FLAGS.use_engine,
+    )
 
 
 if __name__ == "__main__":

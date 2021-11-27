@@ -16,22 +16,21 @@ import os
 import subprocess
 import pytest
 import numpy as np
+from . import learn_dynamics_c
 
 
 def test_shadows_dont_seperate(tmpdir):
     """Ensure that classical shadows cannot distinguish tsym vs scrambling circuits."""
 
     pyfile = os.path.join(os.path.dirname(__file__), "learn_dynamics_c.py")
-    subprocess.run(
-        [
-            "python3",
-            f"{pyfile}",
-            "--n=6",
-            "--depth=5",
-            "--n_data=20",
-            "--batch_size=20",
-            f"--save_dir={tmpdir}",
-        ]
+    learn_dynamics_c.run_and_save(
+        n=6,
+        depth=5,
+        n_data=20,
+        batch_size=20,
+        n_shots=2000,
+        save_dir=tmpdir,
+        use_engine=False,
     )
 
     tsym_datapoints = []
