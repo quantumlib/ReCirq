@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import subprocess
 import pytest
 import numpy as np
 from . import learn_dynamics_c
