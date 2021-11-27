@@ -15,14 +15,13 @@
 import os
 import pytest
 import numpy as np
-from . import learn_dynamics_c
 
 
-def test_shadows_dont_seperate(tmpdir):
-    """Ensure that classical shadows cannot distinguish tsym vs scrambling circuits."""
+def test_twocopy_seperates(tmpdir):
+    """Ensure that two copy can distinguish tsym vs scrambling circuits."""
+    from . import learn_dynamics_q
 
-    pyfile = os.path.join(os.path.dirname(__file__), "learn_dynamics_c.py")
-    learn_dynamics_c.run_and_save(
+    learn_dynamics_q.run_and_save(
         n=6,
         depth=5,
         n_data=20,
@@ -35,18 +34,23 @@ def test_shadows_dont_seperate(tmpdir):
     tsym_datapoints = []
     scramble_datapoints = []
     for i in range(20):
-        fname = f"1D-scramble-C-size-6-depth-5-type-1-batch-0-number-{i}.npy"
+        fname = f"1D-scramble-Q-size-6-depth-5-type-1-batch-0-number-{i}.npy"
         t = np.load(os.path.join(tmpdir, fname))
         tsym_datapoints.append([np.mean(t, axis=0), np.std(t, axis=0)])
-        fname = f"1D-scramble-C-size-6-depth-5-type-0-batch-0-number-{i}.npy"
+        fname = f"1D-scramble-Q-size-6-depth-5-type-0-batch-0-number-{i}.npy"
         t = np.load(os.path.join(tmpdir, fname))
         scramble_datapoints.append([np.mean(t, axis=0), np.std(t, axis=0)])
 
     scramble_bitwise_stats = np.mean(scramble_datapoints, axis=0)
     tsym_bitwise_stats = np.mean(tsym_datapoints, axis=0)
-    expected_diff = np.zeros_like(tsym_bitwise_stats)
-    # Should see no meaningful difference between measurement stats
-    # when using shadows.
+    expected_diff = np.ones_like(tsym_bitwise_stats) * 0.5
+    print(scramble_bitwise_stats)
+    print(tsym_bitwise_stats)
     np.testing.assert_allclose(
         scramble_bitwise_stats - tsym_bitwise_stats, expected_diff, atol=0.15
     )
+    # Cleanup absl flags.
+    from absl import flags
+
+    for name in list(flags.FLAGS):
+        delattr(flags.FLAGS, name)
