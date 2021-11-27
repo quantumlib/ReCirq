@@ -450,7 +450,7 @@ class CirqBoard:
                 self.error_mitigation,
                 self.noise_mitigation,
                 self.transformer if self.device else None,
-                reset_starting_states=false,
+                reset_starting_states=False,
             )
             sample_jump_move = move.Move(
                 "b1",
