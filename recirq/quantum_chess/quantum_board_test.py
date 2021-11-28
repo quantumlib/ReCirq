@@ -1,3 +1,4 @@
+
 # Copyright 2020 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1256,7 +1257,8 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
         move_variant=enums.MoveVariant.BASIC,
     )
     b.do_move(m1)
-    probs = b.get_probability_distribution(1000)
+
+    probs = list(b.get_probability_distribution(1000))
     b.do_move(m2)
     b.clear_debug_log()
     # Expected probability with the cache applied
@@ -1265,11 +1267,12 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
     probs[square_to_bit("d1")] = b.cache[cache_key]["target2"]
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
-    probs2 = b.get_probability_distribution(1000, use_cache=True)
-    full_squares = b.get_full_squares_bitboard(1000, use_cache=True)
-    empty_squares = b.get_empty_squares_bitboard(1000, use_cache=True)
 
-    assert probs == probs2
+    probs2 = b.get_probability_distribution(1000)
+    full_squares = b.get_full_squares_bitboard(1000)
+    empty_squares = b.get_empty_squares_bitboard(1000)
+
+    assert tuple(probs) == probs2
     # Check that the second run and getting full and empty bitboards did not trigger any new logs.
     assert len(b.debug_log) == 0
     # Check bitboard updated correctly
@@ -1302,11 +1305,11 @@ def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
     expected_probs[square_to_bit("d1")] = b.cache[cache_key]["target2"]
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
-    probs = b.get_probability_distribution(100, use_cache=True)
-    full_squares = b.get_full_squares_bitboard(100, use_cache=True)
-    empty_squares = b.get_empty_squares_bitboard(100, use_cache=True)
+    probs = b.get_probability_distribution(100)
+    full_squares = b.get_full_squares_bitboard(100)
+    empty_squares = b.get_empty_squares_bitboard(100)
 
-    assert probs == expected_probs
+    assert probs == tuple(expected_probs)
     # Check that the second run and getting full and empty bitboards did not trigger any new logs.
     assert len(b.debug_log) == 0
     # Check bitboard updated correctly
