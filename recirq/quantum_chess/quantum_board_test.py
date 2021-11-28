@@ -1,4 +1,3 @@
-
 # Copyright 2020 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1212,10 +1211,10 @@ def test_caching_accumulations_different_repetition_not_cached(board):
         )
     )
     probs1 = b.get_probability_distribution(1)
-    probs2 = b.get_probability_distribution(100)
+    probs2 = b.get_probability_distribution(1001)
     assert probs1 != probs2
     board_probs1 = b.get_board_probability_distribution(1)
-    board_probs2 = b.get_board_probability_distribution(100)
+    board_probs2 = b.get_board_probability_distribution(1001)
     assert board_probs1 != board_probs2
 
 
@@ -1243,7 +1242,7 @@ def test_caching_accumulations_same_repetition_cached(board):
 def test_get_probability_distribution_split_jump_pre_cached(board):
     b = board(u.squares_to_bitboard(["a1", "b1"]))
     # Cache a split jump in advance.
-    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 1000)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 1001)
     b.cache_results(cache_key)
 
     m1 = move.Move(
@@ -1258,7 +1257,7 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
     )
     b.do_move(m1)
 
-    probs = list(b.get_probability_distribution(1000))
+    probs = list(b.get_probability_distribution(1001))
     b.do_move(m2)
     b.clear_debug_log()
     # Expected probability with the cache applied
@@ -1268,9 +1267,9 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
 
-    probs2 = b.get_probability_distribution(1000)
-    full_squares = b.get_full_squares_bitboard(1000)
-    empty_squares = b.get_empty_squares_bitboard(1000)
+    probs2 = b.get_probability_distribution(1001)
+    full_squares = b.get_full_squares_bitboard(1001)
+    empty_squares = b.get_empty_squares_bitboard(1001)
 
     assert tuple(probs) == probs2
     # Check that the second run and getting full and empty bitboards did not trigger any new logs.
@@ -1286,7 +1285,7 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
 def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
     b = board(u.squares_to_bitboard(["a1", "b1"]))
     # Cache a split jump in advance.
-    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 100)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 1001)
     b.cache_results(cache_key)
     m1 = move.Move(
         "b1",
@@ -1305,9 +1304,9 @@ def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
     expected_probs[square_to_bit("d1")] = b.cache[cache_key]["target2"]
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
-    probs = b.get_probability_distribution(100)
-    full_squares = b.get_full_squares_bitboard(100)
-    empty_squares = b.get_empty_squares_bitboard(100)
+    probs = b.get_probability_distribution(1001)
+    full_squares = b.get_full_squares_bitboard(1001)
+    empty_squares = b.get_empty_squares_bitboard(1001)
 
     assert probs == tuple(expected_probs)
     # Check that the second run and getting full and empty bitboards did not trigger any new logs.
@@ -1429,7 +1428,7 @@ def test_merge_to_fully_classical_position(board):
 
     expected_probs = [0] * 64
     expected_probs[square_to_bit("a1")] = 1
-    probs = b.get_probability_distribution(100)
+    probs = list(b.get_probability_distribution(100))
 
     assert b.is_classical()
     assert probs == expected_probs

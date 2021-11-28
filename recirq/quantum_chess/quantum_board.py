@@ -1,4 +1,3 @@
-
 # Copyright 2020 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -135,11 +134,11 @@ class CirqBoard:
             # the move-history when undoing moves
             self.init_basis_state = basis_state
             self.move_history_probabilities_cache = [
-              self._make_probability_history(
-                _CACHE_ALWAYS_AVAILABLE, initial_square_probs
-            )
-        ]
-            
+                self._make_probability_history(
+                    _CACHE_ALWAYS_AVAILABLE, initial_square_probs
+                )
+            ]
+
         self.clear_debug_log()
         self.timing_stats = defaultdict(list)
         return self
@@ -537,10 +536,10 @@ class CirqBoard:
         self._generate_accumulations(repetitions)
         return self.move_history_probabilities_cache[-1].empty_squares
 
-    def is_classical(self, repetitions=1000, use_cache: bool = False) -> bool:
+    def is_classical(self, repetitions=1000) -> bool:
         """Returns true if the board is in a fully classical position, and false otherwise."""
-        empty_squares = self.get_empty_squares_bitboard(repetitions, use_cache)
-        full_squares = self.get_full_squares_bitboard(repetitions, use_cache)
+        empty_squares = self.get_empty_squares_bitboard(repetitions)
+        full_squares = self.get_full_squares_bitboard(repetitions)
         actual = empty_squares | full_squares
         return CLASSICAL_BITBOARD == actual
 
