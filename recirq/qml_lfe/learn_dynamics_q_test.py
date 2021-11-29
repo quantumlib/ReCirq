@@ -15,11 +15,11 @@
 import os
 import pytest
 import numpy as np
+from . import learn_dynamics_q
 
 
 def test_twocopy_seperates(tmpdir):
     """Ensure that two copy can distinguish tsym vs scrambling circuits."""
-    from . import learn_dynamics_q
 
     learn_dynamics_q.run_and_save(
         n=6,
@@ -49,8 +49,3 @@ def test_twocopy_seperates(tmpdir):
     np.testing.assert_allclose(
         scramble_bitwise_stats - tsym_bitwise_stats, expected_diff, atol=0.15
     )
-    # Cleanup absl flags.
-    from absl import flags
-
-    for name in list(flags.FLAGS):
-        delattr(flags.FLAGS, name)

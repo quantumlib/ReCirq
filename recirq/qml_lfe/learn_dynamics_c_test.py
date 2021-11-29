@@ -15,12 +15,11 @@
 import os
 import pytest
 import numpy as np
+from . import learn_dynamics_c
 
 
 def test_shadows_dont_seperate(tmpdir):
     """Ensure that classical shadows cannot distinguish tsym vs scrambling circuits."""
-    from . import learn_dynamics_c
-
     learn_dynamics_c.run_and_save(
         n=6,
         depth=5,
@@ -49,9 +48,3 @@ def test_shadows_dont_seperate(tmpdir):
     np.testing.assert_allclose(
         scramble_bitwise_stats - tsym_bitwise_stats, expected_diff, atol=0.15
     )
-
-    # Cleanup absl flags.
-    from absl import flags
-
-    for name in list(flags.FLAGS):
-        delattr(flags.FLAGS, name)

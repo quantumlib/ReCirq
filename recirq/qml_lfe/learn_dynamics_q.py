@@ -16,8 +16,8 @@
 
 learn_dynamics_q.py --n=6 --depth=5 --n_data=20 --batch_size=5 --n_shots=1000
 
-Will create 40 total circuits, 20 scrambling and 20 tsym circuits all on
-6 qubits with depth 5. Once the circuits are generated, batch_size circuits
+Will create 20 scrambling and 20 tsym circuits (40 total circuits) all on
+12 qubits with depth 5. Once the circuits are generated, batch_size circuits
 will be sent for simulation/execution, drawing n_shots samples from each
 one using `run_batch` in Cirq. By default the bitstring data will be saved
 in the data folder. One can also set `use_engine` to True in order to
@@ -31,41 +31,12 @@ import cirq
 import cirq_google
 import numpy as np
 from . import circuit_blocks
-
+from . import dynamics_flags
+from . import util
 from absl import app
-from absl import flags
 from absl import logging
 
-FLAGS = flags.FLAGS
-
-flags.DEFINE_integer("n", None, "System size (total qubits == 2 * n).")
-flags.DEFINE_integer("depth", None, "Circuit depth (block-wise).")
-flags.DEFINE_integer(
-    "n_data",
-    20,
-    "Number of circuits generated for each class (total circuits == 2 * n_data).",
-)
-
-flags.DEFINE_integer(
-    "batch_size",
-    5,
-    "Number of circuits to send over the wire per batch (value does not affect results).",
-)
-
-flags.DEFINE_integer(
-    "n_shots", 2000, "Number of measurements to draw from each individual circuit."
-)
-
-flags.DEFINE_string(
-    "save_dir", "./data", "Path to save experiment data (must already exist)."
-)
-
-flags.DEFINE_bool("use_engine", False, "Whether or not to use quantum engine.")
-
-
-def _flatten_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
-    """Pack operations in circuit to the left as far as possible."""
-    return cirq.Circuit([op for mom in circuit for op in mom])
+FLAGS = dynamics_flags.FLAGS
 
 
 def _build_circuit(
@@ -104,7 +75,7 @@ def _build_circuit(
     # Merge single qubit gates together and add measurements.
     cirq.merge_single_qubit_gates_into_phxz(ret_circuit)
     cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
-    ret_circuit = _flatten_circuit(ret_circuit)
+    ret_circuit = util.flatten_circuit(ret_circuit)
 
     for i, qubit in enumerate([item for sublist in qubit_pairs for item in sublist]):
         ret_circuit += cirq.measure(qubit, key="q{}".format(i))
@@ -114,25 +85,6 @@ def _build_circuit(
         f"Generated a new circuit w/ tsym={use_tsym} and depth {len(ret_circuit)}"
     )
     return ret_circuit
-
-
-def _engine_sim_workaround(
-    batch: List[cirq.Circuit], n_shots: int, use_engine: bool
-) -> List[cirq.Result]:
-    """Use either simulator or engine."""
-    if use_engine:
-        project_id = os.environ["GOOGLE_CLOUD_PROJECT"]
-        engine = cirq_google.Engine(project_id=project_id)
-        job = engine.run_batch(
-            programs=batch,
-            gate_set=cirq_google.SYC_GATESET,
-            processor_ids=["weber"],
-            repetitions=n_shots,
-        )
-        return job.results()
-
-    sim = cirq.Simulator()
-    return [sim.run(circuit, repetitions=n_shots) for circuit in batch]
 
 
 def run_and_save(
@@ -149,7 +101,7 @@ def run_and_save(
     Note: uses qubit layouts native to a Sycamore device (Weber).
 
     Args:
-        n: Number of system qubits to use.
+        n: Number of system qubits to use (total qubits == 2 * n).
         depth: Number of tsym or scrambling blocks.
         n_data: Number of tsym and scrambling circuits to generate.
         batch_size: The number of circuits to send off for execution in
@@ -162,32 +114,7 @@ def run_and_save(
     """
     logging.info("Beginning quantum-enhanced circuit generation.")
     # Choose system pairs so that they are consecutive neighbors.
-    system_pairs = [
-        [cirq.GridQubit(1, 5), cirq.GridQubit(0, 5)],
-        [cirq.GridQubit(1, 6), cirq.GridQubit(0, 6)],
-        [cirq.GridQubit(2, 6), cirq.GridQubit(3, 6)],
-        [cirq.GridQubit(2, 7), cirq.GridQubit(1, 7)],
-        [cirq.GridQubit(3, 7), cirq.GridQubit(3, 8)],
-        [cirq.GridQubit(4, 7), cirq.GridQubit(4, 8)],
-        [cirq.GridQubit(5, 7), cirq.GridQubit(5, 8)],
-        [cirq.GridQubit(5, 6), cirq.GridQubit(4, 6)],
-        # Avoid dead qubit 5, 4.
-        # [cirq.GridQubit(5, 5), cirq.GridQubit(5, 4)],
-        [cirq.GridQubit(6, 6), cirq.GridQubit(6, 7)],
-        [cirq.GridQubit(6, 5), cirq.GridQubit(5, 5)],
-        [cirq.GridQubit(7, 5), cirq.GridQubit(8, 5)],
-        [cirq.GridQubit(7, 4), cirq.GridQubit(8, 4)],
-        [cirq.GridQubit(7, 3), cirq.GridQubit(7, 2)],
-        [cirq.GridQubit(6, 3), cirq.GridQubit(6, 4)],
-        [cirq.GridQubit(6, 2), cirq.GridQubit(6, 1)],
-        [cirq.GridQubit(5, 2), cirq.GridQubit(5, 1)],
-        [cirq.GridQubit(4, 2), cirq.GridQubit(4, 1)],
-        [cirq.GridQubit(4, 3), cirq.GridQubit(5, 3)],
-        [cirq.GridQubit(3, 3), cirq.GridQubit(3, 2)],
-        [cirq.GridQubit(3, 4), cirq.GridQubit(4, 4)],
-        [cirq.GridQubit(3, 5), cirq.GridQubit(4, 5)],
-        [cirq.GridQubit(2, 5), cirq.GridQubit(2, 4)],
-    ]
+    system_pairs = util.qubit_pairs()
     system_pairs = system_pairs[:n]
 
     to_run_scramb = [_build_circuit(system_pairs, False, depth) for _ in range(n_data)]
@@ -206,7 +133,7 @@ def run_and_save(
                 batch = to_run_tsym[k : k + batch_size]
 
             # Upload and run the circuit batch.
-            results = _engine_sim_workaround(batch, n_shots, use_engine)
+            results = util.engine_sim_workaround(batch, n_shots, use_engine)
 
             for j, single_circuit_samples in enumerate(results):
                 name0 = (
