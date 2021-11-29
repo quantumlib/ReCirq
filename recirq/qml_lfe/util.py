@@ -15,7 +15,9 @@
 """Misc utility functions."""
 
 from typing import List
+import os
 import cirq
+import cirq_google
 
 
 def flatten_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
@@ -62,7 +64,7 @@ def engine_sim_workaround(
 def qubit_pairs() -> List[List[cirq.Qid]]:
     """Returns a pair of valid system qubits for 1D tsym vs scrambling.
 
-    Note: x[i][0] must is adjacent to x[i + 1][0]
+    Note: x[i][0] must be adjacent to x[i + 1][0]
         and x[i][0] must be adjacent to x[i][1] for all
         x in the returned system pairs.
 
