@@ -44,8 +44,6 @@ def test_twocopy_seperates(tmpdir):
     scramble_bitwise_stats = np.mean(scramble_datapoints, axis=0)
     tsym_bitwise_stats = np.mean(tsym_datapoints, axis=0)
     expected_diff = np.ones_like(tsym_bitwise_stats) * 0.5
-    print(scramble_bitwise_stats)
-    print(tsym_bitwise_stats)
     np.testing.assert_allclose(
         scramble_bitwise_stats - tsym_bitwise_stats, expected_diff, atol=0.15
     )

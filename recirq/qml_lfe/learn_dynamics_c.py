@@ -29,7 +29,6 @@ from typing import List
 
 import os
 import cirq
-import cirq_google
 import numpy as np
 from . import circuit_blocks
 from . import dynamics_flags
