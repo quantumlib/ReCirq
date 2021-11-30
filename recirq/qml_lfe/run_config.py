@@ -46,18 +46,17 @@ def execute_batch(
             environment variable to be set, along with the required cloud
             permissions.
     """
+    runner = cirq.Simulator()
     if use_engine:
-        engine = cirq_google.get_engine()
-        job = engine.run_batch(
-            programs=batch,
-            gate_set=cirq_google.SYC_GATESET,
-            processor_ids=["weber"],
-            repetitions=n_shots,
+        runner = cirq_google.get_engine_sampler(
+            processor_id="weber", gate_set_name="sycamore"
         )
-        return job.results()
 
-    sim = cirq.Simulator()
-    return [sim.run(circuit, repetitions=n_shots) for circuit in batch]
+    res = runner.run_batch(
+        programs=batch,
+        repetitions=n_shots,
+    )
+    return [x[0] for x in res]
 
 
 def qubit_pairs() -> List[List[cirq.Qid]]:
