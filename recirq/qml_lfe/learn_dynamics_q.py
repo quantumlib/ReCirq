@@ -31,7 +31,7 @@ import cirq
 import numpy as np
 from . import circuit_blocks
 from . import dynamics_flags
-from . import util
+from . import run_config
 from absl import app
 from absl import logging
 
@@ -74,7 +74,7 @@ def _build_circuit(
     # Merge single qubit gates together and add measurements.
     cirq.merge_single_qubit_gates_into_phxz(ret_circuit)
     cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
-    ret_circuit = util.flatten_circuit(ret_circuit)
+    ret_circuit = run_config.flatten_circuit(ret_circuit)
 
     for i, qubit in enumerate([item for sublist in qubit_pairs for item in sublist]):
         ret_circuit += cirq.measure(qubit, key="q{}".format(i))
@@ -113,13 +113,15 @@ def run_and_save(
     """
     logging.info("Beginning quantum-enhanced circuit generation.")
     # Choose system pairs so that they are consecutive neighbors.
-    system_pairs = util.qubit_pairs()
+    system_pairs = run_config.qubit_pairs()
     system_pairs = system_pairs[:n]
 
     to_run_scramb = [_build_circuit(system_pairs, False, depth) for _ in range(n_data)]
     to_run_tsym = [_build_circuit(system_pairs, True, depth) for _ in range(n_data)]
     logging.info(
-        f"Circuit generation complete. Generated {len(to_run_tsym) + len(to_run_scramb)} total circuits"
+        "Circuit generation complete."
+        f"Generated {len(to_run_tsym) + len(to_run_scramb)}"
+        "total circuits"
     )
     for k in range(0, n_data, batch_size):
         logging.info(f"Running batch: [{k}-{k + batch_size}) / {n_data}")
@@ -132,7 +134,7 @@ def run_and_save(
                 batch = to_run_tsym[k : k + batch_size]
 
             # Upload and run the circuit batch.
-            results = util.engine_sim_workaround(batch, n_shots, use_engine)
+            results = run_config.execute_batch(batch, n_shots, use_engine)
 
             for j, single_circuit_samples in enumerate(results):
                 name0 = (

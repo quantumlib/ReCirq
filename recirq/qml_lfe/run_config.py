@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Misc utility functions."""
+"""Runtime configuration items for excuting experiments on Weber (or sim)."""
 
 from typing import List
 import os
@@ -33,10 +33,10 @@ def flatten_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
     return cirq.Circuit([op for mom in circuit for op in mom])
 
 
-def engine_sim_workaround(
+def execute_batch(
     batch: List[cirq.Circuit], n_shots: int, use_engine: bool
 ) -> List[cirq.Result]:
-    """Use either simulator or engine with a uniform return type.
+    """Use either simulator or engine to execute a batch of circuits.
 
     Args:
         batch: List of `cirq.Circuit`s to execute.
@@ -47,8 +47,7 @@ def engine_sim_workaround(
             permissions.
     """
     if use_engine:
-        project_id = os.environ["GOOGLE_CLOUD_PROJECT"]
-        engine = cirq_google.Engine(project_id=project_id)
+        engine = cirq_google.get_engine()
         job = engine.run_batch(
             programs=batch,
             gate_set=cirq_google.SYC_GATESET,
@@ -64,9 +63,12 @@ def engine_sim_workaround(
 def qubit_pairs() -> List[List[cirq.Qid]]:
     """Returns a pair of valid system qubits for 1D tsym vs scrambling.
 
-    Note: x[i][0] must be adjacent to x[i + 1][0]
-        and x[i][0] must be adjacent to x[i][1] for all
-        x in the returned system pairs.
+    Returns pairs of qubits forming a valid 1D chain on the
+    weber processor.
+
+    Note: in order for a 1D chain to be valid, x[i][0] must be
+        adjacent to x[i + 1][0] and x[i][0] must be adjacent to x[i][1]
+        for all x in the returned system pairs.
 
     Returns:
         A list of valid system pairs.

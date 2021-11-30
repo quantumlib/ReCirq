@@ -32,7 +32,7 @@ import cirq
 import numpy as np
 from . import circuit_blocks
 from . import dynamics_flags
-from . import util
+from . import run_config
 from absl import app
 from absl import logging
 
@@ -60,7 +60,7 @@ def _build_circuit(
     # Merge single qubit gates together and add measurements.
     cirq.merge_single_qubit_gates_into_phxz(ret_circuit)
     cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
-    ret_circuit = util.flatten_circuit(ret_circuit)
+    ret_circuit = run_config.flatten_circuit(ret_circuit)
 
     for i, qubit in enumerate([qubits[0] for qubits in qubit_pairs]):
         ret_circuit += cirq.measure(qubit, key=f"q{i}")
@@ -99,7 +99,7 @@ def run_and_save(
     """
     logging.info("Beginning conventional circuit generation for Weber.")
     # Choose system pairs so that they are consecutive neighbors.
-    system_pairs = util.qubit_pairs()
+    system_pairs = run_config.qubit_pairs()
     system_pairs = system_pairs[:n]
 
     to_run_scramb = [_build_circuit(system_pairs, False, depth) for _ in range(n_data)]
@@ -119,7 +119,7 @@ def run_and_save(
                 batch = to_run_tsym[k : k + batch_size]
 
             # Upload and run the circuit batch.
-            results = util.engine_sim_workaround(batch, n_shots, use_engine)
+            results = run_config.execute_batch(batch, n_shots, use_engine)
 
             for j, single_circuit_samples in enumerate(results):
                 name0 = (

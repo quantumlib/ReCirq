@@ -11,10 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import pytest
 import cirq
-from . import util
+from . import run_config
 import numpy as np
 
 
@@ -27,10 +26,10 @@ def test_flatten_circuit():
         ]
     )
     expected = cirq.Circuit([cirq.Moment([cirq.H(q0), cirq.H(q1)])])
-    assert util.flatten_circuit(initial) == expected
+    assert run_config.flatten_circuit(initial) == expected
 
 
-def test_engine_sim_workaround():
+def test_execute():
     q0, q1 = cirq.LineQubit.range(2)
     circuits = [
         cirq.Circuit(
@@ -41,7 +40,7 @@ def test_engine_sim_workaround():
         ),
         cirq.Circuit(cirq.H(q0), cirq.H(q1), cirq.measure(q0, key="q0")),
     ]
-    results = util.engine_sim_workaround(circuits, 500, False)
+    results = run_config.execute_batch(circuits, 500, False)
     assert len(results) == 2
     assert results[0].data[["q0", "q1"]].to_numpy().shape == (500, 2)
     np.testing.assert_allclose(
@@ -54,7 +53,7 @@ def test_engine_sim_workaround():
 
 
 def test_qubit_pairs():
-    all_pairs = util.qubit_pairs()
+    all_pairs = run_config.qubit_pairs()
     for pair, next_pair in zip(all_pairs, all_pairs[1:]):
         assert pair[0].is_adjacent(next_pair[0])
         assert pair[0].is_adjacent(pair[1])
