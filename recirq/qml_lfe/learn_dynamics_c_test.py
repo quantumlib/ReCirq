@@ -20,8 +20,6 @@ from . import learn_dynamics_c
 
 def test_shadows_dont_seperate(tmpdir):
     """Ensure that classical shadows cannot distinguish tsym vs scrambling circuits."""
-
-    pyfile = os.path.join(os.path.dirname(__file__), "learn_dynamics_c.py")
     learn_dynamics_c.run_and_save(
         n=6,
         depth=5,
