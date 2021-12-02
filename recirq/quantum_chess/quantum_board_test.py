@@ -33,6 +33,9 @@ from recirq.quantum_chess.test_utils import (
 from recirq.quantum_chess.bit_utils import bit_to_qubit, square_to_bit, nth_bit_of
 from recirq.quantum_chess.caching_utils import CacheKey
 
+# The number of reps needed to avoid having the sample size of is_classical(), which is 1000,
+# chosen over the sampling in the caching tests
+CACHE_INVALIDATION_REPS = 1001
 
 def get_seed():
     seed = os.environ.get("RECIRQ_CHESS_TEST_SEED")
@@ -1211,10 +1214,10 @@ def test_caching_accumulations_different_repetition_not_cached(board):
         )
     )
     probs1 = b.get_probability_distribution(1)
-    probs2 = b.get_probability_distribution(1001)
+    probs2 = b.get_probability_distribution(CACHE_INVALIDATION_REPS)
     assert probs1 != probs2
     board_probs1 = b.get_board_probability_distribution(1)
-    board_probs2 = b.get_board_probability_distribution(1001)
+    board_probs2 = b.get_board_probability_distribution(100)
     assert board_probs1 != board_probs2
 
 
@@ -1242,7 +1245,7 @@ def test_caching_accumulations_same_repetition_cached(board):
 def test_get_probability_distribution_split_jump_pre_cached(board):
     b = board(u.squares_to_bitboard(["a1", "b1"]))
     # Cache a split jump in advance.
-    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 1001)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, CACHE_INVALIDATION_REPS)
     b.cache_results(cache_key)
 
     m1 = move.Move(
@@ -1257,7 +1260,7 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
     )
     b.do_move(m1)
 
-    probs = list(b.get_probability_distribution(1001))
+    probs = list(b.get_probability_distribution(CACHE_INVALIDATION_REPS))
     b.do_move(m2)
     b.clear_debug_log()
     # Expected probability with the cache applied
@@ -1267,9 +1270,9 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
 
-    probs2 = b.get_probability_distribution(1001)
-    full_squares = b.get_full_squares_bitboard(1001)
-    empty_squares = b.get_empty_squares_bitboard(1001)
+    probs2 = b.get_probability_distribution(CACHE_INVALIDATION_REPS)
+    full_squares = b.get_full_squares_bitboard(100)
+    empty_squares = b.get_empty_squares_bitboard(100)
 
     assert tuple(probs) == probs2
     # Check that the second run and getting full and empty bitboards did not trigger any new logs.
@@ -1285,7 +1288,7 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
 def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
     b = board(u.squares_to_bitboard(["a1", "b1"]))
     # Cache a split jump in advance.
-    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 1001)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, CACHE_INVALIDATION_REPS)
     b.cache_results(cache_key)
     m1 = move.Move(
         "b1",
@@ -1304,9 +1307,9 @@ def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
     expected_probs[square_to_bit("d1")] = b.cache[cache_key]["target2"]
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
-    probs = b.get_probability_distribution(1001)
-    full_squares = b.get_full_squares_bitboard(1001)
-    empty_squares = b.get_empty_squares_bitboard(1001)
+    probs = b.get_probability_distribution(CACHE_INVALIDATION_REPS)
+    full_squares = b.get_full_squares_bitboard(100)
+    empty_squares = b.get_empty_squares_bitboard(100)
 
     assert probs == tuple(expected_probs)
     # Check that the second run and getting full and empty bitboards did not trigger any new logs.
@@ -1435,7 +1438,7 @@ def test_merge_to_fully_classical_position(board):
 
 
 @pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
-def test_undo_to_start_after_measurement(board):
+def test_undo_to_start_after_classical_reset(board):
     """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
     Then does three undo moves to return to initial position."""
     b = simulator(u.squares_to_bitboard(["f4", "f8", "f2"]))

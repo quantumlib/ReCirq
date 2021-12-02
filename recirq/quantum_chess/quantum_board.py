@@ -37,6 +37,10 @@ import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
 
+# This is a constant used to check if a board is in a classical state. It indicates that every
+# space is represented by a 1. The XOR of the empty squares and full squares bitboards will yield
+# this constant if the board is classical, so we can compare this constant with that operation on
+# the empty and full squares bitboards.
 CLASSICAL_BITBOARD = 2 ** 64 - 1
 
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
@@ -102,7 +106,7 @@ class CirqBoard:
             self.transformer = (
                 transformer or ct.ConnectivityHeuristicCircuitTransformer(device)
             )
-        self.with_state(init_basis_state, True)
+        self.with_state(init_basis_state)
         self.error_mitigation = error_mitigation
         self.noise_mitigation = noise_mitigation
 
@@ -115,9 +119,12 @@ class CirqBoard:
         self.reset_starting_states = reset_starting_states
 
     def with_state(self, basis_state: int, reset_move_history=True) -> "CirqBoard":
-        """Resets the board with a specific classical state. reset_move_history indicates
-        whether to reset the entire move history of the game. It will be set to false
-        if we are calling this function after the board has returned to a fully classical position"""
+        """Resets the board with a specific classical state.
+
+            Args:
+                reset_move_history: indicates whether to reset the entire move history of the game. It will be set to false
+                    if we are calling this function after the board has returned to a fully classical position.
+        """
         self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
         self.state = basis_state
         self.allowed_pieces = set()
@@ -127,6 +134,8 @@ class CirqBoard:
         self.circuit = cirq.Circuit()
         self.ancilla_count = 0
         initial_square_probs = (float(nth_bit_of(i, basis_state)) for i in range(64))
+        # Invariant: len(self.move_history_probabilities_cache) ==
+        #            len(self.move_history) + 1
 
         if reset_move_history:
             self.move_history = []
