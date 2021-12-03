@@ -37,6 +37,7 @@ from recirq.quantum_chess.caching_utils import CacheKey
 # chosen over the sampling in the caching tests
 CACHE_INVALIDATION_REPS = 1001
 
+
 def get_seed():
     seed = os.environ.get("RECIRQ_CHESS_TEST_SEED")
     if seed:
