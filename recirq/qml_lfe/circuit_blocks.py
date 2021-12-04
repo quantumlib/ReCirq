@@ -171,7 +171,7 @@ def swap_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
     return mapped_circuit.all_operations()
 
 
-def inv_z_basis_gate(pauli: str):
+def inv_z_basis_gate(pauli: str) -> cirq.Gate:
     """Returns inverse Z basis transformation ops for a given Pauli.
 
     Args:

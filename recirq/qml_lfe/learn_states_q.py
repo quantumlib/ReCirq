@@ -38,7 +38,9 @@ from absl import app
 from absl import logging
 
 
-def _create_randomized_sweeps(hidden_p: str, symbols: Dict[str, int], num_reps: int):
+def _create_randomized_sweeps(
+    hidden_p: str, symbols: Dict[str, int], num_reps: int
+) -> List[Dict[str, int]]:
     last_i = 0
     for i, pauli in enumerate(hidden_p):
         if pauli != "I":
