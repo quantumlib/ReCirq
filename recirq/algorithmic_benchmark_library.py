@@ -14,7 +14,8 @@ class AlgorithmicBenchmark:
     algorithm of interest.
 
     Args:
-        domain: The problem domain. Usually a high-level ReCirq module.
+        domain: The problem domain represented as the corresponding high-level ReCirq module.
+            This must be a valid module name beginning with "recirq.".
         name: The benchmark name. Must be unique within the domain.
         executable_family: A globally unique identifier for this AlgorithmicBenchmark.
             This should match up with this Benchmark's `spec_class.executable_family`.
