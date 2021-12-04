@@ -10,33 +10,32 @@ from cirq_google.workflow import ExecutableSpec, QuantumExecutableGroup
 
 @dataclass
 class AlgorithmicBenchmark:
-    domain: str
-    """The problem domain. Usually a high-level ReCirq module."""
+    """A record of relevant elements that comprise a benchmark based on a quantum computing
+    algorithm of interest.
 
-    name: str
-    """The benchmark name. Must be unique within the domain."""
-
-    executable_family: str
-    """A globally unique identifier for this AlgorithmicBenchmark.
-    
-    This should match up with this Benchmark's `spec_class.executable_family`.
-    
-    By convention, the executable family is the fully-qualified leaf-module where the code
-    for this AlgorithmicBenchmark lives.
+    Args:
+        domain: The problem domain. Usually a high-level ReCirq module.
+        name: The benchmark name. Must be unique within the domain.
+        executable_family: A globally unique identifier for this AlgorithmicBenchmark.
+            This should match up with this Benchmark's `spec_class.executable_family`.
+            By convention, the executable family is the fully-qualified leaf-module where the code
+            for this AlgorithmicBenchmark lives.
+        spec_class: The ExecutableSpec subclass for this AlgorithmicBenchmark.
+        data_class: The class which can contain ETL-ed data for this AlgorithmicBenchmark.
+        gen_func: The function that returns a QuantumExecutableGroup for a given Config.
+        configs: A list of available `BenchmarkConfig` for this benchmark.
     """
 
+    domain: str
+    name: str
+    executable_family: str
     spec_class: Type[ExecutableSpec]
-    """The ExecutableSpec subclass for this AlgorithmicBenchmark."""
-
     data_class: Type
-    """The class which can contain ETL-ed data for this AlgorithmicBenchmark."""
-
     gen_func: Callable[[...], QuantumExecutableGroup]
-    """The function that returns a QuantumExecutableGroup for a given Config."""
-
     configs: List['BenchmarkConfig']
 
     def as_strings(self):
+        """Get values of this class as strings suitable for printing."""
         ret = {k: str(v) for k, v in dataclasses.asdict(self).items()}
         ret['spec_class'] = self.spec_class.__name__
         ret['data_class'] = self.data_class.__name__
