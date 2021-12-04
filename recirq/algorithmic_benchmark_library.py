@@ -81,12 +81,9 @@ def get_all_algo_configs() -> List[Tuple[AlgorithmicBenchmark, BenchmarkConfig]]
     return ret
 
 
-def main():
+def print_table_of_benchmarks():
+    """Print the AlgorithmicBenchmarks in a tabular form."""
     df = pd.DataFrame([algo.as_strings() for algo in BENCHMARKS]).set_index('executable_family')
     pd.set_option('display.width', None)
     pd.set_option('display.max_colwidth', None)
     print(df.transpose())
-
-
-if __name__ == '__main__':
-    main()
