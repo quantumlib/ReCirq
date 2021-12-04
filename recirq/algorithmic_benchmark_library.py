@@ -19,7 +19,7 @@ class AlgorithmicBenchmark:
         name: The benchmark name. Must be unique within the domain.
         executable_family: A globally unique identifier for this AlgorithmicBenchmark.
             This should match up with this Benchmark's `spec_class.executable_family`.
-            By convention, the executable family is the fully-qualified leaf-module where the code
+            The executable family is the fully-qualified leaf-module where the code
             for this AlgorithmicBenchmark lives.
         spec_class: The ExecutableSpec subclass for this AlgorithmicBenchmark.
         data_class: The class which can contain ETL-ed data for this AlgorithmicBenchmark.
@@ -53,6 +53,7 @@ class BenchmarkConfig:
         short_name: The short name for this config. Unique within an AlgorithmicBenchmark.
         full_name: A globally unique name for this config.
         gen_script: The script filename that generates the QuantumExecutableGroup for this Config.
+            Should begin with prefix "gen-".
         run_scripts: A list of script filenames that execute (or can execute) this config.
     """
 
