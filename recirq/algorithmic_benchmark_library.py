@@ -47,17 +47,19 @@ class AlgorithmicBenchmark:
 
 @dataclass
 class BenchmarkConfig:
+    """A particular configuration of an AlgorithmicBenchmark
+
+    Args:
+        short_name: The short name for this config. Unique within an AlgorithmicBenchmark.
+        full_name: A globally unique name for this config.
+        gen_script: The script filename that generates the QuantumExecutableGroup for this Config.
+        run_scripts: A list of script filenames that execute (or can execute) this config.
+    """
+
     short_name: str
-    """The short name for this config. Unique within an AlgorithmicBenchmark."""
-
     full_name: str
-    """A globally unique name for this config."""
-
     gen_script: str
-    """The script filename that generates the QuantumExecutableGroup for this Config."""
-
     run_scripts: List[str]
-    """A list of script filenames that execute (or can execute) this config."""
 
 
 BENCHMARKS = [
