@@ -69,6 +69,11 @@ BENCHMARKS = [
 
 @lru_cache()
 def get_all_algo_configs() -> List[Tuple[AlgorithmicBenchmark, BenchmarkConfig]]:
+    """Return a tuple of (AlgorithmsBenchmark, BenchmarkConfig) for each BenchmarkConfig in
+    `BENCHMARKS`.
+
+    This "flattens" the list of BenchmarkConfig from their nested structure in `BENCHMARKS`.
+    """
     ret = []
     for algo in BENCHMARKS:
         for config in algo.configs:
