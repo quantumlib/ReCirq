@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import recirq.quantum_chess.enums as enums
+from typing import Optional
 
 _ORD_A = ord("a")
 
@@ -52,11 +53,11 @@ class Move:
         source: str,
         target: str,
         *,
-        source2: str = None,
-        target2: str = None,
-        move_type: enums.MoveType = None,
-        move_variant: enums.MoveVariant = None,
-        measurement: int = None,
+        source2: Optional[str] = None,
+        target2: Optional[str] = None,
+        move_type: Optional[enums.MoveType] = None,
+        move_variant: Optional[enums.MoveVariant] = None,
+        measurement: Optional[int] = None,
     ):
         self.source = source
         self.source2 = source2
