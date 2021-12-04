@@ -30,12 +30,9 @@ import os
 import cirq
 import numpy as np
 from . import circuit_blocks
-from . import dynamics_flags
 from . import run_config
 from absl import app
 from absl import logging
-
-FLAGS = dynamics_flags.FLAGS
 
 
 def _build_circuit(
@@ -151,14 +148,16 @@ def run_and_save(
 
 
 def main(_):
+    from . import dynamics_flags
+
     run_and_save(
-        FLAGS.n,
-        FLAGS.depth,
-        FLAGS.n_data,
-        FLAGS.batch_size,
-        FLAGS.n_shots,
-        FLAGS.save_dir,
-        FLAGS.use_engine,
+        dynamics_flags.n,
+        dynamics_flags.depth,
+        dynamics_flags.n_data,
+        dynamics_flags.batch_size,
+        dynamics_flags.n_shots,
+        dynamics_flags.save_dir,
+        dynamics_flags.use_engine,
     )
 
 

@@ -14,7 +14,7 @@
 
 """Runtime configuration items for excuting experiments on Weber (or sim)."""
 
-from typing import List
+from typing import Dict, List
 import os
 import cirq
 import cirq_google
@@ -45,6 +45,8 @@ def execute_batch(
             weber processor. Note this requires the GOOGLE_CLOUD_PROJECT
             environment variable to be set, along with the required cloud
             permissions.
+    Returns:
+        List of results to execution.
     """
     runner = cirq.Simulator()
     if use_engine:
@@ -57,6 +59,30 @@ def execute_batch(
         repetitions=n_shots,
     )
     return [x[0] for x in res]
+
+
+def execute_sweep(
+    circuit: cirq.Circuit, params: List[Dict[str, float]], use_engine: bool
+) -> List[cirq.Result]:
+    """Use either simulator or engine to run a one rep sweep on a circuit.
+
+    Args:
+        circuit: the `cirq.Circuit` with symbols to execute.
+        params: The list of parameters to place in the symbols.
+        use_engine: Whether or not to make use of quantum engine and the
+            weber processor. Note this requires the GOOGLE_CLOUD_PROJECT
+            environment variable to be set, along with the required cloud
+            permissions.
+    Returns:
+        List of results to execution.
+    """
+    runner = cirq.Simulator()
+    if use_engine:
+        runner = cirq_google.get_engine_sampler(
+            processor_id="weber", gate_set_name="sycamore"
+        )
+
+    return runner.run_sweep(program=circuit, params=params, repetitions=1)
 
 
 def qubit_pairs() -> List[List[cirq.Qid]]:

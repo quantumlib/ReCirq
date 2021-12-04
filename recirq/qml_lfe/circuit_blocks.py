@@ -169,3 +169,24 @@ def swap_block(qubits: List[cirq.Qid]) -> List[cirq.Operation]:
         {cirq.GridQubit(0, 0): qubits[0], cirq.GridQubit(0, 1): qubits[1]}
     )
     return mapped_circuit.all_operations()
+
+
+def inv_z_basis_gate(pauli: str):
+    """Returns inverse Z basis transformation ops for a given Pauli.
+
+    Args:
+        pauli: Python str representing a single pauli.
+
+    Returns:
+        Corresponding `cirq.Gate` to do the inverse basis conversion.
+    """
+    if pauli == "I" or pauli == "Z":
+        return cirq.I
+    if pauli == "X":
+        return cirq.H
+    if pauli == "Y":
+        # S^dag H to get to computational, H S to go back.
+        return cirq.PhasedXZGate(
+            axis_phase_exponent=-0.5, x_exponent=0.5, z_exponent=-0.5
+        )
+    raise ValueError("Invalid Pauli.")
