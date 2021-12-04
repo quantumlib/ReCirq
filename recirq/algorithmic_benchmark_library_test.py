@@ -4,7 +4,7 @@ from types import ModuleType
 
 import pytest
 
-from recirq.algo_benchmark_library import BENCHMARKS, get_all_algo_configs
+from recirq.algorithmic_benchmark_library import BENCHMARKS, get_all_algo_configs
 
 RECIRQ_DIR = os.path.abspath(os.path.dirname(__file__) + '/../')
 
@@ -25,7 +25,7 @@ def test_benchmark_name_unique_in_domain():
 
 @pytest.mark.parametrize('algo', BENCHMARKS)
 def test_executable_family_is_formulaic(algo):
-    # Check consistency in the AlgoBenchmark dataclass:
+    # Check consistency in the AlgorithmicBenchmark dataclass:
     assert algo.executable_family == algo.spec_class.executable_family
 
     # By convention, we set this to be the module name. By further convention,

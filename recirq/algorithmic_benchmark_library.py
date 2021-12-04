@@ -9,7 +9,7 @@ from cirq_google.workflow import ExecutableSpec, QuantumExecutableGroup
 
 
 @dataclass
-class AlgoBenchmark:
+class AlgorithmicBenchmark:
     domain: str
     """The problem domain. Usually a high-level ReCirq module."""
 
@@ -17,19 +17,19 @@ class AlgoBenchmark:
     """The benchmark name. Must be unique within the domain."""
 
     executable_family: str
-    """A globally unique identifier for this AlgoBenchmark.
+    """A globally unique identifier for this AlgorithmicBenchmark.
     
     This should match up with this Benchmark's `spec_class.executable_family`.
     
     By convention, the executable family is the fully-qualified leaf-module where the code
-    for this AlgoBenchmark lives.
+    for this AlgorithmicBenchmark lives.
     """
 
     spec_class: Type[ExecutableSpec]
-    """The ExecutableSpec subclass for this AlgoBenchmark."""
+    """The ExecutableSpec subclass for this AlgorithmicBenchmark."""
 
     data_class: Type
-    """The class which can contain ETL-ed data for this AlgoBenchmark."""
+    """The class which can contain ETL-ed data for this AlgorithmicBenchmark."""
 
     gen_func: Callable[[...], QuantumExecutableGroup]
     """The function that returns a QuantumExecutableGroup for a given Config."""
@@ -47,7 +47,7 @@ class AlgoBenchmark:
 @dataclass
 class BenchmarkConfig:
     short_name: str
-    """The short name for this config. Unique within an AlgoBenchmark."""
+    """The short name for this config. Unique within an AlgorithmicBenchmark."""
 
     full_name: str
     """A globally unique name for this config."""
@@ -64,7 +64,7 @@ BENCHMARKS = [
 
 
 @lru_cache()
-def get_all_algo_configs() -> List[Tuple[AlgoBenchmark, BenchmarkConfig]]:
+def get_all_algo_configs() -> List[Tuple[AlgorithmicBenchmark, BenchmarkConfig]]:
     ret = []
     for algo in BENCHMARKS:
         for config in algo.configs:
