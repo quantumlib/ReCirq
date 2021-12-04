@@ -23,7 +23,8 @@ class AlgorithmicBenchmark:
             for this AlgorithmicBenchmark lives.
         spec_class: The ExecutableSpec subclass for this AlgorithmicBenchmark.
         data_class: The class which can contain ETL-ed data for this AlgorithmicBenchmark.
-        gen_func: The function that returns a QuantumExecutableGroup for a given Config.
+        executable_generator_func: The function that returns a QuantumExecutableGroup for a
+            given Config.
         configs: A list of available `BenchmarkConfig` for this benchmark.
     """
 
@@ -32,7 +33,7 @@ class AlgorithmicBenchmark:
     executable_family: str
     spec_class: Type[ExecutableSpec]
     data_class: Type
-    gen_func: Callable[[...], QuantumExecutableGroup]
+    executable_generator_func: Callable[[...], QuantumExecutableGroup]
     configs: List['BenchmarkConfig']
 
     def as_strings(self):
@@ -40,7 +41,7 @@ class AlgorithmicBenchmark:
         ret = {k: str(v) for k, v in dataclasses.asdict(self).items()}
         ret['spec_class'] = self.spec_class.__name__
         ret['data_class'] = self.data_class.__name__
-        ret['gen_func'] = self.gen_func.__name__
+        ret['executable_generator_func'] = self.executable_generator_func.__name__
         return ret
 
 

@@ -43,7 +43,7 @@ def test_classes_and_funcs(algo):
     mod = import_module(algo.executable_family)
     assert algo.spec_class == getattr(mod, algo.spec_class.__name__)
     assert algo.data_class == getattr(mod, algo.data_class.__name__)
-    assert algo.gen_func == getattr(mod, algo.gen_func.__name__)
+    assert algo.executable_generator_func == getattr(mod, algo.executable_generator_func.__name__)
 
 
 def test_globally_unique_executable_family():
