@@ -122,6 +122,7 @@ class CirqBoard:
         """Resets the board with a specific classical state.
 
         Args:
+            basis_state: a 64-bit bitboard representing the given position of the board
             reset_move_history: indicates whether to reset the entire move history of the game. It will be set to false
                 if we are calling this function after the board has returned to a fully classical position.
         """

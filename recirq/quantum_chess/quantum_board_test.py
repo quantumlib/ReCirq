@@ -33,8 +33,8 @@ from recirq.quantum_chess.test_utils import (
 from recirq.quantum_chess.bit_utils import bit_to_qubit, square_to_bit, nth_bit_of
 from recirq.quantum_chess.caching_utils import CacheKey
 
-# The number of reps needed to avoid having the sample size of is_classical(), which is 1000,
-# chosen over the sampling in the caching tests
+# The number of samples needed to avoid caching previous repetitions.
+# Choosing this to be above the sample size of is_classical(), which is 1000, will avoid caching.
 CACHE_INVALIDATION_REPS = 1001
 
 
