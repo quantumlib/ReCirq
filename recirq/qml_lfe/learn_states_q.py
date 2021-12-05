@@ -41,6 +41,21 @@ from absl import logging
 def _create_randomized_sweeps(
     hidden_p: str, symbols: Dict[str, int], num_reps: int
 ) -> List[Dict[str, int]]:
+    """Generate sweeps to help prepare \rho = 2^(-n) (I + \alpha P) states.
+
+    See section A.2.a (https://arxiv.org/pdf/2112.00778.pdf) more details.
+
+    Args:
+        hidden_p: Pauli operator in (I + \alpha P)
+        symbols: Symbols to generate values for to prepare \rho.
+        num_reps: Number of unique parameter configurations (sweeps)
+            to generate for the given `symbols`.
+
+    Returns:
+        List of sweeps, that when placed in a circuit will realize
+        \rho.
+    """
+
     last_i = 0
     for i, pauli in enumerate(hidden_p):
         if pauli != "I":
@@ -57,14 +72,14 @@ def _create_randomized_sweeps(
                 current_sweep[current_symbol] = 0
                 if pauli != "I":
                     if last_i == i:
-                        if parity == -1:
-                            current_sweep[current_symbol] = 1
+                        current_sweep[current_symbol] = 1 if parity == -1 else 0
                     elif np.random.choice([0, 1]) == 1:
                         parity *= -1
                         current_sweep[current_symbol] = 1
-                else:
-                    if np.random.choice([0, 1]) == 1:
-                        current_sweep[current_symbol] = 1
+
+                elif np.random.choice([0, 1]) == 1:
+                    current_sweep[current_symbol] = 1
+
         all_sweeps.append(current_sweep)
 
     return all_sweeps
@@ -172,9 +187,9 @@ def run_and_save(
             all_results.append(batch_results)
 
         all_results = np.concatenate(all_results)
-        name0 = "Q-size-{}-pauli-{}".format(n, "".join(t for t in pauli))
-        np.save(os.path.join(save_dir, name0), all_results)  # [n_shots, 2 * n]
-        logging.debug("Saved: " + name0)
+        file_name = "Q-size-{}-pauli-{}".format(n, "".join(t for t in pauli))
+        np.save(os.path.join(save_dir, file_name), all_results)  # [n_shots, 2 * n]
+        logging.debug("Saved: " + file_name)
 
 
 def main(_):

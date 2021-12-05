@@ -48,11 +48,13 @@ def execute_batch(
     Returns:
         List of results to execution.
     """
-    runner = cirq.Simulator()
+    runner = None
     if use_engine:
         runner = cirq_google.get_engine_sampler(
             processor_id="weber", gate_set_name="sycamore"
         )
+    else:
+        runner = cirq.Simulator()
 
     res = runner.run_batch(
         programs=batch,
@@ -76,11 +78,13 @@ def execute_sweep(
     Returns:
         List of results to execution.
     """
-    runner = cirq.Simulator()
+    runner = None
     if use_engine:
         runner = cirq_google.get_engine_sampler(
             processor_id="weber", gate_set_name="sycamore"
         )
+    else:
+        runner = cirq.Simulator()
 
     return runner.run_sweep(program=circuit, params=params, repetitions=1)
 
