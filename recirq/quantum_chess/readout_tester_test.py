@@ -14,12 +14,13 @@
 #
 #
 import cirq
+import cirq_google as cg
 
 import recirq.quantum_chess.readout_tester as readout_tester
 
 
 def test_readout_tester():
-    device = cirq.google.Sycamore23
+    device = cg.Sycamore23
     sim = cirq.Simulator()
 
     tester = readout_tester.ReadoutTester(sampler=sim, device=device)

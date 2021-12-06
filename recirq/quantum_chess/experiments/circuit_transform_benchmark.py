@@ -30,6 +30,7 @@ directory (https://github.com/quantumlib/ReCirq/issues/163).
 """
 
 import cirq
+import cirq_google as cg
 import cProfile
 import pstats
 import sys
@@ -75,7 +76,7 @@ def optimize(name: str, circuit: cirq.Circuit) -> cirq.Circuit:
     """
     print(f"optimizing: {name}", flush=True)
     start = timer()
-    optimized = cirq.google.optimized_for_sycamore(circuit)
+    optimized = cg.optimized_for_sycamore(circuit)
     stop = timer()
     print_stats(stop - start, optimized)
     return optimized
@@ -127,7 +128,7 @@ def benchmark_transform(
 
 
 def main(input_files: List[str]) -> None:
-    device = cirq.google.Sycamore
+    device = cg.Sycamore
     transformers = {
         "dynamic look-ahead placement": ct.DynamicLookAheadHeuristicCircuitTransformer(
             device

@@ -42,7 +42,7 @@ def test_place_on_device():
     routed_circuit, initial_qubit_map, final_qubit_map = place_on_device(circuit, device)
 
     # Check that constraints are not violated
-    for _, op, _ in routed_circuit.findall_operations_with_gate_type(cirq.TwoQubitGate):
+    for _, op in routed_circuit.findall_operations(lambda op: op._num_qubits_() == 2):
         a, b = op.qubits
         a = cast(cirq.GridQubit, a)
         b = cast(cirq.GridQubit, b)

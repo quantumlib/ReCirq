@@ -36,7 +36,6 @@ from recirq.engine_utils import (
     get_processor_id_by_device_name,
     get_sampler_by_name,
     execute_in_queue,
-    get_available_processors
 )
 
 from recirq.documentation_utils import (
