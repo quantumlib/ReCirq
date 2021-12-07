@@ -19,7 +19,7 @@ learn_states_q.py --n=6 --n_paulis=20 --batch_size=500 --n_shots=1000
 
 Will create paulistring circuits all on 12 qubits (two systems of size 6).
 Once the circuits are generated, batch_size sweeps and a single circuit at
-a timewill be sent will be sent for simulation/execution, drawing n_shots
+a time will be sent will be sent for simulation/execution, drawing n_shots
 total samples from each one using `run_sweep` in Cirq. By default the
 bitstring data will be saved in the data folder. One can also set
 `use_engine` to True in order to run this against a processor on
@@ -39,7 +39,10 @@ from absl import logging
 
 
 def _create_randomized_sweeps(
-    hidden_p: str, symbols: Dict[str, int], num_reps: int
+    hidden_p: str,
+    symbols: Dict[str, int],
+    num_reps: int,
+    rand_state: np.random.RandomState,
 ) -> List[Dict[str, int]]:
     """Generate sweeps to help prepare \rho = 2^(-n) (I + \alpha P) states.
 
@@ -61,31 +64,33 @@ def _create_randomized_sweeps(
         if pauli != "I":
             last_i = i
 
-    sign_p = -1 if np.random.random() < 0.5 else 1
+    sign_p = -1 if rand_state.random() < 0.5 else 1
     all_sweeps = []
     for _ in range(num_reps):
         current_sweep = dict()
         for twocopy in [0, 1]:
-            parity = sign_p * (1 if np.random.random() <= 0.95 else -1)
+            parity = sign_p * (1 if rand_state.random() <= 0.95 else -1)
             for i, pauli in enumerate(hidden_p):
                 current_symbol = symbols[2 * i + twocopy]
-                current_sweep[current_symbol] = 0
+                current_sweep[current_symbol] = rand_state.choice([0, 1])
                 if pauli != "I":
                     if last_i == i:
-                        current_sweep[current_symbol] = 1 if parity == -1 else 0
-                    elif np.random.choice([0, 1]) == 1:
+                        v = 1 if parity == -1 else 0
+                        current_sweep[current_symbol] = v
+                    elif current_sweep[current_symbol] == 1:
                         parity *= -1
-                        current_sweep[current_symbol] = 1
-
-                elif np.random.choice([0, 1]) == 1:
-                    current_sweep[current_symbol] = 1
 
         all_sweeps.append(current_sweep)
 
     return all_sweeps
 
 
-def build_circuit(qubit_pairs: List[List[cirq.Qid]], pauli: str, num_reps: int):
+def build_circuit(
+    qubit_pairs: List[List[cirq.Qid]],
+    pauli: str,
+    num_reps: int,
+    rand_state: np.random.RandomState,
+):
     """Create I + P problem circuit between qubit pairs.
 
     Args:
@@ -128,7 +133,7 @@ def build_circuit(qubit_pairs: List[List[cirq.Qid]], pauli: str, num_reps: int):
 
     # Create randomized flippings. These flippings will contain values of 1,0.
     # which will turn the X gates on or off.
-    params = _create_randomized_sweeps(pauli, flip_params, num_reps)
+    params = _create_randomized_sweeps(pauli, flip_params, num_reps, rand_state)
     logging.debug(
         f"Generated circuit w/ depth {len(ret_circuit)} and {len(params)} sweeps."
     )
@@ -166,10 +171,11 @@ def run_and_save(
     logging.info("Generating pauli strings.")
     paulis = np.array(["X", "Y", "Z", "I"])
     pauli_strings = np.random.choice(a=paulis, size=(n_paulis, n), replace=True)
+    rand_source = np.random.RandomState(1234)
 
     for pauli in pauli_strings:
         logging.info(f"Processing pauli: {pauli}")
-        circuit, sweeps = build_circuit(system_pairs, pauli, n_shots)
+        circuit, sweeps = build_circuit(system_pairs, pauli, n_shots, rand_source)
 
         all_results = []
         for b in range(0, n_shots, batch_size):
