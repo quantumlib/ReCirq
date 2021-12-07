@@ -13,13 +13,14 @@
 # limitations under the License.
 
 """Sycamore native circuit building blocks."""
-from typing import List, Callable
+from typing import Callable, Dict, List
 from numbers import Number
 
 import os
 import cirq
 import cirq_google
 import functools
+import numpy as np
 
 
 @functools.lru_cache(maxsize=128)
@@ -190,3 +191,51 @@ def inv_z_basis_gate(pauli: str) -> cirq.Gate:
             axis_phase_exponent=-0.5, x_exponent=0.5, z_exponent=-0.5
         )
     raise ValueError("Invalid Pauli.")
+
+
+def create_randomized_sweeps(
+    hidden_p: str,
+    symbols: Dict[str, int],
+    num_reps: int,
+    rand_state: np.random.RandomState,
+) -> List[Dict[str, int]]:
+    """Generate sweeps to help prepare \rho = 2^(-n) (I + \alpha P) states.
+
+    See section A.2.a (https://arxiv.org/pdf/2112.00778.pdf) more details.
+
+    Args:
+        hidden_p: Pauli operator in (I + \alpha P)
+        symbols: Symbols to generate values for to prepare \rho.
+        num_reps: Number of unique parameter configurations (sweeps)
+            to generate for the given `symbols`.
+        rand_state: np.random.RandomState source of randomness.
+
+    Returns:
+        List of sweeps, that when placed in a circuit will realize
+        \rho.
+    """
+
+    last_i = 0
+    for i, pauli in enumerate(hidden_p):
+        if pauli != "I":
+            last_i = i
+
+    sign_p = -1 if rand_state.random() < 0.5 else 1
+    all_sweeps = []
+    for _ in range(num_reps):
+        current_sweep = dict()
+        for twocopy in [0, 1]:
+            parity = sign_p * (1 if rand_state.random() <= 0.95 else -1)
+            for i, pauli in enumerate(hidden_p):
+                current_symbol = symbols[2 * i + twocopy]
+                current_sweep[current_symbol] = rand_state.choice([0, 1])
+                if pauli != "I":
+                    if last_i == i:
+                        v = 1 if parity == -1 else 0
+                        current_sweep[current_symbol] = v
+                    elif current_sweep[current_symbol] == 1:
+                        parity *= -1
+
+        all_sweeps.append(current_sweep)
+
+    return all_sweeps

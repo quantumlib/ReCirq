@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Draw I + P pauli product data using two copy strategy.
+"""Draw I + P pauli product data using shadow strategy.
 style circuits.
 
-learn_states_q.py --n=6 --n_paulis=20 --batch_size=500 --n_shots=1000
+learn_states_c.py --n=6 --n_paulis=20 --batch_size=500 --n_shots=1000
 
-Will create paulistring circuits all on 12 qubits (two systems of size 6).
+Will create paulistring circuits all on 6 qubits.
 Once the circuits are generated, batch_size sweeps and a single circuit at
 a time will be sent will be sent for simulation/execution, drawing n_shots
 total samples from each one using `run_sweep` in Cirq. By default the
@@ -38,27 +38,62 @@ from absl import app
 from absl import logging
 
 
+def _create_basis_sweeps(
+    H_params: List[sympy.Symbol],
+    S_params: List[sympy.Symbol],
+    num_reps: int,
+    rand_state: np.random.RandomState,
+) -> Tuple[List[Dict[str, int]], np.ndarray]:
+    """Generate sweeps that transform to many different random pauli bases."""
+    assert len(H_params) == len(S_params)
+    all_sweeps = []
+    all_bases = rand_state.randint(0, 3, size=(num_reps, len(H_params)))
+    for r in range(num_reps):
+        basis = all_bases[r]
+        sweep = dict()
+        for i in range(len(H_params)):
+            if basis[i] == 0:
+                # Identity.
+                sweep[H_params[i]] = 0.0
+                sweep[S_params[i]] = 0.0
+            elif basis[i] == 1:
+                # H.
+                sweep[H_params[i]] = 0.5
+                sweep[S_params[i]] = 0.5
+            elif basis[i] == 2:
+                # HS.
+                sweep[H_params[i]] = -1.0
+                sweep[S_params[i]] = 0.5
+
+        all_sweeps.append(sweep)
+
+    return all_sweeps, all_bases
+
+
 def build_circuit(
     qubit_pairs: List[List[cirq.Qid]],
     pauli: str,
     num_reps: int,
     rand_state: np.random.RandomState,
-) -> Tuple[cirq.Circuit, List[Dict[str, int]]]:
-    """Create I + P problem circuit between qubit pairs.
+) -> Tuple[cirq.Circuit, List[Dict[str, int]], np.ndarray]:
+    """Create I + P problem circuit using shadows (not two copy).
 
     Args:
         qubit_pairs: List of qubit pairs.
         pauli: Python str containing characters 'I', 'X', 'Y' or 'Z'.
         num_reps: Number of repetitions to generate for sweeps.
+        rand_state: np.random.RandomState source of randomness.
 
     Returns:
-        A (circuit, sweep) tuple, runnable using `run_sweep`.
+        A (circuit, sweep, basis) tuple, runnable using `run_sweep`.
     """
     a_qubits = [pair[0] for pair in qubit_pairs]
     b_qubits = [pair[1] for pair in qubit_pairs]
     all_qubits = np.concatenate(qubit_pairs)
 
     flip_params = sympy.symbols(f"param_0:{len(qubit_pairs) * 2}")
+    S_params = sympy.symbols(f"Sparam_0:{len(qubit_pairs)}")
+    H_params = sympy.symbols(f"Hparam_0:{len(qubit_pairs)}")
 
     # Add X flips.
     ret_circuit = cirq.Circuit(cirq.X(q) ** p for q, p in zip(all_qubits, flip_params))
@@ -71,15 +106,18 @@ def build_circuit(
         circuit_blocks.inv_z_basis_gate(p)(q) for q, p in zip(b_qubits, pauli)
     ]
 
-    # Add un-bell pair.
-    ret_circuit += [circuit_blocks.un_bell_pair_block(pair) for pair in qubit_pairs]
+    # Turn for X/Y, p is either 0 or 1
+    ret_circuit += cirq.Circuit(
+        cirq.PhasedXZGate(axis_phase_exponent=p, x_exponent=r, z_exponent=0.0)(q)
+        for q, (p, r) in zip(a_qubits, zip(H_params, S_params))
+    )
 
     # Add measurements.
-    for i, qubit in enumerate(all_qubits):
-        ret_circuit += cirq.measure(qubit, key=f"q{i}")
+    for i, qubit in enumerate(a_qubits):
+        ret_circuit += cirq.measure(qubit, key="q{}".format(i))
 
     # Merge single qubit operations, flatten moments and align measurements.
-    cirq.merge_single_qubit_gates_into_phxz(ret_circuit)
+    cirq.optimizers.merge_single_qubit_gates_into_phxz(ret_circuit)
     cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
     ret_circuit = run_config.flatten_circuit(ret_circuit)
     cirq.SynchronizeTerminalMeasurements().optimize_circuit(circuit=ret_circuit)
@@ -89,10 +127,17 @@ def build_circuit(
     params = circuit_blocks.create_randomized_sweeps(
         pauli, flip_params, num_reps, rand_state
     )
+
+    # Choose between Z,X,Y basis measurement basis.
+    basis_sweeps, basis_arr = _create_basis_sweeps(
+        H_params, S_params, num_reps, rand_state
+    )
+
+    all_params = [x | y for x, y in zip(params, basis_sweeps)]
     logging.debug(
         f"Generated circuit w/ depth {len(ret_circuit)} and {len(params)} sweeps."
     )
-    return ret_circuit, params
+    return ret_circuit, all_params, basis_arr
 
 
 def run_and_save(
@@ -130,7 +175,9 @@ def run_and_save(
 
     for pauli in pauli_strings:
         logging.info(f"Processing pauli: {pauli}")
-        circuit, sweeps = build_circuit(system_pairs, pauli, n_shots, rand_source)
+        circuit, sweeps, basis_arr = build_circuit(
+            system_pairs, pauli, n_shots, rand_source
+        )
 
         all_results = []
         for b in range(0, n_shots, batch_size):
@@ -140,7 +187,7 @@ def run_and_save(
 
             batch_results = []
             for j, single_circuit_samples in enumerate(results):
-                qubit_order = [f"q{i}" for i in range(2 * n)]
+                qubit_order = [f"q{i}" for i in range(n)]
                 out0 = single_circuit_samples.data[qubit_order].to_numpy()
                 batch_results.append(np.squeeze(out0))
 
@@ -149,7 +196,11 @@ def run_and_save(
 
         all_results = np.concatenate(all_results)
         file_name = "Q-size-{}-pauli-{}".format(n, "".join(t for t in pauli))
+        basis_file_name = "Q-size-{}-pauli-{}-basis".format(
+            n, "".join(t for t in pauli)
+        )
         np.save(os.path.join(save_dir, file_name), all_results)  # [n_shots, 2 * n]
+        np.save(os.path.join(save_dir, basis_file_name), basis_arr)
         logging.debug("Saved: " + file_name)
 
 
