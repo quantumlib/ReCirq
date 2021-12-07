@@ -11,6 +11,8 @@ import cirq.contrib.routing as ccr
 import cirq_google as cg
 
 try:
+    # Set the 'RECIRQ_IGNORE_PYTKET' environment variable to treat PyTket as an optional
+    # dependency. We do this for CI testing against the next, pre-release Cirq version.
     import pytket
     import pytket.extensions.cirq
     from pytket.circuit import Node, Qubit
