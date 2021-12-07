@@ -133,7 +133,7 @@ def build_circuit(
         H_params, S_params, num_reps, rand_state
     )
 
-    all_params = [x | y for x, y in zip(params, basis_sweeps)]
+    all_params = [{**x, **y} for x, y in zip(params, basis_sweeps)]
     logging.debug(
         f"Generated circuit w/ depth {len(ret_circuit)} and {len(params)} sweeps."
     )
