@@ -14,12 +14,12 @@
 
 """Draw I + P pauli product data using shadow strategy.
 
-learn_states_c.py --n=6 --n_paulis=20 --batch_size=500 --n_shots=1000
+learn_states_c.py --n=6 --n_paulis=20 --n_sweeps=500 --n_shots=1000
 
 Will create 20 random paulistring circuits on 6 qubits.
-For each paulistring circuit, payloads containing batch_size sweeps are
+For each paulistring circuit, payloads containing n_sweeps sweeps are
 executed until n_shots total samples have been drawn from that circuit.
-By default the bitstring data will be saved in the data folder. One can
+By default, the bitstring data will be saved in the data folder. One can
 also set `use_engine` to True in order to run this against a processor on
 quantum engine.
 """
@@ -141,7 +141,7 @@ def build_circuit(
 def run_and_save(
     n: int,
     n_paulis: int,
-    batch_size: int,
+    n_sweeps: int,
     n_shots: int,
     save_dir: str,
     use_engine: bool,
@@ -153,7 +153,7 @@ def run_and_save(
     Args:
         n: Number of system qubits to use (total qubits == 2 * n).
         n_paulis: Number of pauli circuits to generate.
-        batch_size: The number of circuits to send off for execution in
+        n_sweeps: The number of circuits to send off for execution in
             a single payload (Does not affect experimental resluts).
         n_shots: Number of shots to draw from each circuit.
         save_dir: str or Path to directory where data is saved.
@@ -178,9 +178,9 @@ def run_and_save(
         )
 
         all_results = []
-        for b in range(0, n_shots, batch_size):
+        for b in range(0, n_shots, n_sweeps):
             results = run_config.execute_sweep(
-                circuit, sweeps[b : b + batch_size], use_engine
+                circuit, sweeps[b : b + n_sweeps], use_engine
             )
 
             batch_results = []
@@ -208,7 +208,7 @@ def main(_):
     run_and_save(
         state_flags.n,
         state_flags.n_paulis,
-        state_flags.batch_size,
+        state_flags.n_sweeps,
         state_flags.n_shots,
         state_flags.save_dir,
         state_flags.use_engine,

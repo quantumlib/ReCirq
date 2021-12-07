@@ -42,7 +42,7 @@ def _predict_exp(data, paulistring, two_copy):
 
 def test_twocopy_seperates(tmpdir):
     learn_states_q.run_and_save(
-        n=5, n_paulis=10, batch_size=250, n_shots=250, save_dir=tmpdir, use_engine=False
+        n=5, n_paulis=10, n_sweeps=250, n_shots=250, save_dir=tmpdir, use_engine=False
     )
     pauli_files = [
         f

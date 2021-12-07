@@ -5,11 +5,12 @@ import numpy as np
 from . import learn_states_c
 
 
-def _predict_exp(data, pauli_list, two_copy):
-    ave = 0
+def _predict_exp(data, paulistring, two_copy):
+    """Compute expectation values of paulistring given bitstring data."""
+    expectation_value = 0
     for a in data:
         val = 1
-        for i, pauli in enumerate(pauli_list):
+        for i, pauli in enumerate(paulistring):
             idx = a[i]
             if two_copy:
                 idx = a[2 * i] * 2 + a[2 * i + 1]
@@ -22,13 +23,13 @@ def _predict_exp(data, pauli_list, two_copy):
             elif pauli == "Z":
                 ls = [1, -1, 1, -1]
             val *= ls[idx]
-        ave += val / len(data)
-    return ave
+        expectation_value += val / len(data)
+    return expectation_value
 
 
 def test_shadow_doesnt_seperate(tmpdir):
     learn_states_c.run_and_save(
-        n=5, n_paulis=10, batch_size=250, n_shots=250, save_dir=tmpdir, use_engine=False
+        n=5, n_paulis=10, n_sweeps=250, n_shots=250, save_dir=tmpdir, use_engine=False
     )
     pauli_files = [
         f

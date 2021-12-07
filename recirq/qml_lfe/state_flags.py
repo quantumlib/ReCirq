@@ -27,7 +27,7 @@ flags.DEFINE_integer(
 # Here batch_size shots are drawn via run_sweep until n_shots measurements
 # are reached for each circuit.
 flags.DEFINE_integer(
-    "batch_size",
+    "n_sweeps",
     500,
     "Number of sweeps to send over the wire per circuit (value does not affect results).",
 )
