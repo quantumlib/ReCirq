@@ -20,11 +20,11 @@ import uuid
 from dataclasses import dataclass, field
 from typing import List, Any, Optional, Callable, Dict, Union
 
+import numpy as np
+
 import cirq
 import cirq_google as cg
-import numpy as np
 from cirq import work, study, circuits, ops
-from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
 from cirq_google.engine.engine_job import TERMINAL_STATES
 
 
@@ -377,42 +377,3 @@ async def execute_in_queue(func, tasks, num_workers: int):
 
 def _get_current_time():
     return datetime.datetime.now()
-
-
-def get_available_processors(processor_names: List[str]):
-    """Returns a list of available processors.
-
-    Checks the reservation status of the processors and returns a list of
-    processors that are available to run on at the present time.
-
-    Args:
-        processor_names: A list of processor names which are keys from QUANTUM_PROCESSORS.
-    """
-    project_id = os.environ['GOOGLE_CLOUD_PROJECT']
-    engine = cg.get_engine()
-    available_processors = []
-    current_time = _get_current_time()
-    for processor_name in processor_names:
-        processor_id = get_processor_id_by_device_name(processor_name)
-        if processor_id is None:
-            # Skip the check if this is a simulator.
-            continue
-        processor = engine.get_processor(processor_id)
-        for time_slot in processor.get_schedule():
-            try:
-                time_slot = cg.EngineTimeSlot.from_proto(time_slot)
-            # Parsing the end_time of the last time range in the schedule might give throw an error.
-            # TODO: remove this check once it is fixed in cirq.
-            except ValueError as e:
-                continue
-            # Ignore time slots that do not contain the current time.
-            if time_slot.start_time < current_time < time_slot.end_time:
-                # Time slots need to be either in OPEN_SWIM or reserved by the
-                # current project to be considered available.
-                if (time_slot.slot_type
-                    == enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM
-                ) or (time_slot.slot_type
-                      == enums.QuantumTimeSlot.TimeSlotType.RESERVATION and
-                      time_slot.project_id == project_id):
-                    available_processors.append(processor_name)
-    return available_processors

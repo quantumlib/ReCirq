@@ -14,6 +14,7 @@
 from typing import Sequence, Union, Optional
 
 import cirq
+import cirq_google as cg
 import numpy as np
 from cirq.optimizers.two_qubit_to_fsim import (
     _decompose_xx_yy_into_two_fsims_ignoring_single_qubit_ops,
@@ -122,7 +123,7 @@ def controlled_iswap(
 
 def controlled_sqrt_iswap(a: cirq.Qid, b: cirq.Qid, c: cirq.Qid):
     """Performs (ISWAP(a,b)i**0.5).controlled_by(c)"""
-    return cirq.google.optimized_for_sycamore(
+    return cg.optimized_for_sycamore(
         cirq.Circuit(
             cirq.CNOT(a, b),
             cirq.TOFFOLI(c, b, a) ** -0.5,
@@ -134,7 +135,7 @@ def controlled_sqrt_iswap(a: cirq.Qid, b: cirq.Qid, c: cirq.Qid):
 
 def controlled_inv_sqrt_iswap(a: cirq.Qid, b: cirq.Qid, c: cirq.Qid):
     """Performs (ISWAP(a,b)i**0.5).controlled_by(c)"""
-    return cirq.google.optimized_for_sycamore(
+    return cg.optimized_for_sycamore(
         cirq.Circuit(
             cirq.CNOT(a, b),
             cirq.TOFFOLI(c, b, a) ** 0.5,

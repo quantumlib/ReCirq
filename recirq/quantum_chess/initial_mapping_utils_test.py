@@ -15,6 +15,7 @@ import pytest
 from collections import deque
 
 import cirq
+import cirq_google as cg
 
 import recirq.quantum_chess.initial_mapping_utils as imu
 
@@ -33,7 +34,7 @@ grid_qubits = dict(
 
 
 def test_build_physical_qubits_graph():
-    g = imu.build_physical_qubits_graph(cirq.google.Foxtail)
+    g = imu.build_physical_qubits_graph(cg.Foxtail)
     expected = {
         grid_qubits["0_0"]: [grid_qubits["0_1"], grid_qubits["1_0"]],
         grid_qubits["0_1"]: [
@@ -356,7 +357,7 @@ def test_find_reference_qubits():
 
 
 def test_find_candidate_qubits():
-    g = imu.build_physical_qubits_graph(cirq.google.Foxtail)
+    g = imu.build_physical_qubits_graph(cg.Foxtail)
     # First level has free qubits.
     mapped = {
         grid_qubits["0_5"],
@@ -418,8 +419,8 @@ def test_find_shortest_path():
 @pytest.mark.parametrize(
     "device",
     [
-        cirq.google.Sycamore23,
-        cirq.google.Sycamore,
+        cg.Sycamore23,
+        cg.Sycamore,
     ],
 )
 def test_calculate_initial_mapping(device):

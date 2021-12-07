@@ -14,16 +14,11 @@
 
 import os
 import uuid
-from datetime import datetime
-from unittest.mock import patch
+
+import pytest
 
 import cirq
 import cirq_google
-import pytest
-from cirq_google.engine.client.quantum_v1alpha1 import types as qtypes
-from cirq_google.engine.client.quantum_v1alpha1.gapic import enums
-from google.protobuf.timestamp_pb2 import Timestamp
-
 import recirq
 from recirq.engine_utils import _get_program_id
 
@@ -113,75 +108,3 @@ def test_sampler_by_name():
     assert isinstance(recirq.get_sampler_by_name('Syc23-zeros',
                                                  gateset='sqrt-iswap'),
                       recirq.ZerosSampler)
-
-
-@patch('cirq.google.engine.engine_client.quantum.QuantumEngineServiceClient')
-@patch('recirq.engine_utils._get_current_time')
-@patch('cirq.google.engine.EngineProcessor.get_schedule')
-def test_get_available_processors_open_swim_in_time_window(schedule_mock, time_mock, engine_mock):
-    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
-    schedule_mock.return_value = [
-        qtypes.QuantumTimeSlot(
-            processor_name='Sycamore23',
-            start_time=Timestamp(seconds=100),
-            end_time=Timestamp(seconds=500),
-            slot_type=enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM)
-    ]
-    time_mock.return_value = datetime.fromtimestamp(300)
-    assert 'Sycamore23' in recirq.get_available_processors(['Sycamore23'])
-
-
-@patch('cirq.google.engine.engine_client.quantum.QuantumEngineServiceClient')
-@patch('recirq.engine_utils._get_current_time')
-@patch('cirq.google.engine.EngineProcessor.get_schedule')
-def test_get_available_processors_open_swim_outside_window(schedule_mock, time_mock, engine_mock):
-    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
-    schedule_mock.return_value = [
-        qtypes.QuantumTimeSlot(
-            processor_name='Sycamore23',
-            start_time=Timestamp(seconds=300),
-            end_time=Timestamp(seconds=500),
-            slot_type=enums.QuantumTimeSlot.TimeSlotType.OPEN_SWIM)
-    ]
-    time_mock.return_value = datetime.fromtimestamp(700)
-    assert recirq.get_available_processors(['Sycamore23']) == []
-
-
-@patch('cirq.google.engine.engine_client.quantum.QuantumEngineServiceClient')
-@patch('recirq.engine_utils._get_current_time')
-@patch('cirq.google.engine.EngineProcessor.get_schedule')
-def test_get_available_processors_current_project_reservation(
-        schedule_mock, time_mock, engine_mock):
-    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
-    schedule_mock.return_value = [
-        qtypes.QuantumTimeSlot(
-            processor_name='Sycamore23',
-            start_time=Timestamp(seconds=100),
-            end_time=Timestamp(seconds=500),
-            slot_type=enums.QuantumTimeSlot.TimeSlotType.RESERVATION,
-            reservation_config=qtypes.QuantumTimeSlot.ReservationConfig(
-                project_id='some_project'),
-        )
-    ]
-    time_mock.return_value = datetime.fromtimestamp(300)
-    assert 'Sycamore23' in recirq.get_available_processors(['Sycamore23'])
-
-
-@patch('cirq.google.engine.engine_client.quantum.QuantumEngineServiceClient')
-@patch('recirq.engine_utils._get_current_time')
-@patch('cirq.google.engine.EngineProcessor.get_schedule')
-def test_get_available_processors_other_project_reservation(
-        schedule_mock, time_mock, engine_mock):
-    os.environ['GOOGLE_CLOUD_PROJECT'] = 'some_project'
-    schedule_mock.return_value = [
-        qtypes.QuantumTimeSlot(
-            processor_name='Sycamore23',
-            start_time=Timestamp(seconds=100),
-            end_time=Timestamp(seconds=500),
-            slot_type=enums.QuantumTimeSlot.TimeSlotType.RESERVATION,
-            reservation_config=qtypes.QuantumTimeSlot.ReservationConfig(
-                project_id='other_project'),
-        )
-    ]
-    time_mock.return_value = datetime.fromtimestamp(300)
-    assert recirq.get_available_processors(['Sycamore23']) == []

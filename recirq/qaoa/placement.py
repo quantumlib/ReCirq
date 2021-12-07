@@ -3,17 +3,27 @@ from collections import defaultdict
 from functools import lru_cache
 from typing import Callable, Dict, List, Optional, Tuple
 
+import networkx as nx
+import numpy as np
+
 import cirq
 import cirq.contrib.routing as ccr
 import cirq_google as cg
-import networkx as nx
-import numpy as np
-import pytket
-import pytket.extensions.cirq
-from pytket.circuit import Node, Qubit
-from pytket.passes import SequencePass, RoutingPass, PlacementPass
-from pytket.predicates import CompilationUnit, ConnectivityPredicate
-from pytket.routing import GraphPlacement
+
+try:
+    # Set the 'RECIRQ_IGNORE_PYTKET' environment variable to treat PyTket as an optional
+    # dependency. We do this for CI testing against the next, pre-release Cirq version.
+    import pytket
+    import pytket.extensions.cirq
+    from pytket.circuit import Node, Qubit
+    from pytket.passes import SequencePass, RoutingPass, PlacementPass
+    from pytket.predicates import CompilationUnit, ConnectivityPredicate
+    from pytket.routing import GraphPlacement
+except ImportError as e:
+    if 'RECIRQ_IGNORE_PYTKET' in os.environ:
+        pytket = NotImplemented
+    else:
+        raise e
 
 import recirq
 
@@ -56,7 +66,7 @@ def _device_to_tket_device(device):
     )
 
 
-def tk_to_cirq_qubit(tk: Qubit):
+def tk_to_cirq_qubit(tk: 'Qubit'):
     """Convert a tket Qubit to either a LineQubit or GridQubit.
 
     """

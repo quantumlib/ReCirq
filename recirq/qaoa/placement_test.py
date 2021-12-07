@@ -12,7 +12,7 @@ from recirq.qaoa.gates_and_compilation import compile_problem_unitary_to_arbitra
     compile_driver_unitary_to_rx
 from recirq.qaoa.placement import place_line_on_device, place_on_device, \
     min_weight_simple_paths_brute_force, min_weight_simple_path_greedy, path_weight, \
-    min_weight_simple_path_anneal
+    min_weight_simple_path_anneal, pytket
 from recirq.qaoa.problem_circuits import get_generic_qaoa_circuit
 
 
@@ -23,6 +23,7 @@ def permute_gate(qubits: Sequence[cirq.Qid], permutation: List[int]):
     ).on(*qubits)
 
 
+@pytest.mark.skipif(pytket is NotImplemented, reason='Pytket is not installed.')
 def test_place_on_device():
     problem_graph = nx.random_regular_graph(d=3, n=10)
     nx.set_edge_attributes(problem_graph, values=1, name='weight')
@@ -42,7 +43,7 @@ def test_place_on_device():
     routed_circuit, initial_qubit_map, final_qubit_map = place_on_device(circuit, device)
 
     # Check that constraints are not violated
-    for _, op, _ in routed_circuit.findall_operations_with_gate_type(cirq.TwoQubitGate):
+    for _, op in routed_circuit.findall_operations(lambda op: op._num_qubits_() == 2):
         a, b = op.qubits
         a = cast(cirq.GridQubit, a)
         b = cast(cirq.GridQubit, b)

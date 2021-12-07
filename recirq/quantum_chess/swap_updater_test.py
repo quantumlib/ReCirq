@@ -1,5 +1,6 @@
 import pytest
 import cirq
+import cirq_google as cg
 
 from recirq.quantum_chess.swap_updater import SwapUpdater, generate_decomposed_swap
 import recirq.quantum_chess.quantum_moves as qm
@@ -104,7 +105,7 @@ def test_pentagonal_split_and_merge():
 
     # Whereas the original circuit's initial mapping was not valid due to
     # adjacency constraints, the updated circuit is valid.
-    device = cirq.google.Sycamore
+    device = cg.Sycamore
     with pytest.raises(ValueError):
         device.validate_circuit(
             logical_circuit.transform_qubits(lambda q: initial_mapping.get(q))
@@ -172,7 +173,7 @@ def test_holes_in_device_graph():
     updated_circuit = cirq.Circuit(
         SwapUpdater(circuit, allowed_qubits, initial_mapping).add_swaps()
     )
-    cirq.google.Sycamore.validate_circuit(updated_circuit)
+    cg.Sycamore.validate_circuit(updated_circuit)
     for op in updated_circuit.all_operations():
         assert initial_mapping[b2] not in op.qubits
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 import pytest
 import cirq
+import cirq_google as cg
 
 import recirq.quantum_chess.circuit_transformer as ct
 import recirq.quantum_chess.quantum_moves as qm
@@ -30,7 +31,7 @@ c3 = cirq.NamedQubit("c3")
 d1 = cirq.NamedQubit("d1")
 
 
-@pytest.mark.parametrize("device", (cirq.google.Sycamore23, cirq.google.Sycamore))
+@pytest.mark.parametrize("device", (cg.Sycamore23, cg.Sycamore))
 def test_qubits_within(device):
     """Coupling graph of grid qubits looks like:
 
@@ -47,7 +48,7 @@ def test_qubits_within(device):
     assert transformer.qubits_within(10, grid_qubits[0], grid_qubits, set()) == 6
 
 
-@pytest.mark.parametrize("device", (cirq.google.Sycamore23, cirq.google.Sycamore))
+@pytest.mark.parametrize("device", (cg.Sycamore23, cg.Sycamore))
 def test_edges_within(device):
     """
     The circuit looks like:
@@ -93,7 +94,7 @@ def test_edges_within(device):
         ct.DynamicLookAheadHeuristicCircuitTransformer,
     ],
 )
-@pytest.mark.parametrize("device", [cirq.google.Sycamore23, cirq.google.Sycamore])
+@pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
 def test_single_qubit_ops(transformer, device):
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3))
     t = transformer(device)
@@ -107,7 +108,7 @@ def test_single_qubit_ops(transformer, device):
         ct.DynamicLookAheadHeuristicCircuitTransformer,
     ],
 )
-@pytest.mark.parametrize("device", [cirq.google.Sycamore23, cirq.google.Sycamore])
+@pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
 def test_single_qubit_and_two_qubits_ops(transformer, device):
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3), cirq.ISWAP(a3, a4) ** 0.5)
     t = transformer(device)
@@ -121,7 +122,7 @@ def test_single_qubit_and_two_qubits_ops(transformer, device):
         ct.DynamicLookAheadHeuristicCircuitTransformer,
     ],
 )
-@pytest.mark.parametrize("device", [cirq.google.Sycamore23, cirq.google.Sycamore])
+@pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
 def test_three_split_moves(transformer, device):
     c = cirq.Circuit(
         qm.split_move(a1, a2, b1), qm.split_move(a2, a3, b3), qm.split_move(b1, c1, c2)
@@ -137,7 +138,7 @@ def test_three_split_moves(transformer, device):
         ct.DynamicLookAheadHeuristicCircuitTransformer,
     ],
 )
-@pytest.mark.parametrize("device", [cirq.google.Sycamore23, cirq.google.Sycamore])
+@pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
 def test_disconnected(transformer, device):
     c = cirq.Circuit(
         qm.split_move(a1, a2, a3),
@@ -156,7 +157,7 @@ def test_disconnected(transformer, device):
         ct.DynamicLookAheadHeuristicCircuitTransformer,
     ],
 )
-@pytest.mark.parametrize("device", [cirq.google.Sycamore23, cirq.google.Sycamore])
+@pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
 def test_move_around_square(transformer, device):
     c = cirq.Circuit(
         qm.normal_move(a1, a2),
@@ -175,7 +176,7 @@ def test_move_around_square(transformer, device):
         ct.DynamicLookAheadHeuristicCircuitTransformer,
     ],
 )
-@pytest.mark.parametrize("device", [cirq.google.Sycamore23, cirq.google.Sycamore])
+@pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
 def test_split_then_merge(transformer, device):
     c = cirq.Circuit(
         qm.split_move(a1, a2, b1),
@@ -189,7 +190,7 @@ def test_split_then_merge(transformer, device):
     device.validate_circuit(t.transform(c))
 
 
-@pytest.mark.parametrize("device", [cirq.google.Sycamore23, cirq.google.Sycamore])
+@pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
 def test_split_then_merge_trapezoid(device):
     c = cirq.Circuit(
         qm.split_move(a1, a2, b1), qm.normal_move(a2, a3), qm.merge_move(a3, b1, b3)
@@ -202,7 +203,7 @@ def test_too_many_qubits():
     c = cirq.Circuit()
     for i in range(24):
         c.append(cirq.X(cirq.NamedQubit("q" + str(i))))
-    t = ct.ConnectivityHeuristicCircuitTransformer(cirq.google.Sycamore23)
+    t = ct.ConnectivityHeuristicCircuitTransformer(cg.Sycamore23)
     with pytest.raises(ct.DeviceMappingError, match="Qubits exhausted"):
         t.transform(c)
 
@@ -211,7 +212,7 @@ def test_two_operations_on_single_qubit():
     """Tests that a new qubit is NOT allocated for every gate."""
     qubit = cirq.NamedQubit("a")
     c = cirq.Circuit(*[cirq.X(qubit)] * 99)
-    device = cirq.google.Sycamore23
+    device = cg.Sycamore23
     t = ct.ConnectivityHeuristicCircuitTransformer(device)
     device.validate_circuit(t.transform(c))
 

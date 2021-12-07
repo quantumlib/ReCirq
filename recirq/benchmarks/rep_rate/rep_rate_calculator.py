@@ -133,12 +133,12 @@ class RepRateCalculator:
                     processor_id: str,
                     gate_set: Optional[cg.SerializableGateSet] = None):
         """
-        Constructs a RepRateTester using a cirq.google.Engine object.
+        Constructs a RepRateTester using a cirq_google.Engine object.
         Uses the device from the device specification from the API
         and the sampler provided by the Engine.
 
         Args:
-            engine: cirq.google.Engine to use for device and sampler.
+            engine: cirq_google.Engine to use for device and sampler.
             gate_set: gate set to use.  Defaults to square root of iswap
             processor_id: Processor to test on.
         """

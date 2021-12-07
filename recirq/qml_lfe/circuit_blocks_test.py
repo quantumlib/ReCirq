@@ -91,3 +91,11 @@ def test_block_1d_circuit():
         # always have parity that disagrees if number of
         # qubits is odd.
         assert i % 2 != tot_i % 2
+
+
+def test_z_basis_gate():
+    assert circuit_blocks.inv_z_basis_gate("Z") == cirq.I
+    assert circuit_blocks.inv_z_basis_gate("X") == cirq.H
+    assert circuit_blocks.inv_z_basis_gate("Y") == cirq.PhasedXZGate(
+        axis_phase_exponent=-0.5, x_exponent=0.5, z_exponent=-0.5
+    )
