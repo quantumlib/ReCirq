@@ -1,11 +1,21 @@
 import dataclasses
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Type, Callable, List, Tuple
+from typing import Type, Callable, List, Tuple, Any
 
 import pandas as pd
 
-from cirq_google.workflow import ExecutableSpec, QuantumExecutableGroup
+try:
+    from cirq_google.workflow import ExecutableSpec, QuantumExecutableGroup
+
+    workflow = True
+except ImportError as e:
+    import os
+
+    if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
+        workflow = False
+    else:
+        raise ImportError(f"This functionality requires a pre-release version of Cirq: {e}")
 
 
 @dataclass
@@ -33,7 +43,7 @@ class AlgorithmicBenchmark:
     executable_family: str
     spec_class: Type[ExecutableSpec]
     data_class: Type
-    executable_generator_func: Callable[[...], QuantumExecutableGroup]
+    executable_generator_func: Callable[[Any], QuantumExecutableGroup]
     configs: List['BenchmarkConfig']
 
     def as_strings(self):

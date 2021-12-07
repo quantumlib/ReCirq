@@ -11,7 +11,7 @@ import cirq.contrib.routing as ccr
 import cirq_google as cg
 
 try:
-    # Set the 'RECIRQ_IGNORE_PYTKET' environment variable to treat PyTket as an optional
+    # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
     # dependency. We do this for CI testing against the next, pre-release Cirq version.
     import pytket
     import pytket.extensions.cirq
@@ -20,7 +20,7 @@ try:
     from pytket.predicates import CompilationUnit, ConnectivityPredicate
     from pytket.routing import GraphPlacement
 except ImportError as e:
-    if 'RECIRQ_IGNORE_PYTKET' in os.environ:
+    if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
         pytket = NotImplemented
     else:
         raise e

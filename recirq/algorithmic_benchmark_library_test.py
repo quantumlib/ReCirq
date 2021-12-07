@@ -4,9 +4,12 @@ from types import ModuleType
 
 import pytest
 
-from recirq.algorithmic_benchmark_library import BENCHMARKS, get_all_algo_configs
+from recirq.algorithmic_benchmark_library import BENCHMARKS, get_all_algo_configs, workflow
 
 RECIRQ_DIR = os.path.abspath(os.path.dirname(__file__) + '/../')
+
+if not workflow:
+    pytestmark = pytest.mark.skip
 
 
 @pytest.mark.parametrize('algo', BENCHMARKS)
