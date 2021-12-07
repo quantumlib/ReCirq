@@ -41,9 +41,9 @@ class AlgorithmicBenchmark:
     domain: str
     name: str
     executable_family: str
-    spec_class: Type[ExecutableSpec]
+    spec_class: Type['ExecutableSpec']
     data_class: Type
-    executable_generator_func: Callable[[Any], QuantumExecutableGroup]
+    executable_generator_func: Callable[[Any], 'QuantumExecutableGroup']
     configs: List['BenchmarkConfig']
 
     def as_strings(self):

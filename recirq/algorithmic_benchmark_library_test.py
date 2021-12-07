@@ -9,7 +9,7 @@ from recirq.algorithmic_benchmark_library import BENCHMARKS, get_all_algo_config
 RECIRQ_DIR = os.path.abspath(os.path.dirname(__file__) + '/../')
 
 if not workflow:
-    pytestmark = pytest.mark.skip
+    pytestmark = pytest.mark.skip('algorithmic_benchmark_library requires pre-release of Cirq.')
 
 
 @pytest.mark.parametrize('algo', BENCHMARKS)
