@@ -13,16 +13,14 @@
 # limitations under the License.
 
 """Draw I + P pauli product data using shadow strategy.
-style circuits.
 
 learn_states_c.py --n=6 --n_paulis=20 --batch_size=500 --n_shots=1000
 
-Will create paulistring circuits all on 6 qubits.
-Once the circuits are generated, batch_size sweeps and a single circuit at
-a time will be sent will be sent for simulation/execution, drawing n_shots
-total samples from each one using `run_sweep` in Cirq. By default the
-bitstring data will be saved in the data folder. One can also set
-`use_engine` to True in order to run this against a processor on
+Will create 20 random paulistring circuits on 6 qubits.
+For each paulistring circuit, payloads containing batch_size sweeps are
+executed until n_shots total samples have been drawn from that circuit.
+By default the bitstring data will be saved in the data folder. One can
+also set `use_engine` to True in order to run this against a processor on
 quantum engine.
 """
 from typing import Dict, List, Tuple
@@ -41,14 +39,14 @@ from absl import logging
 def _create_basis_sweeps(
     H_params: List[sympy.Symbol],
     S_params: List[sympy.Symbol],
-    num_reps: int,
+    n_shots: int,
     rand_state: np.random.RandomState,
 ) -> Tuple[List[Dict[str, int]], np.ndarray]:
     """Generate sweeps that transform to many different random pauli bases."""
     assert len(H_params) == len(S_params)
     all_sweeps = []
-    all_bases = rand_state.randint(0, 3, size=(num_reps, len(H_params)))
-    for r in range(num_reps):
+    all_bases = rand_state.randint(0, 3, size=(n_shots, len(H_params)))
+    for r in range(n_shots):
         basis = all_bases[r]
         sweep = dict()
         for i in range(len(H_params)):
@@ -73,7 +71,7 @@ def _create_basis_sweeps(
 def build_circuit(
     qubit_pairs: List[List[cirq.Qid]],
     pauli: str,
-    num_reps: int,
+    n_shots: int,
     rand_state: np.random.RandomState,
 ) -> Tuple[cirq.Circuit, List[Dict[str, int]], np.ndarray]:
     """Create I + P problem circuit using shadows (not two copy).
@@ -81,7 +79,7 @@ def build_circuit(
     Args:
         qubit_pairs: List of qubit pairs.
         pauli: Python str containing characters 'I', 'X', 'Y' or 'Z'.
-        num_reps: Number of repetitions to generate for sweeps.
+        n_shots: Number of repetitions to generate for sweeps.
         rand_state: np.random.RandomState source of randomness.
 
     Returns:
@@ -125,12 +123,12 @@ def build_circuit(
     # Create randomized flippings. These flippings will contain values of 1,0.
     # which will turn the X gates on or off.
     params = circuit_blocks.create_randomized_sweeps(
-        pauli, flip_params, num_reps, rand_state
+        pauli, flip_params, n_shots, rand_state
     )
 
     # Choose between Z,X,Y basis measurement basis.
     basis_sweeps, basis_arr = _create_basis_sweeps(
-        H_params, S_params, num_reps, rand_state
+        H_params, S_params, n_shots, rand_state
     )
 
     all_params = [{**x, **y} for x, y in zip(params, basis_sweeps)]

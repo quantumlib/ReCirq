@@ -13,16 +13,14 @@
 # limitations under the License.
 
 """Draw I + P pauli product data using two copy strategy.
-style circuits.
 
 learn_states_q.py --n=6 --n_paulis=20 --batch_size=500 --n_shots=1000
 
-Will create paulistring circuits all on 12 qubits (two systems of size 6).
-Once the circuits are generated, batch_size sweeps and a single circuit at
-a time will be sent will be sent for simulation/execution, drawing n_shots
-total samples from each one using `run_sweep` in Cirq. By default the
-bitstring data will be saved in the data folder. One can also set
-`use_engine` to True in order to run this against a processor on
+Will create 20 paulistring circuits all on 12 qubits (two systems of size 6).
+For each paulistring circuit, payloads containing batch_size sweeps are
+executed until n_shots total samples have been drawn from that circuit.
+By default the bitstring data will be saved in the data folder. One can
+also set `use_engine` to True in order to run this against a processor on
 quantum engine.
 """
 from typing import Dict, List, Tuple
@@ -41,7 +39,7 @@ from absl import logging
 def build_circuit(
     qubit_pairs: List[List[cirq.Qid]],
     pauli: str,
-    num_reps: int,
+    n_shots: int,
     rand_state: np.random.RandomState,
 ) -> Tuple[cirq.Circuit, List[Dict[str, int]]]:
     """Create I + P problem circuit between qubit pairs.
@@ -49,7 +47,7 @@ def build_circuit(
     Args:
         qubit_pairs: List of qubit pairs.
         pauli: Python str containing characters 'I', 'X', 'Y' or 'Z'.
-        num_reps: Number of repetitions to generate for sweeps.
+        n_shots: Number of repetitions to generate for sweeps.
 
     Returns:
         A (circuit, sweep) tuple, runnable using `run_sweep`.
@@ -87,7 +85,7 @@ def build_circuit(
     # Create randomized flippings. These flippings will contain values of 1,0.
     # which will turn the X gates on or off.
     params = circuit_blocks.create_randomized_sweeps(
-        pauli, flip_params, num_reps, rand_state
+        pauli, flip_params, n_shots, rand_state
     )
     logging.debug(
         f"Generated circuit w/ depth {len(ret_circuit)} and {len(params)} sweeps."

@@ -196,7 +196,7 @@ def inv_z_basis_gate(pauli: str) -> cirq.Gate:
 def create_randomized_sweeps(
     hidden_p: str,
     symbols: Dict[str, int],
-    num_reps: int,
+    n_params: int,
     rand_state: np.random.RandomState,
 ) -> List[Dict[str, int]]:
     """Generate sweeps to help prepare \rho = 2^(-n) (I + \alpha P) states.
@@ -206,7 +206,7 @@ def create_randomized_sweeps(
     Args:
         hidden_p: Pauli operator in (I + \alpha P)
         symbols: Symbols to generate values for to prepare \rho.
-        num_reps: Number of unique parameter configurations (sweeps)
+        n_params: Number of unique parameter configurations (sweeps)
             to generate for the given `symbols`.
         rand_state: np.random.RandomState source of randomness.
 
@@ -220,12 +220,12 @@ def create_randomized_sweeps(
         if pauli != "I":
             last_i = i
 
-    sign_p = -1 if rand_state.random() < 0.5 else 1
+    sign_p = rand_state.choice([1, -1])
     all_sweeps = []
-    for _ in range(num_reps):
+    for _ in range(n_params):
         current_sweep = dict()
         for twocopy in [0, 1]:
-            parity = sign_p * (1 if rand_state.random() <= 0.95 else -1)
+            parity = sign_p * rand_state.choice([1, -1], p=[0.95, 0.05])
             for i, pauli in enumerate(hidden_p):
                 current_symbol = symbols[2 * i + twocopy]
                 current_sweep[current_symbol] = rand_state.choice([0, 1])
