@@ -12,11 +12,17 @@ BASE_PACKAGES = [
 ]
 
 
-def _check_notebook(notebook_fn, notebook_id, stdout, stderr):
+def _check_notebook(notebook_fn: str, notebook_id: str, stdout, stderr):
     """Helper function to actually do the work in `check_notebook`.
 
     `check_notebook` has all the context managers and exception handling,
     which would otherwise result in highly indented code.
+
+    Args:
+        notebook_fn: The notebook filename
+        notebook_id: A unique string id for the notebook that does not include `/`
+        stdout: A file-like object to redirect stdout
+        stderr: A file-like object to redirect stderr
     """
     print(f'Starting {notebook_id}')
 
@@ -41,7 +47,7 @@ def _check_notebook(notebook_fn, notebook_id, stdout, stderr):
     shutil.rmtree(venv_dir)
 
 
-def check_notebook(notebook_fn):
+def check_notebook(notebook_fn: str):
     """Check a notebook.
 
      1. Create a venv just for that notebook
