@@ -65,7 +65,8 @@ class TiltedSquareLatticeLoschmidtSpec(ExecutableSpec):
     """The ExecutableSpec for the tilted square lattice loschmidt benchmark.
 
     The loschmidt echo runs a random unitary forward and backwards and measures how often
-    we return to the starting state.
+    we return to the starting state. This benchmark checks random unitaries generated
+    on the TiltedSquareLattice topology.
 
     Args:
         topology: The topology
