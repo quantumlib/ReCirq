@@ -1,9 +1,7 @@
+cirq-core>=0.12.0
+cirq-google>=0.12.0
+# When changing Cirq requirements be sure to update dev_tools/write-ci-requirements.py
 
-# We'd like to only depend on cirq-core and cirq-google, but pip's dependency resolver
-# chokes since pytket depends on the cirq metapackage.
-cirq~=0.12.0
-cirq-core~=0.12.0
-cirq-google~=0.12.0
 seaborn
 sphinx
 ipython
