@@ -15,7 +15,7 @@
 import os
 import pytest
 import numpy as np
-from . import learn_dynamics_c
+import learn_dynamics_c
 
 
 def test_shadows_dont_seperate(tmpdir):

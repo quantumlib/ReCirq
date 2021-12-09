@@ -15,7 +15,7 @@
 import os
 import pytest
 import numpy as np
-from . import learn_dynamics_q
+import learn_dynamics_q
 
 
 def test_twocopy_seperates(tmpdir):

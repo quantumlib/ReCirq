@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from . import circuit_blocks
+import circuit_blocks
 import cirq
 import cirq_google
 import numpy as np

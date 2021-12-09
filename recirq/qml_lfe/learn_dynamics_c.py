@@ -30,11 +30,10 @@ from typing import List
 import os
 import cirq
 import numpy as np
-from . import circuit_blocks
-from . import run_config
+import circuit_blocks
+import run_config
 from absl import app
 from absl import logging
-
 
 def _build_circuit(
     qubit_pairs: List[List[cirq.Qid]], use_tsym: bool, depth: int
@@ -132,18 +131,17 @@ def run_and_save(
 
 
 def main(_):
-    from . import dynamics_flags
-
     run_and_save(
-        dynamics_flags.n,
-        dynamics_flags.depth,
-        dynamics_flags.n_data,
-        dynamics_flags.batch_size,
-        dynamics_flags.n_shots,
-        dynamics_flags.save_dir,
-        dynamics_flags.use_engine,
+        dynamics_flags.FLAGS.n,
+        dynamics_flags.FLAGS.depth,
+        dynamics_flags.FLAGS.n_data,
+        dynamics_flags.FLAGS.batch_size,
+        dynamics_flags.FLAGS.n_shots,
+        dynamics_flags.FLAGS.save_dir,
+        dynamics_flags.FLAGS.use_engine,
     )
 
 
 if __name__ == "__main__":
+    import dynamics_flags
     app.run(main)

@@ -15,7 +15,7 @@
 import pytest
 import os
 import numpy as np
-from . import learn_states_q
+import learn_states_q
 
 
 def _predict_exp(data, paulistring, two_copy):
