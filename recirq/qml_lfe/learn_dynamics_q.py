@@ -29,10 +29,12 @@ from typing import List
 import os
 import cirq
 import numpy as np
-from . import circuit_blocks
-from . import run_config
+
 from absl import app
 from absl import logging
+
+from recirq.qml_lfe import circuit_blocks
+from recirq.qml_lfe import run_config
 
 
 def _build_circuit(
@@ -148,18 +150,18 @@ def run_and_save(
 
 
 def main(_):
-    from . import dynamics_flags
-
     run_and_save(
-        dynamics_flags.n,
-        dynamics_flags.depth,
-        dynamics_flags.n_data,
-        dynamics_flags.batch_size,
-        dynamics_flags.n_shots,
-        dynamics_flags.save_dir,
-        dynamics_flags.use_engine,
+        dynamics_flags.FLAGS.n,
+        dynamics_flags.FLAGS.depth,
+        dynamics_flags.FLAGS.n_data,
+        dynamics_flags.FLAGS.batch_size,
+        dynamics_flags.FLAGS.n_shots,
+        dynamics_flags.FLAGS.save_dir,
+        dynamics_flags.FLAGS.use_engine,
     )
 
 
 if __name__ == "__main__":
+    from recirq.qml_lfe import dynamics_flags
+
     app.run(main)

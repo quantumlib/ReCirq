@@ -2,7 +2,7 @@ import os
 import pytest
 import tempfile
 import numpy as np
-from . import learn_states_c
+from recirq.qml_lfe import learn_states_c
 
 
 def _predict_exp(data, paulistring, two_copy):

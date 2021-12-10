@@ -37,7 +37,9 @@ flags.DEFINE_integer(
 )
 
 flags.DEFINE_string(
-    "save_dir", "./data", "Path to save experiment data (must already exist)."
+    "save_dir",
+    "./recirq/qml_lfe/data",
+    "Path to save experiment data (must already exist).",
 )
 
 flags.DEFINE_bool("use_engine", False, "Whether or not to use quantum engine.")

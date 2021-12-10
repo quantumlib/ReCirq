@@ -29,11 +29,12 @@ import os
 import cirq
 import numpy as np
 import sympy
-from . import circuit_blocks
-from . import run_config
 
 from absl import app
 from absl import logging
+
+from recirq.qml_lfe import circuit_blocks
+from recirq.qml_lfe import run_config
 
 
 def _create_basis_sweeps(
@@ -203,17 +204,17 @@ def run_and_save(
 
 
 def main(_):
-    from . import state_flags
-
     run_and_save(
-        state_flags.n,
-        state_flags.n_paulis,
-        state_flags.n_sweeps,
-        state_flags.n_shots,
-        state_flags.save_dir,
-        state_flags.use_engine,
+        state_flags.FLAGS.n,
+        state_flags.FLAGS.n_paulis,
+        state_flags.FLAGS.n_sweeps,
+        state_flags.FLAGS.n_shots,
+        state_flags.FLAGS.save_dir,
+        state_flags.FLAGS.use_engine,
     )
 
 
 if __name__ == "__main__":
+    from recirq.qml_lfe import state_flags
+
     app.run(main)
