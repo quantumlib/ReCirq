@@ -29,11 +29,12 @@ import os
 import cirq
 import numpy as np
 import sympy
-import circuit_blocks
-import run_config
 
 from absl import app
 from absl import logging
+
+from recirq.qml_lfe import circuit_blocks
+from recirq.qml_lfe import run_config
 
 
 def _create_basis_sweeps(
@@ -215,4 +216,5 @@ def main(_):
 
 if __name__ == "__main__":
     import state_flags
+
     app.run(main)

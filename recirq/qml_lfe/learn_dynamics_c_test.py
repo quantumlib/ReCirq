@@ -15,7 +15,7 @@
 import os
 import pytest
 import numpy as np
-import learn_dynamics_c
+from recirq.qml_lfe import learn_dynamics_c
 
 
 def test_shadows_dont_seperate(tmpdir):

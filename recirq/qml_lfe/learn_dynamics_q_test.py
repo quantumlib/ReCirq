@@ -15,7 +15,7 @@
 import os
 import pytest
 import numpy as np
-import learn_dynamics_q
+from recirq.qml_lfe import learn_dynamics_q
 
 
 def test_twocopy_seperates(tmpdir):

@@ -13,7 +13,7 @@
 # limitations under the License.
 import pytest
 import cirq
-from . import run_config
+from recirq.qml_lfe import run_config
 import numpy as np
 
 

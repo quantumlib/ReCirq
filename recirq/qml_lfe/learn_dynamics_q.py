@@ -29,10 +29,12 @@ from typing import List
 import os
 import cirq
 import numpy as np
-import circuit_blocks
-import run_config
+
 from absl import app
 from absl import logging
+
+from recirq.qml_lfe import circuit_blocks
+from recirq.qml_lfe import run_config
 
 
 def _build_circuit(
@@ -161,4 +163,5 @@ def main(_):
 
 if __name__ == "__main__":
     import dynamics_flags
+
     app.run(main)
