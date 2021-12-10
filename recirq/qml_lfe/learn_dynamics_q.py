@@ -162,6 +162,6 @@ def main(_):
 
 
 if __name__ == "__main__":
-    import dynamics_flags
+    from recirq.qml_lfe import dynamics_flags
 
     app.run(main)

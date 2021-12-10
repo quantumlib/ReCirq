@@ -164,6 +164,6 @@ def main(_):
 
 
 if __name__ == "__main__":
-    import state_flags
+    from recirq.qml_lfe import state_flags
 
     app.run(main)
