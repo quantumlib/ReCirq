@@ -8,9 +8,9 @@ module does.
 
 To generate bitstring data for an 8-qubit depth-5 experiment on learning 1D physical dynamics:
 
-`python3 -m recirq.qml_lfe.learn_dynamics_c --n=8 --depth=3`
+`python3 -m recirq.qml_lfe.learn_dynamics_c --n=8 --depth=5`
 
-`python3 -m recirq.qml_lfe.learn_dynamics_q --n=8 --depth=3`
+`python3 -m recirq.qml_lfe.learn_dynamics_q --n=8 --depth=5`
 
 To generate bitstring data for an 8-qubit experiment on learning physical states:
 
