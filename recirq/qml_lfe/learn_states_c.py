@@ -194,8 +194,8 @@ def run_and_save(
             all_results.append(batch_results)
 
         all_results = np.concatenate(all_results)
-        file_name = "Q-size-{}-pauli-{}".format(n, "".join(t for t in pauli))
-        basis_file_name = "Q-size-{}-pauli-{}-basis".format(
+        file_name = "C-size-{}-pauli-{}".format(n, "".join(t for t in pauli))
+        basis_file_name = "C-size-{}-pauli-{}-basis".format(
             n, "".join(t for t in pauli)
         )
         np.save(os.path.join(save_dir, file_name), all_results)  # [n_shots, 2 * n]
