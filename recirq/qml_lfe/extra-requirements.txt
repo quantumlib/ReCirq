@@ -1,2 +1,5 @@
 absl-py
 numpy
+torch
+scikit-learn
+seaborn
