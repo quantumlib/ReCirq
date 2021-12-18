@@ -123,7 +123,7 @@ class CirqBoard:
 
         Args:
             basis_state: a 64-bit bitboard representing the given position of the board
-            reset_move_history: indicates whether to reset the entire move history of the game. This value will be set to false
+            reset_move_history: indicates whether to reset the entire move history of the game. It will be set to false
                 if we are calling this function after the board has returned to a fully classical position.
         """
         self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
