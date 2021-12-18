@@ -33,6 +33,10 @@ from recirq.quantum_chess.test_utils import (
 from recirq.quantum_chess.bit_utils import bit_to_qubit, square_to_bit, nth_bit_of
 from recirq.quantum_chess.caching_utils import CacheKey
 
+# The number of samples needed to avoid caching previous repetitions.
+# Choosing this to be above the sample size of is_classical(), which is 1000, will avoid caching.
+CACHE_INVALIDATION_REPS = 1001
+
 
 def get_seed():
     seed = os.environ.get("RECIRQ_CHESS_TEST_SEED")
@@ -1211,7 +1215,7 @@ def test_caching_accumulations_different_repetition_not_cached(board):
         )
     )
     probs1 = b.get_probability_distribution(1)
-    probs2 = b.get_probability_distribution(100)
+    probs2 = b.get_probability_distribution(CACHE_INVALIDATION_REPS)
     assert probs1 != probs2
     board_probs1 = b.get_board_probability_distribution(1)
     board_probs2 = b.get_board_probability_distribution(100)
@@ -1242,7 +1246,7 @@ def test_caching_accumulations_same_repetition_cached(board):
 def test_get_probability_distribution_split_jump_pre_cached(board):
     b = board(u.squares_to_bitboard(["a1", "b1"]))
     # Cache a split jump in advance.
-    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 100)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, CACHE_INVALIDATION_REPS)
     b.cache_results(cache_key)
 
     m1 = move.Move(
@@ -1256,7 +1260,8 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
         move_variant=enums.MoveVariant.BASIC,
     )
     b.do_move(m1)
-    probs = list(b.get_probability_distribution(100))
+
+    probs = list(b.get_probability_distribution(CACHE_INVALIDATION_REPS))
     b.do_move(m2)
     b.clear_debug_log()
     # Expected probability with the cache applied
@@ -1265,7 +1270,8 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
     probs[square_to_bit("d1")] = b.cache[cache_key]["target2"]
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
-    probs2 = b.get_probability_distribution(100)
+
+    probs2 = b.get_probability_distribution(CACHE_INVALIDATION_REPS)
     full_squares = b.get_full_squares_bitboard(100)
     empty_squares = b.get_empty_squares_bitboard(100)
 
@@ -1283,7 +1289,7 @@ def test_get_probability_distribution_split_jump_pre_cached(board):
 def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
     b = board(u.squares_to_bitboard(["a1", "b1"]))
     # Cache a split jump in advance.
-    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, 100)
+    cache_key = CacheKey(enums.MoveType.SPLIT_JUMP, CACHE_INVALIDATION_REPS)
     b.cache_results(cache_key)
     m1 = move.Move(
         "b1",
@@ -1302,7 +1308,7 @@ def test_get_probability_distribution_split_jump_first_move_pre_cached(board):
     expected_probs[square_to_bit("d1")] = b.cache[cache_key]["target2"]
 
     # Get probability distribution should apply the cache without rerunning _generate_accumulations.
-    probs = b.get_probability_distribution(100)
+    probs = b.get_probability_distribution(CACHE_INVALIDATION_REPS)
     full_squares = b.get_full_squares_bitboard(100)
     empty_squares = b.get_empty_squares_bitboard(100)
 
@@ -1412,3 +1418,76 @@ def test_split_capture_with_failed_measurement_outcome(board):
         probs = b.get_probability_distribution(100)
         assert_prob_about(probs, u.square_to_bit("a2"), 1, atol=0.1)
         assert_prob_about(probs, u.square_to_bit("a3"), 0, atol=0.1)
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_merge_to_fully_classical_position(board):
+    """Splits piece on d4 to b3 and c2, then merge back to fully classical position on a1."""
+    b = simulator(u.squares_to_bitboard(["d4"]))
+    b.reset_starting_states = True
+    assert b.perform_moves(
+        "d4^b3c2:SPLIT_JUMP:BASIC",
+        "b3c2^a1:MERGE_JUMP:BASIC",
+    )
+
+    expected_probs = [0] * 64
+    expected_probs[square_to_bit("a1")] = 1
+    probs = list(b.get_probability_distribution(100))
+
+    assert b.is_classical()
+    assert probs == expected_probs
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_undo_to_start_after_classical_reset(board):
+    """Splits piece on f8 to d6 and h6. Piece on f4 then captures piece on d6. Then piece on h6 captures d6
+    Then does three undo moves to return to initial position."""
+    b = simulator(u.squares_to_bitboard(["f4", "f8", "f2"]))
+    b.reset_starting_states = True
+    initial_board = b.get_full_squares_bitboard()
+    assert b.perform_moves(
+        "f8^d6h6:SPLIT_JUMP:BASIC",
+        "f4^d6:JUMP:CAPTURE",
+        "f2^h6:JUMP:CAPTURE",
+    )
+
+    assert b.is_classical()
+    assert b.circuit == cirq.Circuit()
+
+    assert b.undo_last_move()
+    assert b.undo_last_move()
+    assert b.undo_last_move()
+
+    assert b.get_full_squares_bitboard() == initial_board
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_quantum_capture_with_forced_measurement(board):
+    """Splits piece on b1 to a1 and c1. Piece on a1 then captures piece on a5."""
+    b = simulator(u.squares_to_bitboard(["b1", "a5"]))
+    b.reset_starting_states = True
+
+    b.perform_moves(
+        "b1^a1c1:SPLIT_JUMP:BASIC",
+        "a1^a5:JUMP:CAPTURE",
+    )
+
+    assert b.is_classical()
+    assert b.move_history != []
+    assert b.circuit == cirq.Circuit()
+    assert b.ancilla_count == 0
+
+
+@pytest.mark.parametrize("board", ALL_CIRQ_BOARDS)
+def test_measurement_without_fully_classical_position(board):
+    """Splits piece on d3 to d7 and h3, then splits piece on b5 to b7 and b3.
+    Piece on f5 then tries to capture b3, which will force a measurement but will
+    not return the entire board to a fully classical position."""
+    b = simulator(u.squares_to_bitboard(["b5", "f5", "d3"]))
+    b.reset_starting_states = True
+    b.perform_moves(
+        "d3^d7h3:SPLIT_JUMP:BASIC",
+        "b5^b7b3:SPLIT_JUMP:BASIC",
+        "f5^b3:JUMP:CAPTURE",
+    )
+    assert not b.is_classical()

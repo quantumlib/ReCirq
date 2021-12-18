@@ -37,6 +37,11 @@ import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
 
+# This is a constant used to check if a board is in a classical state. It indicates that every
+# space is represented by a 1. The XOR of the empty squares and full squares bitboards will yield
+# this constant if the board is classical, so we can compare this constant with that operation on
+# the empty and full squares bitboards.
+CLASSICAL_BITBOARD = 2 ** 64 - 1
 
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
 DEFAULT_CHESS_INIT_STATE = 0xFFFF00000000FFFF
@@ -93,6 +98,7 @@ class CirqBoard:
         ] = enums.ErrorMitigation.Nothing,
         noise_mitigation: Optional[float] = 0.0,
         transformer: Optional[ct.CircuitTransformer] = None,
+        reset_starting_states=False,
     ):
         self.device = device
         self.sampler = sampler
@@ -109,8 +115,17 @@ class CirqBoard:
 
         self.cache = {}
 
-    def with_state(self, basis_state: int) -> "CirqBoard":
-        """Resets the board with a specific classical state."""
+        # Will only be turned on if user specifies
+        self.reset_starting_states = reset_starting_states
+
+    def with_state(self, basis_state: int, reset_move_history=True) -> "CirqBoard":
+        """Resets the board with a specific classical state.
+
+        Args:
+            basis_state: a 64-bit bitboard representing the given position of the board
+            reset_move_history: indicates whether to reset the entire move history of the game. It will be set to false
+                if we are calling this function after the board has returned to a fully classical position.
+        """
         self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
         self.state = basis_state
         self.allowed_pieces = set()
@@ -119,19 +134,21 @@ class CirqBoard:
         self.post_selection = {}
         self.circuit = cirq.Circuit()
         self.ancilla_count = 0
-        self.move_history = []
         initial_square_probs = (float(nth_bit_of(i, basis_state)) for i in range(64))
         # Invariant: len(self.move_history_probabilities_cache) ==
         #            len(self.move_history) + 1
-        self.move_history_probabilities_cache = [
-            self._make_probability_history(
-                _CACHE_ALWAYS_AVAILABLE, initial_square_probs
-            )
-        ]
 
-        # Store the initial basis state so that we can use it for replaying
-        # the move-history when undoing moves
-        self.init_basis_state = basis_state
+        if reset_move_history:
+            self.move_history = []
+            # Store the initial basis state so that we can use it for replaying
+            # the move-history when undoing moves
+            self.init_basis_state = basis_state
+            self.move_history_probabilities_cache = [
+                self._make_probability_history(
+                    _CACHE_ALWAYS_AVAILABLE, initial_square_probs
+                )
+            ]
+
         self.clear_debug_log()
         self.timing_stats = defaultdict(list)
         return self
@@ -178,7 +195,7 @@ class CirqBoard:
         # Store current move history...
         current_move_history = self.move_history.copy()
         # ...because we'll be resetting it here
-        self.with_state(self.init_basis_state)
+        self.with_state(self.init_basis_state, True)
 
         # Repeat history up to last move
         for m in range(len(current_move_history) - 1):
@@ -442,6 +459,7 @@ class CirqBoard:
                 self.error_mitigation,
                 self.noise_mitigation,
                 self.transformer if self.device else None,
+                reset_starting_states=False,
             )
             sample_jump_move = move.Move(
                 "b1",
@@ -527,6 +545,19 @@ class CirqBoard:
         """
         self._generate_accumulations(repetitions)
         return self.move_history_probabilities_cache[-1].empty_squares
+
+    def is_classical(self, repetitions=1000) -> bool:
+        """Returns true if the board is in a fully classical position, and false otherwise."""
+        empty_squares = self.get_empty_squares_bitboard(repetitions)
+        full_squares = self.get_full_squares_bitboard(repetitions)
+        actual = empty_squares | full_squares
+        return CLASSICAL_BITBOARD == actual
+
+    def reset_if_classical(self) -> None:
+        """If the position is fully classical, calls with_state with current position
+        and with reset_move_history set to false."""
+        if self.is_classical():
+            self.with_state(self.get_full_squares_bitboard(), False)
 
     def add_entangled(self, *qubits):
         """Adds squares as entangled.
@@ -697,12 +728,20 @@ class CirqBoard:
         return result
 
     def do_move(self, m: move.Move) -> int:
-        """Performs a move on the quantum board.
+        """Will call do_move_internal to perform a move on the quantum board,
+        resetting the quantum circuit if the board is in a fully classical position.
+        """
+        initial_circuit = self.circuit.copy()
+        move_succeeded = self.do_move_internal(m)
+        if self.reset_starting_states and initial_circuit != self.circuit:
+            self.reset_if_classical()
+        return move_succeeded
 
+    def do_move_internal(self, m: move.Move) -> int:
+        """Performs a move on the quantum board.
         Based on the type and variant of the move requested,
         this function augments the circuit, classical registers,
         and post-selection criteria to perform the board.
-
         Returns:  The measurement that was performed, or 1 if
             no measurement was required.
         """
