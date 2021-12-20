@@ -60,7 +60,7 @@ def test_tilted_square_lattice_loschmidt_spec(tmpdir):
     assert spec1 == spec2
 
 
-def test_get_all_tilted_square_lattice_executables(monkeypatch):
+def test_get_all_tilted_square_lattice_executables_default_args(monkeypatch):
     call_count = 0
 
     def mock_get_circuit(topology: cirq.TiltedSquareLattice, macrocycle_depth: int,
@@ -78,3 +78,17 @@ def test_get_all_tilted_square_lattice_executables(monkeypatch):
     n_side_lengths = 4  # width or height # of possibilities
     n_topos = n_side_lengths * (n_side_lengths + 1) / 2
     assert call_count == n_instances * n_macrocycle_depths * n_topos
+
+
+def test_get_all_tilted_square_lattice_executables():
+    exes = get_all_tilted_square_lattice_executables(
+        n_instances=2,
+        min_side_length=2,
+        max_side_length=3,
+        side_length_step=1,
+        macrocycle_depths=[2, 4],
+    )
+    assert sorted({exe.spec.instance_i for exe in exes}) == [0, 1]
+    assert sorted({exe.spec.macrocycle_depth for exe in exes}) == [2, 4]
+    assert sorted({exe.spec.topology.width for exe in exes}) == [2, 3]
+    assert sorted({exe.spec.topology.height for exe in exes}) == [2, 3]
