@@ -348,7 +348,7 @@ def merge_slide_one_one_diff_qubits(
 def merge_slide_one_multiple(
     squbit_one, tqubit, squbit_multiple, path_qubit, path_ancilla, ancilla
 ):
-    """Performs a merge slide from two source qubits to tqubit. Only one qubit
+    """Perform a merge slide from two source qubits to tqubit. Only one qubit
     (i.e. path_qubit) is in the way from squbit_one to tqubit, while multiple
     qubits (whose corresponding path ancilla is path_ancilla) are in the way
     from squbit_multiple to tqubit.
