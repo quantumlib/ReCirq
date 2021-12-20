@@ -22,6 +22,11 @@ from .tilted_square_lattice import (
 
 @lru_cache()
 def _resolve_json(cirq_type: str) -> Optional[ObjectFactory]:
+    """Resolve the types of `recirq.otoc.` json objects.
+
+    This is a Cirq JSON resolver suitable for appending to
+    `cirq.protocols.json_serialization.DEFAULT_RESOLVERS`.
+    """
     if not cirq_type.startswith('recirq.otoc.'):
         return None
 
