@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from recirq.time_crystals.dtctask import *
+from recirq.time_crystals.dtc_utilities import *
