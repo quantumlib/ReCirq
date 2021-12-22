@@ -113,8 +113,8 @@ class DTCTask:
         qubits: a chain of connected qubits available for the circuit
         disorder_instances: number of disorder instances averaged over
         initial_states: initial state of the system used in circuit
-        g: thermalization constant used in circuit
-        local_fields: random noise used in circuit
+        g: control parameter used in circuit
+        local_fields: random potentials used in circuit
         thetas: theta parameters for FSim Gate used in circuit
         zetas: zeta parameters for FSim Gate used in circuit
         chis: chi parameters for FSim Gate used in circuit
