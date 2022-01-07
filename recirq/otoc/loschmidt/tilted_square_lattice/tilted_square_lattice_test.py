@@ -1,3 +1,17 @@
+# Copyright 2021 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import numpy as np
 
 import cirq
@@ -46,7 +60,7 @@ def test_tilted_square_lattice_loschmidt_spec(tmpdir):
     assert spec1 == spec2
 
 
-def test_get_all_tilted_square_lattice_executables(monkeypatch):
+def test_get_all_tilted_square_lattice_executables_default_args(monkeypatch):
     call_count = 0
 
     # Creating random circuits is expensive, but this test tests the default arguments for
@@ -67,3 +81,17 @@ def test_get_all_tilted_square_lattice_executables(monkeypatch):
     n_side_lengths = 4  # width or height # of possibilities
     n_topos = n_side_lengths * (n_side_lengths + 1) / 2
     assert call_count == n_instances * n_macrocycle_depths * n_topos
+
+
+def test_get_all_tilted_square_lattice_executables():
+    exes = get_all_tilted_square_lattice_executables(
+        n_instances=2,
+        min_side_length=2,
+        max_side_length=3,
+        side_length_step=1,
+        macrocycle_depths=[2, 4],
+    )
+    assert sorted({exe.spec.instance_i for exe in exes}) == [0, 1]
+    assert sorted({exe.spec.macrocycle_depth for exe in exes}) == [2, 4]
+    assert sorted({exe.spec.topology.width for exe in exes}) == [2, 3]
+    assert sorted({exe.spec.topology.height for exe in exes}) == [2, 3]
