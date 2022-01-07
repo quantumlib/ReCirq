@@ -49,6 +49,9 @@ def test_tilted_square_lattice_loschmidt_spec(tmpdir):
 def test_get_all_tilted_square_lattice_executables(monkeypatch):
     call_count = 0
 
+    # Creating random circuits is expensive, but this test tests the default arguments for
+    # this function and asserts that it's called the correct number of times.
+
     def mock_get_circuit(topology: cirq.TiltedSquareLattice, macrocycle_depth: int,
                          twoq_gate: cirq.Gate = cirq.FSimGate(np.pi / 4, 0.0),
                          rs: cirq.RANDOM_STATE_OR_SEED_LIKE = None):
