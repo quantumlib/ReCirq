@@ -5,6 +5,11 @@ from typing import Type, Callable, List, Tuple, Any
 
 import pandas as pd
 
+from recirq.otoc.loschmidt.tilted_square_lattice import (
+    TiltedSquareLatticeLoschmidtSpec,
+    get_all_tilted_square_lattice_executables,
+)
+
 try:
     from cirq_google.workflow import ExecutableSpec, QuantumExecutableGroup
 
@@ -32,7 +37,6 @@ class AlgorithmicBenchmark:
             The executable family is the fully-qualified leaf-module where the code
             for this AlgorithmicBenchmark lives.
         spec_class: The ExecutableSpec subclass for this AlgorithmicBenchmark.
-        data_class: The class which can contain ETL-ed data for this AlgorithmicBenchmark.
         executable_generator_func: The function that returns a QuantumExecutableGroup for a
             given Config.
         configs: A list of available `BenchmarkConfig` for this benchmark.
@@ -42,7 +46,6 @@ class AlgorithmicBenchmark:
     name: str
     executable_family: str
     spec_class: Type['ExecutableSpec']
-    data_class: Type
     executable_generator_func: Callable[[Any], 'QuantumExecutableGroup']
     configs: List['BenchmarkConfig']
 
@@ -50,7 +53,6 @@ class AlgorithmicBenchmark:
         """Get values of this class as strings suitable for printing."""
         ret = {k: str(v) for k, v in dataclasses.asdict(self).items()}
         ret['spec_class'] = self.spec_class.__name__
-        ret['data_class'] = self.data_class.__name__
         ret['executable_generator_func'] = self.executable_generator_func.__name__
         return ret
 
@@ -74,6 +76,15 @@ class BenchmarkConfig:
 
 
 BENCHMARKS = [
+    AlgorithmicBenchmark(
+        domain='recirq.otoc',
+        name='loschmidt.tilted_square_lattice',
+        executable_family='recirq.otoc.loschmidt.tilted_square_lattice',
+        spec_class=TiltedSquareLatticeLoschmidtSpec,
+        executable_generator_func=get_all_tilted_square_lattice_executables,
+        configs=[
+        ]
+    ),
 ]
 
 
