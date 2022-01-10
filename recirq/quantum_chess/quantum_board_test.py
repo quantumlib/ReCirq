@@ -509,9 +509,11 @@ def test_slide_with_two_path_qubits_coherence():
     )
 
 
-@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
-def test_split_slide_merge_slide_coherence(board):
-    b = board(u.squares_to_bitboard(["b4", "d3"]))
+#@pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
+#def test_split_slide_merge_slide_coherence(board):
+#    b = board(u.squares_to_bitboard(["b4", "d3"]))
+def test_split_slide_merge_slide_coherence():
+    b = simulator(u.squares_to_bitboard(["b4", "d3"]))
     assert b.perform_moves(
         "d3^c5e5:SPLIT_JUMP:BASIC",
         "b4^b8e7:SPLIT_SLIDE:BASIC",
@@ -543,6 +545,25 @@ def test_split_slide_zero_multiple():
         "d3^c3d1:SPLIT_SLIDE:BASIC",
         "f2^e2f1:SPLIT_SLIDE:BASIC",
         "a1^a5g1:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["c3", "e2", "a5"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "e2", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "f1", "a5"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "e2", "a5"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "f1", "a5"]): 1 / 4,
+        },
+    )
+
+
+def test_split_slide_multiple_zero():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
+    assert b.perform_moves(
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "f2^e2f1:SPLIT_SLIDE:BASIC",
+        "a1^g1a5:SPLIT_SLIDE:BASIC",
     )
     assert_sample_distribution(
         b,
@@ -602,6 +623,43 @@ def test_split_slide_one_multiple():
             u.squares_to_bitboard(["c3", "f1", "e1"]): 1 / 4,
             u.squares_to_bitboard(["d1", "e2", "a1"]): 1 / 4,
             u.squares_to_bitboard(["d1", "f1", "a1"]): 1 / 4,
+        },
+    )
+
+
+def test_split_slide_multiple_one():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
+    assert b.perform_moves(
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "f2^e2f1:SPLIT_SLIDE:BASIC",
+        "a1^g1e1:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["c3", "e2", "e1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "e2", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "f1", "e1"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "e2", "a1"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "f1", "a1"]): 1 / 4,
+        },
+    )
+
+
+def test_split_slide_multiple_multiple():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
+    assert b.perform_moves(
+        "d3^a3d1:SPLIT_SLIDE:BASIC",
+        "f2^a2f1:SPLIT_SLIDE:BASIC",
+        "a1^g1a5:SPLIT_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+	b,
+        {
+            u.squares_to_bitboard(["a3", "a2", "g1"]): 1 / 4,
+            u.squares_to_bitboard(["a3", "f1", "a1"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "a2", "a1"]): 1 / 4,
+            u.squares_to_bitboard(["d1", "f1", "a5"]): 1 / 4,
         },
     )
 
@@ -866,6 +924,28 @@ def test_merge_slide_zero_multiple():
     )
 
 
+def test_merge_slide_multiple_zero():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
+    assert b.perform_moves(
+        "a1^a5g1:SPLIT_SLIDE:BASIC",
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "f2^e2f1:SPLIT_SLIDE:BASIC",
+        "g1a5^a1:MERGE_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["c3", "e2", "a1"]): 1 / 4,
+            u.squares_to_bitboard(["c3", "f1", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "f1", "a1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "e2", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "e2", "a1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "f1", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "f1", "a1"]): 1 / 8,
+        },
+    )
+
+
 def test_merge_slide_one_one_same_qubit():
     b = simulator(u.squares_to_bitboard(["a1", "d3"]))
     assert b.perform_moves(
@@ -918,6 +998,51 @@ def test_merge_slide_one_multiple():
             u.squares_to_bitboard(["d1", "e2", "e1"]): 1 / 8,
             u.squares_to_bitboard(["d1", "e2", "g1"]): 1 / 8,
             u.squares_to_bitboard(["d1", "f1", "e1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "f1", "g1"]): 1 / 8,
+        },
+    )
+
+
+def test_merge_slide_multiple_one():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
+    assert b.perform_moves(
+        "a1^e1g1:SPLIT_SLIDE:BASIC",
+        "d3^c3d1:SPLIT_SLIDE:BASIC",
+        "f2^e2f1:SPLIT_SLIDE:BASIC",
+        "g1e1^a1:MERGE_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["c3", "e2", "a1"]): 1 / 4,
+            u.squares_to_bitboard(["c3", "f1", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["c3", "f1", "a1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "e2", "e1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "e2", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "f1", "e1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "f1", "g1"]): 1 / 8,
+        },
+    )
+
+
+def test_merge_slide_multiple_multiple():
+    b = simulator(u.squares_to_bitboard(["a1", "d3", "f2"]))
+    assert b.perform_moves(
+        "a1^a5g1:SPLIT_SLIDE:BASIC",
+        "d3^a3d1:SPLIT_SLIDE:BASIC",
+        "f2^a2f1:SPLIT_SLIDE:BASIC",
+        "a5g1^a1:MERGE_SLIDE:BASIC",
+    )
+    assert_sample_distribution(
+        b,
+        {
+            u.squares_to_bitboard(["a3", "a2", "a1"]): 1 / 8,
+            u.squares_to_bitboard(["a3", "a2", "a5"]): 1 / 8,
+            u.squares_to_bitboard(["a3", "f1", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["a3", "f1", "a5"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "a2", "a5"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "a2", "g1"]): 1 / 8,
+            u.squares_to_bitboard(["d1", "f1", "a1"]): 1 / 8,
             u.squares_to_bitboard(["d1", "f1", "g1"]): 1 / 8,
         },
     )

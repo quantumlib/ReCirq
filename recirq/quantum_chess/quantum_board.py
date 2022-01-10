@@ -931,6 +931,7 @@ class CirqBoard:
                     )
                 )
                 self._clear_path_ancilla(path_qubits, path1)
+                return 1
             # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
             else:
                 self.add_entangled(squbit, tqubit, tqubit2)
@@ -1032,11 +1033,12 @@ class CirqBoard:
                 path1 = self._create_path_ancilla(path_qubits)
                 ancilla = self.new_ancilla()
                 self.circuit.append(
-                    qm.split_slide_one_multiple(
+                    qm.merge_slide_one_multiple(
                         squbit2, tqubit, squbit, path_qubits2[0], path1, ancilla
                     )
                 )
                 self._clear_path_ancilla(path_qubits, path1)
+                return 1
             # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
             else:
                 self.add_entangled(squbit, squbit2, tqubit)
