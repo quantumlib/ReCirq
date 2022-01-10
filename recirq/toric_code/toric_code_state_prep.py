@@ -11,25 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module for representing, preparing, and analyzing toric code states.
-
-Rectangular patches of the toric code are represented by ToricCodeRectangle. These are used to
-make Cirq circuits to make the toric code ground state with ToricCodeStatePrep. Resulting plaquette
-parity expectation values are stored with ToricCodePlaquettes, which can be visualized using
-ToricCodePlotter.
-"""
-
 from __future__ import annotations
 
 from typing import Iterator, List, Set
 
 import cirq
 
+from . import toric_code_rectangle as tcr
+
 
 class ToricCodeStatePrep:
     """Circuits to generate the ground state in a toric code rectangle (all plaquettes +1)."""
 
-    def __init__(self, code: ToricCodeRectangle):
+    def __init__(self, code: tcr.ToricCodeRectangle):
         """
 
         Args:
