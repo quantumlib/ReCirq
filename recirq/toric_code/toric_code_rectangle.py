@@ -19,12 +19,22 @@ parity expectation values are stored with ToricCodePlaquettes, which can be visu
 ToricCodePlotter.
 """
 
-from __future__ import annotations
-
 from typing import Iterator, List, Set, Tuple
 
 import cirq
 import numpy as np
+
+
+def q_displaced(qubit: cirq.GridQubit, displacement: np.ndarray) -> cirq.GridQubit:
+    """Helper to return a `GridQubit` displaced by a fixed x/y.
+
+    Args:
+        displacement: numpy array with row/column displacement.
+
+    Returns:
+        `cirq.GridQubit` that is displaced by a fixed amount of rows/columns/
+    """
+    return qubit + (int(round(displacement[0])), int(round(displacement[1])))
 
 
 class ToricCodeRectangle:
@@ -124,10 +134,6 @@ class ToricCodeRectangle:
             f"row_vector={tuple(self.row_vector)}, rows={self.rows}, cols={self.cols})"
         )
 
-    @staticmethod
-    def q_displaced(qubit: cirq.GridQubit, displacement: np.ndarray) -> cirq.GridQubit:
-        return qubit + (int(round(displacement[0])), int(round(displacement[1])))
-
     @property
     def captain_qubits(self) -> Set[cirq.GridQubit]:
         return {
@@ -199,7 +205,7 @@ class ToricCodeRectangle:
 
     def x_plaquette_to_captain(self, row: int, col: int) -> cirq.GridQubit:
         displacement = row * self.row_vector + col * self.col_vector
-        return self.q_displaced(self.origin_qubit, displacement)
+        return q_displaced(self.origin_qubit, displacement)
 
     def x_plaquette_to_qubits(self, row: int, col: int) -> Set[cirq.GridQubit]:
         captain = self.x_plaquette_to_captain(row, col)
@@ -250,19 +256,19 @@ class ToricCodeRectangle:
         return int(round(plaq_row)), int(round(plaq_col))
 
     def q_lower_left(self, captain_qubit: cirq.GridQubit) -> cirq.GridQubit:
-        return self.q_displaced(captain_qubit, (self.row_vector - self.col_vector) / 2)
+        return q_displaced(captain_qubit, (self.row_vector - self.col_vector) / 2)
 
     def q_lower_right(self, captain_qubit: cirq.GridQubit) -> cirq.GridQubit:
-        return self.q_displaced(captain_qubit, (self.row_vector + self.col_vector) / 2)
+        return q_displaced(captain_qubit, (self.row_vector + self.col_vector) / 2)
 
     def q_down(self, captain_qubit: cirq.GridQubit) -> cirq.GridQubit:
-        return self.q_displaced(captain_qubit, self.row_vector)
+        return q_displaced(captain_qubit, self.row_vector)
 
     def q_upper_left(self, captain_qubit: cirq.GridQubit) -> cirq.GridQubit:
-        return self.q_displaced(captain_qubit, (-self.row_vector - self.col_vector) / 2)
+        return q_displaced(captain_qubit, (-self.row_vector - self.col_vector) / 2)
 
     def q_across_left(self, captain_qubit: cirq.GridQubit) -> cirq.GridQubit:
-        return self.q_displaced(captain_qubit, -self.col_vector)
+        return q_displaced(captain_qubit, -self.col_vector)
 
     def q_lower_outside(self, captain_qubit: cirq.GridQubit) -> cirq.GridQubit:
         _row, col = self.captain_to_x_plaquette(captain_qubit)
