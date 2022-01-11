@@ -15,6 +15,7 @@ import copy
 from typing import Dict, Iterable, List, Optional, Set
 
 import cirq
+import cirq_google as cg
 
 import recirq.quantum_chess.controlled_iswap as controlled_iswap
 import recirq.quantum_chess.initial_mapping_utils as imu
@@ -413,9 +414,9 @@ class SycamoreDecomposer(cirq.PointOptimizer):
         if len(op.qubits) > 3:
             raise DeviceMappingError(f"Four qubit ops not yet supported: {op}")
         new_ops = None
-        if op.gate == cirq.SWAP or op.gate == cirq.CNOT:
-            new_ops = cirq.google.optimized_for_sycamore(cirq.Circuit(op))
-        if isinstance(op, cirq.ControlledOperation):
+        if op.gate == cirq.SWAP or op.gate == cirq.CNOT or op.gate == cirq.TOFFOLI:
+            new_ops = cg.optimized_for_sycamore(cirq.Circuit(op))
+        elif isinstance(op, cirq.ControlledOperation):
             if not all(v == 1 for values in op.control_values for v in values):
                 raise DeviceMappingError(f"0-controlled ops not yet supported: {op}")
             qubits = op.sub_operation.qubits
@@ -433,11 +434,11 @@ class SycamoreDecomposer(cirq.PointOptimizer):
                 )
             if op.gate.sub_gate == cirq.X:
                 if len(op.qubits) == 2:
-                    new_ops = cirq.google.optimized_for_sycamore(
+                    new_ops = cg.optimized_for_sycamore(
                         cirq.Circuit(cirq.CNOT(*op.controls, *qubits))
                     )
                 if len(op.qubits) == 3:
-                    new_ops = cirq.google.optimized_for_sycamore(
+                    new_ops = cg.optimized_for_sycamore(
                         cirq.Circuit(cirq.TOFFOLI(*op.controls, *qubits))
                     )
         if new_ops:

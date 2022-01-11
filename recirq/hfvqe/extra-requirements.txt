@@ -1,0 +1,3 @@
+# fix bug with openfermionpyscf https://github.com/quantumlib/ReCirq/issues/200#issuecomment-923203883
+h5py~=3.2.1
+openfermion>=1.2.0

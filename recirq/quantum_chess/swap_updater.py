@@ -106,7 +106,7 @@ class SwapUpdater:
         device_qubits: Optional[Iterable[cirq.GridQubit]],
         initial_mapping: Dict[cirq.Qid, cirq.GridQubit] = {},
         swap_factory: Callable[
-            [cirq.Qid, cirq.Qid], List[cirq.Operation]
+            [cirq.Qid, cirq.Qid], Iterable[cirq.Operation]
         ] = generate_decomposed_swap,
     ):
         self.device_qubits = device_qubits
