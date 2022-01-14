@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from recirq.time_crystals.dtctask import *
+from recirq.time_crystals.dtctask import DTCTask, CompareDTCTask

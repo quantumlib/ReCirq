@@ -24,11 +24,11 @@ EXPERIMENT_NAME = "time_crystals"
 DEFAULT_BASE_DIR = os.path.expanduser(f'~/cirq_results/{EXPERIMENT_NAME}')
 
 
-@recirq.json_serializable_dataclass(namespace='recirq.readout_scan',
+@recirq.json_serializable_dataclass(namespace='recirq.time_crystals',
                                     registry=recirq.Registry,
                                     frozen=False)
 class CompareDTCTask:
-    """ A task for managing inputs to a comparison Discrete Time Crystal experiment, comparing different options for parameters
+    """ A task to a comparison DTC experiment, comparing different options for parameters
 
     Attributes
         dataset_id: unique identifier for this dataset
@@ -102,7 +102,7 @@ class CompareDTCTask:
             yield DTCTask(qubits=self.qubits, disorder_instances=self.disorder_instances, **kwargs)
 
 
-@recirq.json_serializable_dataclass(namespace='recirq.readout_scan',
+@recirq.json_serializable_dataclass(namespace='recirq.time_crystals',
                                     registry=recirq.Registry,
                                     frozen=False)
 class DTCTask:
