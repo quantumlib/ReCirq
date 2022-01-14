@@ -83,6 +83,12 @@ BENCHMARKS = [
         spec_class=TiltedSquareLatticeLoschmidtSpec,
         executable_generator_func=get_all_tilted_square_lattice_executables,
         configs=[
+            BenchmarkConfig(
+                short_name='small-v1',
+                full_name='loschmidt.tilted_square_lattice.small-v1',
+                gen_script='gen-small-v1.py',
+                run_scripts=['run-simulator.py']
+            )
         ]
     ),
 ]
