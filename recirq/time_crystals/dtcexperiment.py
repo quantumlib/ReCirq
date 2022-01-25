@@ -19,10 +19,11 @@ from typing import Sequence, Optional, Generator
 import os
 
 EXPERIMENT_NAME = "time_crystals"
-DEFAULT_BASE_DIR = os.path.expanduser(f'~/cirq_results/{EXPERIMENT_NAME}')
+DEFAULT_BASE_DIR = os.path.expanduser(f"~/cirq_results/{EXPERIMENT_NAME}")
+
 
 class DTCExperiment:
-    """ Manage inputs to a DTC experiment, over some number of disorder instances
+    """Manage inputs to a DTC experiment, over some number of disorder instances
 
     Attributes:
         qubits: a chain of connected qubits available for the circuit
@@ -39,26 +40,42 @@ class DTCExperiment:
     """
 
     def __init__(
-            self,
-            qubits: Optional[Sequence[cirq.Qid]] = None,
-            disorder_instances: Optional[int] = 36,
-            g: Optional[int] = 0.94,
-            initial_states: Optional[np.ndarray] = None,
-            local_fields: Optional[np.ndarray] = None,
-            thetas: Optional[np.ndarray] = None,
-            zetas: Optional[np.ndarray] = None,
-            chis: Optional[np.ndarray] = None,
-            gammas: Optional[np.ndarray] = None,
-            phis: Optional[np.ndarray] = None
-            ):
+        self,
+        qubits: Optional[Sequence[cirq.Qid]] = None,
+        disorder_instances: Optional[int] = 36,
+        g: Optional[int] = 0.94,
+        initial_states: Optional[np.ndarray] = None,
+        local_fields: Optional[np.ndarray] = None,
+        thetas: Optional[np.ndarray] = None,
+        zetas: Optional[np.ndarray] = None,
+        chis: Optional[np.ndarray] = None,
+        gammas: Optional[np.ndarray] = None,
+        phis: Optional[np.ndarray] = None,
+    ):
 
         self.qubits = qubits
         self.disorder_instances = disorder_instances
         self.g = g
 
         if qubits is None:
-            qubit_locations = [(3, 9), (3, 8), (3, 7), (4, 7), (4, 8), (5, 8), (5, 7), (5, 6),
-                    (6, 6), (6, 5), (7, 5), (8, 5), (8, 4), (8, 3), (7, 3), (6, 3)]
+            qubit_locations = [
+                (3, 9),
+                (3, 8),
+                (3, 7),
+                (4, 7),
+                (4, 8),
+                (5, 8),
+                (5, 7),
+                (5, 6),
+                (6, 6),
+                (6, 5),
+                (7, 5),
+                (8, 5),
+                (8, 4),
+                (8, 3),
+                (7, 3),
+                (6, 3),
+            ]
             self.qubits = [cirq.GridQubit(*idx) for idx in qubit_locations]
         else:
             self.qubits = qubits
@@ -66,12 +83,16 @@ class DTCExperiment:
         num_qubits = len(self.qubits)
 
         if initial_states is None:
-            self.initial_states = np.random.choice(2, (self.disorder_instances, num_qubits))
+            self.initial_states = np.random.choice(
+                2, (self.disorder_instances, num_qubits)
+            )
         else:
             self.initial_states = initial_states
 
         if local_fields is None:
-            self.local_fields = np.random.uniform(-1.0, 1.0, (self.disorder_instances, num_qubits))
+            self.local_fields = np.random.uniform(
+                -1.0, 1.0, (self.disorder_instances, num_qubits)
+            )
         else:
             self.local_fields = local_fields
 
@@ -85,48 +106,58 @@ class DTCExperiment:
 
         # if gamma or phi is not supplied, generate it from the other such that phis == -2*gammas
         if gammas is None and phis is None:
-            self.gammas = -np.random.uniform(0.5*np.pi, 1.5*np.pi,
-                                (self.disorder_instances, num_qubits - 1))
-            self.phis = -2*self.gammas
+            self.gammas = -np.random.uniform(
+                0.5 * np.pi, 1.5 * np.pi, (self.disorder_instances, num_qubits - 1)
+            )
+            self.phis = -2 * self.gammas
         elif phis is None:
             self.gammas = gammas
-            self.phis = -2*self.gammas
+            self.phis = -2 * self.gammas
         elif gammas is None:
             self.phis = phis
-            self.gammas = -1/2*self.phis
+            self.gammas = -1 / 2 * self.phis
         else:
             self.phis = phis
             self.gammas = gammas
 
     def param_resolvers(self) -> cirq.Zip:
-        """ return a sweep over disorder instances for the parameters of this experiment
+        """return a sweep over disorder instances for the parameters of this experiment
         Returns:
             `cirq.Zip` object with self.disorder_instances many `cirq.ParamResolver`s
         """
 
         # initialize the dict and add the first, non-qubit-dependent parameter, g
-        factor_dict = {'g': np.full(self.disorder_instances, self.g).tolist()}
+        factor_dict = {"g": np.full(self.disorder_instances, self.g).tolist()}
 
         # iterate over the different parameters
-        qubit_varying_factors = ["initial_states", "local_fields", "thetas",
-                                    "zetas", "chis", "gammas", "phis"]
+        qubit_varying_factors = [
+            "initial_states",
+            "local_fields",
+            "thetas",
+            "zetas",
+            "chis",
+            "gammas",
+            "phis",
+        ]
         for factor in qubit_varying_factors:
             parameter = getattr(self, factor)
             # iterate over each index in the qubit chain and the various options for that qubit
             for index, qubit_factor_options in enumerate(parameter.transpose()):
                 factor_name = factor[:-1]
-                factor_dict[f'{factor_name}_{index}'] = qubit_factor_options.tolist()
+                factor_dict[f"{factor_name}_{index}"] = qubit_factor_options.tolist()
 
         return cirq.study.dict_to_zip_sweep(factor_dict)
 
-def comparison_experiments(qubits: Sequence[cirq.Qid],
-                            disorder_instances: int,
-                            g_cases: Optional[Sequence[int]] = None,
-                            initial_states_cases: Optional[Sequence[np.ndarray]] = None,
-                            local_fields_cases: Optional[Sequence[np.ndarray]] = None,
-                            phis_cases: Optional[Sequence[np.ndarray]] = None,
-                            ) -> Generator[DTCExperiment, None, None]:
-    """ Yield DTCExperiments with parameters taken from the cartesian product of input parameters
+
+def comparison_experiments(
+    qubits: Sequence[cirq.Qid],
+    disorder_instances: int,
+    g_cases: Optional[Sequence[int]] = None,
+    initial_states_cases: Optional[Sequence[np.ndarray]] = None,
+    local_fields_cases: Optional[Sequence[np.ndarray]] = None,
+    phis_cases: Optional[Sequence[np.ndarray]] = None,
+) -> Generator[DTCExperiment, None, None]:
+    """Yield DTCExperiments with parameters taken from the cartesian product of input parameters
     Args:
         Any number of (parameter, parameter_values) pairs
     Yields:
@@ -134,11 +165,13 @@ def comparison_experiments(qubits: Sequence[cirq.Qid],
     """
 
     # take product over elements of options_dict, in the order of options_order
-    items = [([x] if x is None else x)
-                for x in [g_cases, initial_states_cases, local_fields_cases, phis_cases]]
+    items = [
+        ([x] if x is None else x)
+        for x in [g_cases, initial_states_cases, local_fields_cases, phis_cases]
+    ]
     for components in itertools.product(*items):
         # prepare arguments for DTCExperiment
-        kwargs = dict(zip(['g', 'initial_states', 'local_fields', 'phis'], components))
-        yield DTCExperiment(qubits=qubits,
-                            disorder_instances=disorder_instances,
-                            **kwargs)
+        kwargs = dict(zip(["g", "initial_states", "local_fields", "phis"], components))
+        yield DTCExperiment(
+            qubits=qubits, disorder_instances=disorder_instances, **kwargs
+        )
