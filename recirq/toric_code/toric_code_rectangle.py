@@ -152,9 +152,11 @@ class ToricCodeRectangle:
     def _qubits_reading_order(self) -> Tuple[cirq.GridQubit, ...]:
         """Qubits listed in "reading order."
 
-        The qubits are enumerated starting with the "captain" of x_plaquette (0, 0)
-        being map[1] and then reading right (the first self.cols qubits are the captains
-        of row 0) and going down row by row.
+        Returns:
+            A tuple with the qubits enumerated starting with the "captain"
+            of x_plaquette (0, 0) and then reading right
+            (the first self.cols qubits are the captains of row 0)
+            and going down row by row.
         """
         qubits: List[cirq.GridQubit] = []
         for row in range(self.rows):
