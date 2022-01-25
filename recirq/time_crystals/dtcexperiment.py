@@ -26,16 +26,33 @@ class DTCExperiment:
     """Manage inputs to a DTC experiment, over some number of disorder instances
 
     Attributes:
-        qubits: a chain of connected qubits available for the circuit
-        disorder_instances: number of disorder instances averaged over
-        initial_states: initial state of the system used in circuit
-        g: thermalization constant used in circuit
-        local_fields: random noise used in circuit
-        thetas: theta parameters for FSim Gate used in circuit
-        zetas: zeta parameters for FSim Gate used in circuit
-        chis: chi parameters for FSim Gate used in circuit
-        phis: phi parameters for FSim Gate used in circuit
-        gammas: gamma parameters for FSim Gate used in circuit
+        qubits: a chain of connected qubits available for the circuit.
+            Defaults to 16 `cirq.Gridqubits` connected in a chain.
+        disorder_instances: number of disorder instances averaged over.
+            Defaults to 36.
+        g: thermalization constant used in circuit.
+            Defaults to 0.94.
+        initial_states: initial state of the system used in circuit.
+            Defaults to `np.ndarray` of shape (disorder_instances, num_qubits) of ints,
+            randomly selected from {0,1}.
+        local_fields: random noise used in circuit.
+            Defaults to `np.ndarray` of shape (disorder_instances, num_qubits) of floats,
+            randomly and uniformly selected from the range [-1.0, 1.0].
+        thetas: theta parameters for FSim Gate used in circuit.
+            Defaults to `np.ndarray` of shape (disorder_instnaces, num_qubits - 1) of ints,
+            all set to zero.
+        zetas: zeta parameters for FSim Gate used in circuit.
+            Defaults to `np.ndarray` of shape (disorder_instnaces, num_qubits - 1) of ints,
+            all set to zero.
+        chis: chi parameters for FSim Gate used in circuit.
+            Defaults to `np.ndarray` of shape (disorder_instnaces, num_qubits - 1) of ints,
+            all set to zero.
+        phis: phi parameters for FSim Gate used in circuit.
+            Defaults to `np.ndarray` of shape (disorder_instances, num_qubits - 1) of floats,
+            randomly and uniformly selected from the range [-0.5*`np.pi`, -1.5*`np.pi`].
+        gammas: gamma parameters for FSim Gate used in circuit.
+            Defaults to `np.ndarray` of shape (disorder_instances, num_qubits - 1) of floats,
+            computed as -2*gammas.
 
     """
 
@@ -156,7 +173,7 @@ def comparison_experiments(
     initial_states_cases: Optional[Sequence[np.ndarray]] = None,
     local_fields_cases: Optional[Sequence[np.ndarray]] = None,
     phis_cases: Optional[Sequence[np.ndarray]] = None,
-) -> Generator[DTCExperiment, None, None]:
+) -> Iterator[DTCExperiment]:
     """Yield DTCExperiments with parameters taken from the cartesian product of input parameters
     Args:
         Any number of (parameter, parameter_values) pairs
