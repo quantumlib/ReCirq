@@ -24,6 +24,9 @@ def get_unique_run_id(fmt: str = 'run-{i}', base_data_dir: str = '.') -> str:
         fmt: A format string containing {i} and optionally {date} to template trial run_ids.
         base_data_dir: The directory to check for the existence of files or directories.
     """
+    if '{i}' not in fmt:
+        raise ValueError("run_id format string must contain an '{i}' placeholder.")
+
     i = 1
     while True:
         run_id = fmt.format(i=i, date=datetime.date.today().isoformat())
