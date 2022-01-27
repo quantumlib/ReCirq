@@ -1,6 +1,6 @@
 import cirq
-from cirq_google.workflow import QuantumRuntimeConfiguration, execute
-from recirq.cirqflow.quantum_backend import SimulatedEngineProcessorWithLocalDevice
+from cirq_google.workflow import QuantumRuntimeConfiguration, \
+    SimulatedProcessorWithLocalDeviceRecord, execute
 from recirq.cirqflow.run_utils import get_unique_run_id
 from recirq.otoc.loschmidt.tilted_square_lattice import TiltedSquareLatticeLoschmidtSpec
 
@@ -12,7 +12,7 @@ FN = 'loschmidt.tilted_square_lattice.small-v1.json.gz'
 def main():
     exegroup = cirq.read_json_gzip(FN)
     rt_config = QuantumRuntimeConfiguration(
-        processor=SimulatedEngineProcessorWithLocalDevice('rainbow', noise_strength=0.005),
+        processor_record=SimulatedProcessorWithLocalDeviceRecord('rainbow', noise_strength=0.005),
         run_id=get_unique_run_id('simulated-{i}'),
         random_seed=52,
     )
