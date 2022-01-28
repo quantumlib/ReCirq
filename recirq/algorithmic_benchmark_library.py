@@ -1,7 +1,7 @@
 import dataclasses
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Type, Callable, List, Tuple, Any
+from typing import Type, Callable, List, Tuple, Any, Optional
 
 import pandas as pd
 
@@ -48,6 +48,7 @@ class AlgorithmicBenchmark:
     spec_class: Type['ExecutableSpec']
     executable_generator_func: Callable[[Any], 'QuantumExecutableGroup']
     configs: List['BenchmarkConfig']
+    description: Optional[str] = None
 
     def as_strings(self):
         """Get values of this class as strings suitable for printing."""
@@ -73,6 +74,7 @@ class BenchmarkConfig:
     full_name: str
     gen_script: str
     run_scripts: List[str]
+    description: Optional[str] = None
 
 
 BENCHMARKS = [
@@ -80,12 +82,28 @@ BENCHMARKS = [
         domain='recirq.otoc',
         name='loschmidt.tilted_square_lattice',
         executable_family='recirq.otoc.loschmidt.tilted_square_lattice',
+        description='\n'.join([
+            "An OTOC-style Loschmidt Echo on a tilted square lattice topology.",
+            "",
+            "This benchmark involves running a random unitary U forwards and backwards to",
+            "measure the fraction of times one ends up back in the starting state.",
+            "",
+            "Please browse the docstring for `TiltedSquareLatticeLoschmidtSpec` for details",
+            "on available parameters."
+        ]),
         spec_class=TiltedSquareLatticeLoschmidtSpec,
         executable_generator_func=get_all_tilted_square_lattice_executables,
         configs=[
             BenchmarkConfig(
                 short_name='small-v1',
                 full_name='loschmidt.tilted_square_lattice.small-v1',
+                description='\n'.join([
+                    "A 'small' configuration for quick verification of Loschmidt echos",
+                    "",
+                    "This configuration uses small grid topologies (making it suitable for",
+                    "running on simulators) and a small number of random instances making it",
+                    "suitable for getting a quick reading on processor performance in ~minutes."
+                ]),
                 gen_script='gen-small-v1.py',
                 run_scripts=['run-simulator.py']
             )
