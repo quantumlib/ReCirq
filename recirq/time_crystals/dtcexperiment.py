@@ -15,7 +15,7 @@
 import cirq
 import itertools
 import numpy as np
-from typing import Sequence, Optional, Generator
+from typing import Sequence, Optional, Iterator
 import os
 
 EXPERIMENT_NAME = "time_crystals"
@@ -139,8 +139,10 @@ class DTCExperiment:
 
     def param_resolvers(self) -> cirq.Zip:
         """return a sweep over disorder instances for the parameters of this experiment
+
         Returns:
             `cirq.Zip` object with self.disorder_instances many `cirq.ParamResolver`s
+
         """
 
         # initialize the dict and add the first, non-qubit-dependent parameter, g
@@ -175,10 +177,13 @@ def comparison_experiments(
     phis_cases: Optional[Sequence[np.ndarray]] = None,
 ) -> Iterator[DTCExperiment]:
     """Yield DTCExperiments with parameters taken from the cartesian product of input parameters
+
     Args:
         Any number of (parameter, parameter_values) pairs
+
     Yields:
         DTCTasks with parameters taken from self.options_dict
+
     """
 
     # take product over elements of options_dict, in the order of options_order
