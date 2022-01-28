@@ -187,13 +187,14 @@ def comparison_experiments(
     """
 
     # take product over elements of options_dict, in the order of options_order
-    items = [
+    argument_cases = [
         ([x] if x is None else x)
         for x in [g_cases, initial_states_cases, local_fields_cases, phis_cases]
     ]
-    for components in itertools.product(*items):
+    argument_names = ["g", "initial_states", "local_fields", "phis"]
+    for arguments in itertools.product(*argument_cases):
         # prepare arguments for DTCExperiment
-        kwargs = dict(zip(["g", "initial_states", "local_fields", "phis"], components))
+        kwargs = dict(zip(argument_names, arguments))
         yield DTCExperiment(
             qubits=qubits, disorder_instances=disorder_instances, **kwargs
         )

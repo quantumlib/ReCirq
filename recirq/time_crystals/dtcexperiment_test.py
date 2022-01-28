@@ -19,6 +19,10 @@ import itertools
 
 
 def test_DTCExperiment():
+    """Test to check all combinations of defaults vs supplied inputs for
+    DTCExperiment, with the goal of checking all paths for crashes
+
+    """
     np.random.seed(5)
     qubit_locations = [
         (3, 9),
@@ -42,18 +46,33 @@ def test_DTCExperiment():
     qubits = [cirq.GridQubit(*idx) for idx in qubit_locations]
     num_qubits = len(qubits)
     g = 0.94
-    instances = 36
-    initial_state = np.random.choice(2, num_qubits)
-    local_fields = np.random.uniform(-1.0, 1.0, (instances, num_qubits))
-    thetas = np.zeros((instances, num_qubits - 1))
-    zetas = np.zeros((instances, num_qubits - 1))
-    chis = np.zeros((instances, num_qubits - 1))
-    gammas = -np.random.uniform(0.5 * np.pi, 1.5 * np.pi, (instances, num_qubits - 1))
+    disorder_instances = 36
+    initial_states = np.random.choice(2, (disorder_instances, num_qubits))
+    local_fields = np.random.uniform(-1.0, 1.0, (disorder_instances, num_qubits))
+    thetas = np.zeros((disorder_instances, num_qubits - 1))
+    zetas = np.zeros((disorder_instances, num_qubits - 1))
+    chis = np.zeros((disorder_instances, num_qubits - 1))
+    gammas = -np.random.uniform(
+        0.5 * np.pi, 1.5 * np.pi, (disorder_instances, num_qubits - 1)
+    )
     phis = -2 * gammas
-    args = [
+    arguments = [
+        qubits,
+        g,
+        disorder_instances,
+        initial_states,
+        local_fields,
+        thetas,
+        zetas,
+        chis,
+        gammas,
+        phis,
+    ]
+    argument_names = [
         "qubits",
         "g",
-        "initial_state",
+        "disorder_instances",
+        "initial_states",
         "local_fields",
         "thetas",
         "zetas",
@@ -62,17 +81,23 @@ def test_DTCExperiment():
         "phis",
     ]
     default_resolvers = time_crystals.DTCExperiment().param_resolvers()
-    for arg in args:
-        kwargs = {}
-        for name in args:
-            kwargs[name] = None if name is arg else locals()[name]
-        dtcexperiment = time_crystals.DTCExperiment(
-            disorder_instances=instances, **kwargs
-        )
-        param_resolvers = dtcexperiment.param_resolvers()
+    for arguments_instance in itertools.product(
+        *zip(arguments, [None] * len(arguments))
+    ):
+        kwargs = {
+            name: instance
+            for (name, instance) in zip(argument_names, arguments_instance)
+            if instance is not None
+        }
+        dtcexperiment = time_crystals.DTCExperiment(**kwargs)
+        param_resolvers = list(dtcexperiment.param_resolvers())
 
 
 def test_comparison_experiments():
+    """Test to check all combinations of defaults vs supplied inputs for
+    comparison_experiments, with the goal of checking all paths for crashes
+
+    """
     np.random.seed(5)
     qubit_locations = [
         (3, 9),
@@ -96,24 +121,31 @@ def test_comparison_experiments():
     qubits = [cirq.GridQubit(*idx) for idx in qubit_locations]
     num_qubits = len(qubits)
     g_cases = [0.94, 0.6]
-    instances = 36
+    disorder_instances = 36
     initial_states_cases = [
-        np.random.choice(2, (instances, num_qubits)),
-        np.tile(np.random.choice(2, num_qubits), (instances, 1)),
+        np.random.choice(2, (disorder_instances, num_qubits)),
+        np.tile(np.random.choice(2, num_qubits), (disorder_instances, 1)),
     ]
     local_fields_cases = [
-        np.random.uniform(-1.0, 1.0, (instances, num_qubits)),
-        np.tile(np.random.uniform(-1.0, 1.0, num_qubits), (instances, 1)),
+        np.random.uniform(-1.0, 1.0, (disorder_instances, num_qubits)),
+        np.tile(np.random.uniform(-1.0, 1.0, num_qubits), (disorder_instances, 1)),
     ]
     phis_cases = [
-        np.random.uniform(np.pi, 3 * np.pi, (instances, num_qubits - 1)),
-        np.full((instances, num_qubits - 1), 0.4),
+        np.random.uniform(np.pi, 3 * np.pi, (disorder_instances, num_qubits - 1)),
+        np.full((disorder_instances, num_qubits - 1), 0.4),
     ]
-    names = ["g_cases", "initial_states_cases", "local_fields_cases", "phis_cases"]
-    args = [g_cases, initial_states_cases, local_fields_cases, phis_cases]
-    for cases in itertools.product(*zip([None] * 4, args)):
-        kwargs = dict(zip(names, cases))
+    argument_names = [
+        "g_cases",
+        "initial_states_cases",
+        "local_fields_cases",
+        "phis_cases",
+    ]
+    argument_cases = [g_cases, initial_states_cases, local_fields_cases, phis_cases]
+    for argument_case in itertools.product(
+        *zip([None] * len(argument_cases), argument_cases)
+    ):
+        kwargs = dict(zip(argument_names, argument_case))
         for experiment in time_crystals.comparison_experiments(
-            qubits, instances, **kwargs
+            qubits, disorder_instances, **kwargs
         ):
-            param_resolvers = experiment.param_resolvers()
+            param_resolvers = list(experiment.param_resolvers())
