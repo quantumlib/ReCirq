@@ -49,8 +49,6 @@ def test_classes_and_funcs(algo):
     mod = import_module(algo.executable_family)
     assert algo.spec_class == getattr(mod, algo.spec_class.__name__), \
         "The spec_class must exist in the benchmark's module"
-    assert algo.data_class == getattr(mod, algo.data_class.__name__), \
-        "The data_class must exist in the benchmark's module"
     assert algo.executable_generator_func == getattr(mod, algo.executable_generator_func.__name__), \
         "the executable_generator_func must exist in the benchmark's module"
 
