@@ -728,26 +728,21 @@ class CirqBoard:
         return result
 
     def do_move(self, m: move.Move) -> int:
-        """Will call do_move_internal to perform a move on the quantum board,
-        resetting the quantum circuit if the board is in a fully classical position.
-        """
-        initial_circuit = self.circuit.copy()
-        move_succeeded = self.do_move_internal(m)
-        if self.reset_starting_states and initial_circuit != self.circuit:
-            self.reset_if_classical()
-        return move_succeeded
-
-    def do_move_internal(self, m: move.Move) -> int:
         """Performs a move on the quantum board.
         Based on the type and variant of the move requested,
         this function augments the circuit, classical registers,
-        and post-selection criteria to perform the board.
+        and post-selection criteria to perform the move. The
+        circuit may be cleared if reset_if_classical is enabled and running the
+        circuit (which occurs only with that option enabled) shows that
+        the board is in a classical state.
+
         Returns:  The measurement that was performed, or 1 if
             no measurement was required.
         """
         if m.move_type not in self._MOVE_FUNC:
             raise ValueError(f"Invalid move type {m.move_type}")
 
+        initial_circuit = self.circuit.copy()
         self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
 
         # Add move to move_history
@@ -772,6 +767,8 @@ class CirqBoard:
 
         measurement = self._MOVE_FUNC[m.move_type](self, m, sbit, tbit, squbit, tqubit)
         assert measurement in (0, 1)
+        if self.reset_starting_states and initial_circuit != self.circuit:
+            self.reset_if_classical()
         return measurement
 
     def _do_move_pawn_ep(self, m, sbit, tbit, squbit, tqubit):
