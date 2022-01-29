@@ -745,14 +745,9 @@ class CirqBoard:
         Returns:  The measurement that was performed, or 1 if
             no measurement was required.
         """
-        if not m.move_type:
-            raise ValueError("No Move defined")
-        if m.move_type == enums.MoveType.NULL_TYPE:
-            raise ValueError("Move has null type")
-        if m.move_type == enums.MoveType.UNSPECIFIED_STANDARD:
-            raise ValueError("Move type is unspecified")
+        if m.move_type not in self._MOVE_FUNC:
+            raise ValueError(f"Invalid move type {m.move_type}")
 
-        # Reset accumulations here because function has conditional return branches
         self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
 
         # Add move to move_history
@@ -775,577 +770,571 @@ class CirqBoard:
             for val in list(self.allowed_pieces):
                 self.allowed_pieces.add(val - 1)
 
-        if m.move_type == enums.MoveType.PAWN_EP:
-            # For en passant, first determine the square of the pawn being
-            # captured, which should be next to the target.
-            if m.target[1] == "6":
-                epbit = square_to_bit(m.target[0] + "5")
-            elif m.target[1] == "3":
-                epbit = square_to_bit(m.target[0] + "4")
-            else:
-                raise ValueError(f"Invalid en passant target {m.target}")
-            epqubit = bit_to_qubit(epbit)
+        measurement = self._MOVE_FUNC[m.move_type](self, m, sbit, tbit, squbit, tqubit)
+        assert measurement in (0, 1)
+        return measurement
 
-            # For the classical version, set the bits appropriately
+    def _do_move_pawn_ep(self, m, sbit, tbit, squbit, tqubit):
+        # For en passant, first determine the square of the pawn being
+        # captured, which should be next to the target.
+        if m.target[1] == "6":
+            epbit = square_to_bit(m.target[0] + "5")
+        elif m.target[1] == "3":
+            epbit = square_to_bit(m.target[0] + "4")
+        else:
+            raise ValueError(f"Invalid en passant target {m.target}")
+        epqubit = bit_to_qubit(epbit)
+
+        # For the classical version, set the bits appropriately
+        if (
+            epqubit not in self.entangled_squares
+            and squbit not in self.entangled_squares
+            and tqubit not in self.entangled_squares
+        ):
             if (
-                epqubit not in self.entangled_squares
-                and squbit not in self.entangled_squares
-                and tqubit not in self.entangled_squares
+                not nth_bit_of(epbit, self.state)
+                or not nth_bit_of(sbit, self.state)
+                or nth_bit_of(tbit, self.state)
             ):
-                if (
-                    not nth_bit_of(epbit, self.state)
-                    or not nth_bit_of(sbit, self.state)
-                    or nth_bit_of(tbit, self.state)
-                ):
-                    raise ValueError("Invalid classical e.p. move")
+                raise ValueError("Invalid classical e.p. move")
 
-                self.state = set_nth_bit(epbit, self.state, False)
-                self.state = set_nth_bit(sbit, self.state, False)
-                self.state = set_nth_bit(tbit, self.state, True)
-                return 1
-
-            # If any squares are quantum, it's a quantum move
-            self.add_entangled(squbit, tqubit, epqubit)
-
-            # Capture e.p. post-select on the source
-            if m.move_variant == enums.MoveVariant.CAPTURE:
-                is_there = self.post_select_on(squbit, m.measurement)
-                if not is_there:
-                    return 0
-                self.add_entangled(squbit)
-                # capture e.p. has a special circuit
-                self.circuit.append(
-                    qm.capture_ep(
-                        squbit,
-                        tqubit,
-                        epqubit,
-                        self.new_ancilla(),
-                        self.new_ancilla(),
-                        self.new_ancilla(),
-                    )
-                )
-                return 1
-
-            # Blocked/excluded e.p. post-select on the target
-            if m.move_variant == enums.MoveVariant.EXCLUDED:
-                # Note that a measurement of 1 means that the move was
-                # successful so that the target square is empty
-                is_there = self.post_select_on(tqubit, m.measurement, invert=True)
-                if is_there:
-                    return 0
-                self.add_entangled(tqubit)
-            self.circuit.append(
-                qm.en_passant(
-                    squbit, tqubit, epqubit, self.new_ancilla(), self.new_ancilla()
-                )
-            )
+            self.state = set_nth_bit(epbit, self.state, False)
+            self.state = set_nth_bit(sbit, self.state, False)
+            self.state = set_nth_bit(tbit, self.state, True)
             return 1
 
-        if m.move_type == enums.MoveType.PAWN_CAPTURE:
-            # For pawn capture, first measure source.
+        # If any squares are quantum, it's a quantum move
+        self.add_entangled(squbit, tqubit, epqubit)
+
+        # Capture e.p. post-select on the source
+        if m.move_variant == enums.MoveVariant.CAPTURE:
             is_there = self.post_select_on(squbit, m.measurement)
             if not is_there:
                 return 0
-            if tqubit in self.entangled_squares:
-                old_tqubit = self.unhook(tqubit)
-                self.state = set_nth_bit(tbit, self.state, False)
-                self.add_entangled(squbit, tqubit)
-
-                self.circuit.append(
-                    qm.controlled_operation(
-                        cirq.ISWAP, [squbit, tqubit], [old_tqubit], []
-                    )
+            self.add_entangled(squbit)
+            # capture e.p. has a special circuit
+            self.circuit.append(
+                qm.capture_ep(
+                    squbit,
+                    tqubit,
+                    epqubit,
+                    self.new_ancilla(),
+                    self.new_ancilla(),
+                    self.new_ancilla(),
                 )
-            else:
-                # Classical case
-                self.state = set_nth_bit(sbit, self.state, False)
-                self.state = set_nth_bit(tbit, self.state, True)
+            )
             return 1
 
-        if m.move_type == enums.MoveType.SPLIT_SLIDE:
-            tbit2 = square_to_bit(m.target2)
-            tqubit2 = bit_to_qubit(tbit2)
+        # Blocked/excluded e.p. post-select on the target
+        if m.move_variant == enums.MoveVariant.EXCLUDED:
+            # Note that a measurement of 1 means that the move was
+            # successful so that the target square is empty
+            is_there = self.post_select_on(tqubit, m.measurement, invert=True)
+            if is_there:
+                return 0
+            self.add_entangled(tqubit)
+        self.circuit.append(
+            qm.en_passant(
+                squbit, tqubit, epqubit, self.new_ancilla(), self.new_ancilla()
+            )
+        )
+        return 1
 
-            # Find all the squares on both paths
-            path_qubits = self.path_qubits(m.source, m.target)
-            if tqubit2 in path_qubits:
-                path_qubits.remove(tqubit2)
-            path_qubits2 = self.path_qubits(m.source, m.target2)
-            if tqubit in path_qubits2:
-                path_qubits2.remove(tqubit)
+    def _do_move_pawn_capture(self, m, sbit, tbit, squbit, tqubit):
+        # For pawn capture, first measure source.
+        is_there = self.post_select_on(squbit, m.measurement)
+        if not is_there:
+            return 0
+        if tqubit in self.entangled_squares:
+            old_tqubit = self.unhook(tqubit)
+            self.state = set_nth_bit(tbit, self.state, False)
+            self.add_entangled(squbit, tqubit)
 
-            # (0, 0): No interposing squares, just jump. 0 ancilla needed.
-            if len(path_qubits) == 0 and len(path_qubits2) == 0:
-                m.move_type = enums.MoveType.SPLIT_JUMP
-            elif len(path_qubits) == 0:
-                self.add_entangled(squbit, tqubit, tqubit2)
-                # (0, 1): No qubit in one arm, one qubit in the other. 0 ancilla needed.
-                if len(path_qubits2) == 1:
+            self.circuit.append(
+                qm.controlled_operation(cirq.ISWAP, [squbit, tqubit], [old_tqubit], [])
+            )
+        else:
+            # Classical case
+            self.state = set_nth_bit(sbit, self.state, False)
+            self.state = set_nth_bit(tbit, self.state, True)
+        return 1
+
+    def _do_move_split_slide(self, m, sbit, tbit, squbit, tqubit):
+        tbit2 = square_to_bit(m.target2)
+        tqubit2 = bit_to_qubit(tbit2)
+
+        # Find all the squares on both paths
+        path_qubits = self.path_qubits(m.source, m.target)
+        if tqubit2 in path_qubits:
+            path_qubits.remove(tqubit2)
+        path_qubits2 = self.path_qubits(m.source, m.target2)
+        if tqubit in path_qubits2:
+            path_qubits2.remove(tqubit)
+
+        # (0, 0): No interposing squares, just jump. 0 ancilla needed.
+        if len(path_qubits) == 0 and len(path_qubits2) == 0:
+            return self._do_move_split_jump(m, sbit, tbit, squbit, tqubit)
+        elif len(path_qubits) == 0:
+            self.add_entangled(squbit, tqubit, tqubit2)
+            # (0, 1): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+            if len(path_qubits2) == 1:
+                self.circuit.append(
+                    qm.split_slide_zero_one(squbit, tqubit, tqubit2, path_qubits2[0])
+                )
+            # (0, 2+): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+            else:
+                path2 = self._create_path_ancilla(path_qubits2)
+                self.circuit.append(
+                    qm.split_slide_zero_multiple(squbit, tqubit, tqubit2, path2)
+                )
+                self._clear_path_ancilla(path_qubits2, path2)
+            return 1
+        elif len(path_qubits2) == 0:
+            self.add_entangled(squbit, tqubit, tqubit2)
+            # (1, 0): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+            if len(path_qubits) == 1:
+                self.circuit.append(
+                    qm.split_slide_zero_one(squbit, tqubit2, tqubit, path_qubits[0])
+                )
+            # (2+, 0): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+            else:
+                path1 = self._create_path_ancilla(path_qubits)
+                self.circuit.append(
+                    qm.split_slide_zero_multiple(squbit, tqubit2, tqubit, path1)
+                )
+                self._clear_path_ancilla(path_qubits, path1)
+            return 1
+        elif len(path_qubits) == 1:
+            self.add_entangled(squbit, tqubit, tqubit2)
+            # (1, 1): One qubit in one arm, one qubit in the other.
+            if len(path_qubits2) == 1:
+                # If both arms share the same qubit in path. 0 ancilla needed.
+                if qubit_to_bit(path_qubits[0]) == qubit_to_bit(path_qubits2[0]):
                     self.circuit.append(
-                        qm.split_slide_zero_one(
-                            squbit, tqubit, tqubit2, path_qubits2[0]
+                        qm.split_slide_one_one_same_qubit(
+                            squbit, tqubit, tqubit2, path_qubits[0]
                         )
                     )
-                # (0, 2+): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                # Otherwise 1 ancilla needed.
                 else:
-                    path2 = self._create_path_ancilla(path_qubits2)
-                    self.circuit.append(
-                        qm.split_slide_zero_multiple(squbit, tqubit, tqubit2, path2)
-                    )
-                    self._clear_path_ancilla(path_qubits2, path2)
-                return 1
-            elif len(path_qubits2) == 0:
-                self.add_entangled(squbit, tqubit, tqubit2)
-                # (1, 0): No qubit in one arm, one qubit in the other. 0 ancilla needed.
-                if len(path_qubits) == 1:
-                    self.circuit.append(
-                        qm.split_slide_zero_one(squbit, tqubit2, tqubit, path_qubits[0])
-                    )
-                # (2+, 0): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
-                else:
-                    path1 = self._create_path_ancilla(path_qubits)
-                    self.circuit.append(
-                        qm.split_slide_zero_multiple(squbit, tqubit2, tqubit, path1)
-                    )
-                    self._clear_path_ancilla(path_qubits, path1)
-                return 1
-            elif len(path_qubits) == 1:
-                self.add_entangled(squbit, tqubit, tqubit2)
-                # (1, 1): One qubit in one arm, one qubit in the other.
-                if len(path_qubits2) == 1:
-                    # If both arms share the same qubit in path. 0 ancilla needed.
-                    if qubit_to_bit(path_qubits[0]) == qubit_to_bit(path_qubits2[0]):
-                        self.circuit.append(
-                            qm.split_slide_one_one_same_qubit(
-                                squbit, tqubit, tqubit2, path_qubits[0]
-                            )
-                        )
-                    # Otherwise 1 ancilla needed.
-                    else:
-                        ancilla = self.new_ancilla()
-                        self.circuit.append(
-                            qm.split_slide_one_one_diff_qubits(
-                                squbit,
-                                tqubit,
-                                tqubit2,
-                                path_qubits[0],
-                                path_qubits2[0],
-                                ancilla,
-                            )
-                        )
-                # (1, 2+): One qubit in one arm, multiple qubits in the other. 2 ancillas needed.
-                else:
-                    path2 = self._create_path_ancilla(path_qubits2)
                     ancilla = self.new_ancilla()
                     self.circuit.append(
-                        qm.split_slide_one_multiple(
-                            squbit, tqubit, tqubit2, path_qubits[0], path2, ancilla
+                        qm.split_slide_one_one_diff_qubits(
+                            squbit,
+                            tqubit,
+                            tqubit2,
+                            path_qubits[0],
+                            path_qubits2[0],
+                            ancilla,
                         )
                     )
-                    self._clear_path_ancilla(path_qubits2, path2)
-                return 1
-            # (2+, 1): one qubit in one arm, multiple qubits in the other. 2 ancillas needed.
-            elif len(path_qubits2) == 1:
-                self.add_entangled(squbit, tqubit, tqubit2)
-                path1 = self._create_path_ancilla(path_qubits)
+            # (1, 2+): One qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+            else:
+                path2 = self._create_path_ancilla(path_qubits2)
                 ancilla = self.new_ancilla()
                 self.circuit.append(
                     qm.split_slide_one_multiple(
-                        squbit, tqubit2, tqubit, path_qubits2[0], path1, ancilla
+                        squbit, tqubit, tqubit2, path_qubits[0], path2, ancilla
                     )
                 )
-                self._clear_path_ancilla(path_qubits, path1)
-                return 1
-            # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
-            else:
-                self.add_entangled(squbit, tqubit, tqubit2)
-                path1 = self._create_path_ancilla(path_qubits)
-                path2 = self._create_path_ancilla(path_qubits2)
-                ancilla = self.new_ancilla()
-                self.circuit.append(
-                    qm.split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla)
-                )
-                self._clear_path_ancilla(path_qubits, path1)
                 self._clear_path_ancilla(path_qubits2, path2)
-                return 1
+            return 1
+        # (2+, 1): one qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+        elif len(path_qubits2) == 1:
+            self.add_entangled(squbit, tqubit, tqubit2)
+            path1 = self._create_path_ancilla(path_qubits)
+            ancilla = self.new_ancilla()
+            self.circuit.append(
+                qm.split_slide_one_multiple(
+                    squbit, tqubit2, tqubit, path_qubits2[0], path1, ancilla
+                )
+            )
+            self._clear_path_ancilla(path_qubits, path1)
+            return 1
+        # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
+        else:
+            self.add_entangled(squbit, tqubit, tqubit2)
+            path1 = self._create_path_ancilla(path_qubits)
+            path2 = self._create_path_ancilla(path_qubits2)
+            ancilla = self.new_ancilla()
+            self.circuit.append(
+                qm.split_slide(squbit, tqubit, tqubit2, path1, path2, ancilla)
+            )
+            self._clear_path_ancilla(path_qubits, path1)
+            self._clear_path_ancilla(path_qubits2, path2)
+            return 1
 
-        if m.move_type == enums.MoveType.MERGE_SLIDE:
-            sbit2 = square_to_bit(m.source2)
-            squbit2 = bit_to_qubit(sbit2)
+    def _do_move_merge_slide(self, m, sbit, tbit, squbit, tqubit):
+        sbit2 = square_to_bit(m.source2)
+        squbit2 = bit_to_qubit(sbit2)
 
-            # Find all the squares on both paths
-            path_qubits = self.path_qubits(m.source, m.target)
-            if squbit2 in path_qubits:
-                path_qubits.remove(squbit2)
-            path_qubits2 = self.path_qubits(m.source2, m.target)
-            if squbit in path_qubits2:
-                path_qubits2.remove(squbit)
+        # Find all the squares on both paths
+        path_qubits = self.path_qubits(m.source, m.target)
+        if squbit2 in path_qubits:
+            path_qubits.remove(squbit2)
+        path_qubits2 = self.path_qubits(m.source2, m.target)
+        if squbit in path_qubits2:
+            path_qubits2.remove(squbit)
 
-            # (0, 0): No interposing squares, just jump. 0 ancilla needed.
-            if len(path_qubits) == 0 and len(path_qubits2) == 0:
-                m.move_type = enums.MoveType.MERGE_JUMP
-            elif len(path_qubits) == 0:
-                self.add_entangled(squbit, squbit2, tqubit)
-                # (0, 1): No qubit in one arm, one qubit in the other. 0 ancilla needed.
-                if len(path_qubits2) == 1:
+        # (0, 0): No interposing squares, just jump. 0 ancilla needed.
+        if len(path_qubits) == 0 and len(path_qubits2) == 0:
+            return self._do_move_merge_jump(m, sbit, tbit, squbit, tqubit)
+        elif len(path_qubits) == 0:
+            self.add_entangled(squbit, squbit2, tqubit)
+            # (0, 1): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+            if len(path_qubits2) == 1:
+                self.circuit.append(
+                    qm.merge_slide_zero_one(squbit, tqubit, squbit2, path_qubits2[0])
+                )
+            # (0, 2+): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+            else:
+                path2 = self._create_path_ancilla(path_qubits2)
+                self.circuit.append(
+                    qm.merge_slide_zero_multiple(squbit, tqubit, squbit2, path2)
+                )
+                self._clear_path_ancilla(path_qubits2, path2)
+            return 1
+        elif len(path_qubits2) == 0:
+            self.add_entangled(squbit, squbit2, tqubit)
+            # (1, 0): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+            if len(path_qubits) == 1:
+                self.circuit.append(
+                    qm.merge_slide_zero_one(squbit2, tqubit, squbit, path_qubits[0])
+                )
+            # (2+, 0): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+            else:
+                path1 = self._create_path_ancilla(path_qubits)
+                self.circuit.append(
+                    qm.merge_slide_zero_multiple(squbit2, tqubit, squbit, path1)
+                )
+                self._clear_path_ancilla(path_qubits, path1)
+            return 1
+        elif len(path_qubits) == 1:
+            self.add_entangled(squbit, squbit2, tqubit)
+            # (1, 1): One qubit in one arm, one qubit in the other.
+            if len(path_qubits2) == 1:
+                # If both arms share the same qubit in path. 0 ancilla needed.
+                if qubit_to_bit(path_qubits[0]) == qubit_to_bit(path_qubits2[0]):
                     self.circuit.append(
-                        qm.merge_slide_zero_one(
-                            squbit, tqubit, squbit2, path_qubits2[0]
+                        qm.merge_slide_one_one_same_qubit(
+                            squbit, tqubit, squbit2, path_qubits[0]
                         )
                     )
-                # (0, 2+): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                # Otherwise 1 ancilla needed.
                 else:
-                    path2 = self._create_path_ancilla(path_qubits2)
-                    self.circuit.append(
-                        qm.merge_slide_zero_multiple(squbit, tqubit, squbit2, path2)
-                    )
-                    self._clear_path_ancilla(path_qubits2, path2)
-                return 1
-            elif len(path_qubits2) == 0:
-                self.add_entangled(squbit, squbit2, tqubit)
-                # (1, 0): No qubit in one arm, one qubit in the other. 0 ancilla needed.
-                if len(path_qubits) == 1:
-                    self.circuit.append(
-                        qm.merge_slide_zero_one(squbit2, tqubit, squbit, path_qubits[0])
-                    )
-                # (2+, 0): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
-                else:
-                    path1 = self._create_path_ancilla(path_qubits)
-                    self.circuit.append(
-                        qm.merge_slide_zero_multiple(squbit2, tqubit, squbit, path1)
-                    )
-                    self._clear_path_ancilla(path_qubits, path1)
-                return 1
-            elif len(path_qubits) == 1:
-                self.add_entangled(squbit, squbit2, tqubit)
-                # (1, 1): One qubit in one arm, one qubit in the other.
-                if len(path_qubits2) == 1:
-                    # If both arms share the same qubit in path. 0 ancilla needed.
-                    if qubit_to_bit(path_qubits[0]) == qubit_to_bit(path_qubits2[0]):
-                        self.circuit.append(
-                            qm.merge_slide_one_one_same_qubit(
-                                squbit, tqubit, squbit2, path_qubits[0]
-                            )
-                        )
-                    # Otherwise 1 ancilla needed.
-                    else:
-                        ancilla = self.new_ancilla()
-                        self.circuit.append(
-                            qm.merge_slide_one_one_diff_qubits(
-                                squbit,
-                                tqubit,
-                                squbit2,
-                                path_qubits[0],
-                                path_qubits2[0],
-                                ancilla,
-                            )
-                        )
-                # (1, 2+): One qubit in one arm, multiple qubits in the other. 2 ancillas needed.
-                else:
-                    path2 = self._create_path_ancilla(path_qubits2)
                     ancilla = self.new_ancilla()
                     self.circuit.append(
-                        qm.merge_slide_one_multiple(
-                            squbit, tqubit, squbit2, path_qubits[0], path2, ancilla
+                        qm.merge_slide_one_one_diff_qubits(
+                            squbit,
+                            tqubit,
+                            squbit2,
+                            path_qubits[0],
+                            path_qubits2[0],
+                            ancilla,
                         )
                     )
-                    self._clear_path_ancilla(path_qubits2, path2)
-                return 1
-            # (2+, 1): one qubit in one arm, multiple qubits in the other. 2 ancillas needed.
-            elif len(path_qubits2) == 1:
-                self.add_entangled(squbit, squbit2, tqubit)
-                path1 = self._create_path_ancilla(path_qubits)
+            # (1, 2+): One qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+            else:
+                path2 = self._create_path_ancilla(path_qubits2)
                 ancilla = self.new_ancilla()
                 self.circuit.append(
                     qm.merge_slide_one_multiple(
-                        squbit2, tqubit, squbit, path_qubits2[0], path1, ancilla
+                        squbit, tqubit, squbit2, path_qubits[0], path2, ancilla
                     )
                 )
-                self._clear_path_ancilla(path_qubits, path1)
-                return 1
-            # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
-            else:
-                self.add_entangled(squbit, squbit2, tqubit)
-                path1 = self._create_path_ancilla(path_qubits)
-                path2 = self._create_path_ancilla(path_qubits2)
-                ancilla = self.new_ancilla()
-                self.circuit.append(
-                    qm.merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla)
-                )
-                self._clear_path_ancilla(path_qubits, path1)
                 self._clear_path_ancilla(path_qubits2, path2)
-                return 1
-
-        if (
-            m.move_type == enums.MoveType.SLIDE
-            or m.move_type == enums.MoveType.PAWN_TWO_STEP
-        ):
-            path_qubits = self.path_qubits(m.source, m.target)
-            if len(path_qubits) == 0:
-                # No path, change to jump
-                m.move_type = enums.MoveType.JUMP
-
-        if (
-            m.move_type == enums.MoveType.SLIDE
-            or m.move_type == enums.MoveType.PAWN_TWO_STEP
-        ):
-            for p in path_qubits:
-                if p not in self.entangled_squares and nth_bit_of(
-                    qubit_to_bit(p), self.state
-                ):
-                    # Classical piece in the way
-                    return 0
-
-            # For excluded case, measure target
-            if m.move_variant == enums.MoveVariant.EXCLUDED:
-                # Note that a measurement of 1 means that the move was
-                # successful so that the target square is empty
-                is_there = self.post_select_on(tqubit, m.measurement, invert=True)
-                if is_there:
-                    return 0
-
-            if m.move_variant == enums.MoveVariant.CAPTURE:
-                if (
-                    squbit not in self.entangled_squares
-                    and nth_bit_of(qubit_to_bit(squbit), self.state)
-                    and len(path_qubits) == 1
-                ):
-                    # squbit is classically true and there is only one path_qubit
-                    capture_allowed = 1 - self.post_select_on(
-                        path_qubits[0], m.measurement
-                    )
-                else:
-                    self.add_entangled(squbit, tqubit)
-                    capture_ancilla = self.new_ancilla()
-                    self.circuit.append(
-                        qm.controlled_operation(
-                            cirq.X, [capture_ancilla], [squbit], path_qubits
-                        )
-                    )
-
-                    # We need to add the captured_ancilla to entangled squares
-                    # So that we measure it
-                    self.entangled_squares.add(capture_ancilla)
-                    capture_allowed = self.post_select_on(
-                        capture_ancilla, m.measurement
-                    )
-
-                if not capture_allowed:
-                    return 0
-                else:
-                    # Perform the captured slide
-                    self.add_entangled(squbit)
-                    # Remove the target from the board into an ancilla
-                    # and set bit to zero
-                    self.unhook(tqubit)
-                    self.state = set_nth_bit(tbit, self.state, False)
-
-                    # Re-add target since we need to swap into the square
-                    self.add_entangled(tqubit)
-
-                    # Perform the actual move
-                    self.circuit.append(qm.normal_move(squbit, tqubit))
-
-                    # Set source to empty
-                    self.unhook(squbit)
-                    self.state = set_nth_bit(sbit, self.state, False)
-
-                    # Now set the whole path to empty
-                    for p in path_qubits:
-                        self.state = set_nth_bit(qubit_to_bit(p), self.state, False)
-                        self.unhook(p)
-                    return 1
-            # Basic slide (or successful excluded slide)
-
-            # Add all involved squares into entanglement
-            self.add_entangled(squbit, tqubit, *path_qubits)
-
-            if len(path_qubits) == 1:
-                # For path of one, no ancilla needed
-                self.circuit.append(qm.slide_move(squbit, tqubit, path_qubits))
-                return 1
-            # Longer paths require a path ancilla
-            ancilla = self.new_ancilla()
-            self.circuit.append(qm.slide_move(squbit, tqubit, path_qubits, ancilla))
             return 1
-
-        if (
-            m.move_type == enums.MoveType.JUMP
-            or m.move_type == enums.MoveType.PAWN_STEP
-        ):
-            if (
-                squbit not in self.entangled_squares
-                and tqubit not in self.entangled_squares
-            ):
-                # Classical version
-                self.state = set_nth_bit(sbit, self.state, False)
-                self.state = set_nth_bit(tbit, self.state, True)
-                return 1
-
-            # Measure source for capture
-            if m.move_variant == enums.MoveVariant.CAPTURE:
-                is_there = self.post_select_on(squbit, m.measurement)
-                if not is_there:
-                    return 0
-                self.unhook(tqubit)
-
-            # Measure target for excluded
-            if m.move_variant == enums.MoveVariant.EXCLUDED:
-                # Note that a measurement of 1 means that the move was
-                # successful so that the target square is empty
-                is_there = self.post_select_on(tqubit, m.measurement, invert=True)
-                if is_there:
-                    return 0
-
-            # Only convert source qubit to ancilla if target
-            # is empty
-            unhook = tqubit not in self.entangled_squares
-            self.add_entangled(squbit, tqubit)
-
-            # Execute jump
-            self.circuit.append(qm.normal_move(squbit, tqubit))
-
-            if unhook or m.move_variant != enums.MoveVariant.BASIC:
-                # The source is empty.
-                # Change source qubit to be an ancilla
-                # and set classical bit to zero
-                self.state = set_nth_bit(sbit, self.state, False)
-                self.unhook(squbit)
-
-            return 1
-
-        if m.move_type == enums.MoveType.SPLIT_JUMP:
-            tbit2 = square_to_bit(m.target2)
-            tqubit2 = bit_to_qubit(tbit2)
-            is_basic_case = (
-                squbit not in self.entangled_squares
-                and tqubit not in self.entangled_squares
-                and tqubit2 not in self.entangled_squares
-                and nth_bit_of(sbit, self.state)
-                and not nth_bit_of(tbit, self.state)
-                and not nth_bit_of(tbit2, self.state)
-            )
-            self.add_entangled(squbit, tqubit, tqubit2)
-            self.circuit.append(qm.split_move(squbit, tqubit, tqubit2))
-            if is_basic_case:
-                self.state = set_nth_bit(sbit, self.state, False)
-                self.unhook(squbit)
-            return 1
-
-        if m.move_type == enums.MoveType.MERGE_JUMP:
-            sbit2 = square_to_bit(m.source2)
-            squbit2 = bit_to_qubit(sbit2)
+        # (2+, 1): one qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+        elif len(path_qubits2) == 1:
             self.add_entangled(squbit, squbit2, tqubit)
-            self.circuit.append(qm.merge_move(squbit, squbit2, tqubit))
-            # TODO: should the source qubit be 'unhooked'?
+            path1 = self._create_path_ancilla(path_qubits)
+            ancilla = self.new_ancilla()
+            self.circuit.append(
+                qm.merge_slide_one_multiple(
+                    squbit2, tqubit, squbit, path_qubits2[0], path1, ancilla
+                )
+            )
+            self._clear_path_ancilla(path_qubits, path1)
+            return 1
+        # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
+        else:
+            self.add_entangled(squbit, squbit2, tqubit)
+            path1 = self._create_path_ancilla(path_qubits)
+            path2 = self._create_path_ancilla(path_qubits2)
+            ancilla = self.new_ancilla()
+            self.circuit.append(
+                qm.merge_slide(squbit, tqubit, squbit2, path1, path2, ancilla)
+            )
+            self._clear_path_ancilla(path_qubits, path1)
+            self._clear_path_ancilla(path_qubits2, path2)
             return 1
 
-        if m.move_type == enums.MoveType.KS_CASTLE:
-            # Figure out the rook squares
-            if sbit == square_to_bit("e1") and tbit == square_to_bit("g1"):
-                rook_sbit = square_to_bit("h1")
-                rook_tbit = square_to_bit("f1")
-            elif sbit == square_to_bit("e8") and tbit == square_to_bit("g8"):
-                rook_sbit = square_to_bit("h8")
-                rook_tbit = square_to_bit("f8")
-            else:
-                raise ValueError(f"Invalid kingside castling move")
-            rook_squbit = bit_to_qubit(rook_sbit)
-            rook_tqubit = bit_to_qubit(rook_tbit)
+    def _do_move_slide(self, m, sbit, tbit, squbit, tqubit):
+        path_qubits = self.path_qubits(m.source, m.target)
+        if len(path_qubits) == 0:
+            # No path, change to jump
+            return self._do_move_jump(m, sbit, tbit, squbit, tqubit)
 
-            # Piece in non-superposition in the way, not legal
-            if (
-                nth_bit_of(rook_tbit, self.state)
-                and rook_tqubit not in self.entangled_squares
+        for p in path_qubits:
+            if p not in self.entangled_squares and nth_bit_of(
+                qubit_to_bit(p), self.state
             ):
-                return 0
-            if nth_bit_of(tbit, self.state) and tqubit not in self.entangled_squares:
+                # Classical piece in the way
                 return 0
 
-            # Not in superposition, just castle
-            if (
-                rook_tqubit not in self.entangled_squares
-                and tqubit not in self.entangled_squares
-            ):
-                self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-                return 1
-
-            # Both intervening squares in superposition
-            if (
-                rook_tqubit in self.entangled_squares
-                and tqubit in self.entangled_squares
-            ):
-                castle_ancilla = self._create_path_ancilla([rook_tqubit, tqubit])
-                self.entangled_squares.add(castle_ancilla)
-                castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
-                if castle_allowed:
-                    self.unhook(rook_tqubit)
-                    self.unhook(tqubit)
-                    self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-                    return 1
-                else:
-                    self.post_selection[castle_ancilla] = castle_allowed
-                    return 0
-
-            # One intervening square in superposition
-            if rook_tqubit in self.entangled_squares:
-                measure_qubit = rook_tqubit
-            else:
-                measure_qubit = tqubit
+        # For excluded case, measure target
+        if m.move_variant == enums.MoveVariant.EXCLUDED:
             # Note that a measurement of 1 means that the move was
             # successful so that the target square is empty
-            is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)
+            is_there = self.post_select_on(tqubit, m.measurement, invert=True)
             if is_there:
                 return 0
+
+        if m.move_variant == enums.MoveVariant.CAPTURE:
+            if (
+                squbit not in self.entangled_squares
+                and nth_bit_of(qubit_to_bit(squbit), self.state)
+                and len(path_qubits) == 1
+            ):
+                # squbit is classically true and there is only one path_qubit
+                capture_allowed = 1 - self.post_select_on(path_qubits[0], m.measurement)
+            else:
+                self.add_entangled(squbit, tqubit)
+                capture_ancilla = self.new_ancilla()
+                self.circuit.append(
+                    qm.controlled_operation(
+                        cirq.X, [capture_ancilla], [squbit], path_qubits
+                    )
+                )
+
+                # We need to add the captured_ancilla to entangled squares
+                # So that we measure it
+                self.entangled_squares.add(capture_ancilla)
+                capture_allowed = self.post_select_on(capture_ancilla, m.measurement)
+
+            if not capture_allowed:
+                return 0
+            else:
+                # Perform the captured slide
+                self.add_entangled(squbit)
+                # Remove the target from the board into an ancilla
+                # and set bit to zero
+                self.unhook(tqubit)
+                self.state = set_nth_bit(tbit, self.state, False)
+
+                # Re-add target since we need to swap into the square
+                self.add_entangled(tqubit)
+
+                # Perform the actual move
+                self.circuit.append(qm.normal_move(squbit, tqubit))
+
+                # Set source to empty
+                self.unhook(squbit)
+                self.state = set_nth_bit(sbit, self.state, False)
+
+                # Now set the whole path to empty
+                for p in path_qubits:
+                    self.state = set_nth_bit(qubit_to_bit(p), self.state, False)
+                    self.unhook(p)
+                return 1
+        # Basic slide (or successful excluded slide)
+
+        # Add all involved squares into entanglement
+        self.add_entangled(squbit, tqubit, *path_qubits)
+
+        if len(path_qubits) == 1:
+            # For path of one, no ancilla needed
+            self.circuit.append(qm.slide_move(squbit, tqubit, path_qubits))
+            return 1
+        # Longer paths require a path ancilla
+        ancilla = self.new_ancilla()
+        self.circuit.append(qm.slide_move(squbit, tqubit, path_qubits, ancilla))
+        return 1
+
+    def _do_move_jump(self, m, sbit, tbit, squbit, tqubit):
+        if (
+            squbit not in self.entangled_squares
+            and tqubit not in self.entangled_squares
+        ):
+            # Classical version
+            self.state = set_nth_bit(sbit, self.state, False)
+            self.state = set_nth_bit(tbit, self.state, True)
+            return 1
+
+        # Measure source for capture
+        if m.move_variant == enums.MoveVariant.CAPTURE:
+            is_there = self.post_select_on(squbit, m.measurement)
+            if not is_there:
+                return 0
+            self.unhook(tqubit)
+
+        # Measure target for excluded
+        if m.move_variant == enums.MoveVariant.EXCLUDED:
+            # Note that a measurement of 1 means that the move was
+            # successful so that the target square is empty
+            is_there = self.post_select_on(tqubit, m.measurement, invert=True)
+            if is_there:
+                return 0
+
+        # Only convert source qubit to ancilla if target
+        # is empty
+        unhook = tqubit not in self.entangled_squares
+        self.add_entangled(squbit, tqubit)
+
+        # Execute jump
+        self.circuit.append(qm.normal_move(squbit, tqubit))
+
+        if unhook or m.move_variant != enums.MoveVariant.BASIC:
+            # The source is empty.
+            # Change source qubit to be an ancilla
+            # and set classical bit to zero
+            self.state = set_nth_bit(sbit, self.state, False)
+            self.unhook(squbit)
+
+        return 1
+
+    def _do_move_split_jump(self, m, sbit, tbit, squbit, tqubit):
+        tbit2 = square_to_bit(m.target2)
+        tqubit2 = bit_to_qubit(tbit2)
+        is_basic_case = (
+            squbit not in self.entangled_squares
+            and tqubit not in self.entangled_squares
+            and tqubit2 not in self.entangled_squares
+            and nth_bit_of(sbit, self.state)
+            and not nth_bit_of(tbit, self.state)
+            and not nth_bit_of(tbit2, self.state)
+        )
+        self.add_entangled(squbit, tqubit, tqubit2)
+        self.circuit.append(qm.split_move(squbit, tqubit, tqubit2))
+        if is_basic_case:
+            self.state = set_nth_bit(sbit, self.state, False)
+            self.unhook(squbit)
+        return 1
+
+    def _do_move_merge_jump(self, m, sbit, tbit, squbit, tqubit):
+        sbit2 = square_to_bit(m.source2)
+        squbit2 = bit_to_qubit(sbit2)
+        self.add_entangled(squbit, squbit2, tqubit)
+        self.circuit.append(qm.merge_move(squbit, squbit2, tqubit))
+        # TODO: should the source qubit be 'unhooked'?
+        return 1
+
+    def _do_move_ks_castle(self, m, sbit, tbit, squbit, tqubit):
+        # Figure out the rook squares
+        if sbit == square_to_bit("e1") and tbit == square_to_bit("g1"):
+            rook_sbit = square_to_bit("h1")
+            rook_tbit = square_to_bit("f1")
+        elif sbit == square_to_bit("e8") and tbit == square_to_bit("g8"):
+            rook_sbit = square_to_bit("h8")
+            rook_tbit = square_to_bit("f8")
+        else:
+            raise ValueError(f"Invalid kingside castling move")
+        rook_squbit = bit_to_qubit(rook_sbit)
+        rook_tqubit = bit_to_qubit(rook_tbit)
+
+        # Piece in non-superposition in the way, not legal
+        if (
+            nth_bit_of(rook_tbit, self.state)
+            and rook_tqubit not in self.entangled_squares
+        ):
+            return 0
+        if nth_bit_of(tbit, self.state) and tqubit not in self.entangled_squares:
+            return 0
+
+        # Not in superposition, just castle
+        if (
+            rook_tqubit not in self.entangled_squares
+            and tqubit not in self.entangled_squares
+        ):
             self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
             return 1
 
-        if m.move_type == enums.MoveType.QS_CASTLE:
-
-            # Figure out the rook squares and the b-file square involved
-            if sbit == square_to_bit("e1") and tbit == square_to_bit("c1"):
-                rook_sbit = square_to_bit("a1")
-                rook_tbit = square_to_bit("d1")
-                b_bit = square_to_bit("b1")
-            elif sbit == square_to_bit("e8") and tbit == square_to_bit("c8"):
-                rook_sbit = square_to_bit("a8")
-                rook_tbit = square_to_bit("d8")
-                b_bit = square_to_bit("b8")
-            else:
-                raise ValueError(f"Invalid queenside castling move")
-            rook_squbit = bit_to_qubit(rook_sbit)
-            rook_tqubit = bit_to_qubit(rook_tbit)
-            b_qubit = bit_to_qubit(b_bit)
-
-            # Piece in non-superposition in the way, not legal
-            if (
-                nth_bit_of(rook_tbit, self.state)
-                and rook_tqubit not in self.entangled_squares
-            ):
-                return 0
-            if nth_bit_of(tbit, self.state) and tqubit not in self.entangled_squares:
-                return 0
-            if (
-                b_bit is not None
-                and nth_bit_of(b_bit, self.state)
-                and b_qubit not in self.entangled_squares
-            ):
-                return 0
-
-            # Not in superposition, just castle
-            if (
-                rook_tqubit not in self.entangled_squares
-                and tqubit not in self.entangled_squares
-                and b_qubit not in self.entangled_squares
-            ):
+        # Both intervening squares in superposition
+        if rook_tqubit in self.entangled_squares and tqubit in self.entangled_squares:
+            castle_ancilla = self._create_path_ancilla([rook_tqubit, tqubit])
+            self.entangled_squares.add(castle_ancilla)
+            castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
+            if castle_allowed:
+                self.unhook(rook_tqubit)
+                self.unhook(tqubit)
                 self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
                 return 1
+            else:
+                self.post_selection[castle_ancilla] = castle_allowed
+                return 0
 
-            # Neither intervening squares in superposition
-            if (
-                rook_tqubit not in self.entangled_squares
-                and tqubit not in self.entangled_squares
-            ):
+        # One intervening square in superposition
+        if rook_tqubit in self.entangled_squares:
+            measure_qubit = rook_tqubit
+        else:
+            measure_qubit = tqubit
+        # Note that a measurement of 1 means that the move was
+        # successful so that the target square is empty
+        is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)
+        if is_there:
+            return 0
+        self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
+        return 1
+
+    def _do_move_qs_castle(self, m, sbit, tbit, squbit, tqubit):
+        # Figure out the rook squares and the b-file square involved
+        if sbit == square_to_bit("e1") and tbit == square_to_bit("c1"):
+            rook_sbit = square_to_bit("a1")
+            rook_tbit = square_to_bit("d1")
+            b_bit = square_to_bit("b1")
+        elif sbit == square_to_bit("e8") and tbit == square_to_bit("c8"):
+            rook_sbit = square_to_bit("a8")
+            rook_tbit = square_to_bit("d8")
+            b_bit = square_to_bit("b8")
+        else:
+            raise ValueError(f"Invalid queenside castling move")
+        rook_squbit = bit_to_qubit(rook_sbit)
+        rook_tqubit = bit_to_qubit(rook_tbit)
+        b_qubit = bit_to_qubit(b_bit)
+
+        # Piece in non-superposition in the way, not legal
+        if (
+            nth_bit_of(rook_tbit, self.state)
+            and rook_tqubit not in self.entangled_squares
+        ):
+            return 0
+        if nth_bit_of(tbit, self.state) and tqubit not in self.entangled_squares:
+            return 0
+        if (
+            b_bit is not None
+            and nth_bit_of(b_bit, self.state)
+            and b_qubit not in self.entangled_squares
+        ):
+            return 0
+
+        # Not in superposition, just castle
+        if (
+            rook_tqubit not in self.entangled_squares
+            and tqubit not in self.entangled_squares
+            and b_qubit not in self.entangled_squares
+        ):
+            self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
+            return 1
+
+        # Neither intervening squares in superposition
+        if (
+            rook_tqubit not in self.entangled_squares
+            and tqubit not in self.entangled_squares
+        ):
+            if b_qubit not in self.entangled_squares:
+                self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
+            else:
+                self.queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit, b_qubit)
+            return 1
+
+        # Both intervening squares in superposition
+        if rook_tqubit in self.entangled_squares and tqubit in self.entangled_squares:
+            castle_ancilla = self._create_path_ancilla([rook_tqubit, tqubit])
+            self.entangled_squares.add(castle_ancilla)
+            castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
+            if castle_allowed:
+                self.unhook(rook_tqubit)
+                self.unhook(tqubit)
                 if b_qubit not in self.entangled_squares:
                     self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
                 else:
@@ -1353,46 +1342,40 @@ class CirqBoard:
                         squbit, rook_squbit, tqubit, rook_tqubit, b_qubit
                     )
                 return 1
-
-            # Both intervening squares in superposition
-            if (
-                rook_tqubit in self.entangled_squares
-                and tqubit in self.entangled_squares
-            ):
-                castle_ancilla = self._create_path_ancilla([rook_tqubit, tqubit])
-                self.entangled_squares.add(castle_ancilla)
-                castle_allowed = self.post_select_on(castle_ancilla, m.measurement)
-                if castle_allowed:
-                    self.unhook(rook_tqubit)
-                    self.unhook(tqubit)
-                    if b_qubit not in self.entangled_squares:
-                        self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-                    else:
-                        self.queenside_castle(
-                            squbit, rook_squbit, tqubit, rook_tqubit, b_qubit
-                        )
-                    return 1
-                else:
-                    self.post_selection[castle_ancilla] = castle_allowed
-                    return 0
-
-            # One intervening square in superposition
-            if rook_tqubit in self.entangled_squares:
-                measure_qubit = rook_tqubit
             else:
-                measure_qubit = tqubit
-            # Note that a measurement of one means the move was successful
-            # so that the path was clear
-            is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)
-            if is_there:
+                self.post_selection[castle_ancilla] = castle_allowed
                 return 0
-            if b_qubit not in self.entangled_squares:
-                self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
-            else:
-                self.queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit, b_qubit)
-            return 1
 
-        raise ValueError(f"Move type {m.move_type} not supported")
+        # One intervening square in superposition
+        if rook_tqubit in self.entangled_squares:
+            measure_qubit = rook_tqubit
+        else:
+            measure_qubit = tqubit
+        # Note that a measurement of one means the move was successful
+        # so that the path was clear
+        is_there = self.post_select_on(measure_qubit, m.measurement, invert=True)
+        if is_there:
+            return 0
+        if b_qubit not in self.entangled_squares:
+            self.set_castle(sbit, rook_sbit, tbit, rook_tbit)
+        else:
+            self.queenside_castle(squbit, rook_squbit, tqubit, rook_tqubit, b_qubit)
+        return 1
+
+    _MOVE_FUNC = {
+        enums.MoveType.JUMP: _do_move_jump,
+        enums.MoveType.SLIDE: _do_move_slide,
+        enums.MoveType.SPLIT_JUMP: _do_move_split_jump,
+        enums.MoveType.SPLIT_SLIDE: _do_move_split_slide,
+        enums.MoveType.MERGE_JUMP: _do_move_merge_jump,
+        enums.MoveType.MERGE_SLIDE: _do_move_merge_slide,
+        enums.MoveType.PAWN_STEP: _do_move_jump,
+        enums.MoveType.PAWN_TWO_STEP: _do_move_slide,
+        enums.MoveType.PAWN_CAPTURE: _do_move_pawn_capture,
+        enums.MoveType.PAWN_EP: _do_move_pawn_ep,
+        enums.MoveType.KS_CASTLE: _do_move_ks_castle,
+        enums.MoveType.QS_CASTLE: _do_move_qs_castle,
+    }
 
     def __str__(self):
         """Renders a ASCII diagram showing the board probabilities."""
