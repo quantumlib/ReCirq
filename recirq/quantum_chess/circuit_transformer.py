@@ -422,13 +422,13 @@ class SycamoreDecomposer(cirq.PointOptimizer):
             qubits = op.sub_operation.qubits
             if op.gate.sub_gate == cirq.ISWAP:
                 new_ops = controlled_iswap.controlled_iswap(*qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP ** -1:
+            if op.gate.sub_gate == cirq.ISWAP**-1:
                 new_ops = controlled_iswap.controlled_iswap(
                     *qubits, *op.controls, inverse=True
                 )
-            if op.gate.sub_gate == cirq.ISWAP ** 0.5:
+            if op.gate.sub_gate == cirq.ISWAP**0.5:
                 new_ops = controlled_iswap.controlled_sqrt_iswap(*qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP ** -0.5:
+            if op.gate.sub_gate == cirq.ISWAP**-0.5:
                 new_ops = controlled_iswap.controlled_inv_sqrt_iswap(
                     *qubits, *op.controls
                 )
