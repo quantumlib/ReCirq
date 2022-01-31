@@ -41,7 +41,7 @@ import recirq.quantum_chess.quantum_moves as qm
 # space is represented by a 1. The XOR of the empty squares and full squares bitboards will yield
 # this constant if the board is classical, so we can compare this constant with that operation on
 # the empty and full squares bitboards.
-CLASSICAL_BITBOARD = 2 ** 64 - 1
+CLASSICAL_BITBOARD = 2**64 - 1
 
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
 DEFAULT_CHESS_INIT_STATE = 0xFFFF00000000FFFF
@@ -51,7 +51,7 @@ DEFAULT_CHESS_INIT_STATE = 0xFFFF00000000FFFF
 _NO_CACHE_AVAILABLE = -1
 
 # Repetitions count for position which should always use the cache
-_CACHE_ALWAYS_AVAILABLE = 10 ** 9
+_CACHE_ALWAYS_AVAILABLE = 10**9
 
 
 class CirqBoard:
