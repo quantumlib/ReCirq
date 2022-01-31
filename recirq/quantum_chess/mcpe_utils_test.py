@@ -59,7 +59,7 @@ def test_distance_fn():
     # After swapping a1 and a2, they'd only be 1 unit apart, so things improve
     # by sqrt(2) - 1.
     effect = mcpe.effect_of_swap((a1, a2), (a1, b2), euclidean_dist)
-    np.testing.assert_allclose(effect, 2 ** 0.5 - 1)
+    np.testing.assert_allclose(effect, 2**0.5 - 1)
 
 
 def test_peek():
