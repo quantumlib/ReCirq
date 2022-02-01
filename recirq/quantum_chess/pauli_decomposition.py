@@ -44,7 +44,7 @@ def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.Pauli
     if measurement.ndim != 2:
         raise ValueError("pauli_decomposition expects a 2-d square matrix.")
     d = len(qubits)
-    if len(measurement) != 2 ** d:
+    if len(measurement) != 2**d:
         raise ValueError(
             f"pauli_decomposition: Expect that size_of_matrix==pow(2, number_of_qubits). In your case {len(measurement)}!=pow(2, {d})."
         )
@@ -57,7 +57,7 @@ def pauli_decomposition(measurement: list, qubits: List[cirq.Qid]) -> cirq.Pauli
     for ind in itertools.product(iter(range(4)), repeat=d):
         ind_array = np.array(ind)
         coeff = (
-            0.5 ** d * np.dot(kron_product(s[ind_array]).T.conj(), measurement).trace()
+            0.5**d * np.dot(kron_product(s[ind_array]).T.conj(), measurement).trace()
         )
         if abs(coeff) > 1e-12:
             result = result + cirq.PauliString(

@@ -88,7 +88,7 @@ def controlled_iswap(
 
     Returns a generator of cirq.Operations.
     """
-    available_gate = cirq.ISWAP ** 0.5
+    available_gate = cirq.ISWAP**0.5
     if inverse:
         mul = -1
     else:

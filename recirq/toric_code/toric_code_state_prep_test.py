@@ -29,22 +29,20 @@ ROW_VECTOR = (1, 1)
 
 def test_middle_out_column_groups_odd():
     code = tcr.ToricCodeRectangle(ORIGIN, ROW_VECTOR, ROWS, 7)
-    state_prep = tcsp.ToricCodeStatePrep(code)
     expected_groups = [{3}, {2, 4}, {1, 5}, {0, 6}]
-    assert list(state_prep._middle_out_column_groups()) == expected_groups
+    assert list(tcsp._middle_out_column_groups(code)) == expected_groups
 
 
 def test_middle_out_column_groups_even():
     code = tcr.ToricCodeRectangle(ORIGIN, ROW_VECTOR, ROWS, 8)
-    state_prep = tcsp.ToricCodeStatePrep(code)
     expected_groups = [{3, 4}, {2, 5}, {1, 6}, {0, 7}]
-    assert list(state_prep._middle_out_column_groups()) == expected_groups
+    assert list(tcsp._middle_out_column_groups(code)) == expected_groups
 
 
 @pytest.mark.parametrize("cols", range(1, 10))
 def test_cnot_circuit_depth(cols: int):
     code = tcr.ToricCodeRectangle(ORIGIN, ROW_VECTOR, ROWS, cols)
-    circuit = tcsp.ToricCodeStatePrep(code).cnot_circuit()
+    circuit = tcsp.toric_code_cnot_circuit(code)
     number_of_column_groups = (cols + 1) // 2
     expected_cnot_depth = 2 * number_of_column_groups + 1
     expected_hadamard_depth = 1
@@ -53,8 +51,8 @@ def test_cnot_circuit_depth(cols: int):
 
 def test_cnot_circuit_hadamards():
     code = tcr.ToricCodeRectangle(ORIGIN, ROW_VECTOR, ROWS, COLS)
-    circuit_z = tcsp.ToricCodeStatePrep(code).cnot_circuit(x_basis=False)
-    circuit_x = tcsp.ToricCodeStatePrep(code).cnot_circuit(x_basis=True)
+    circuit_z = tcsp.toric_code_cnot_circuit(code, x_basis=False)
+    circuit_x = tcsp.toric_code_cnot_circuit(code, x_basis=True)
     assert circuit_z == circuit_x[:-1]
     assert circuit_x[-1] == cirq.Moment(cirq.H(q) for q in code.qubits)
 
@@ -71,7 +69,7 @@ def test_cnot_circuit_7_qubit_example():
     These are read off in binary as 0b0000000, 0b1101100, 0b0011011, 0b1110111.
     """
     small_code = tcr.ToricCodeRectangle(ORIGIN, ROW_VECTOR, 1, 2)
-    circuit = tcsp.ToricCodeStatePrep(small_code).cnot_circuit()
+    circuit = tcsp.toric_code_cnot_circuit(small_code)
     result = cirq.Simulator().simulate(circuit)
     state = result.state_vector()
     nonzero_elements = np.nonzero(state)[0]
@@ -107,7 +105,7 @@ def test_cnot_circuit_12_qubit_example():
     These are read off in binary as 0b000000000000, 0b000011001100, 0b000000011011, etc.
     """
     code = tcr.ToricCodeRectangle(ORIGIN, ROW_VECTOR, 2, 2)
-    circuit = tcsp.ToricCodeStatePrep(code).cnot_circuit()
+    circuit = tcsp.toric_code_cnot_circuit(code)
     result = cirq.Simulator().simulate(circuit)
     state = result.state_vector()
     nonzero_elements = np.nonzero(state)[0]
