@@ -1,4 +1,4 @@
-# Copyright 2021 Google
+# Copyright 2022 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Sequence, Tuple, List
+from typing import Sequence, Tuple, List, Iterator
 
 import cirq
 import functools
@@ -167,7 +167,7 @@ def simulate_dtc_circuit_list_sweep(
     circuit_list: Sequence[cirq.Circuit],
     param_resolvers: Sequence[cirq.ParamResolver],
     qubit_order: Sequence[cirq.Qid],
-):
+) -> Iterator[np.ndarray]:
     """Simulate a dtc circuit list over a sweep of param_resolvers
 
     Args:
@@ -245,7 +245,7 @@ def get_polarizations(
     return polarizations
 
 
-def signal_ratio(zeta_1: np.ndarray, zeta_2: np.ndarray):
+def signal_ratio(zeta_1: np.ndarray, zeta_2: np.ndarray) -> np.ndarray:
     """Calculate signal ratio between two signals
 
     Args:
@@ -266,7 +266,7 @@ def simulate_for_polarizations(
     circuit_list: Sequence[cirq.Circuit],
     autocorrelate: bool = True,
     take_abs: bool = False,
-):
+) -> np.ndarray:
     """Simulate and get polarizations for a single DTCExperiment and circuit list
 
     Args:
@@ -324,7 +324,7 @@ def run_comparison_experiment(
     autocorrelate: bool = True,
     take_abs: bool = False,
     **kwargs,
-):
+) -> Iterator[np.ndarray]:
     """Run comparison experiment
 
     Args:
