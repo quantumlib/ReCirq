@@ -43,7 +43,7 @@ def get_seed():
     if seed:
         seed = int(seed)
     else:
-        seed = random.randrange(2 ** 32)
+        seed = random.randrange(2**32)
     print("Using seed", seed)
     return seed
 
