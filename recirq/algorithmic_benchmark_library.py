@@ -1,7 +1,7 @@
 import dataclasses
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Type, Callable, List, Tuple, Any, Optional
+from typing import Type, Callable, List, Tuple, Any, Optional, Dict
 
 import pandas as pd
 
@@ -50,7 +50,7 @@ class AlgorithmicBenchmark:
     configs: List['BenchmarkConfig']
     description: Optional[str] = None
 
-    def as_strings(self):
+    def as_strings(self) -> Dict[str, str]:
         """Get values of this class as strings suitable for printing."""
         ret = {k: str(v) for k, v in dataclasses.asdict(self).items()}
         ret['spec_class'] = self.spec_class.__name__
