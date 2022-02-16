@@ -278,7 +278,7 @@ def test_zzswap_as_syc():
     cirq.testing.assert_allclose_up_to_global_phase(u1, u2, atol=1e-8)
 
 
-@pytest.mark.skip(msg="KAK instability")
+@pytest.mark.skip("KAK instability")
 def test_zzswap_as_syc_2():
     q1, q2 = cirq.LineQubit.range(2)
     zzs = ZZSwap(zz_exponent=0.123)
