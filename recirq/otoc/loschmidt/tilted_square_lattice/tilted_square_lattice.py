@@ -14,6 +14,7 @@
 
 import itertools
 from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 
@@ -97,6 +98,7 @@ class TiltedSquareLatticeLoschmidtSpec(ExecutableSpec):
     macrocycle_depth: int
     instance_i: int
     n_repetitions: int
+    twoq_gate_name: str = 'sqrt_iswap'
     executable_family: str = 'recirq.otoc.loschmidt.tilted_square_lattice'
 
     @classmethod
@@ -107,11 +109,73 @@ class TiltedSquareLatticeLoschmidtSpec(ExecutableSpec):
         return dataclass_json_dict(self, namespace=self._json_namespace_())
 
 
+def get_all_tilted_square_lattice_specs(
+        *, n_instances=10, n_repetitions=1_000,
+        min_side_length=2, max_side_length=8,
+        side_length_step=2,
+        macrocycle_depths=None,
+        twoq_gate_name='sqrt_iswap',
+) -> List[TiltedSquareLatticeLoschmidtSpec]:
+    """Return a collection of quantum executables for various parameter settings of the tilted
+    square lattice loschmidt benchmark.
+
+    Args:
+        n_instances: The number of random instances to make per setting
+        n_repetitions: The number of circuit repetitions to use for measuring the return
+            probability.
+        min_side_length, max_side_length, side_length_step: generate a range of
+            TiltedSquareLattice topologies with widths and heights in this range.
+        macrocycle_depths: The collection of macrocycle depths to use per setting.
+    """
+
+    if macrocycle_depths is None:
+        macrocycle_depths = np.arange(2, 8 + 1, 2)
+    topologies = _get_all_tilted_square_lattices(
+        min_side_length=min_side_length,
+        max_side_length=max_side_length,
+        side_length_step=side_length_step,
+    )
+
+    return [
+        TiltedSquareLatticeLoschmidtSpec(
+            topology=topology,
+            macrocycle_depth=macrocycle_depth,
+            instance_i=instance_i,
+            n_repetitions=n_repetitions,
+            twoq_gate_name=twoq_gate_name,
+        )
+        for topology, macrocycle_depth, instance_i in itertools.product(
+            topologies, macrocycle_depths, range(n_instances))
+    ]
+
+
+def tilted_square_lattice_spec_to_exe(
+        spec: TiltedSquareLatticeLoschmidtSpec, *, rs: np.random.RandomState
+) -> QuantumExecutable:
+    twoq_gates = {
+        'sqrt_iswap': cirq.SQRT_ISWAP,
+        'cz': cirq.CZ,
+    }
+
+    return QuantumExecutable(
+        spec=spec,
+        problem_topology=spec.topology,
+        circuit=create_tilted_square_lattice_loschmidt_echo_circuit(
+            topology=spec.topology,
+            macrocycle_depth=spec.macrocycle_depth,
+            twoq_gate=twoq_gates[spec.twoq_gate_name],
+            rs=rs,
+        ),
+        measurement=BitstringsMeasurement(spec.n_repetitions)
+    )
+
+
 def get_all_tilted_square_lattice_executables(
         *, n_instances=10, n_repetitions=1_000,
         min_side_length=2, max_side_length=8,
         side_length_step=2,
         macrocycle_depths=None, seed=52,
+        twoq_gate_name='sqrt_iswap',
 ) -> QuantumExecutableGroup:
     """Return a collection of quantum executables for various parameter settings of the tilted
     square lattice loschmidt benchmark.
@@ -125,37 +189,14 @@ def get_all_tilted_square_lattice_executables(
         seed: The random seed to make this deterministic.
         macrocycle_depths: The collection of macrocycle depths to use per setting.
     """
-
     rs = np.random.RandomState(seed)
-    if macrocycle_depths is None:
-        macrocycle_depths = np.arange(2, 8 + 1, 2)
-    topologies = _get_all_tilted_square_lattices(
-        min_side_length=min_side_length,
-        max_side_length=max_side_length,
-        side_length_step=side_length_step,
+    specs = get_all_tilted_square_lattice_specs(
+        n_instances=n_instances, n_repetitions=n_repetitions, min_side_length=min_side_length,
+        max_side_length=max_side_length, side_length_step=side_length_step,
+        macrocycle_depths=macrocycle_depths, twoq_gate_name=twoq_gate_name,
     )
 
-    specs = [
-        TiltedSquareLatticeLoschmidtSpec(
-            topology=topology,
-            macrocycle_depth=macrocycle_depth,
-            instance_i=instance_i,
-            n_repetitions=n_repetitions
-        )
-        for topology, macrocycle_depth, instance_i in itertools.product(
-            topologies, macrocycle_depths, range(n_instances))
-    ]
-
     return QuantumExecutableGroup([
-        QuantumExecutable(
-            spec=spec,
-            problem_topology=spec.topology,
-            circuit=create_tilted_square_lattice_loschmidt_echo_circuit(
-                topology=spec.topology,
-                macrocycle_depth=spec.macrocycle_depth,
-                rs=rs,
-            ),
-            measurement=BitstringsMeasurement(spec.n_repetitions)
-        )
+        tilted_square_lattice_spec_to_exe(spec, rs=rs)
         for spec in specs
     ])

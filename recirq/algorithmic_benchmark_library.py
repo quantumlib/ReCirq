@@ -106,6 +106,20 @@ BENCHMARKS = [
                 ]),
                 gen_script='gen-small-v1.py',
                 run_scripts=['run-simulator.py']
+            ),
+            BenchmarkConfig(
+                short_name='small-cz-v1',
+                full_name='loschmidt.tilted_square_lattice.small-cz-v1',
+                description='\n'.join([
+                    "A 'small' configuration for quick verification of Loschmidt echos using the ",
+                    "CZ gate",
+                    "",
+                    "This configuration uses small grid topologies (making it suitable for",
+                    "running on simulators) and a small number of random instances making it",
+                    "suitable for getting a quick reading on processor performance in ~minutes."
+                ]),
+                gen_script='gen-small-cz-v1.py',
+                run_scripts=['run-simulator-cz.py']
             )
         ]
     ),
