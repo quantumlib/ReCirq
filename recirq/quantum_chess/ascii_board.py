@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 import recirq.quantum_chess.bit_utils as bu
 import recirq.quantum_chess.constants as c
@@ -22,6 +22,8 @@ class AsciiBoard:
         self.board = board or qb.CirqBoard(0)
 
         self._reset_state()
+
+    _probs: Sequence[float]
 
     def _reset_state(self):
         """Resets all the values that represent the state to default values."""

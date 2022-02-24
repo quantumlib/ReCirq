@@ -11,6 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Circuits to generate the ground state in a toric code rectangle
+
+(all plaquettes +1).
+"""
+
 from __future__ import annotations
 
 from typing import Iterator, List, Set
@@ -19,74 +24,60 @@ import cirq
 
 from . import toric_code_rectangle as tcr
 
+def toric_code_cnot_circuit(
+    code: tcr.ToricCodeRectangle, x_basis: bool = False
+) -> cirq.Circuit:
+    """State prep circuit using CNOTs and Hadamards.
 
-class ToricCodeStatePrep:
-    """Circuits to generate the ground state in a toric code rectangle (all plaquettes +1)."""
+    Args:
+        x_basis: If True, we Hadamard all qubits at the end of the circuit, effectively
+            changing basis from Z to X, or switching around Z and X plaquettes.
+    """
+    # Hadamard "captain" qubits
+    circuit = cirq.Circuit(cirq.H(q) for q in code.captain_qubits)
 
-    def __init__(self, code: tcr.ToricCodeRectangle):
-        """
+    # Work "middle-out" through the columns
+    # Each group's "down" CNOTs coexist with the next group's "out" CNOTs
+    cnot_moments: List[List[cirq.Operation]] = [[]]
+    for idx, cols in enumerate(_middle_out_column_groups(code)):
+        cnot_moments.extend([[], []])
 
-        Args:
-            code: Toric code rectangle whose ground state to prepare
-        """
-        self.code = code
+        for col in cols:
+            for row in range(code.rows):
+                captain = code.x_plaquette_to_captain(row, col)
+                if idx == 0:  # Center columns: left, right, down
+                    q0 = code.q_lower_left(captain)
+                    q1 = code.q_lower_right(captain)
+                else:  # Outer columns: outside, inside, down
+                    q0 = code.q_lower_outside(captain)
+                    q1 = code.q_lower_inside(captain)
+                q2 = code.q_down(captain)
 
-    def __repr__(self) -> str:
-        return f"ToricCodeStatePrep(code={self.code})"
+                cnot_moments[-3].append(cirq.CNOT(captain, q0))
+                cnot_moments[-2].append(cirq.CNOT(captain, q1))
+                cnot_moments[-1].append(cirq.CNOT(code.q_lower_outside(captain), q2))
 
-    def cnot_circuit(self, x_basis: bool = False) -> cirq.Circuit:
-        """State prep circuit using CNOTs and Hadamards.
+    circuit += (cirq.Moment(ops) for ops in cnot_moments)
 
-        Args:
-            x_basis: If True, we Hadamard all qubits at the end of the circuit, effectively
-                changing basis from Z to X, or switching around Z and X plaquettes.
-        """
-        # Hadamard "captain" qubits
-        circuit = cirq.Circuit(cirq.H(q) for q in self.code.captain_qubits)
+    # Optionally Hadamard all qubits to switch basis
+    if x_basis:
+        circuit += cirq.Moment(cirq.H(q) for q in code.qubits)
 
-        # Work "middle-out" through the columns
-        # Each group's "down" CNOTs coexist with the next group's "out" CNOTs
-        cnot_moments: List[List[cirq.Operation]] = [[]]
-        for idx, cols in enumerate(self._middle_out_column_groups()):
-            cnot_moments.extend([[], []])
+    return circuit
 
-            for col in cols:
-                for row in range(self.code.rows):
-                    captain = self.code.x_plaquette_to_captain(row, col)
-                    if idx == 0:  # Center columns: left, right, down
-                        q0 = self.code.q_lower_left(captain)
-                        q1 = self.code.q_lower_right(captain)
-                    else:  # Outer columns: outside, inside, down
-                        q0 = self.code.q_lower_outside(captain)
-                        q1 = self.code.q_lower_inside(captain)
-                    q2 = self.code.q_down(captain)
 
-                    cnot_moments[-3].append(cirq.CNOT(captain, q0))
-                    cnot_moments[-2].append(cirq.CNOT(captain, q1))
-                    cnot_moments[-1].append(
-                        cirq.CNOT(self.code.q_lower_outside(captain), q2)
-                    )
+def _middle_out_column_groups(code: tcr.ToricCodeRectangle) -> Iterator[Set[int]]:
+    """Iterate through column indices, starting from the center and working out in pairs."""
+    cols = code.cols
 
-        circuit += (cirq.Moment(ops) for ops in cnot_moments)
+    # Start in center: 2 for even cols, 1 for odd cols
+    if cols % 2 == 0:
+        center_cols = {cols // 2 - 1, cols // 2}
+    else:
+        center_cols = {cols // 2}
+    yield center_cols
 
-        # Optionally Hadamard all qubits to switch basis
-        if x_basis:
-            circuit += cirq.Moment(cirq.H(q) for q in self.code.qubits)
-
-        return circuit
-
-    def _middle_out_column_groups(self) -> Iterator[Set[int]]:
-        """Iterate through column indices, starting from the center and working out in pairs."""
-        cols = self.code.cols
-
-        # Start in center: 2 for even cols, 1 for odd cols
-        if cols % 2 == 0:
-            center_cols = {cols // 2 - 1, cols // 2}
-        else:
-            center_cols = {cols // 2}
-        yield center_cols
-
-        # Work outwards in pairs
-        for right_col in range(cols // 2 + 1, cols):
-            left_col = cols - right_col - 1
-            yield {left_col, right_col}
+    # Work outwards in pairs
+    for right_col in range(cols // 2 + 1, cols):
+        left_col = cols - right_col - 1
+        yield {left_col, right_col}
