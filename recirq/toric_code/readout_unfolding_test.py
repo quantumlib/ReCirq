@@ -31,8 +31,7 @@ DISTRIBUTIONS = [
 @pytest.mark.parametrize("use_uniform_prior", [False, True])
 @pytest.mark.parametrize("distribution", DISTRIBUTIONS)
 def test_initial_guess(use_uniform_prior, distribution):
-    unfolder = ru.ReadoutUnfolder(use_uniform_prior=use_uniform_prior)
-    guess = unfolder.get_initial_guess(distribution)
+    guess = ru._get_initial_guess(distribution, use_uniform_prior)
     if use_uniform_prior:
         assert np.allclose(guess, [0.25, 0.25, 0.25, 0.25])
     else:
@@ -41,17 +40,17 @@ def test_initial_guess(use_uniform_prior, distribution):
 
 @pytest.mark.parametrize("use_uniform_prior", [False, True])
 @pytest.mark.parametrize("distribution", DISTRIBUTIONS)
-def test_correct_with_identity_matrix(use_uniform_prior, distribution):
-    unfolder = ru.ReadoutUnfolder(use_uniform_prior=use_uniform_prior)
+def test_correct_with_identity_matrix(distribution, use_uniform_prior):
     distribution = np.array(distribution)
-    corrected = unfolder.correct_distribution(np.eye(4), distribution)
+    corrected = ru.correct_readout_distribution(
+        np.eye(4), distribution, use_uniform_prior=use_uniform_prior
+    )
     assert np.allclose(corrected, distribution)
 
 
 @pytest.mark.parametrize("use_uniform_prior", [False, True])
 @pytest.mark.parametrize("ideal", DISTRIBUTIONS)
 def test_error_on_one_qubit(use_uniform_prior, ideal):
-    unfolder = ru.ReadoutUnfolder(use_uniform_prior=use_uniform_prior)
     ideal = np.array(ideal)
 
     # Use order 00, 10, 01, 11 and put error on the right qubit
@@ -66,14 +65,15 @@ def test_error_on_one_qubit(use_uniform_prior, ideal):
         ]
     )
     measured = readout_matrix.transpose() @ ideal
-    corrected = unfolder.correct_distribution(readout_matrix, measured)
+    corrected = ru.correct_readout_distribution(
+        readout_matrix, measured, use_uniform_prior=use_uniform_prior
+    )
     assert np.allclose(corrected, ideal, atol=0.01)
 
 
 @pytest.mark.parametrize("use_uniform_prior", [False, True])
 @pytest.mark.parametrize("ideal", DISTRIBUTIONS)
 def test_correlated_error(use_uniform_prior, ideal):
-    unfolder = ru.ReadoutUnfolder(use_uniform_prior=use_uniform_prior)
     ideal = np.array(ideal)
     readout_matrix = np.array(
         [
@@ -84,5 +84,7 @@ def test_correlated_error(use_uniform_prior, ideal):
         ]
     )
     measured = readout_matrix.transpose() @ ideal
-    corrected = unfolder.correct_distribution(readout_matrix, measured)
+    corrected = ru.correct_readout_distribution(
+        readout_matrix, measured, use_uniform_prior=use_uniform_prior
+    )
     assert np.allclose(corrected, ideal, atol=0.02)
