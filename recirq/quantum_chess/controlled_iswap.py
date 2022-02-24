@@ -14,6 +14,7 @@
 from typing import Sequence, Union, Optional
 
 import cirq
+from cirq import optimizers
 import cirq_google as cg
 import numpy as np
 from cirq.optimizers.two_qubit_to_fsim import (
@@ -116,8 +117,8 @@ def controlled_iswap(
     )
 
     converted_ops = cirq.Circuit(convert_op(op) for op in circuit.all_operations())
-    cirq.optimizers.MergeSingleQubitGates().optimize_circuit(converted_ops)
-    cirq.optimizers.DropNegligible().optimize_circuit(converted_ops)
+    optimizers.MergeSingleQubitGates().optimize_circuit(converted_ops)
+    optimizers.DropNegligible().optimize_circuit(converted_ops)
     return cirq.Circuit(simplify_op(op) for op in converted_ops.all_operations())
 
 
