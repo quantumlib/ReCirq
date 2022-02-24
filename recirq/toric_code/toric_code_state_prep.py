@@ -24,6 +24,7 @@ import cirq
 
 from . import toric_code_rectangle as tcr
 
+
 def toric_code_cnot_circuit(
     code: tcr.ToricCodeRectangle, x_basis: bool = False
 ) -> cirq.Circuit:
