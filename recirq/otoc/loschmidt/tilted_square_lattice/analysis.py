@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """Analysis routines for loschmidt echo data.
+
+See also the notebooks in this directory demonstrating usage of these analysis routines.
 """
 
 from typing import Callable, Dict, cast, Sequence, Any, Tuple, List
@@ -22,15 +24,18 @@ import pandas as pd
 from scipy.optimize import curve_fit
 
 import cirq
-from cirq_google.workflow import ExecutableGroupResult, SharedRuntimeInfo, \
-    QuantumRuntimeConfiguration, \
-    ExecutableResult
+from cirq_google.workflow import (
+    ExecutableGroupResult, SharedRuntimeInfo,
+    QuantumRuntimeConfiguration,
+    ExecutableResult)
 from recirq.otoc.loschmidt.tilted_square_lattice import TiltedSquareLatticeLoschmidtSpec
 
 
 def to_ground_state_prob(result: cirq.Result) -> float:
-    """The loschmidt echo success probability is the fraction of times we return to the state
-    we started from.
+    """Compute the fraction of times we return to the state we started from.
+
+    In a loschmidt echo, this is a measure of success since perfect execution of the random
+    unitary and its inverse should return the system to its starting state.
 
     This function computes the fraction of time the all-zeros bitstring was measured. It assumes
     the system was initialized in the all-zeros state.
