@@ -22,9 +22,6 @@ import numpy as np
 
 UNITARY_ATOL = 1e-8
 
-# Helper functions to determine circuit attributes
-
-
 def _gates_are_close(gate0: cirq.Gate, gate1: cirq.Gate) -> bool:
     """Determine whether two gates' unitaries are equal up to global phase and tolerance."""
     # Sanity check the shapes agree
@@ -37,6 +34,7 @@ def _gates_are_close(gate0: cirq.Gate, gate1: cirq.Gate) -> bool:
 
 
 def _qubits_with_hadamard(moment: cirq.Moment) -> Set[cirq.Qid]:
+    """Returns the set of qubits in a moment acted on by a hadamard."""
     return {op.qubits[0] for op in moment if _gates_are_close(op.gate, cirq.H)}
 
 
@@ -62,9 +60,6 @@ def _is_exclusively_1q_gates(moment: cirq.Moment) -> bool:
 def _has_cnot(moment: cirq.Moment) -> bool:
     """Returns True if any operations in the moment are CNOT."""
     return any(_gates_are_close(op.gate, cirq.CNOT) for op in moment)
-
-
-# Helper functions for decomposing operations
 
 
 def _merge_hadamards(moment0: cirq.Moment, moment1: cirq.Moment) -> List[cirq.Moment]:
@@ -187,8 +182,7 @@ def convert_cnot_moments_to_cz_and_simplify_hadamards(
 def defer_single_qubit_gates(circuit: cirq.Circuit) -> cirq.Circuit:
     """Create a new circuit where some early single-qubit gates have been pushed later.
 
-    This is useful if the qubits begin the circuit in |0⟩; we leave them in the initial state
-    until right before their first entangling gates.
+    This leaves qubits in the |0> state until right before their first entangling gates.
 
     This is intended for a moment structure where each moment is exclusively 1q or exclusively 2q
     gates. We do not add any additional moments, and we do not insert 1q gates into any moment
@@ -197,13 +191,10 @@ def defer_single_qubit_gates(circuit: cirq.Circuit) -> cirq.Circuit:
     """
     new_circuit = copy.deepcopy(circuit)
 
-    exclusively_1q_moments: List[
-        int
-    ] = []  # We can move 1q gates in/out of these moments
+    # We can move 1q gates in/out of these moments
+    exclusively_1q_moments: List[ int ] = []
     deferrable_qubits = set(new_circuit.all_qubits())
-    qubit_to_deferred_ops: Dict[cirq.Qid, List[cirq.Operation]] = defaultdict(
-        lambda: []
-    )
+    qubit_to_deferred_ops: Dict[cirq.Qid, List[cirq.Operation]] = defaultdict(list)
 
     def resolve_qubit(q: cirq.Qid) -> None:
         """Insert deferred gates into new_circuit and remove q from qubit_to_deferred_gates."""
