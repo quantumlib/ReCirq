@@ -30,6 +30,12 @@ from cirq_google.workflow import (
     ExecutableResult)
 from recirq.otoc.loschmidt.tilted_square_lattice import TiltedSquareLatticeLoschmidtSpec
 
+CYCLES_PER_MACROCYCLE = 4
+"""Each macrocycle has 4 'cycles' for the four directions in the tilted square lattice."""
+
+U_APPLICATION_COUNT = 2
+"""In the echo, we apply the random circuit forwards and backwards, for two total applications."""
+
 
 def to_ground_state_prob(result: cirq.Result) -> float:
     """Compute the fraction of times we return to the state we started from.
@@ -115,10 +121,9 @@ def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFra
             'height': spec.topology.height,
             'n_qubits': spec.topology.n_nodes,
             'macrocycle_depth': spec.macrocycle_depth,
-            # "quantum area" is circuit width (n_qubits) times circuit depth. The factor of
-            # four is for the four directions of 2q gates in each macrocycle. The factor of
-            # two is because we do U followed by U_dag.
-            'q_area': (spec.macrocycle_depth * 4 * 2) * spec.topology.n_nodes,
+            # "quantum area" is circuit width (n_qubits) times circuit depth.
+            'q_area': ((spec.macrocycle_depth * CYCLES_PER_MACROCYCLE * U_APPLICATION_COUNT)
+                       * spec.topology.n_nodes),
             'instance_i': spec.instance_i,
             'n_repetitions': spec.n_repetitions,
             'success_probability': success_prob,
@@ -136,11 +141,15 @@ def fit_vs_macrocycle_depth(df):
 
     Returns:
         fitted_df: A new dataframe containing fit parameters.
-        exp_ansatz_vs_macrocycle_depth: The function used for the fit.
+        exp_ansatz_vs_macrocycle_depth: The function used for the fit. This is
+            a * f^depth. The depth in this expression is the number of macrocycles
+            multiplied by four (to give the number of cycles) and multiplied by two
+            (to account for the inversion in the echo).
     """
 
     def exp_ansatz_vs_macrocycle_depth(macrocycle_depths, a, f):
-        return a * np.exp(np.log(f) * 4 * 2 * macrocycle_depths)
+        return a * np.exp(
+            np.log(f) * macrocycle_depths * CYCLES_PER_MACROCYCLE * U_APPLICATION_COUNT)
 
     def _fit(row):
         (a, f), pcov = curve_fit(
