@@ -18,15 +18,13 @@ import numpy as np
 from recirq.qml_lfe import learn_states_q
 
 
-def _predict_exp(data, paulistring, two_copy):
+def _predict_exp(data, paulistring):
     """Compute expectation values of paulistring given bitstring data."""
     expectation_value = 0
     for a in data:
         val = 1
         for i, pauli in enumerate(paulistring):
-            idx = a[i]
-            if two_copy:
-                idx = a[2 * i] * 2 + a[2 * i + 1]
+            idx = a[2 * i] * 2 + a[2 * i + 1]
             if pauli == "I":
                 continue
             elif pauli == "X":
@@ -53,7 +51,7 @@ def test_twocopy_seperates(tmpdir):
     for fname in pauli_files:
         t = np.load(os.path.join(tmpdir, fname))
         pauli = fname.split("-")[-1][:-4]
-        exp_predictions.append(_predict_exp(t, pauli, True))
+        exp_predictions.append(_predict_exp(t, pauli))
 
     # Strong signal on matching paulis.
     assert np.mean(exp_predictions) >= 0.5
