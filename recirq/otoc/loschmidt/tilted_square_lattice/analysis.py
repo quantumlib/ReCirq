@@ -94,6 +94,13 @@ def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFra
     This function performs the data analysis using `to_ground_state_prob` and
     extracts the most relevant quantities for a dataframe suitable for
     grouping, selecting, and plotting.
+
+    In addition to `TiltedSquareLatticeLoschmidtSpec` input parameters, we also include
+    the computed exogenous parameters "n_qubits" (a function of topology width and height)
+    and "q_area" (a function of macrocycle_depth and n_qubits). The quantum area (q_area)
+    is the number of qubits times the circuit depth. The circuit depth is 4 * 2 * macrocycle_depth
+    accounting for the four directions of gates in the tilted square lattice and the two times
+    we do U and/or its inverse.
     """
 
     def _to_record(result: ExecutableResult,
@@ -108,6 +115,9 @@ def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFra
             'height': spec.topology.height,
             'n_qubits': spec.topology.n_nodes,
             'macrocycle_depth': spec.macrocycle_depth,
+            # "quantum area" is circuit width (n_qubits) times circuit depth. The factor of
+            # four is for the four directions of 2q gates in each macrocycle. The factor of
+            # two is because we do U followed by U_dag.
             'q_area': (spec.macrocycle_depth * 4 * 2) * spec.topology.n_nodes,
             'instance_i': spec.instance_i,
             'n_repetitions': spec.n_repetitions,
