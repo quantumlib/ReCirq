@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Sycamore native circuit building blocks."""
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 from numbers import Number
 
 import os
@@ -194,8 +194,8 @@ def inv_z_basis_gate(pauli: str) -> cirq.Gate:
 
 
 def create_randomized_sweeps(
-    hidden_p: str,
-    symbols: Dict[str, int],
+    hidden_p: np.ndarray,
+    symbols: Tuple[str],
     n_params: int,
     rand_state: np.random.RandomState,
 ) -> List[Dict[str, int]]:

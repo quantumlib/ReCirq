@@ -25,7 +25,8 @@ The readout matrix (R_ij in Nachman et al.) is:
  - Nachman: R_ij = Prob(measured=i | prepared=j) (beginning of "Methods" section)
     → Columns sum to 1
 
-We also must be consistent in bitstring ordering / endianness.
+Consistent bitstring ordering and endianness is needed for compatibility
+with other libraries.
 
 This is an iterative technique. The key equation is Nachman (5). The number of iterations
 to use is not obvious (see Fig. 6), but in practice N=20 iterations works well.
