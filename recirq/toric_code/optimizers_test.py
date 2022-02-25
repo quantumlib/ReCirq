@@ -245,8 +245,7 @@ class TestDeferSingleQubitGates:
 
     def test_toric_code(self):
         code = tcr.ToricCodeRectangle(cirq.GridQubit(0, 0), (1, 1), 1, 3)
-        prep = tcsp.ToricCodeStatePrep(code)
-        circuit = prep.cnot_circuit()
+        circuit = tcsp.toric_code_cnot_circuit(code)
         deferred_circuit = optimizers.defer_single_qubit_gates(circuit)
         assert cirq.linalg.allclose_up_to_global_phase(
             cirq.unitary(circuit), cirq.unitary(deferred_circuit)
@@ -326,8 +325,7 @@ class TestInsertEchosOnActiveQubits:
     @pytest.mark.parametrize("resolve_to_hadamard", [False, True])
     def test_toric_code(self, resolve_to_hadamard: bool):
         code = tcr.ToricCodeRectangle(cirq.GridQubit(0, 0), (1, 1), 1, 3)
-        prep = tcsp.ToricCodeStatePrep(code)
-        circuit = prep.cnot_circuit()
+        circuit = tcsp.toric_code_cnot_circuit(code)
         echo_circuit = optimizers.insert_echos_on_active_qubits(
             circuit, resolve_to_hadamard=resolve_to_hadamard
         )

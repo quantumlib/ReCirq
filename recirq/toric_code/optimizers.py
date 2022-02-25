@@ -22,6 +22,7 @@ import numpy as np
 
 UNITARY_ATOL = 1e-8
 
+
 def _gates_are_close(gate0: cirq.Gate, gate1: cirq.Gate) -> bool:
     """Determine whether two gates' unitaries are equal up to global phase and tolerance."""
     # Sanity check the shapes agree
@@ -136,12 +137,12 @@ def _combine_1q_cliffords(*gates: cirq.Gate) -> cirq.Gate:
         cirq.SingleQubitCliffordGate.X: cirq.X,
         cirq.SingleQubitCliffordGate.Y: cirq.Y,
         cirq.SingleQubitCliffordGate.Z: cirq.Z,
-        cirq.SingleQubitCliffordGate.X_sqrt: cirq.X ** 0.5,
-        cirq.SingleQubitCliffordGate.Y_sqrt: cirq.Y ** 0.5,
+        cirq.SingleQubitCliffordGate.X_sqrt: cirq.X**0.5,
+        cirq.SingleQubitCliffordGate.Y_sqrt: cirq.Y**0.5,
         cirq.SingleQubitCliffordGate.Z_sqrt: cirq.S,
-        cirq.SingleQubitCliffordGate.X_nsqrt: cirq.X ** -0.5,
-        cirq.SingleQubitCliffordGate.Y_nsqrt: cirq.Y ** -0.5,
-        cirq.SingleQubitCliffordGate.Z_nsqrt: cirq.S ** -1,
+        cirq.SingleQubitCliffordGate.X_nsqrt: cirq.X**-0.5,
+        cirq.SingleQubitCliffordGate.Y_nsqrt: cirq.Y**-0.5,
+        cirq.SingleQubitCliffordGate.Z_nsqrt: cirq.S**-1,
     }
     return clifford_to_friendly_rep.get(clifford, clifford)
 
@@ -192,7 +193,7 @@ def defer_single_qubit_gates(circuit: cirq.Circuit) -> cirq.Circuit:
     new_circuit = copy.deepcopy(circuit)
 
     # We can move 1q gates in/out of these moments
-    exclusively_1q_moments: List[ int ] = []
+    exclusively_1q_moments: List[int] = []
     deferrable_qubits = set(new_circuit.all_qubits())
     qubit_to_deferred_ops: Dict[cirq.Qid, List[cirq.Operation]] = defaultdict(list)
 
@@ -445,7 +446,7 @@ def resolve_gate_to_hadamard(gate: cirq.Gate) -> Tuple[cirq.Gate, cirq.Gate, cir
     # After: a + z = 1.5 + z_exp_after
     z_exp_before = 0.5 - xz_gate.axis_phase_exponent
     z_exp_after = xz_gate.axis_phase_exponent + xz_gate.z_exponent - 1.5
-    gate_before = _combine_1q_cliffords(cirq.Z ** z_exp_before)
-    gate_after = _combine_1q_cliffords(cirq.Z ** z_exp_after)
+    gate_before = _combine_1q_cliffords(cirq.Z**z_exp_before)
+    gate_after = _combine_1q_cliffords(cirq.Z**z_exp_after)
 
     return gate_before, cirq.H, gate_after
