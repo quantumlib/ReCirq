@@ -37,7 +37,10 @@ Examples:
 The interactive board uses a simulator with an unconstrained device.
 """
 import argparse
+import math
 import sys
+
+import numpy as np
 
 import recirq.quantum_chess.ascii_board as ab
 import recirq.quantum_chess.move as m
@@ -60,6 +63,8 @@ def main_loop(args):
             density = b.board.two_square_density_matrix(square1, square2, 2000).data
             b.board.print_debug_log()
             print(density.round(3))
+            transposed = density.reshape(2, 2, 2, 2).transpose(0, 3, 2, 1).reshape(4, 4)
+            print("Log negativity:", math.log2(np.linalg.norm(transposed, "nuc")))
             continue
         if not in_str:
             continue
