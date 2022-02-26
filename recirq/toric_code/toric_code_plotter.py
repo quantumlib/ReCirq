@@ -257,7 +257,7 @@ class ToricCodePlotter:
                 figsize = (2.0, 0.1)
             else:
                 raise ValueError(
-                    f'Invalid {orientation=}, expected "vertical" or "horizontal"'
+                    f'Invalid orientation={orientation}, expected "vertical" or "horizontal"'
                 )
             _fig, ax = plt.subplots(figsize=figsize)
 
