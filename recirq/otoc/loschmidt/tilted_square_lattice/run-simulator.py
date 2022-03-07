@@ -19,8 +19,10 @@ QuantumRuntimeConfiguration.
 """
 
 import cirq
-from cirq_google.workflow import QuantumRuntimeConfiguration, \
-    SimulatedProcessorWithLocalDeviceRecord, execute
+from cirq_google.workflow import (
+    QuantumRuntimeConfiguration, SimulatedProcessorWithLocalDeviceRecord, RandomDevicePlacer,
+    execute
+)
 from recirq.cirqflow.run_utils import get_unique_run_id
 from recirq.otoc.loschmidt.tilted_square_lattice import TiltedSquareLatticeLoschmidtSpec
 
@@ -33,6 +35,7 @@ def main():
     exegroup = cirq.read_json_gzip(EXES_FILENAME)
     rt_config = QuantumRuntimeConfiguration(
         processor_record=SimulatedProcessorWithLocalDeviceRecord('rainbow', noise_strength=0.005),
+        qubit_placer=RandomDevicePlacer(),
         run_id=get_unique_run_id('simulated-{i}'),
         random_seed=52,
     )

@@ -15,11 +15,14 @@
 import numpy as np
 
 import cirq
+import cirq_google as cg
 # Need this exact import for monkeypatching to work (below)
 import recirq.otoc.loschmidt.tilted_square_lattice.tilted_square_lattice
-from recirq.otoc.loschmidt.tilted_square_lattice import \
-    create_tilted_square_lattice_loschmidt_echo_circuit, TiltedSquareLatticeLoschmidtSpec, \
-    get_all_tilted_square_lattice_executables
+from recirq.otoc.loschmidt.tilted_square_lattice import (
+    create_tilted_square_lattice_loschmidt_echo_circuit, TiltedSquareLatticeLoschmidtSpec,
+    get_all_tilted_square_lattice_executables, get_all_tilted_square_lattice_specs,
+    tilted_square_lattice_spec_to_exe,
+)
 
 
 def test_create_tilted_square_lattice_loschmidt_echo_circuit():
@@ -95,3 +98,21 @@ def test_get_all_tilted_square_lattice_executables():
     assert sorted({exe.spec.macrocycle_depth for exe in exes}) == [2, 4]
     assert sorted({exe.spec.topology.width for exe in exes}) == [2, 3]
     assert sorted({exe.spec.topology.height for exe in exes}) == [2, 3]
+
+
+def test_get_all_tilted_square_lattice_specs():
+    specs = get_all_tilted_square_lattice_specs()
+    assert len(specs) == 400
+    for spec in specs:
+        assert spec.twoq_gate_name == 'sqrt_iswap'
+
+
+def test_tilted_square_lattice_spec_to_exe():
+    rs = np.random.RandomState()
+    exe = tilted_square_lattice_spec_to_exe(TiltedSquareLatticeLoschmidtSpec(
+        topology=cirq.TiltedSquareLattice(2, 2),
+        macrocycle_depth=1, instance_i=123, n_repetitions=1_000
+    ), rs=rs)
+    assert isinstance(exe, cg.QuantumExecutable)
+    assert exe.measurement.n_repetitions == 1_000
+    assert len(exe.circuit) == 18 + 1
