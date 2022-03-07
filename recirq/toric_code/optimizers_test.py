@@ -262,7 +262,7 @@ class TestInsertEchosOnActiveQubits:
             cirq.Moment(cirq.CZ(qubits[0], qubits[2])),
             cirq.Moment(cirq.X(qubits[2])),
         )
-        echo_circuit = optimizers.insert_echos_on_active_qubits(circuit)
+        echo_circuit = optimizers.insert_echos_on_idle_qubits(circuit)
         expected = """
 0: ───H───@───X───@───X───
           │       │
@@ -284,7 +284,7 @@ class TestInsertEchosOnActiveQubits:
             cirq.Moment(cirq.H(qubits[0])),
             cirq.Moment(cirq.H(qubits[0])),
         )
-        echo_circuit = optimizers.insert_echos_on_active_qubits(circuit)
+        echo_circuit = optimizers.insert_echos_on_idle_qubits(circuit)
         expected = """
 0: ───H───@───H───H───M───H───H───
           │
@@ -320,13 +320,13 @@ class TestInsertEchosOnActiveQubits:
 
     def test_invalid_echo(self):
         with pytest.raises(ValueError):
-            _ = optimizers.insert_echos_on_active_qubits(cirq.Circuit(), echo=cirq.H)
+            _ = optimizers.insert_echos_on_idle_qubits(cirq.Circuit(), echo=cirq.H)
 
     @pytest.mark.parametrize("resolve_to_hadamard", [False, True])
     def test_toric_code(self, resolve_to_hadamard: bool):
         code = tcr.ToricCodeRectangle(cirq.GridQubit(0, 0), (1, 1), 1, 3)
         circuit = tcsp.toric_code_cnot_circuit(code)
-        echo_circuit = optimizers.insert_echos_on_active_qubits(
+        echo_circuit = optimizers.insert_echos_on_idle_qubits(
             circuit, resolve_to_hadamard=resolve_to_hadamard
         )
         assert cirq.linalg.allclose_up_to_global_phase(

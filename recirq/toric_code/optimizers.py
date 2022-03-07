@@ -303,7 +303,7 @@ def propagate_inserted_paulis(
     return modified_circuit, pauli_frame / pauli_frame.coefficient
 
 
-def insert_echos_on_active_qubits(
+def insert_echos_on_idle_qubits(
     circuit: cirq.Circuit, echo: cirq.Pauli = cirq.X, resolve_to_hadamard: bool = False
 ) -> cirq.Circuit:
     """Create a new circuit where we add "echo" gates to qubits during idle moments.
@@ -345,17 +345,17 @@ def insert_echos_on_active_qubits(
         return new_circuit
 
     # Insert tagged echo gates into a copy of circuit
-    tag = "insert_echos_on_active_qubits"
+    tag = "insert_echos_on_idle_qubits"
     new_circuit = copy.deepcopy(circuit)
-    active_qubits: Set[cirq.Qid] = set()
+    idle_qubits: Set[cirq.Qid] = set()
 
     for idx, moment in enumerate(new_circuit[:final_1q_moment]):
         if _is_exclusively_1q_gates(moment):  # Add echos
-            for q in active_qubits - moment.qubits:
+            for q in idle_qubits - moment.qubits:
                 new_circuit.insert(
                     idx + 1, echo(q).with_tags(tag), strategy=cirq.InsertStrategy.INLINE
                 )
-        active_qubits |= moment.qubits  # Eligible for subsequent echos
+        idle_qubits |= moment.qubits  # Eligible for subsequent echos
 
     # Figure out the overall Pauli frame heading into the final 1q gate moment
     untagged_partial_circuit, pauli_frame = propagate_inserted_paulis(
