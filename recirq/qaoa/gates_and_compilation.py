@@ -12,8 +12,8 @@ from recirq.qaoa.problems import _validate_problem_graph
 try:
     from cirq_google.optimizers.convert_to_sycamore_gates import swap_rzz, rzz
 except ImportError:
-    from cirq_google.optimizers.convert_to_sycamore_gates import _swap_rzz as swap_rzz
-    from cirq_google.optimizers.convert_to_sycamore_gates import _rzz as rzz
+    from cirq-google.cirq_google.transformers.analytical_decompositions.two_qubit_to_sycamore import _swap_rzz as swap_rzz
+    from cirq-google.cirq_google.transformers.analytical_decompositions.two_qubit_to_sycamore import _rzz as rzz
 
 try:
     from cirq.interop.quirk import QuirkQubitPermutationGate
