@@ -116,7 +116,7 @@ class ToricCodeRectangle:
             cols: Number of columns of X plaquettes
         """
         if np.any(np.abs(row_vector) != np.array([1, 1])):
-            raise ValueError(f"Illegal {row_vector=}: must be (±1, ±1)")
+            raise ValueError(f"Illegal row_vector={row_vector}: must be (±1, ±1)")
 
         if rows < 1 or cols < 1:
             raise ValueError(f"rows ({rows}) and cols ({cols}) must both be at least 1")
