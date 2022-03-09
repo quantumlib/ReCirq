@@ -18,5 +18,6 @@
 # successfully.
 
 python gen-small-v1.py
+python gen-small-cz-v1.py
 rm -rf simulated-1/
 python run-simulator.py

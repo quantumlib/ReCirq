@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Generate the QuantumExecutableGroup for the small-v1 configuration of the
+"""Generate the QuantumExecutableGroup for the small-cz-v1 configuration of the
 loschmidt.tilted_square_lattice benchmark.
 
-The `small-v1` configuration is A 'small' configuration for quick verification
-of Loschmidt echos.
+The `small-cz-v1` configuration is A 'small' configuration for quick verification
+of Loschmidt echos using the CZ gate.
 
 This configuration uses small grid topologies (making it suitable for
 running on simulators) and a small number of random instances making it
@@ -24,7 +24,7 @@ suitable for getting a quick reading on processor performance in ~minutes.
 
 To run:
 
-    python gen-small-v1.py
+    python gen-small-cz-v1.py
 
 """
 
@@ -34,14 +34,16 @@ import cirq
 from recirq.otoc.loschmidt.tilted_square_lattice import \
     get_all_tilted_square_lattice_executables
 
-EXES_FILENAME = 'loschmidt.tilted_square_lattice.small-v1.json.gz'
+EXES_FILENAME = 'loschmidt.tilted_square_lattice.small-cz-v1.json.gz'
 
 
 def main():
     exes = get_all_tilted_square_lattice_executables(
         min_side_length=2, max_side_length=3, side_length_step=1,
         n_instances=3,
-        macrocycle_depths=np.arange(0, 4 + 1, 1))
+        macrocycle_depths=np.arange(0, 4 + 1, 1),
+        twoq_gate_name='cz',
+    )
     print(len(exes), 'executables')
 
     cirq.to_json_gzip(exes, EXES_FILENAME)
