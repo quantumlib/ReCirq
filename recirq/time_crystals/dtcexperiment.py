@@ -30,12 +30,12 @@ class DTCExperiment:
             Defaults to 16 `cirq.Gridqubits` connected in a chain.
         disorder_instances: number of disorder instances averaged over.
             Defaults to 36.
-        g: thermalization constant used in circuit.
+        g: control constant used in circuit.
             Defaults to 0.94.
         initial_states: initial state of the system used in circuit.
             Defaults to `np.ndarray` of shape (disorder_instances, num_qubits) of ints,
             randomly selected from {0,1}.
-        local_fields: random noise used in circuit.
+        local_fields: local fields that break integrability.
             Defaults to `np.ndarray` of shape (disorder_instances, num_qubits) of floats,
             randomly and uniformly selected from the range [-1.0, 1.0].
         thetas: theta parameters for FSim Gate used in circuit.
