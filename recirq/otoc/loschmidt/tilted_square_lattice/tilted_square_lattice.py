@@ -92,6 +92,8 @@ class TiltedSquareLatticeLoschmidtSpec(ExecutableSpec):
         instance_i: An arbitary index into the random instantiation
         n_repetitions: The number of repetitions to sample to measure the return probability.
         executable_family: The globally unique string identifier for this benchmark.
+        twoq_gate_name: The name of the two-qubit entangling gate used in the random unitary. See
+            `tilted_square_lattice_spec_to_exe` for currently supported values.
     """
 
     topology: TiltedSquareLattice
@@ -126,6 +128,7 @@ def get_all_tilted_square_lattice_specs(
         min_side_length, max_side_length, side_length_step: generate a range of
             TiltedSquareLattice topologies with widths and heights in this range.
         macrocycle_depths: The collection of macrocycle depths to use per setting.
+        twoq_gate_name: The name of the two-qubit entangling gate used in the random unitary.
     """
 
     if macrocycle_depths is None:
@@ -155,6 +158,7 @@ def tilted_square_lattice_spec_to_exe(
     """Create a full `QuantumExecutable` from a given `TiltedSquareLatticeLoschmidtSpec`
 
     This "fleshes out" the specification into a complete executable with a random circuit.
+    The spec's `twoq_gate_name` must be one of "sqrt_iswap" or "cz".
 
     Args:
         spec: The spec
@@ -202,6 +206,7 @@ def get_all_tilted_square_lattice_executables(
             TiltedSquareLattice topologies with widths and heights in this range.
         seed: The random seed to make this deterministic.
         macrocycle_depths: The collection of macrocycle depths to use per setting.
+        twoq_gate_name: The name of the two-qubit entangling gate used in the random unitary.
     """
     rs = np.random.RandomState(seed)
     specs = get_all_tilted_square_lattice_specs(
