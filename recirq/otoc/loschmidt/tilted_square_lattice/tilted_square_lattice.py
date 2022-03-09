@@ -152,6 +152,20 @@ def get_all_tilted_square_lattice_specs(
 def tilted_square_lattice_spec_to_exe(
         spec: TiltedSquareLatticeLoschmidtSpec, *, rs: np.random.RandomState
 ) -> QuantumExecutable:
+    """Create a full `QuantumExecutable` from a given `TiltedSquareLatticeLoschmidtSpec`
+
+    This "fleshes out" the specification into a complete executable with a random circuit.
+
+    Args:
+        spec: The spec
+        rs: A random state. The ExecutableSpec only specifies an `instance_i` and this function
+            is responsible for generating a pseudo-random circuit for each `instance_i`. Therefore,
+            some care should be taken when using this function to share a `RandomState` among
+            all calls to this function.
+
+    Returns:
+        a QuantumExecutable corresponding to the input specification.
+    """
     twoq_gates = {
         'sqrt_iswap': cirq.SQRT_ISWAP,
         'cz': cirq.CZ,
