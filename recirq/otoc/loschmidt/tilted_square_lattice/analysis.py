@@ -133,7 +133,7 @@ def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFra
     return _results_to_dataframe(results, _to_record)
 
 
-def agg_vs_macrocycle_depth(df: pd.DataFrame):
+def agg_vs_macrocycle_depth(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
     """Aggregate mean and stddev vs macrocycle depth.
 
     We use pandas group-by functionality to
@@ -207,7 +207,7 @@ def fit_vs_macrocycle_depth(df):
     return fitted_df, exp_ansatz_vs_macrocycle_depth
 
 
-def agg_vs_q_area(df: pd.DataFrame):
+def agg_vs_q_area(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
     """Aggregate mean and stddev vs quantum area.
 
     quantum area is the circuit number of qubits multiplied by its depth.
