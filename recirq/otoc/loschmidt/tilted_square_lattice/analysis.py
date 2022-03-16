@@ -127,10 +127,42 @@ def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFra
             'instance_i': spec.instance_i,
             'n_repetitions': spec.n_repetitions,
             'success_probability': success_prob,
-            'processor_id': rt_config.processor_record.processor_id,
+            'processor_str': str(rt_config.processor_record),
         }
 
     return _results_to_dataframe(results, _to_record)
+
+
+def agg_vs_macrocycle_depth(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
+    """Aggregate mean and stddev vs macrocycle depth.
+
+    We use pandas group-by functionality to
+        1. Average (and compute the standard deviation) over random circuit
+           instances, holding all else constant.
+        2. Group these averaged quantities vs. macrocycle_depth for plotting by row.
+
+    This aggregation uses `groupby_all_except` as a wrapper around `pd.DataFrame.groupby` so we
+    can specify what we _don't_ want to aggregate over, making this function robust to the
+    introduction of new columns.
+
+    Args:
+        df: The dataframe from `loschmidt_results_to_dataframe`.
+
+    Returns:
+        vs_depth_df: A new, aggregated dataframe.
+        vs_depth_gb_cols: The named of the columns used in the final groupby operation.
+    """
+    means_df, means_gb_cols = groupby_all_except(
+        df.drop(['n_qubits', 'q_area'], axis=1),
+        y_cols=('instance_i', 'success_probability'),
+        agg_func={'success_probability': ['mean', 'std']}
+    )
+    vs_depth_df, vs_depth_gb_cols = groupby_all_except(
+        means_df,
+        y_cols=('macrocycle_depth', 'success_probability_mean', 'success_probability_std'),
+        agg_func=list
+    )
+    return vs_depth_df, vs_depth_gb_cols
 
 
 def fit_vs_macrocycle_depth(df):
@@ -173,6 +205,41 @@ def fit_vs_macrocycle_depth(df):
     fitted_df = agged.apply(_fit, axis=1) \
         .drop(y_cols, axis=1)
     return fitted_df, exp_ansatz_vs_macrocycle_depth
+
+
+def agg_vs_q_area(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
+    """Aggregate mean and stddev vs quantum area.
+
+    quantum area is the circuit number of qubits multiplied by its depth.
+
+    We use pandas group-by functionality to
+        1. Average (and compute the standard deviation) over random circuit
+           instances, holding all else constant.
+        2. Group these averaged quantities vs. q_area for plotting by row.
+
+    This aggregation uses `groupby_all_except` as a wrapper around `pd.DataFrame.groupby` so we
+    can specify what we _don't_ want to aggregate over, making this function robust to the
+    introduction of new columns.
+
+    Args:
+        df: The dataframe from `loschmidt_results_to_dataframe`.
+
+    Returns:
+        vs_q_area_df: A new, aggregated dataframe.
+        vs_q_area_gb_cols: The named of the columns used in the final groupby operation.
+    """
+    means_df, means_gb_cols = groupby_all_except(
+        df.drop(['width', 'height', 'n_qubits'], axis=1),
+        y_cols=('instance_i', 'success_probability'),
+        agg_func={'success_probability': ['mean', 'std']}
+    )
+    vs_q_area_df, vs_q_area_gb_cols = groupby_all_except(
+        means_df,
+        y_cols=('q_area', 'macrocycle_depth',
+                'success_probability_mean', 'success_probability_std'),
+        agg_func=list,
+    )
+    return vs_q_area_df, vs_q_area_gb_cols
 
 
 def fit_vs_q_area(df):
