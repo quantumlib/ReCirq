@@ -344,20 +344,16 @@ class CirqBoard:
                 rtn.append(new_sample)
                 ancilla.append(new_ancilla)
                 if len(rtn) >= num_samples:
-                    self.debug_log += (
-                        f"Discarded {error_count} from error mitigation "
-                        f"{noise_count} from noise and "
-                        f"{post_count} from post-selection\n"
-                    )
-                    self.record_time("sample_with_ancilla", t0)
-                    return (rtn, ancilla)
+                    break
         else:
             rtn = [self.state] * num_samples
-            self.debug_log += (
-                f"Discarded {error_count} from error mitigation "
-                f"{noise_count} from noise and {post_count} from post-selection\n"
-            )
+
         self.record_time("sample_with_ancilla", t0)
+        self.debug_log += (
+            f"Discarded {error_count} from error mitigation "
+            f"{noise_count} from noise and "
+            f"{post_count} from post-selection\n"
+        )
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
