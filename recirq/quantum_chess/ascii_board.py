@@ -1,3 +1,4 @@
+import math
 from typing import Optional, Sequence
 
 import recirq.quantum_chess.bit_utils as bu
@@ -183,6 +184,10 @@ class AsciiBoard:
             self._pieces[move.target2] = s
         if move.source2 and self._probs[bu.square_to_bit(move.source2)] < 0.01:
             self._pieces[move.source2] = c.EMPTY
+        if move.move_type == enums.MoveType.KS_CASTLE:
+            self._pieces[move.source.replace("e", "f")] = int(math.copysign(c.ROOK, s))
+        if move.move_type == enums.MoveType.QS_CASTLE:
+            self._pieces[move.source.replace("e", "d")] = int(math.copysign(c.ROOK, s))
 
         # Update en passant and castling flags
         self.ep_flag = self._ep_flag(move, s)
