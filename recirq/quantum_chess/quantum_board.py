@@ -682,7 +682,7 @@ class CirqBoard:
         self,
         qubit: cirq.Qid,
         measurement_outcome: Optional[int] = None,
-        invert: Optional[bool] = False,
+        invert: bool = False,
     ) -> int:
         """Adds a post-selection requirement to the circuit.
 
@@ -1110,7 +1110,7 @@ class CirqBoard:
                 ):
                     # squbit is classically true and there is only one path_qubit
                     capture_allowed = 1 - self.post_select_on(
-                        path_qubits[0], m.measurement
+                        path_qubits[0], m.measurement, invert=True
                     )
                 else:
                     self.add_entangled(squbit, tqubit)
