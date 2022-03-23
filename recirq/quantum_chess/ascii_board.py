@@ -178,7 +178,7 @@ class AsciiBoard:
             self._pieces[move.source] = c.EMPTY
 
         # Update classical bits
-        self._pieces[move.target] = s
+        self._pieces[move.target] = move.promotion_piece or s
         if move.target2:
             self._pieces[move.target2] = s
         if move.source2 and self._probs[bu.square_to_bit(move.source2)] < 0.01:
