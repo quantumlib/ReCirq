@@ -414,6 +414,26 @@ def test_blocked_slide_capture_through():
     assert success < 75
 
 
+def test_blocked_slide_capture_force_success():
+    b = simulator(0)
+    b.with_state(u.squares_to_bitboard(["f7", "f2", "g1"]))
+    did_it_move = b.perform_moves("g1^f3h3:SPLIT_JUMP:BASIC", "f7f2.m1:SLIDE:CAPTURE")
+    assert did_it_move
+    samples = b.sample(100)
+    for sample in samples:
+        assert sample == u.squares_to_bitboard(["f2", "h3"])
+
+
+def test_blocked_slide_capture_force_failure():
+    b = simulator(0)
+    b.with_state(u.squares_to_bitboard(["f7", "f2", "g1"]))
+    did_it_move = b.perform_moves("g1^f3h3:SPLIT_JUMP:BASIC", "f7f2.m0:SLIDE:CAPTURE")
+    assert not did_it_move
+    samples = b.sample(100)
+    for sample in samples:
+        assert sample == u.squares_to_bitboard(["f7", "f3", "f2"])
+
+
 # Works on all boards but is really slow
 @pytest.mark.parametrize("board", BIG_CIRQ_BOARDS)
 def test_superposition_slide_move(board):
