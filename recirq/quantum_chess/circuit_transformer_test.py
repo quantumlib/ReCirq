@@ -98,7 +98,7 @@ def test_edges_within(device):
 def test_single_qubit_ops(transformer, device):
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3))
     t = transformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
 @pytest.mark.parametrize(
@@ -112,7 +112,7 @@ def test_single_qubit_ops(transformer, device):
 def test_single_qubit_and_two_qubits_ops(transformer, device):
     c = cirq.Circuit(cirq.X(a1), cirq.X(a2), cirq.X(a3), cirq.ISWAP(a3, a4) ** 0.5)
     t = transformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
 @pytest.mark.parametrize(
@@ -128,7 +128,7 @@ def test_three_split_moves(transformer, device):
         qm.split_move(a1, a2, b1), qm.split_move(a2, a3, b3), qm.split_move(b1, c1, c2)
     )
     t = transformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
 @pytest.mark.parametrize(
@@ -147,7 +147,7 @@ def test_disconnected(transformer, device):
         qm.split_move(c1, c2, c3),
     )
     t = transformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
 @pytest.mark.parametrize(
@@ -166,7 +166,7 @@ def test_move_around_square(transformer, device):
         qm.normal_move(b1, a1),
     )
     t = transformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
 @pytest.mark.parametrize(
@@ -187,7 +187,7 @@ def test_split_then_merge(transformer, device):
         qm.merge_move(a4, d1, a1),
     )
     t = transformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
 @pytest.mark.parametrize("device", [cg.Sycamore23, cg.Sycamore])
@@ -196,7 +196,7 @@ def test_split_then_merge_trapezoid(device):
         qm.split_move(a1, a2, b1), qm.normal_move(a2, a3), qm.merge_move(a3, b1, b3)
     )
     t = ct.DynamicLookAheadHeuristicCircuitTransformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
 def test_too_many_qubits():
@@ -205,7 +205,7 @@ def test_too_many_qubits():
         c.append(cirq.X(cirq.NamedQubit("q" + str(i))))
     t = ct.ConnectivityHeuristicCircuitTransformer(cg.Sycamore23)
     with pytest.raises(ct.DeviceMappingError, match="Qubits exhausted"):
-        t.transform(c)
+        t(c)
 
 
 def test_two_operations_on_single_qubit():
@@ -214,11 +214,16 @@ def test_two_operations_on_single_qubit():
     c = cirq.Circuit(*[cirq.X(qubit)] * 99)
     device = cg.Sycamore23
     t = ct.ConnectivityHeuristicCircuitTransformer(device)
-    device.validate_circuit(t.transform(c))
+    device.validate_circuit(t(c))
 
 
-def test_sycamore_decomposer_reject_0_controlled():
+def test_sycamore_decomposer_controlled_iswap():
+    c = cirq.Circuit(cirq.ISWAP(a1, a2).controlled_by(a3))
+    decomposed = ct.decompose_into_sqrt_iswap(c)
+    for op in decomposed.all_operations():
+      assert len(op.qubits) <= 2
+
+def test_decompose_into_sqrt_iswap_reject_0_controlled():
     c = cirq.Circuit(cirq.X(a1).controlled_by(a2, control_values=[0]))
-    decomposer = ct.SycamoreDecomposer()
     with pytest.raises(ct.DeviceMappingError):
-        decomposer.optimize_circuit(c)
+        ct.decompose_into_sqrt_iswap(c)

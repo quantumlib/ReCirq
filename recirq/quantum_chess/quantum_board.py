@@ -269,9 +269,9 @@ class CirqBoard:
             # Translate circuit to grid qubits and sqrtISWAP gates
             if self.device is not None:
                 # Decompose 3-qubit operations
-                ct.SycamoreDecomposer().optimize_circuit(measure_circuit)
+                measure_circuit = ct.decompose_into_sqrt_iswap(measure_circuit)
                 # Create NamedQubit to GridQubit mapping and transform
-                measure_circuit = self.transformer.transform(measure_circuit)
+                measure_circuit = self.transformer(measure_circuit)
 
                 # For debug, ensure that the circuit correctly validates
                 try:
