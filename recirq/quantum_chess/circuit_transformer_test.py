@@ -221,7 +221,8 @@ def test_sycamore_decomposer_controlled_iswap():
     c = cirq.Circuit(cirq.ISWAP(a1, a2).controlled_by(a3))
     decomposed = ct.decompose_into_sqrt_iswap(c)
     for op in decomposed.all_operations():
-      assert len(op.qubits) <= 2
+        assert len(op.qubits) <= 2
+
 
 def test_decompose_into_sqrt_iswap_reject_0_controlled():
     c = cirq.Circuit(cirq.X(a1).controlled_by(a2, control_values=[0]))

@@ -24,6 +24,7 @@ import recirq.quantum_chess.swap_updater as su
 ADJACENCY = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 SQRT_ISWAP_GATESET = cirq.SqrtIswapTargetGateset()
 
+
 class DeviceMappingError(Exception):
     """Raised when a circuit cannot be mapped onto a device.
 
@@ -42,7 +43,10 @@ class CircuitTransformer:
         pass
 
     def __call__(
-        self, circuit: cirq.AbstractCircuit, *, context: Optional[cirq.TransformerContext] = None
+        self,
+        circuit: cirq.AbstractCircuit,
+        *,
+        context: Optional[cirq.TransformerContext] = None,
     ) -> cirq.Circuit:
         """Applies the transformation to the circuit."""
         return None
@@ -345,7 +349,10 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
         return mapping
 
     def __call__(
-        self, circuit: 'cirq.AbstractCircuit', *, context: Optional[cirq.TransformerContext] = None
+        self,
+        circuit: "cirq.AbstractCircuit",
+        *,
+        context: Optional[cirq.TransformerContext] = None,
     ) -> cirq.Circuit:
         """Creates a new qubit mapping for a circuit and transforms it.
 
@@ -392,7 +399,10 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         self.device = device
 
     def __call__(
-        self, circuit: 'cirq.AbstractCircuit', *, context: Optional[cirq.TransformerContext] = None
+        self,
+        circuit: "cirq.AbstractCircuit",
+        *,
+        context: Optional[cirq.TransformerContext] = None,
     ) -> cirq.Circuit:
         """Returns a transformed circuit.
 
@@ -407,42 +417,40 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
         return cirq.Circuit(updater.add_swaps())
 
 
-def transform_op_into_sqrt_iswap(
-    op: cirq.Operation, index: int
-) -> cirq.OP_TREE:
-        if len(op.qubits) > 3:
-            raise DeviceMappingError(f"Four qubit ops not yet supported: {op}")
-        if op.gate == cirq.SWAP or op.gate == cirq.CNOT or op.gate == cirq.TOFFOLI:
-            return cg.optimized_for_sycamore(cirq.Circuit(op)).all_operations()
-        elif isinstance(op, cirq.ControlledOperation):
-            if not all(v == 1 for values in op.control_values for v in values):
-                raise DeviceMappingError(f"0-controlled ops not yet supported: {op}")
-            qubits = op.sub_operation.qubits
-            if op.gate.sub_gate == cirq.ISWAP:
-                return controlled_iswap.controlled_iswap(*qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-1:
-                return controlled_iswap.controlled_iswap(
-                    *qubits, *op.controls, inverse=True
-                )
-            if op.gate.sub_gate == cirq.ISWAP**0.5:
-                return controlled_iswap.controlled_sqrt_iswap(*qubits, *op.controls)
-            if op.gate.sub_gate == cirq.ISWAP**-0.5:
-                return controlled_iswap.controlled_inv_sqrt_iswap(
-                    *qubits, *op.controls
-                )
-            if op.gate.sub_gate == cirq.X:
-                if len(op.qubits) == 2:
-                    return cg.optimized_for_sycamore(
-                        cirq.Circuit(cirq.CNOT(*op.controls, *qubits))
-                    ).all_operations()
-                if len(op.qubits) == 3:
-                    return cg.optimized_for_sycamore(
-                        cirq.Circuit(cirq.TOFFOLI(*op.controls, *qubits))
-                    ).all_operations()
-        return op
+def transform_op_into_sqrt_iswap(op: cirq.Operation, index: int) -> cirq.OP_TREE:
+    if len(op.qubits) > 3:
+        raise DeviceMappingError(f"Four qubit ops not yet supported: {op}")
+    if op.gate == cirq.SWAP or op.gate == cirq.CNOT or op.gate == cirq.TOFFOLI:
+        return cg.optimized_for_sycamore(cirq.Circuit(op)).all_operations()
+    elif isinstance(op, cirq.ControlledOperation):
+        if not all(v == 1 for values in op.control_values for v in values):
+            raise DeviceMappingError(f"0-controlled ops not yet supported: {op}")
+        qubits = op.sub_operation.qubits
+        if op.gate.sub_gate == cirq.ISWAP:
+            return controlled_iswap.controlled_iswap(*qubits, *op.controls)
+        if op.gate.sub_gate == cirq.ISWAP**-1:
+            return controlled_iswap.controlled_iswap(
+                *qubits, *op.controls, inverse=True
+            )
+        if op.gate.sub_gate == cirq.ISWAP**0.5:
+            return controlled_iswap.controlled_sqrt_iswap(*qubits, *op.controls)
+        if op.gate.sub_gate == cirq.ISWAP**-0.5:
+            return controlled_iswap.controlled_inv_sqrt_iswap(*qubits, *op.controls)
+        if op.gate.sub_gate == cirq.X:
+            if len(op.qubits) == 2:
+                return cg.optimized_for_sycamore(
+                    cirq.Circuit(cirq.CNOT(*op.controls, *qubits))
+                ).all_operations()
+            if len(op.qubits) == 3:
+                return cg.optimized_for_sycamore(
+                    cirq.Circuit(cirq.TOFFOLI(*op.controls, *qubits))
+                ).all_operations()
+    return op
+
 
 @cirq.transformer
-def decompose_into_sqrt_iswap(circuit: cirq.AbstractCircuit, *, context: Optional[cirq.TransformerContext] = None
+def decompose_into_sqrt_iswap(
+    circuit: cirq.AbstractCircuit, *, context: Optional[cirq.TransformerContext] = None
 ) -> cirq.Circuit:
     """Transformer that decomposes all three qubit operations into
     sqrt-ISWAPs.
