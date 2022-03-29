@@ -286,34 +286,37 @@ class CirqBoard:
             rtn = []
             noise_buffer = {}
             data = results.data
-            for rep in range(num_reps):
-                new_sample = self.state
-                new_ancilla = {}
 
-                # Go through the results and discard any results
-                # that disagree with our pre-defined post-selection criteria
-                post_selected = True
-                for qubit in self.post_selection.keys():
-                    key = qubit.name
-                    if key in data.columns:
-                        result = data.at[rep, key]
-                        if result != self.post_selection[qubit]:
-                            post_selected = False
-                            break
-                if not post_selected:
-                    post_count += 1
-                    continue
+            # Discard any results that disagree with our pre-defined
+            # post-selection criteria
+            if self.post_selection:
+                data.query(
+                    "&".join(
+                        f"{qubit.name} == {val}"
+                        for qubit, val in self.post_selection.items()
+                    ),
+                    inplace=True,
+                )
+                post_count = num_reps - len(data)
 
-                # Translate qubit results into a 64-bit chess board
-                for qubit in qubits:
-                    key = qubit.name
-                    result = data.at[rep, key]
-                    # Ancilla bits should not be part of the chess board
-                    if "anc" not in key:
-                        bit = qubit_to_bit(qubit)
-                        new_sample = set_nth_bit(bit, new_sample, result)
-                    else:
-                        new_ancilla[key] = result
+            # Construct expressions for vectorized evaluation of the board position.
+            # Two 32-bit chunks are used since the numbers are double-precision floating
+            # point which has 53 bits of precision.
+            bitboard_exprs = ["", ""]
+            classical_state = self.state
+            for qubit in qubits:
+                if "anc" not in qubit.name:
+                    bit = qubit_to_bit(qubit)
+                    bitboard_exprs[bit // 32] += f"{qubit.name} * {1 << bit}.0 +"
+                    classical_state &= ~(1 << bit)
+            bitboard_exprs[0] += str(classical_state & (2**32 - 1)) + ".0"
+            bitboard_exprs[1] += str(classical_state >> 32 << 32) + ".0"
+            # Store evaluated position in bb_low and bb_high columns
+            data.eval("bb_low = {}\nbb_high = {}".format(*bitboard_exprs), inplace=True)
+
+            ancilla_dict = data.filter(like="anc").to_dict("index")
+            for rep in data.index:
+                new_sample = int(data.at[rep, "bb_low"]) | int(data.at[rep, "bb_high"])
 
                 # Perform Error Mitigation
                 if self.error_mitigation != enums.ErrorMitigation.Nothing:
@@ -342,7 +345,7 @@ class CirqBoard:
                 # This sample has passed noise and error mitigation
                 # Record it as a proper sample
                 rtn.append(new_sample)
-                ancilla.append(new_ancilla)
+                ancilla.append(ancilla_dict[rep])
                 if len(rtn) >= num_samples:
                     self.debug_log += (
                         f"Discarded {error_count} from error mitigation "
