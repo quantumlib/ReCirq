@@ -16,6 +16,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import cirq
+import pandas
 
 from recirq.quantum_chess.bit_utils import (
     bit_to_qubit,
@@ -229,6 +230,29 @@ class CirqBoard:
             sample_size = 100
         return sample_size
 
+    def _calculate_bitboards_from_measurements(self, data: pandas.DataFrame):
+        """Calculates bitboards given sample results and stores them in the DataFrame.
+
+        The bitboard masked with 0x00000000FFFFFFFF is stored in a new column 'bb_low'
+        and the bitboard masked with 0xFFFFFFFF00000000 in 'bb_high'. It must be split
+        in this way because the vectorized operations only work with double floats which
+        have 53 bits of precision.
+        """
+        # Construct expressions for vectorized evaluation of the board position.
+        # For example, if there are entangled pieces on a1 and e1 and a non-entangled
+        # piece on c1 then bitboard_exprs[0] is "a1 * 1.0 + e1 * 32.0 + 4.0"
+        bitboard_exprs = ["", ""]
+        classical_state = self.state
+        for qubit in self.entangled_squares:
+            if "anc" not in qubit.name:
+                bit = qubit_to_bit(qubit)
+                bitboard_exprs[bit // 32] += f"{qubit.name} * {1 << bit}.0 +"
+                classical_state &= ~(1 << bit)
+        bitboard_exprs[0] += str(classical_state & 0x00000000FFFFFFFF) + ".0"
+        bitboard_exprs[1] += str(classical_state & 0xFFFFFFFF00000000) + ".0"
+        # Store evaluated position in bb_low and bb_high columns
+        data.eval("bb_low = {}\nbb_high = {}".format(*bitboard_exprs), inplace=True)
+
     def sample_with_ancilla(
         self,
         num_samples: int,
@@ -299,22 +323,9 @@ class CirqBoard:
                 )
                 post_count = num_reps - len(data)
 
-            # Construct expressions for vectorized evaluation of the board position.
-            # Two 32-bit chunks are used since the numbers are double-precision floating
-            # point which has 53 bits of precision.
-            bitboard_exprs = ["", ""]
-            classical_state = self.state
-            for qubit in qubits:
-                if "anc" not in qubit.name:
-                    bit = qubit_to_bit(qubit)
-                    bitboard_exprs[bit // 32] += f"{qubit.name} * {1 << bit}.0 +"
-                    classical_state &= ~(1 << bit)
-            bitboard_exprs[0] += str(classical_state & (2**32 - 1)) + ".0"
-            bitboard_exprs[1] += str(classical_state >> 32 << 32) + ".0"
-            # Store evaluated position in bb_low and bb_high columns
-            data.eval("bb_low = {}\nbb_high = {}".format(*bitboard_exprs), inplace=True)
-
+            self._calculate_bitboards_from_measurements(data)
             ancilla_dict = data.filter(like="anc").to_dict("index")
+
             for rep in data.index:
                 new_sample = int(data.at[rep, "bb_low"]) | int(data.at[rep, "bb_high"])
 
