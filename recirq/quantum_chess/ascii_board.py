@@ -110,9 +110,9 @@ class AsciiBoard:
             s += to_rank(x) + "  "
         return s
 
-    def piece(self, x: int, y: int):
-        """Returns the type of the piece at square (x,y)."""
-        return self._pieces[y * self.size + x]
+    def piece(self, square: str):
+        """Returns the type of the piece on the given square."""
+        return self._pieces[square]
 
     @staticmethod
     def _ep_flag(move: Move, piece_type: int):
