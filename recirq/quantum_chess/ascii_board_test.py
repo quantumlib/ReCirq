@@ -93,3 +93,19 @@ def test_queenside_castle():
     assert b.piece("e1") == c.EMPTY
     assert b.piece("d1") == c.ROOK
     assert b.piece("c1") == c.KING
+
+
+def test_pawn_promotion():
+    b = ab.AsciiBoard()
+    b.load_fen("7P/8/8/8/8/8/8/8")
+    b.apply(
+        m.Move(
+            source="h7",
+            target="h8",
+            move_type=MoveType.JUMP,
+            move_variant=MoveVariant.BASIC,
+            promotion_piece=c.ROOK,
+        )
+    )
+    assert b.piece("h7") == c.EMPTY
+    assert b.piece("h8") == c.ROOK
