@@ -1,3 +1,4 @@
+import math
 from typing import Optional, Sequence
 
 import recirq.quantum_chess.bit_utils as bu
@@ -109,9 +110,9 @@ class AsciiBoard:
             s += to_rank(x) + "  "
         return s
 
-    def piece(self, x: int, y: int):
-        """Returns the type of the piece at square (x,y)."""
-        return self._pieces[y * self.size + x]
+    def piece(self, square: str):
+        """Returns the type of the piece on the given square."""
+        return self._pieces[square]
 
     @staticmethod
     def _ep_flag(move: Move, piece_type: int):
@@ -178,11 +179,15 @@ class AsciiBoard:
             self._pieces[move.source] = c.EMPTY
 
         # Update classical bits
-        self._pieces[move.target] = s
+        self._pieces[move.target] = move.promotion_piece or s
         if move.target2:
             self._pieces[move.target2] = s
         if move.source2 and self._probs[bu.square_to_bit(move.source2)] < 0.01:
             self._pieces[move.source2] = c.EMPTY
+        if move.move_type == enums.MoveType.KS_CASTLE:
+            self._pieces[move.source.replace("e", "f")] = int(math.copysign(c.ROOK, s))
+        if move.move_type == enums.MoveType.QS_CASTLE:
+            self._pieces[move.source.replace("e", "d")] = int(math.copysign(c.ROOK, s))
 
         # Update en passant and castling flags
         self.ep_flag = self._ep_flag(move, s)
