@@ -50,12 +50,38 @@ class AlgorithmicBenchmark:
     configs: List['BenchmarkConfig']
     description: Optional[str] = None
 
-    def as_strings(self) -> Dict[str, str]:
+    def as_strings(self, *, abbrev_description=True) -> Dict[str, str]:
         """Get values of this class as strings suitable for printing."""
         ret = {k: str(v) for k, v in dataclasses.asdict(self).items()}
+
+        # Replace class objects with their names
         ret['spec_class'] = self.spec_class.__name__
         ret['executable_generator_func'] = self.executable_generator_func.__name__
+
+        # Abbreviate child configs
+        ret['configs'] = [f'BenchmarkConfig({c.full_name})' for c in self.configs]
+
+        if abbrev_description:
+            # Use only the first line of the description
+            ret['description'] = ret['description'].partition('\n')[0]
+
         return ret
+
+    def _repr_html_(self):
+        """Pretty-print this entry in Jupyter notebook using an HTML table for fields."""
+        s = f'<h3>{self.executable_family}</h3>'
+        s += '<table>'
+        for k, v in self.as_strings(abbrev_description=False).items():
+            s += f'<tr><td>{k}</td><td>{v}</td></tr>'
+        s += '</table>'
+        return s
+
+    def get_config_by_full_name(self, full_name: str) -> 'BenchmarkConfig':
+        """Return the BenchmarkConfig by its `full_name` field.
+
+        The `full_name` field is unique among all configs.
+        """
+        return next(config for config in self.configs if config.full_name == full_name)
 
 
 @dataclass
@@ -124,6 +150,14 @@ BENCHMARKS = [
         ]
     ),
 ]
+
+
+def get_algo_benchmark_by_executable_family(executable_family: str) -> AlgorithmicBenchmark:
+    """Return the algorithmic benchmark for the given executable_family.
+
+    The `executable_family` is unique for each benchmark and serves as a key.
+    """
+    return next(algo for algo in BENCHMARKS if algo.executable_family == executable_family)
 
 
 @lru_cache()
