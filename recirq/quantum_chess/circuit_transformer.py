@@ -289,7 +289,6 @@ class ConnectivityHeuristicCircuitTransformer(CircuitTransformer):
                 if len(op.qubits) == 1:
                     sq.add(op.qubits[0])
                 else:
-                    print(op)
                     q1, q2 = op.qubits
                     if q1 not in g:
                         g[q1] = []
