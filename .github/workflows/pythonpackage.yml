@@ -27,7 +27,7 @@ jobs:
       matrix:
         cirq-version:
           - 'current'
-          # - 'previous'  (gh-247: Disabled 2012-12-15 for cirq.NamedTopologies)
+          - 'previous'
           - 'next'
       fail-fast: false
     steps:
