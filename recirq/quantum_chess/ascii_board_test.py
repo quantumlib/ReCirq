@@ -61,3 +61,51 @@ def test_ep_flag():
     assert b._ep_flag(m.Move("b2", "b3"), c.PAWN) is None
     assert b._ep_flag(m.Move("b2", "b4"), c.KNIGHT) is None
     assert b._ep_flag(m.Move("b2", "b4"), c.PAWN) == 1
+
+
+def test_kingside_castle():
+    b = ab.AsciiBoard()
+    b.load_fen("4k2r/8/8/8/8/8/8/8")
+    b.apply(
+        m.Move(
+            source="e8",
+            target="g8",
+            move_type=MoveType.KS_CASTLE,
+            move_variant=MoveVariant.BASIC,
+        )
+    )
+    assert b.piece("e8") == c.EMPTY
+    assert b.piece("f8") == -c.ROOK
+    assert b.piece("g8") == -c.KING
+
+
+def test_queenside_castle():
+    b = ab.AsciiBoard()
+    b.load_fen("8/8/8/8/8/8/8/R3K3")
+    b.apply(
+        m.Move(
+            source="e1",
+            target="c1",
+            move_type=MoveType.QS_CASTLE,
+            move_variant=MoveVariant.BASIC,
+        )
+    )
+    assert b.piece("e1") == c.EMPTY
+    assert b.piece("d1") == c.ROOK
+    assert b.piece("c1") == c.KING
+
+
+def test_pawn_promotion():
+    b = ab.AsciiBoard()
+    b.load_fen("7P/8/8/8/8/8/8/8")
+    b.apply(
+        m.Move(
+            source="h7",
+            target="h8",
+            move_type=MoveType.JUMP,
+            move_variant=MoveVariant.BASIC,
+            promotion_piece=c.ROOK,
+        )
+    )
+    assert b.piece("h7") == c.EMPTY
+    assert b.piece("h8") == c.ROOK

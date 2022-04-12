@@ -61,3 +61,10 @@ toc:
   path: /cirq/experiments/otoc
 - title: "Experiment example"
   path: /cirq/experiments/otoc/otoc_example
+
+
+- heading: "Toric Code"
+- title: "Overview"
+  path: /cirq/experiments/toric_code
+- title: "Ground State"
+  path: /cirq/experiments/toric_code/toric_code_ground_state

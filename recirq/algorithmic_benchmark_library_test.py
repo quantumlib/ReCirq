@@ -4,7 +4,8 @@ from types import ModuleType
 
 import pytest
 
-from recirq.algorithmic_benchmark_library import BENCHMARKS, get_all_algo_configs, workflow
+from recirq.algorithmic_benchmark_library import BENCHMARKS, get_all_algo_configs, workflow, \
+    get_algo_benchmark_by_executable_family
 
 RECIRQ_DIR = os.path.abspath(os.path.dirname(__file__) + '/../')
 
@@ -76,3 +77,11 @@ def test_gen_script(algo_config):
     gen_script_path = (f"{RECIRQ_DIR}/{algo.domain.replace('.', '/')}/"
                        f"{algo.name.replace('.', '/')}/{config.gen_script}")
     assert os.path.exists(gen_script_path)
+
+
+def test_get_things_by_name():
+    algo = get_algo_benchmark_by_executable_family('recirq.otoc.loschmidt.tilted_square_lattice')
+    assert algo == BENCHMARKS[0]
+
+    config = algo.get_config_by_full_name('loschmidt.tilted_square_lattice.small-v1')
+    assert config == algo.configs[0]

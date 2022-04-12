@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from recirq.quantum_chess import constants
 from recirq.quantum_chess.move import Move
 import recirq.quantum_chess.enums as enums
 
@@ -39,6 +40,13 @@ def test_equality():
     )
     assert Move("a1", "b4", move_type=enums.MoveType.JUMP) != Move(
         "a1", "b4", move_type=enums.MoveType.SLIDE
+    )
+
+    assert Move("e2", "e1", promotion_piece=-constants.QUEEN) == Move(
+        "e2", "e1", promotion_piece=-constants.QUEEN
+    )
+    assert Move("e2", "e1", promotion_piece=-constants.QUEEN) != Move(
+        "e2", "e1", promotion_piece=-constants.KNIGHT
     )
 
 
@@ -97,6 +105,13 @@ def test_from_string():
         move_type=enums.MoveType.MERGE_SLIDE,
         move_variant=enums.MoveVariant.BASIC,
     )
+    assert Move.from_string("e2f1q:PAWN_CAPTURE:CAPTURE") == Move(
+        "e2",
+        "f1",
+        move_type=enums.MoveType.PAWN_CAPTURE,
+        move_variant=enums.MoveVariant.CAPTURE,
+        promotion_piece=-constants.QUEEN,
+    )
 
 
 def test_to_string():
@@ -105,6 +120,10 @@ def test_to_string():
     assert str(Move("a1", "b4", source2="b1")) == "a1b1^b4"
     assert str(Move("a1", "b4", measurement=1)) == "a1b4.m1"
     assert str(Move("a1", "b4", source2="b1", measurement=0)) == "a1b1^b4.m0"
+    assert (
+        str(Move("c7", "c8", measurement=0, promotion_piece=constants.QUEEN))
+        == "c7c8Q.m0"
+    )
     assert (
         Move(
             "c8",
