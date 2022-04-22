@@ -46,10 +46,6 @@ def test_controlled_inv_iswap():
 def test_controlled_sqrt_iswap():
     qubits = cirq.LineQubit.range(3)
     result = controlled_iswap.controlled_sqrt_iswap(qubits[0], qubits[1], qubits[2])
-    import numpy
-
-    numpy.set_printoptions(linewidth=200, precision=3)
-    print(numpy.around(cirq.unitary(result), decimals=2))
     cirq.testing.assert_allclose_up_to_global_phase(
         cirq.unitary(result),
         cirq.unitary(
@@ -57,17 +53,13 @@ def test_controlled_sqrt_iswap():
                 (cirq.ISWAP(qubits[0], qubits[1]) ** 0.5).controlled_by(qubits[2])
             )
         ),
-        atol=1e-8,
+        atol=1e-6,
     )
 
 
 def test_controlled_inv_sqrt_iswap():
     qubits = cirq.LineQubit.range(3)
     result = controlled_iswap.controlled_inv_sqrt_iswap(qubits[0], qubits[1], qubits[2])
-    import numpy
-
-    numpy.set_printoptions(linewidth=200, precision=3)
-    print(numpy.around(cirq.unitary(result), decimals=2))
     cirq.testing.assert_allclose_up_to_global_phase(
         cirq.unitary(result),
         cirq.unitary(
@@ -75,5 +67,5 @@ def test_controlled_inv_sqrt_iswap():
                 (cirq.ISWAP(qubits[0], qubits[1]) ** -0.5).controlled_by(qubits[2])
             )
         ),
-        atol=1e-8,
+        atol=1e-6,
     )

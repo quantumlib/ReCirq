@@ -25,7 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        cirq-version: [ 'previous', 'current', 'next' ]
+        cirq-version:
+          - 'current'
+          - 'previous'
+          - 'next'
       fail-fast: false
     steps:
       - uses: actions/checkout@v2

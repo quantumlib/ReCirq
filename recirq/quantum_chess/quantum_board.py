@@ -16,6 +16,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import cirq
+import pandas
 
 from recirq.quantum_chess.bit_utils import (
     bit_to_qubit,
@@ -37,6 +38,11 @@ import recirq.quantum_chess.enums as enums
 import recirq.quantum_chess.move as move
 import recirq.quantum_chess.quantum_moves as qm
 
+# This is a constant used to check if a board is in a classical state. It indicates that every
+# space is represented by a 1. The XOR of the empty squares and full squares bitboards will yield
+# this constant if the board is classical, so we can compare this constant with that operation on
+# the empty and full squares bitboards.
+CLASSICAL_BITBOARD = 2**64 - 1
 
 # This is the basis state corresponding to FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR.
 DEFAULT_CHESS_INIT_STATE = 0xFFFF00000000FFFF
@@ -46,7 +52,7 @@ DEFAULT_CHESS_INIT_STATE = 0xFFFF00000000FFFF
 _NO_CACHE_AVAILABLE = -1
 
 # Repetitions count for position which should always use the cache
-_CACHE_ALWAYS_AVAILABLE = 10 ** 9
+_CACHE_ALWAYS_AVAILABLE = 10**9
 
 
 class CirqBoard:
@@ -93,6 +99,7 @@ class CirqBoard:
         ] = enums.ErrorMitigation.Nothing,
         noise_mitigation: Optional[float] = 0.0,
         transformer: Optional[ct.CircuitTransformer] = None,
+        reset_starting_states=False,
     ):
         self.device = device
         self.sampler = sampler
@@ -109,8 +116,17 @@ class CirqBoard:
 
         self.cache = {}
 
-    def with_state(self, basis_state: int) -> "CirqBoard":
-        """Resets the board with a specific classical state."""
+        # Will only be turned on if user specifies
+        self.reset_starting_states = reset_starting_states
+
+    def with_state(self, basis_state: int, reset_move_history=True) -> "CirqBoard":
+        """Resets the board with a specific classical state.
+
+        Args:
+            basis_state: a 64-bit bitboard representing the given position of the board
+            reset_move_history: indicates whether to reset the entire move history of the game. It will be set to false
+                if we are calling this function after the board has returned to a fully classical position.
+        """
         self.board_accumulations_repetitions = _NO_CACHE_AVAILABLE
         self.state = basis_state
         self.allowed_pieces = set()
@@ -119,19 +135,21 @@ class CirqBoard:
         self.post_selection = {}
         self.circuit = cirq.Circuit()
         self.ancilla_count = 0
-        self.move_history = []
         initial_square_probs = (float(nth_bit_of(i, basis_state)) for i in range(64))
         # Invariant: len(self.move_history_probabilities_cache) ==
         #            len(self.move_history) + 1
-        self.move_history_probabilities_cache = [
-            self._make_probability_history(
-                _CACHE_ALWAYS_AVAILABLE, initial_square_probs
-            )
-        ]
 
-        # Store the initial basis state so that we can use it for replaying
-        # the move-history when undoing moves
-        self.init_basis_state = basis_state
+        if reset_move_history:
+            self.move_history = []
+            # Store the initial basis state so that we can use it for replaying
+            # the move-history when undoing moves
+            self.init_basis_state = basis_state
+            self.move_history_probabilities_cache = [
+                self._make_probability_history(
+                    _CACHE_ALWAYS_AVAILABLE, initial_square_probs
+                )
+            ]
+
         self.clear_debug_log()
         self.timing_stats = defaultdict(list)
         return self
@@ -178,7 +196,7 @@ class CirqBoard:
         # Store current move history...
         current_move_history = self.move_history.copy()
         # ...because we'll be resetting it here
-        self.with_state(self.init_basis_state)
+        self.with_state(self.init_basis_state, True)
 
         # Repeat history up to last move
         for m in range(len(current_move_history) - 1):
@@ -203,7 +221,7 @@ class CirqBoard:
         number of repetitions to compensate.
         """
         if len(self.post_selection) > 1:
-            sample_size *= 2 ** (len(self.post_selection) + 1)
+            sample_size <<= len(self.post_selection) + 1
         if self.error_mitigation == enums.ErrorMitigation.Correct:
             sample_size *= 2
         if self.noise_mitigation > 0:
@@ -211,6 +229,29 @@ class CirqBoard:
         if sample_size < 100:
             sample_size = 100
         return sample_size
+
+    def _calculate_bitboards_from_measurements(self, data: pandas.DataFrame):
+        """Calculates bitboards given sample results and stores them in the DataFrame.
+
+        The bitboard masked with 0x00000000FFFFFFFF is stored in a new column 'bb_low'
+        and the bitboard masked with 0xFFFFFFFF00000000 in 'bb_high'. It must be split
+        in this way because the vectorized operations only work with double floats which
+        have 53 bits of precision.
+        """
+        # Construct expressions for vectorized evaluation of the board position.
+        # For example, if there are entangled pieces on a1 and e1 and a non-entangled
+        # piece on c1 then bitboard_exprs[0] is "a1 * 1.0 + e1 * 32.0 + 4.0"
+        bitboard_exprs = ["", ""]
+        classical_state = self.state
+        for qubit in self.entangled_squares:
+            if "anc" not in qubit.name:
+                bit = qubit_to_bit(qubit)
+                bitboard_exprs[bit // 32] += f"{qubit.name} * {1 << bit}.0 +"
+                classical_state &= ~(1 << bit)
+        bitboard_exprs[0] += str(classical_state & 0x00000000FFFFFFFF) + ".0"
+        bitboard_exprs[1] += str(classical_state & 0xFFFFFFFF00000000) + ".0"
+        # Store evaluated position in bb_low and bb_high columns
+        data.eval("bb_low = {}\nbb_high = {}".format(*bitboard_exprs), inplace=True)
 
     def sample_with_ancilla(
         self,
@@ -269,34 +310,24 @@ class CirqBoard:
             rtn = []
             noise_buffer = {}
             data = results.data
-            for rep in range(num_reps):
-                new_sample = self.state
-                new_ancilla = {}
 
-                # Go through the results and discard any results
-                # that disagree with our pre-defined post-selection criteria
-                post_selected = True
-                for qubit in self.post_selection.keys():
-                    key = qubit.name
-                    if key in data.columns:
-                        result = data.at[rep, key]
-                        if result != self.post_selection[qubit]:
-                            post_selected = False
-                            break
-                if not post_selected:
-                    post_count += 1
-                    continue
+            # Discard any results that disagree with our pre-defined
+            # post-selection criteria
+            if self.post_selection:
+                data.query(
+                    "&".join(
+                        f"{qubit.name} == {val}"
+                        for qubit, val in self.post_selection.items()
+                    ),
+                    inplace=True,
+                )
+                post_count = num_reps - len(data)
 
-                # Translate qubit results into a 64-bit chess board
-                for qubit in qubits:
-                    key = qubit.name
-                    result = data.at[rep, key]
-                    # Ancilla bits should not be part of the chess board
-                    if "anc" not in key:
-                        bit = qubit_to_bit(qubit)
-                        new_sample = set_nth_bit(bit, new_sample, result)
-                    else:
-                        new_ancilla[key] = result
+            self._calculate_bitboards_from_measurements(data)
+            ancilla_dict = data.filter(like="anc").to_dict("index")
+
+            for rep in data.index:
+                new_sample = int(data.at[rep, "bb_low"]) | int(data.at[rep, "bb_high"])
 
                 # Perform Error Mitigation
                 if self.error_mitigation != enums.ErrorMitigation.Nothing:
@@ -325,22 +356,18 @@ class CirqBoard:
                 # This sample has passed noise and error mitigation
                 # Record it as a proper sample
                 rtn.append(new_sample)
-                ancilla.append(new_ancilla)
+                ancilla.append(ancilla_dict[rep])
                 if len(rtn) >= num_samples:
-                    self.debug_log += (
-                        f"Discarded {error_count} from error mitigation "
-                        f"{noise_count} from noise and "
-                        f"{post_count} from post-selection\n"
-                    )
-                    self.record_time("sample_with_ancilla", t0)
-                    return (rtn, ancilla)
+                    break
         else:
             rtn = [self.state] * num_samples
-            self.debug_log += (
-                f"Discarded {error_count} from error mitigation "
-                f"{noise_count} from noise and {post_count} from post-selection\n"
-            )
+
         self.record_time("sample_with_ancilla", t0)
+        self.debug_log += (
+            f"Discarded {error_count} from error mitigation "
+            f"{noise_count} from noise and "
+            f"{post_count} from post-selection\n"
+        )
         return (rtn, ancilla)
 
     def sample(self, num_samples: int) -> List[int]:
@@ -442,6 +469,7 @@ class CirqBoard:
                 self.error_mitigation,
                 self.noise_mitigation,
                 self.transformer if self.device else None,
+                reset_starting_states=False,
             )
             sample_jump_move = move.Move(
                 "b1",
@@ -527,6 +555,19 @@ class CirqBoard:
         """
         self._generate_accumulations(repetitions)
         return self.move_history_probabilities_cache[-1].empty_squares
+
+    def is_classical(self, repetitions=1000) -> bool:
+        """Returns true if the board is in a fully classical position, and false otherwise."""
+        empty_squares = self.get_empty_squares_bitboard(repetitions)
+        full_squares = self.get_full_squares_bitboard(repetitions)
+        actual = empty_squares | full_squares
+        return CLASSICAL_BITBOARD == actual
+
+    def reset_if_classical(self) -> None:
+        """If the position is fully classical, calls with_state with current position
+        and with reset_move_history set to false."""
+        if self.is_classical():
+            self.with_state(self.get_full_squares_bitboard(), False)
 
     def add_entangled(self, *qubits):
         """Adds squares as entangled.
@@ -655,7 +696,7 @@ class CirqBoard:
         self,
         qubit: cirq.Qid,
         measurement_outcome: Optional[int] = None,
-        invert: Optional[bool] = False,
+        invert: bool = False,
     ) -> int:
         """Adds a post-selection requirement to the circuit.
 
@@ -675,21 +716,23 @@ class CirqBoard:
 
         Returns: the measurement outcome or sample result as 1 or 0.
         """
-        result = measurement_outcome
-        if invert and measurement_outcome is not None:
-            result = 1 - result
-        sample_size = 100 if self.noise_mitigation else 1
+        if measurement_outcome is not None:
+            if invert:
+                result = 1 - measurement_outcome
+            else:
+                result = measurement_outcome
         if "anc" in qubit.name:
-            if result is None:
+            if measurement_outcome is None:
                 ancilla_result = []
+                sample_size = 100 if self.noise_mitigation else 1
                 while len(ancilla_result) == 0:
                     _, ancilla_result = self.sample_with_ancilla(sample_size)
                 result = ancilla_result[0][qubit.name]
             self.post_selection[qubit] = result
         else:
             bit = qubit_to_bit(qubit)
-            if result is None:
-                result = nth_bit_of(bit, self.sample(sample_size)[0])
+            if measurement_outcome is None:
+                result = nth_bit_of(bit, self.sample(1)[0])
             if qubit in self.entangled_squares:
                 ancillary = self.unhook(qubit)
                 self.post_selection[ancillary] = result
@@ -697,12 +740,20 @@ class CirqBoard:
         return result
 
     def do_move(self, m: move.Move) -> int:
-        """Performs a move on the quantum board.
+        """Will call do_move_internal to perform a move on the quantum board,
+        resetting the quantum circuit if the board is in a fully classical position.
+        """
+        initial_circuit = self.circuit.copy()
+        move_succeeded = self.do_move_internal(m)
+        if self.reset_starting_states and initial_circuit != self.circuit:
+            self.reset_if_classical()
+        return move_succeeded
 
+    def do_move_internal(self, m: move.Move) -> int:
+        """Performs a move on the quantum board.
         Based on the type and variant of the move requested,
         this function augments the circuit, classical registers,
         and post-selection criteria to perform the board.
-
         Returns:  The measurement that was performed, or 1 if
             no measurement was required.
         """
@@ -835,9 +886,89 @@ class CirqBoard:
             if tqubit in path_qubits2:
                 path_qubits2.remove(tqubit)
 
+            # (0, 0): No interposing squares, just jump. 0 ancilla needed.
             if len(path_qubits) == 0 and len(path_qubits2) == 0:
-                # No interposing squares, just jump.
                 m.move_type = enums.MoveType.SPLIT_JUMP
+            elif len(path_qubits) == 0:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                # (0, 1): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+                if len(path_qubits2) == 1:
+                    self.circuit.append(
+                        qm.split_slide_zero_one(
+                            squbit, tqubit, tqubit2, path_qubits2[0]
+                        )
+                    )
+                # (0, 2+): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                else:
+                    path2 = self._create_path_ancilla(path_qubits2)
+                    self.circuit.append(
+                        qm.split_slide_zero_multiple(squbit, tqubit, tqubit2, path2)
+                    )
+                    self._clear_path_ancilla(path_qubits2, path2)
+                return 1
+            elif len(path_qubits2) == 0:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                # (1, 0): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+                if len(path_qubits) == 1:
+                    self.circuit.append(
+                        qm.split_slide_zero_one(squbit, tqubit2, tqubit, path_qubits[0])
+                    )
+                # (2+, 0): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                else:
+                    path1 = self._create_path_ancilla(path_qubits)
+                    self.circuit.append(
+                        qm.split_slide_zero_multiple(squbit, tqubit2, tqubit, path1)
+                    )
+                    self._clear_path_ancilla(path_qubits, path1)
+                return 1
+            elif len(path_qubits) == 1:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                # (1, 1): One qubit in one arm, one qubit in the other.
+                if len(path_qubits2) == 1:
+                    # If both arms share the same qubit in path. 0 ancilla needed.
+                    if qubit_to_bit(path_qubits[0]) == qubit_to_bit(path_qubits2[0]):
+                        self.circuit.append(
+                            qm.split_slide_one_one_same_qubit(
+                                squbit, tqubit, tqubit2, path_qubits[0]
+                            )
+                        )
+                    # Otherwise 1 ancilla needed.
+                    else:
+                        ancilla = self.new_ancilla()
+                        self.circuit.append(
+                            qm.split_slide_one_one_diff_qubits(
+                                squbit,
+                                tqubit,
+                                tqubit2,
+                                path_qubits[0],
+                                path_qubits2[0],
+                                ancilla,
+                            )
+                        )
+                # (1, 2+): One qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+                else:
+                    path2 = self._create_path_ancilla(path_qubits2)
+                    ancilla = self.new_ancilla()
+                    self.circuit.append(
+                        qm.split_slide_one_multiple(
+                            squbit, tqubit, tqubit2, path_qubits[0], path2, ancilla
+                        )
+                    )
+                    self._clear_path_ancilla(path_qubits2, path2)
+                return 1
+            # (2+, 1): one qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+            elif len(path_qubits2) == 1:
+                self.add_entangled(squbit, tqubit, tqubit2)
+                path1 = self._create_path_ancilla(path_qubits)
+                ancilla = self.new_ancilla()
+                self.circuit.append(
+                    qm.split_slide_one_multiple(
+                        squbit, tqubit2, tqubit, path_qubits2[0], path1, ancilla
+                    )
+                )
+                self._clear_path_ancilla(path_qubits, path1)
+                return 1
+            # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
             else:
                 self.add_entangled(squbit, tqubit, tqubit2)
                 path1 = self._create_path_ancilla(path_qubits)
@@ -853,7 +984,6 @@ class CirqBoard:
         if m.move_type == enums.MoveType.MERGE_SLIDE:
             sbit2 = square_to_bit(m.source2)
             squbit2 = bit_to_qubit(sbit2)
-            self.add_entangled(squbit, squbit2, tqubit)
 
             # Find all the squares on both paths
             path_qubits = self.path_qubits(m.source, m.target)
@@ -862,10 +992,92 @@ class CirqBoard:
             path_qubits2 = self.path_qubits(m.source2, m.target)
             if squbit in path_qubits2:
                 path_qubits2.remove(squbit)
+
+            # (0, 0): No interposing squares, just jump. 0 ancilla needed.
             if len(path_qubits) == 0 and len(path_qubits2) == 0:
-                # No interposing squares, just jump.
                 m.move_type = enums.MoveType.MERGE_JUMP
+            elif len(path_qubits) == 0:
+                self.add_entangled(squbit, squbit2, tqubit)
+                # (0, 1): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+                if len(path_qubits2) == 1:
+                    self.circuit.append(
+                        qm.merge_slide_zero_one(
+                            squbit, tqubit, squbit2, path_qubits2[0]
+                        )
+                    )
+                # (0, 2+): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                else:
+                    path2 = self._create_path_ancilla(path_qubits2)
+                    self.circuit.append(
+                        qm.merge_slide_zero_multiple(squbit, tqubit, squbit2, path2)
+                    )
+                    self._clear_path_ancilla(path_qubits2, path2)
+                return 1
+            elif len(path_qubits2) == 0:
+                self.add_entangled(squbit, squbit2, tqubit)
+                # (1, 0): No qubit in one arm, one qubit in the other. 0 ancilla needed.
+                if len(path_qubits) == 1:
+                    self.circuit.append(
+                        qm.merge_slide_zero_one(squbit2, tqubit, squbit, path_qubits[0])
+                    )
+                # (2+, 0): No qubit in one arm, multiple qubits in the other. 1 ancilla needed.
+                else:
+                    path1 = self._create_path_ancilla(path_qubits)
+                    self.circuit.append(
+                        qm.merge_slide_zero_multiple(squbit2, tqubit, squbit, path1)
+                    )
+                    self._clear_path_ancilla(path_qubits, path1)
+                return 1
+            elif len(path_qubits) == 1:
+                self.add_entangled(squbit, squbit2, tqubit)
+                # (1, 1): One qubit in one arm, one qubit in the other.
+                if len(path_qubits2) == 1:
+                    # If both arms share the same qubit in path. 0 ancilla needed.
+                    if qubit_to_bit(path_qubits[0]) == qubit_to_bit(path_qubits2[0]):
+                        self.circuit.append(
+                            qm.merge_slide_one_one_same_qubit(
+                                squbit, tqubit, squbit2, path_qubits[0]
+                            )
+                        )
+                    # Otherwise 1 ancilla needed.
+                    else:
+                        ancilla = self.new_ancilla()
+                        self.circuit.append(
+                            qm.merge_slide_one_one_diff_qubits(
+                                squbit,
+                                tqubit,
+                                squbit2,
+                                path_qubits[0],
+                                path_qubits2[0],
+                                ancilla,
+                            )
+                        )
+                # (1, 2+): One qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+                else:
+                    path2 = self._create_path_ancilla(path_qubits2)
+                    ancilla = self.new_ancilla()
+                    self.circuit.append(
+                        qm.merge_slide_one_multiple(
+                            squbit, tqubit, squbit2, path_qubits[0], path2, ancilla
+                        )
+                    )
+                    self._clear_path_ancilla(path_qubits2, path2)
+                return 1
+            # (2+, 1): one qubit in one arm, multiple qubits in the other. 2 ancillas needed.
+            elif len(path_qubits2) == 1:
+                self.add_entangled(squbit, squbit2, tqubit)
+                path1 = self._create_path_ancilla(path_qubits)
+                ancilla = self.new_ancilla()
+                self.circuit.append(
+                    qm.merge_slide_one_multiple(
+                        squbit2, tqubit, squbit, path_qubits2[0], path1, ancilla
+                    )
+                )
+                self._clear_path_ancilla(path_qubits, path1)
+                return 1
+            # (2+, 2+): multiple qubits in both arms. 3 ancillas needed.
             else:
+                self.add_entangled(squbit, squbit2, tqubit)
                 path1 = self._create_path_ancilla(path_qubits)
                 path2 = self._create_path_ancilla(path_qubits2)
                 ancilla = self.new_ancilla()
@@ -904,19 +1116,31 @@ class CirqBoard:
                 if is_there:
                     return 0
 
-            self.add_entangled(squbit, tqubit)
             if m.move_variant == enums.MoveVariant.CAPTURE:
-                capture_ancilla = self.new_ancilla()
-                self.circuit.append(
-                    qm.controlled_operation(
-                        cirq.X, [capture_ancilla], [squbit], path_qubits
+                if (
+                    squbit not in self.entangled_squares
+                    and nth_bit_of(qubit_to_bit(squbit), self.state)
+                    and len(path_qubits) == 1
+                ):
+                    # squbit is classically true and there is only one path_qubit
+                    capture_allowed = 1 - self.post_select_on(
+                        path_qubits[0], m.measurement, invert=True
                     )
-                )
+                else:
+                    self.add_entangled(squbit, tqubit)
+                    capture_ancilla = self.new_ancilla()
+                    self.circuit.append(
+                        qm.controlled_operation(
+                            cirq.X, [capture_ancilla], [squbit], path_qubits
+                        )
+                    )
 
-                # We need to add the captured_ancilla to entangled squares
-                # So that we measure it
-                self.entangled_squares.add(capture_ancilla)
-                capture_allowed = self.post_select_on(capture_ancilla, m.measurement)
+                    # We need to add the captured_ancilla to entangled squares
+                    # So that we measure it
+                    self.entangled_squares.add(capture_ancilla)
+                    capture_allowed = self.post_select_on(
+                        capture_ancilla, m.measurement
+                    )
 
                 if not capture_allowed:
                     return 0

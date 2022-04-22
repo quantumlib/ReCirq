@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from recirq.quantum_chess import constants
 import recirq.quantum_chess.enums as enums
 from typing import Optional
 
@@ -57,6 +58,7 @@ class Move:
         target2: Optional[str] = None,
         move_type: Optional[enums.MoveType] = None,
         move_variant: Optional[enums.MoveVariant] = None,
+        promotion_piece: Optional[int] = None,
         measurement: Optional[int] = None,
     ):
         self.source = source
@@ -65,6 +67,7 @@ class Move:
         self.target2 = target2
         self.move_type = move_type
         self.move_variant = move_variant
+        self.promotion_piece = promotion_piece
         self.measurement = measurement
 
     def __eq__(self, other):
@@ -76,6 +79,7 @@ class Move:
                 and self.target2 == other.target2
                 and self.move_type == other.move_type
                 and self.move_variant == other.move_variant
+                and self.promotion_piece == other.promotion_piece
                 and self.measurement == other.measurement
             )
         return False
@@ -114,12 +118,16 @@ class Move:
 
         sources = None
         targets = None
+        promotion_piece = None
+
         if "^" in source_target:
             sources_str, targets_str = source_target.split("^", maxsplit=1)
             sources = [sources_str[i : i + 2] for i in range(0, len(sources_str), 2)]
             targets = [targets_str[i : i + 2] for i in range(0, len(targets_str), 2)]
         else:
-            if len(source_target) != 4:
+            if len(source_target) == 5:
+                promotion_piece = constants.REV_PIECES[source_target[4]]
+            elif len(source_target) != 4:
                 raise ValueError(f"Invalid sources/targets string {source_target}")
             sources = [source_target[0:2]]
             targets = [source_target[2:4]]
@@ -132,6 +140,7 @@ class Move:
                 targets[0],
                 move_type=move_type,
                 move_variant=move_variant,
+                promotion_piece=promotion_piece,
                 measurement=measurement,
             )
         if len(sources) == 1 and len(targets) == 2:
@@ -180,6 +189,8 @@ class Move:
             movestr = self.source + "^" + self.target + self.target2
         if self.is_merge_move():
             movestr = self.source + self.source2 + "^" + self.target
+        if self.promotion_piece is not None:
+            movestr += constants.PIECES[self.promotion_piece]
         if self.has_measurement():
             movestr += ".m" + str(self.measurement)
 

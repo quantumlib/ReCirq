@@ -88,7 +88,7 @@ def controlled_iswap(
 
     Returns a generator of cirq.Operations.
     """
-    available_gate = cirq.ISWAP ** 0.5
+    available_gate = cirq.ISWAP**0.5
     if inverse:
         mul = -1
     else:
@@ -116,8 +116,8 @@ def controlled_iswap(
     )
 
     converted_ops = cirq.Circuit(convert_op(op) for op in circuit.all_operations())
-    cirq.optimizers.MergeSingleQubitGates().optimize_circuit(converted_ops)
-    cirq.optimizers.DropNegligible().optimize_circuit(converted_ops)
+    cirq.MergeSingleQubitGates().optimize_circuit(converted_ops)
+    cirq.DropNegligible().optimize_circuit(converted_ops)
     return cirq.Circuit(simplify_op(op) for op in converted_ops.all_operations())
 
 

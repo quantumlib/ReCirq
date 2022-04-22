@@ -291,7 +291,7 @@ def find_shortest_path(
     g: Dict[cirq.GridQubit, List[cirq.GridQubit]],
     s: cirq.GridQubit,
     t: cirq.GridQubit,
-) -> int:
+) -> Union[int, float]:
     """Returns the shortest distance between the source and target qubits.
 
     Uses breadth-first search traversal.

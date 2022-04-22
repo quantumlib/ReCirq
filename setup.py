@@ -55,5 +55,7 @@ setup(name='recirq',
       package_data={'recirq': [
           # https://github.com/quantumlib/ReCirq/issues/101
           'hfvqe/molecular_data/hydrogen_chains/*/*/*',
+          # Needed for ftbbl docs
+          'otoc/loschmidt/tilted_square_lattice/*',
       ]},
       )
