@@ -1,6 +1,6 @@
 # QAOA
 
-Combinatorial optimization problems can be solved with the quantum approximate x
+Combinatorial optimization problems can be solved with the quantum approximate
 optimization algorithm (QAOA; also known as "quantum alternating operator ansatz").
 
 We demonstrated the application of the Google Sycamore superconducting qubit
