@@ -16,11 +16,11 @@ import pytest
 
 from cirq import GridQubit
 from cirq import ops
-import recirq.beyond_classical.google_v2_supremacy_circuit as supremacy_v2
+import recirq.beyond_classical.google_v2_beyond_classical as beyond_classical
 
 
-def test_google_v2_supremacy_circuit():
-    circuit = supremacy_v2.generate_boixo_2018_supremacy_circuits_v2_grid(
+def test_google_v2_beyond_classical():
+    circuit = beyond_classical.generate_boixo_2018_beyond_classical_v2_grid(
         n_rows=4, n_cols=5, cz_depth=9, seed=0
     )
     # We check that is exactly circuit inst_4x5_10_0
@@ -44,10 +44,10 @@ def test_google_v2_supremacy_circuit():
     assert circuit.operation_at(qubits[14], 7).gate == ops.CZ
 
 
-def test_google_v2_supremacy_bristlecone():
+def test_google_v2_beyond_classical_bristlecone():
     pytest.importorskip("cirq_google")
     # Check instance consistency
-    c = supremacy_v2.generate_boixo_2018_supremacy_circuits_v2_bristlecone(
+    c = beyond_classical.generate_boixo_2018_beyond_classical_v2_bristlecone(
         n_rows=11, cz_depth=8, seed=0
     )
     assert len(c) == 10
@@ -59,7 +59,7 @@ def test_google_v2_supremacy_bristlecone():
     assert isinstance(c.operation_at(GridQubit(3, 2), 2).gate, ops.XPowGate)
     assert isinstance(c.operation_at(GridQubit(1, 6), 3).gate, ops.XPowGate)
     # test smaller subgraph
-    c = supremacy_v2.generate_boixo_2018_supremacy_circuits_v2_bristlecone(
+    c = beyond_classical.generate_boixo_2018_beyond_classical_v2_bristlecone(
         n_rows=9, cz_depth=8, seed=0
     )
     qubits = list(c.all_qubits())
@@ -74,6 +74,6 @@ def test_google_v2_supremacy_bristlecone():
 def test_n_rows_less_than_2():
     pytest.importorskip("cirq_google")
     with pytest.raises(AssertionError):
-        supremacy_v2.generate_boixo_2018_supremacy_circuits_v2_bristlecone(
+        beyond_classical.generate_boixo_2018_beyond_classical_v2_bristlecone(
             n_rows=1, cz_depth=0, seed=0
         )

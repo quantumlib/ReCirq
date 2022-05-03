@@ -18,7 +18,7 @@ from typing import Callable, Iterable, TypeVar, cast, Sequence
 import cirq
 
 
-def generate_boixo_2018_supremacy_circuits_v2(
+def generate_boixo_2018_beyond_classical_v2(
     qubits: Iterable[cirq.GridQubit], cz_depth: int, seed: int
 ) -> cirq.Circuit:
     """Generates Google Random Circuits v2 as in github.com/sboixo/GRCS cz_v2.
@@ -80,7 +80,7 @@ def generate_boixo_2018_supremacy_circuits_v2(
     return circuit
 
 
-def generate_boixo_2018_supremacy_circuits_v2_grid(
+def generate_boixo_2018_beyond_classical_v2_grid(
     n_rows: int, n_cols: int, cz_depth: int, seed: int
 ) -> cirq.Circuit:
     """Generates Google Random Circuits v2 as in github.com/sboixo/GRCS cz_v2.
@@ -101,7 +101,7 @@ def generate_boixo_2018_supremacy_circuits_v2_grid(
     (as in the QASM mapping)
     """
     qubits = [cirq.GridQubit(i, j) for i in range(n_rows) for j in range(n_cols)]
-    return generate_boixo_2018_supremacy_circuits_v2(qubits, cz_depth, seed)
+    return generate_boixo_2018_beyond_classical_v2(qubits, cz_depth, seed)
 
 
 _bristlecone_qubits = frozenset(
@@ -182,7 +182,7 @@ _bristlecone_qubits = frozenset(
 )
 
 
-def generate_boixo_2018_supremacy_circuits_v2_bristlecone(
+def generate_boixo_2018_beyond_classical_v2_bristlecone(
     n_rows: int, cz_depth: int, seed: int
 ) -> cirq.Circuit:
     """Generates Google Random Circuits v2 in Bristlecone.
@@ -225,7 +225,7 @@ def generate_boixo_2018_supremacy_circuits_v2_bristlecone(
         return qubits
 
     qubits = get_qubits(n_rows)
-    return generate_boixo_2018_supremacy_circuits_v2(qubits, cz_depth, seed)
+    return generate_boixo_2018_beyond_classical_v2(qubits, cz_depth, seed)
 
 
 T = TypeVar('T')
