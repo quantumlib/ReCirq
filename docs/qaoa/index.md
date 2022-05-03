@@ -12,5 +12,13 @@ to the Sherrington-Kirkpatrick model and MaxCut, both high dimensional graph
 problems for which the QAOA requires significant compilation.
 
 This module contains the code to generate QAOA circuits, execute demonstrations,
-and analyze the results. Please read on to learn about the example problems,
-compilation, analysis, and how to run the experiment end-to-end.
+and analyze the results. Please read on to learn about:
+
+*  [Example problems](./example_problems.ipynb)
+*  [Tasks](./tasks.ipynb) and compilation
+*  [Analysis](./precomputed_analysis.ipynb)
+
+See the left navigation for more information about the QAOA experiment
+and how to run it end-to-end.
+
+
