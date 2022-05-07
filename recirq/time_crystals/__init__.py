@@ -19,7 +19,7 @@ from recirq.time_crystals.dtcexperiment import (
     DEFAULT_BASE_DIR,
 )
 
-from recirq.time_crystals.dtcsimulation import (
+from recirq.time_crystals.dtc_simulation import (
     run_comparison_experiment,
     signal_ratio,
     symbolic_dtc_circuit_list,
