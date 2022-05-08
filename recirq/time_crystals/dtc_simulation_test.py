@@ -24,8 +24,6 @@ def test_run_comparison_experiment():
     run_comparison_experiments, with the goal of checking all paths for crashes
 
     """
-
-    print("testing run_comparison_rexperiment")
     np.random.seed(5)
     qubit_locations = [
         (3, 9),
@@ -69,27 +67,22 @@ def test_run_comparison_experiment():
             for polarizations in time_crystals.run_comparison_experiment(
                 qubits, cycles, disorder_instances, autocorrelate, take_abs, **kwargs
             ):
-                pass
-    print("testing run_comparison_rexperiment complete")
+                assert polarizations.shape == (cycles + 1, num_qubits)
+                assert np.all(-1 <= polarizations) and np.all(polarizations <= 1)
 
 
 def test_signal_ratio():
     """Test signal_ratio function with random `np.ndarrays`"""
-
-    print("testing signal_ratio")
     np.random.seed(5)
     cycles = 100
     num_qubits = 16
     zeta_1 = np.random.uniform(-1.0, 1.0, (cycles, num_qubits))
     zeta_2 = np.random.uniform(-1.0, 1.0, (cycles, num_qubits))
     res = time_crystals.signal_ratio(zeta_1, zeta_2)
-    print("testing signal_ratio complete")
 
 
 def test_symbolic_dtc_circuit_list():
     """Test symbolic_dtc_circuit_list function for select qubits and cycles"""
-
-    print("testing symbolic_dtc_circuit_list")
     qubit_locations = [
         (3, 9),
         (3, 8),
@@ -101,4 +94,5 @@ def test_symbolic_dtc_circuit_list():
     num_qubits = len(qubits)
     cycles = 5
     circuit_list = time_crystals.symbolic_dtc_circuit_list(qubits, cycles)
-    print("testing symbolic_dtc_circuit_list complete")
+    for index, circuit in enumerate(circuit_list):
+        assert len(circuit) == 3*index + 1

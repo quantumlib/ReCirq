@@ -14,17 +14,16 @@
 
 from typing import Sequence, Tuple, List, Iterator
 
-import cirq
 import functools
-from recirq.time_crystals.dtcexperiment import DTCExperiment, comparison_experiments
 import numpy as np
 import sympy as sp
 
+import cirq
+from recirq.time_crystals.dtcexperiment import DTCExperiment, comparison_experiments
 
 def symbolic_dtc_circuit_list(
     qubits: Sequence[cirq.Qid], cycles: int
 ) -> List[cirq.Circuit]:
-
     """Create a list of symbolically parameterized dtc circuits, with increasing cycles
 
     Args:
@@ -35,7 +34,6 @@ def symbolic_dtc_circuit_list(
         list of circuits with `0, 1, 2, ... cycles` many cycles
 
     """
-
     num_qubits = len(qubits)
 
     # Symbol for g
@@ -74,44 +72,35 @@ def symbolic_dtc_circuit_list(
     # Second and third components of U cycle, a chain of 2-qubit PhasedFSim gates
     #   The first component is all the 2-qubit PhasedFSim gates starting on even qubits
     #   The second component is the 2-qubit gates starting on odd qubits
-    operation_list = []
-    other_operation_list = []
-    previous_qubit = None
-    previous_index = None
-    for index, qubit in enumerate(qubits):
-        if previous_qubit is None:
-            previous_qubit = qubit
-            previous_index = index
-            continue
-
+    current_moment = []
+    other_moment = []
+    for index, (qubit, next_qubit) in enumerate(zip(qubits, qubits[1:])):
         # Add an fsim gate
         coupling_gate = cirq.ops.PhasedFSimGate(
-            theta=thetas[previous_index],
-            zeta=zetas[previous_index],
-            chi=chis[previous_index],
-            gamma=gammas[previous_index],
-            phi=phis[previous_index],
+            theta=thetas[index],
+            zeta=zetas[index],
+            chi=chis[index],
+            gamma=gammas[index],
+            phi=phis[index],
         )
-        operation_list.append(coupling_gate.on(previous_qubit, qubit))
+        current_moment.append(coupling_gate.on(qubit, next_qubit))
 
-        # Swap the operation lists, to avoid two-qubit gate overlap
-        previous_qubit = qubit
-        previous_index = index
-        temp_swap_list = operation_list
-        operation_list = other_operation_list
-        other_operation_list = temp_swap_list
+        # Apply to the other moment in the next iteration
+        swap_moment = current_moment
+        current_moment = other_moment
+        other_moment = swap_moment
 
     # Add the two components into the U cycle
-    u_cycle.append(cirq.Moment(operation_list))
-    u_cycle.append(cirq.Moment(other_operation_list))
+    u_cycle.append(cirq.Moment(current_moment))
+    u_cycle.append(cirq.Moment(other_moment))
 
     # Prepare a list of circuits, with n=0,1,2,3 ... cycles many cycles
     circuit_list = []
     total_circuit = cirq.Circuit(initial_operations)
     circuit_list.append(total_circuit.copy())
-    for c in range(cycles):
-        for m in u_cycle:
-            total_circuit.append(m)
+    for _ in range(cycles):
+        for moment in u_cycle:
+            total_circuit.append(moment)
         circuit_list.append(total_circuit.copy())
 
     return circuit_list
@@ -123,7 +112,8 @@ def simulate_dtc_circuit_list(
     qubit_order: Sequence[cirq.Qid],
 ) -> np.ndarray:
     """Simulate a dtc circuit list for a particular param_resolver
-        Utilizes on the fact that simulating the last circuit in the list also
+
+        Utilizes the fact that simulating the last circuit in the list also
             simulates each previous circuit along the way
 
     Args:
@@ -137,12 +127,14 @@ def simulate_dtc_circuit_list(
             the probability of measuring each bit string, for each circuit in the list
 
     """
-
     # prepare simulator
     simulator = cirq.Simulator()
 
     # record lengths of circuits in list
-    circuit_positions = [len(c) - 1 for c in circuit_list]
+    assert all(
+        len(x) < len(y) for x, y in zip(circuit_list, circuit_list[1:])
+    ), "circuits in circuit_list are not in increasing order of size"
+    circuit_positions = {len(c) - 1 for c in circuit_list}
 
     # only simulate one circuit, the last one
     circuit = circuit_list[-1]
@@ -182,7 +174,6 @@ def simulate_dtc_circuit_list_sweep(
             of measuring each bit string, for each circuit in the list
 
     """
-
     # iterate over param resolvers and simulate for each
     for param_resolver in param_resolvers:
         yield simulate_dtc_circuit_list(circuit_list, param_resolver, qubit_order)
@@ -194,7 +185,10 @@ def get_polarizations(
     initial_states: np.ndarray = None,
 ) -> np.ndarray:
     """Get polarizations from matrix of probabilities, possibly autocorrelated on
-        the initial state
+        the initial state.
+
+    A polarization is the marginal probability for a qubit to measure zero or one,
+        over all possible basis states, scaled to the range [-1. 1].
 
     Args:
         probabilities: `np.ndarray` of shape (:, cycles, 2**qubits)
@@ -209,7 +203,6 @@ def get_polarizations(
             qubit's polarization
 
     """
-
     # prepare list of polarizations for each qubit
     polarizations = []
     for qubit_index in range(num_qubits):
@@ -257,7 +250,6 @@ def signal_ratio(zeta_1: np.ndarray, zeta_2: np.ndarray) -> np.ndarray:
             to represent polarization over time)
 
     """
-
     return np.abs(zeta_1 - zeta_2) / (np.abs(zeta_1) + np.abs(zeta_2))
 
 
@@ -282,7 +274,6 @@ def simulate_for_polarizations(
             the experiment, averaged over disorder instances
 
     """
-
     # create param resolver sweep
     param_resolvers = dtcexperiment.param_resolvers()
 
