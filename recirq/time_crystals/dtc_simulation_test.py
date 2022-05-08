@@ -95,4 +95,4 @@ def test_symbolic_dtc_circuit_list():
     cycles = 5
     circuit_list = time_crystals.symbolic_dtc_circuit_list(qubits, cycles)
     for index, circuit in enumerate(circuit_list):
-        assert len(circuit) == 3*index + 1
+        assert len(circuit) == 3 * index + 1
