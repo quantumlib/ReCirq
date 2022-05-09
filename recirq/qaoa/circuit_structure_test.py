@@ -18,12 +18,6 @@ import pytest
 
 import cirq
 import cirq_google as cg
-
-try:
-    from cirq.interop.quirk import QuirkQubitPermutationGate
-except ImportError:
-    from cirq.contrib.quirk import QuirkQubitPermutationGate
-
 from recirq.qaoa.circuit_structure import get_moment_class, get_moment_classes, \
     find_circuit_structure_violations, BadlyStructuredCircuitError, validate_well_structured
 from recirq.qaoa.gates_and_compilation import ProblemUnitary, DriverUnitary, \
@@ -58,7 +52,7 @@ def test_get_moment_class():
 
     # Permutation
     assert get_moment_class(cirq.Moment([
-        QuirkQubitPermutationGate('', '', [1, 0]).on(q0, q1)])) == QuirkQubitPermutationGate
+        cirq.QubitPermutationGate([1, 0]).on(q0, q1)])) == cirq.QubitPermutationGate
 
 
 def test_get_moment_classes():
