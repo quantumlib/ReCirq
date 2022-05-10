@@ -16,8 +16,9 @@ import networkx as nx
 import numpy as np
 import pytest
 
+import cirq
 from recirq.qaoa.sk_model.sk_model import _graph_from_row_major_upper_triangular, \
-    _all_to_all_couplings_from_graph
+    _all_to_all_couplings_from_graph, SKModelQAOASpec, sk_model_qaoa_spec_to_exe
 
 
 def test_graph_from_row_major_upper_triangular():
@@ -75,3 +76,20 @@ def test_graph_round_trip(n):
     couplings = tuple(np.random.choice([0, 1], size=n * (n - 1) // 2))
     assert couplings == _all_to_all_couplings_from_graph(
         _graph_from_row_major_upper_triangular(couplings, n=n))
+
+
+def test_spec_to_exe():
+    spec = SKModelQAOASpec(
+        n_nodes=3, all_to_all_couplings=[1, -1, 1], p_depth=1, n_repetitions=1_000
+    )
+    assert isinstance(spec.all_to_all_couplings, tuple)
+    assert hash(spec) is not None
+    exe = sk_model_qaoa_spec_to_exe(spec)
+    init_hadamard_depth = 1
+    zz_swap_depth = 2  # zz + swap
+    driver_depth = 1
+    measure_depth = 1
+    assert len(
+        exe.circuit) == init_hadamard_depth + zz_swap_depth * 3 + driver_depth + measure_depth
+    assert exe.spec == spec
+    assert exe.problem_topology == cirq.LineTopology(3)
