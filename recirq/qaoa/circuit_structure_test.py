@@ -77,7 +77,7 @@ def test_get_moment_classes():
     c5 = compile_to_syc(c4)
     mom_classes = get_moment_classes(c5)
     should_be = [cirq.PhasedXPowGate, cirq.ZPowGate, cg.SycamoreGate] * (n * p * 3)
-    should_be += [cirq.PhasedXPowGate, cirq.ZPowGate, QuirkQubitPermutationGate]
+    should_be += [cirq.PhasedXPowGate, cirq.ZPowGate, cirq.QubitPermutationGate]
     assert mom_classes == should_be
 
 
