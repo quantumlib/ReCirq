@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import recirq.time_crystals as time_crystals
+from typing import List
+
 import numpy as np
 import itertools
-from typing import List
+import pytest
+
 import cirq
+import recirq.time_crystals as time_crystals
 
 qubit_locations = [
     (3, 9),
@@ -29,12 +32,88 @@ QUBITS = [cirq.GridQubit(*idx) for idx in qubit_locations]
 NUM_QUBITS = len(QUBITS)
 
 
-def polarizations_predicate(polarizations, cycles, num_qubits):
+def probabilities_predicate(probabilities, shape):
     return (
-        polarizations.shape == (cycles + 1, NUM_QUBITS)
+        probabilities.shape == shape
+        and np.all(0 <= probabilities)
+        and np.all(probabilities <= 1)
+    )
+
+
+def polarizations_predicate(polarizations, shape):
+    return (
+        polarizations.shape == shape
         and np.all(-1 <= polarizations)
         and np.all(polarizations <= 1)
     )
+
+
+def test_simulate_dtc_circuit_list_sweep():
+    cycles = 5
+    circuit_list = time_crystals.symbolic_dtc_circuit_list(QUBITS, cycles)
+    param_resolvers = time_crystals.DTCExperiment(qubits=QUBITS).param_resolvers()
+    qubit_order = QUBITS
+    for probabilities in time_crystals.dtc_simulation.simulate_dtc_circuit_list_sweep(
+        circuit_list, param_resolvers, qubit_order
+    ):
+        assert probabilities_predicate(probabilities, (cycles + 1, 2**NUM_QUBITS))
+
+    with pytest.raises(
+        ValueError, match="circuits in circuit_list are not in increasing order of size"
+    ):
+        time_crystals.dtc_simulation.simulate_dtc_circuit_list(
+            list(reversed(circuit_list)), param_resolvers, qubit_order
+        )
+
+
+def test_simulate_dtc_circuit_list():
+    cycles = 5
+    circuit_list = time_crystals.symbolic_dtc_circuit_list(QUBITS, cycles)
+    param_resolver = next(
+        iter(time_crystals.DTCExperiment(qubits=QUBITS).param_resolvers())
+    )
+    qubit_order = QUBITS
+    probabilities = time_crystals.dtc_simulation.simulate_dtc_circuit_list(
+        circuit_list, param_resolver, qubit_order
+    )
+    assert probabilities_predicate(probabilities, (cycles + 1, 2**NUM_QUBITS))
+    with pytest.raises(
+        ValueError, match="circuits in circuit_list are not in increasing order of size"
+    ):
+        time_crystals.dtc_simulation.simulate_dtc_circuit_list(
+            list(reversed(circuit_list)), param_resolver, qubit_order
+        )
+
+
+def test_get_polarizations():
+    cycles = 5
+    np.random.seed(5)
+    probabilities = np.random.uniform(0, 1, (cycles, 2**NUM_QUBITS))
+    probabilities = probabilities / probabilities.sum(axis=1, keepdims=True)
+    initial_states = np.random.choice(2, NUM_QUBITS)
+    assert polarizations_predicate(
+        time_crystals.dtc_simulation.get_polarizations(probabilities, NUM_QUBITS),
+        (cycles, NUM_QUBITS),
+    )
+    assert polarizations_predicate(
+        time_crystals.dtc_simulation.get_polarizations(
+            probabilities, NUM_QUBITS, initial_states
+        ),
+        (cycles, NUM_QUBITS),
+    )
+
+
+def test_simulate_for_polarizations():
+    cycles = 5
+    circuit_list = time_crystals.symbolic_dtc_circuit_list(qubits=QUBITS, cycles=cycles)
+    dtcexperiment = time_crystals.DTCExperiment(qubits=QUBITS)
+    for autocorrelate, take_abs in itertools.product([True, False], repeat=2):
+        assert polarizations_predicate(time_crystals.dtc_simulation.simulate_for_polarizations(
+            dtcexperiment=dtcexperiment,
+            circuit_list=circuit_list,
+            autocorrelate=autocorrelate,
+            take_abs=take_abs,
+        ), (cycles + 1, NUM_QUBITS))
 
 
 def test_run_comparison_experiment():
@@ -76,7 +155,7 @@ def test_run_comparison_experiment():
             for polarizations in time_crystals.run_comparison_experiment(
                 QUBITS, cycles, disorder_instances, autocorrelate, take_abs, **kwargs
             ):
-                assert polarizations_predicate(polarizations, cycles, NUM_QUBITS)
+                assert polarizations_predicate(polarizations, (cycles + 1, NUM_QUBITS))
 
 
 def test_signal_ratio():
