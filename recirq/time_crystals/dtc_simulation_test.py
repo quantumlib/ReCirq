@@ -37,6 +37,7 @@ def probabilities_predicate(probabilities, shape):
         probabilities.shape == shape
         and np.all(0 <= probabilities)
         and np.all(probabilities <= 1)
+        and np.all(np.isclose(np.sum(probabilities, axis=1), 1))
     )
 
 
@@ -108,12 +109,15 @@ def test_simulate_for_polarizations():
     circuit_list = time_crystals.symbolic_dtc_circuit_list(qubits=QUBITS, cycles=cycles)
     dtcexperiment = time_crystals.DTCExperiment(qubits=QUBITS)
     for autocorrelate, take_abs in itertools.product([True, False], repeat=2):
-        assert polarizations_predicate(time_crystals.dtc_simulation.simulate_for_polarizations(
-            dtcexperiment=dtcexperiment,
-            circuit_list=circuit_list,
-            autocorrelate=autocorrelate,
-            take_abs=take_abs,
-        ), (cycles + 1, NUM_QUBITS))
+        assert polarizations_predicate(
+            time_crystals.dtc_simulation.simulate_for_polarizations(
+                dtcexperiment=dtcexperiment,
+                circuit_list=circuit_list,
+                autocorrelate=autocorrelate,
+                take_abs=take_abs,
+            ),
+            (cycles + 1, NUM_QUBITS),
+        )
 
 
 def test_run_comparison_experiment():
