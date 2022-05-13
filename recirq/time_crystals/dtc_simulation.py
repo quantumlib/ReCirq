@@ -73,8 +73,8 @@ def symbolic_dtc_circuit_list(
     # Second and third components of U cycle, a chain of 2-qubit PhasedFSim gates
     #   The first component is all the 2-qubit PhasedFSim gates starting on even qubits
     #   The second component is the 2-qubit gates starting on odd qubits
-    current_moment = []
-    other_moment = []
+    even_qubit_moment = []
+    odd_qubit_moment = []
     for index, (qubit, next_qubit) in enumerate(zip(qubits, qubits[1:])):
         # Add an fsim gate
         coupling_gate = cirq.ops.PhasedFSimGate(
@@ -84,16 +84,15 @@ def symbolic_dtc_circuit_list(
             gamma=gammas[index],
             phi=phis[index],
         )
-        current_moment.append(coupling_gate.on(qubit, next_qubit))
 
-        # Apply to the other moment in the next iteration
-        swap_moment = current_moment
-        current_moment = other_moment
-        other_moment = swap_moment
+        if index % 2:
+            even_qubit_moment.append(coupling_gate.on(qubit, next_qubit))
+        else:
+            odd_qubit_moment.append(coupling_gate.on(qubit, next_qubit))
 
     # Add the two components into the U cycle
-    u_cycle.append(cirq.Moment(current_moment))
-    u_cycle.append(cirq.Moment(other_moment))
+    u_cycle.append(cirq.Moment(even_qubit_moment))
+    u_cycle.append(cirq.Moment(odd_qubit_moment))
 
     # Prepare a list of circuits, with n=0,1,2,3 ... cycles many cycles
     circuit_list = []
@@ -111,6 +110,7 @@ def simulate_dtc_circuit_list(
     circuit_list: Sequence[cirq.Circuit],
     param_resolver: cirq.ParamResolver,
     qubit_order: Sequence[cirq.Qid],
+    simulator: "cirq.SimulatesIntermediateState" = None,
 ) -> np.ndarray:
     """Simulate a dtc circuit list for a particular param_resolver
 
@@ -122,6 +122,8 @@ def simulate_dtc_circuit_list(
             increasingly many cycles
         param_resolver: `cirq.ParamResolver` to resolve symbolic parameters
         qubit_order: ordered sequence of qubits connected in a chain
+        simulator: Optional simulator object which must
+            support the `simulate_moment_steps` function
 
     Returns:
         `np.ndarray` of shape (len(circuit_list), 2**number of qubits) representing
@@ -129,12 +131,12 @@ def simulate_dtc_circuit_list(
 
     """
     # prepare simulator
-    simulator = cirq.Simulator()
+    if simulator is None:
+        simulator = cirq.Simulator()
 
     # record lengths of circuits in list
-    assert all(
-        len(x) < len(y) for x, y in zip(circuit_list, circuit_list[1:])
-    ), "circuits in circuit_list are not in increasing order of size"
+    if not all(len(x) < len(y) for x, y in zip(circuit_list, circuit_list[1:])):
+        raise ValueError("circuits in circuit_list are not in increasing order of size")
     circuit_positions = {len(c) - 1 for c in circuit_list}
 
     # only simulate one circuit, the last one
@@ -242,12 +244,15 @@ def get_polarizations(
 def signal_ratio(zeta_1: np.ndarray, zeta_2: np.ndarray) -> np.ndarray:
     """Calculate signal ratio between two signals
 
+    Signal ratio measures how different two signals are,
+        proportional to how large they are.
+
     Args:
         zeta_1: signal (`np.ndarray` to represent polarization over time)
         zeta 2: signal (`np.ndarray` to represent polarization over time)
 
     Returns:
-        computed ratio signal of zeta_1 and zeta_2 (`np.ndarray`)
+        computed ratio of the signals zeta_1 and zeta_2 (`np.ndarray`)
             to represent polarization over time)
 
     """
@@ -317,7 +322,14 @@ def run_comparison_experiment(
     take_abs: bool = False,
     **kwargs,
 ) -> Iterator[np.ndarray]:
-    """Run comparison experiment
+    """Run multiple DTC experiments for qubit polarizations over different parameters.
+
+    This uses the default parameter options noted in
+        `dtcexperiment.comparison_experiments` for any parameter not supplied in
+        kwargs. A DTC experiment is then created and simulated for each possible
+        parameter combination before qubit polarizations by DTC cycle are
+        computed and yielded. Each yield is an `np.ndarray` of shape (qubits, cycles)
+        for a specific combination of parameters.
 
     Args:
         qubits: ordered sequence of available qubits, which are connected in a chain

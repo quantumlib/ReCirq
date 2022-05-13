@@ -18,6 +18,24 @@ import itertools
 from typing import List
 import cirq
 
+qubit_locations = [
+    (3, 9),
+    (3, 8),
+    (3, 7),
+    (4, 7),
+]
+
+QUBITS = [cirq.GridQubit(*idx) for idx in qubit_locations]
+NUM_QUBITS = len(QUBITS)
+
+
+def polarizations_predicate(polarizations, cycles, num_qubits):
+    return (
+        polarizations.shape == (cycles + 1, NUM_QUBITS)
+        and np.all(-1 <= polarizations)
+        and np.all(polarizations <= 1)
+    )
+
 
 def test_run_comparison_experiment():
     """Test to check all combinations of defaults vs supplied inputs for
@@ -25,29 +43,20 @@ def test_run_comparison_experiment():
 
     """
     np.random.seed(5)
-    qubit_locations = [
-        (3, 9),
-        (3, 8),
-        (3, 7),
-        (4, 7),
-    ]
-
-    qubits = [cirq.GridQubit(*idx) for idx in qubit_locations]
-    num_qubits = len(qubits)
     cycles = 5
     g_cases = [0.94, 0.6]
     disorder_instances = 5
     initial_states_cases = [
-        np.random.choice(2, (disorder_instances, num_qubits)),
-        np.tile(np.random.choice(2, num_qubits), (disorder_instances, 1)),
+        np.random.choice(2, (disorder_instances, NUM_QUBITS)),
+        np.tile(np.random.choice(2, NUM_QUBITS), (disorder_instances, 1)),
     ]
     local_fields_cases = [
-        np.random.uniform(-1.0, 1.0, (disorder_instances, num_qubits)),
-        np.tile(np.random.uniform(-1.0, 1.0, num_qubits), (disorder_instances, 1)),
+        np.random.uniform(-1.0, 1.0, (disorder_instances, NUM_QUBITS)),
+        np.tile(np.random.uniform(-1.0, 1.0, NUM_QUBITS), (disorder_instances, 1)),
     ]
     phis_cases = [
-        np.random.uniform(np.pi, 3 * np.pi, (disorder_instances, num_qubits - 1)),
-        np.full((disorder_instances, num_qubits - 1), 0.4),
+        np.random.uniform(np.pi, 3 * np.pi, (disorder_instances, NUM_QUBITS - 1)),
+        np.full((disorder_instances, NUM_QUBITS - 1), 0.4),
     ]
     argument_names = [
         "g_cases",
@@ -65,10 +74,9 @@ def test_run_comparison_experiment():
                 name: args for (name, args) in named_arguments if args is not None
             }
             for polarizations in time_crystals.run_comparison_experiment(
-                qubits, cycles, disorder_instances, autocorrelate, take_abs, **kwargs
+                QUBITS, cycles, disorder_instances, autocorrelate, take_abs, **kwargs
             ):
-                assert polarizations.shape == (cycles + 1, num_qubits)
-                assert np.all(-1 <= polarizations) and np.all(polarizations <= 1)
+                assert polarizations_predicate(polarizations, cycles, NUM_QUBITS)
 
 
 def test_signal_ratio():
@@ -79,20 +87,12 @@ def test_signal_ratio():
     zeta_1 = np.random.uniform(-1.0, 1.0, (cycles, num_qubits))
     zeta_2 = np.random.uniform(-1.0, 1.0, (cycles, num_qubits))
     res = time_crystals.signal_ratio(zeta_1, zeta_2)
+    assert np.all(res >= 0) and np.all(res <= 1)
 
 
 def test_symbolic_dtc_circuit_list():
     """Test symbolic_dtc_circuit_list function for select qubits and cycles"""
-    qubit_locations = [
-        (3, 9),
-        (3, 8),
-        (3, 7),
-        (4, 7),
-    ]
-
-    qubits = [cirq.GridQubit(*idx) for idx in qubit_locations]
-    num_qubits = len(qubits)
     cycles = 5
-    circuit_list = time_crystals.symbolic_dtc_circuit_list(qubits, cycles)
+    circuit_list = time_crystals.symbolic_dtc_circuit_list(QUBITS, cycles)
     for index, circuit in enumerate(circuit_list):
         assert len(circuit) == 3 * index + 1
