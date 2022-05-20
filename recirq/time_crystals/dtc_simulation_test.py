@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import itertools
@@ -21,18 +21,18 @@ import pytest
 import cirq
 import recirq.time_crystals as time_crystals
 
-qubit_locations = [
+QUBIT_LOCATIONS = [
     (3, 9),
     (3, 8),
     (3, 7),
     (4, 7),
 ]
 
-QUBITS = [cirq.GridQubit(*idx) for idx in qubit_locations]
+QUBITS = [cirq.GridQubit(*idx) for idx in QUBIT_LOCATIONS]
 NUM_QUBITS = len(QUBITS)
 
 
-def probabilities_predicate(probabilities, shape):
+def probabilities_predicate(probabilities: np.ndarray, shape: Tuple[int, int]) -> bool:
     return (
         probabilities.shape == shape
         and np.all(0 <= probabilities)
@@ -41,7 +41,7 @@ def probabilities_predicate(probabilities, shape):
     )
 
 
-def polarizations_predicate(polarizations, shape):
+def polarizations_predicate(polarizations: np.ndarray, shape: Tuple[int, int]) -> bool:
     return (
         polarizations.shape == shape
         and np.all(-1 <= polarizations)
@@ -49,7 +49,7 @@ def polarizations_predicate(polarizations, shape):
     )
 
 
-def test_simulate_dtc_circuit_list_sweep():
+def test_simulate_dtc_circuit_list_sweep() -> None:
     cycles = 5
     circuit_list = time_crystals.symbolic_dtc_circuit_list(QUBITS, cycles)
     param_resolvers = time_crystals.DTCExperiment(qubits=QUBITS).param_resolvers()
@@ -67,7 +67,7 @@ def test_simulate_dtc_circuit_list_sweep():
         )
 
 
-def test_simulate_dtc_circuit_list():
+def test_simulate_dtc_circuit_list() -> None:
     cycles = 5
     circuit_list = time_crystals.symbolic_dtc_circuit_list(QUBITS, cycles)
     param_resolver = next(
@@ -86,7 +86,7 @@ def test_simulate_dtc_circuit_list():
         )
 
 
-def test_get_polarizations():
+def test_get_polarizations() -> None:
     cycles = 5
     np.random.seed(5)
     probabilities = np.random.uniform(0, 1, (cycles, 2**NUM_QUBITS))
@@ -104,7 +104,7 @@ def test_get_polarizations():
     )
 
 
-def test_simulate_for_polarizations():
+def test_simulate_for_polarizations() -> None:
     cycles = 5
     circuit_list = time_crystals.symbolic_dtc_circuit_list(qubits=QUBITS, cycles=cycles)
     dtcexperiment = time_crystals.DTCExperiment(qubits=QUBITS)
@@ -120,7 +120,7 @@ def test_simulate_for_polarizations():
         )
 
 
-def test_run_comparison_experiment():
+def test_run_comparison_experiment() -> None:
     """Test to check all combinations of defaults vs supplied inputs for
     run_comparison_experiments, with the goal of checking all paths for crashes
 
@@ -162,7 +162,7 @@ def test_run_comparison_experiment():
                 assert polarizations_predicate(polarizations, (cycles + 1, NUM_QUBITS))
 
 
-def test_signal_ratio():
+def test_signal_ratio() -> None:
     """Test signal_ratio function with random `np.ndarrays`"""
     np.random.seed(5)
     cycles = 100
@@ -173,7 +173,7 @@ def test_signal_ratio():
     assert np.all(res >= 0) and np.all(res <= 1)
 
 
-def test_symbolic_dtc_circuit_list():
+def test_symbolic_dtc_circuit_list() -> None:
     """Test symbolic_dtc_circuit_list function for select qubits and cycles"""
     cycles = 5
     circuit_list = time_crystals.symbolic_dtc_circuit_list(QUBITS, cycles)
