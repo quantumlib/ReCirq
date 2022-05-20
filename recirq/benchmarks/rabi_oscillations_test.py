@@ -16,7 +16,7 @@ import numpy as np
 
 from cirq import GridQubit
 from cirq import sim
-from recirq.rabi_oscillations import rabi_oscillations
+from recirq.benchmarks import rabi_oscillations
 
 
 def test_rabi_oscillations():
