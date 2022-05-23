@@ -20,11 +20,14 @@ from recirq.benchmarks import rabi_oscillations
 
 
 def test_rabi_oscillations():
-    # Check that the excited state population matches the ideal case within a
-    # small statistical error.
+    """Check that the excited state population matches the ideal case within a
+    small statistical error.
+    """
     simulator = sim.Simulator()
     qubit = GridQubit(0, 0)
-    results = rabi_oscillations(simulator, qubit, np.pi, repetitions=1000)
+    results = rabi_oscillations(
+        simulator, qubit, np.pi, repetitions=1000, num_points=1000
+    )
     data = np.asarray(results.data)
     angles = data[:, 0]
     actual_pops = data[:, 1]

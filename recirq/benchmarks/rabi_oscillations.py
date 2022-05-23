@@ -20,10 +20,7 @@ from matplotlib import pyplot as plt
 
 # this is for older systems with matplotlib <3.2 otherwise 3d projections fail
 from mpl_toolkits import mplot3d  # pylint: disable=unused-import
-from cirq import circuits, ops, study
-
-if TYPE_CHECKING:
-    import cirq
+import cirq
 
 
 class RabiResult:
@@ -32,7 +29,7 @@ class RabiResult:
     def __init__(
         self, rabi_angles: Sequence[float], excited_state_probabilities: Sequence[float]
     ):
-        """Inits RabiResult.
+        """Initializes RabiResult.
 
         Args:
             rabi_angles: The rotation angles of the qubit around the x-axis
@@ -78,8 +75,8 @@ class RabiResult:
 
 
 def rabi_oscillations(
-    sampler: "cirq.Sampler",
-    qubit: "cirq.Qid",
+    sampler: cirq.Sampler,
+    qubit: cirq.Qid,
     max_angle: float = 2 * np.pi,
     *,
     repetitions: int = 1000,
@@ -104,9 +101,9 @@ def rabi_oscillations(
         A RabiResult object that stores and plots the result.
     """
     theta = sympy.Symbol("theta")
-    circuit = circuits.Circuit(ops.X(qubit) ** theta)
-    circuit.append(ops.measure(qubit, key="z"))
-    sweep = study.Linspace(
+    circuit = cirq.Circuit(cirq.X(qubit) ** theta)
+    circuit.append(cirq.measure(qubit, key="z"))
+    sweep = cirq.study.Linspace(
         key="theta", start=0.0, stop=max_angle / np.pi, length=num_points
     )
     results = sampler.run_sweep(circuit, params=sweep, repetitions=repetitions)
