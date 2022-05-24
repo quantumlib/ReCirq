@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Iterator, List, Optional, Sequence, Tuple, TYPE_CHECKING
+from typing import Any, Optional, Sequence, Tuple
 import numpy as np
 import sympy
 
@@ -24,7 +24,9 @@ import cirq
 
 
 class RabiResult:
-    """Results from a Rabi oscillation experiment."""
+    """Results from a Rabi oscillation experiment. This consists of a set of x-axis
+    angles following a sine wave and corresponding measurement probabilities for each.
+    """
 
     def __init__(
         self, rabi_angles: Sequence[float], excited_state_probabilities: Sequence[float]
@@ -46,10 +48,7 @@ class RabiResult:
         angle and the second item being the corresponding excited state
         probability.
         """
-        return [
-            (angle, prob)
-            for angle, prob in zip(self._rabi_angles, self._excited_state_probs)
-        ]
+        return list(zip(self._rabi_angles, self._excited_state_probs))
 
     def plot(self, ax: Optional[plt.Axes] = None, **plot_kwargs: Any) -> plt.Axes:
         """Plots excited state probability vs the Rabi angle (angle of rotation
@@ -101,10 +100,10 @@ def rabi_oscillations(
         A RabiResult object that stores and plots the result.
     """
     theta = sympy.Symbol("theta")
-    circuit = cirq.Circuit(cirq.X(qubit) ** theta)
+    circuit = cirq.Circuit(cirq.X(qubit) ** (theta / np.pi))
     circuit.append(cirq.measure(qubit, key="z"))
     sweep = cirq.study.Linspace(
-        key="theta", start=0.0, stop=max_angle / np.pi, length=num_points
+        key="theta", start=0.0, stop=max_angle, length=num_points
     )
     results = sampler.run_sweep(circuit, params=sweep, repetitions=repetitions)
     angles = np.linspace(0.0, max_angle, num_points)

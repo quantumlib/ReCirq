@@ -14,8 +14,7 @@
 
 import numpy as np
 
-from cirq import GridQubit
-from cirq import sim
+import cirq
 from recirq.benchmarks import rabi_oscillations
 
 
@@ -23,8 +22,8 @@ def test_rabi_oscillations():
     """Check that the excited state population matches the ideal case within a
     small statistical error.
     """
-    simulator = sim.Simulator()
-    qubit = GridQubit(0, 0)
+    simulator = cirq.sim.Simulator()
+    qubit = cirq.GridQubit(0, 0)
     results = rabi_oscillations(
         simulator, qubit, np.pi, repetitions=1000, num_points=1000
     )
