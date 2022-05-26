@@ -194,7 +194,8 @@ def comparison_experiments(
     argument_names = ["g", "initial_states", "local_fields", "phis"]
     for arguments in itertools.product(*argument_cases):
         # prepare arguments for DTCExperiment
-        kwargs = dict(zip(argument_names, arguments))
+        named_args = zip(argument_names, arguments)
+        kwargs = {name: arg for (name, arg) in named_args if arg is not None}
         yield DTCExperiment(
             qubits=qubits, disorder_instances=disorder_instances, **kwargs
         )
