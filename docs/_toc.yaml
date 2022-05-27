@@ -1,16 +1,15 @@
 toc:
-- title: "Research using Cirq"
-  path: /cirq/experiments
-
 - heading: "Guide"
+- title: "Research using Cirq"
+  path: /cirq/experiments/research
 - title: "Data collection idioms"
   path: /cirq/experiments/guide/data_collection_idioms
-- title: "Best practices"
-  path: /cirq/experiments/guide/best_practices
 - title: "Data collection"
   path: /cirq/experiments/guide/data_collection
 - title: "Data analysis"
   path: /cirq/experiments/guide/data_analysis
+- title: "Best practices"
+  path: /cirq/experiments/guide/best_practices
 
 - heading: "QAOA"
 - title: "Overview"
