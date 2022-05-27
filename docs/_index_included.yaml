@@ -72,14 +72,14 @@ included:
       name: menu_book
 
 - heading: Quantum Chess
-  description: Tutorials and examples with the Quantum Approximate Optimization Algorithm
+  description: A chess variant that uses and teaches superposition, entanglement, interference and more.
   items:
   - heading: Overview
     path: /cirq/experiments/quantum_chess
     icon:
       name: menu_book
   - heading: Concepts
-    description: What is Quantum Chess?
+    description: Necessary concepts to play quantum chess on hardware.
     path: /cirq/experiments/quantum_chess/concepts
     icon:
       name: menu_book
