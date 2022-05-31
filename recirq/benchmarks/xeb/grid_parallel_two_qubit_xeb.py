@@ -92,7 +92,7 @@ def save(params: Any, obj: Any, base_dir: str, mode: str = "x") -> str:
     filename = os.path.join(base_dir, params.filename)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, mode) as f:
-        protocols.to_json(obj, f)
+        cirq.to_json(obj, f)
     return filename
 
 
@@ -107,7 +107,7 @@ def load(params: Any, base_dir: str) -> Any:
     Returns: The loaded object.
     """
     filename = os.path.join(base_dir, params.filename)
-    return protocols.read_json(filename)
+    return cirq.read_json(filename)
 
 
 @dataclasses.dataclass
@@ -127,7 +127,7 @@ class GridParallelXEBMetadata:
     seed: Optional[int]
 
     def _json_dict_(self):
-        return protocols.dataclass_json_dict(self)
+        return cirq.dataclass_json_dict(self)
 
     def __repr__(self) -> str:
         return (
@@ -243,7 +243,7 @@ def collect_grid_parallel_two_qubit_xeb_data(
         LAYER_C,
         LAYER_D,
     ),
-    seed: "cirq.value.RANDOM_STATE_OR_SEED_LIKE" = None,
+    seed: cirq.RANDOM_STATE_OR_SEED_LIKE = None,
     data_collection_id: Optional[str] = None,
     num_workers: int = 4,
     base_dir: str = DEFAULT_BASE_DIR,
@@ -324,7 +324,7 @@ def collect_grid_parallel_two_qubit_xeb_data(
         data_collection_id = datetime.datetime.now().isoformat().replace(":", "")
     qubits = list(qubits)
     cycles = list(cycles)
-    prng = value.parse_random_state(seed)
+    prng = cirq.parse_random_state(seed)
 
     # Save metadata
     metadata_params = GridParallelXEBMetadataParameters(
@@ -524,7 +524,7 @@ def _get_xeb_result(
     # pytest-cov is unable to detect that this function is called by a
     # multiprocessing Pool
     # coverage: ignore
-    simulator = sim.Simulator()
+    simulator = cirq.Simulator()
     # Simulate circuits to get bitstring probabilities
     all_and_observed_probabilities: Dict[
         int, List[Tuple[np.ndarray, np.ndarray]]
@@ -538,7 +538,7 @@ def _get_xeb_result(
                 step_result = next(step_results)
                 moment_index += 1
             amplitudes = step_result.state_vector()
-            probabilities = value.state_vector_to_probabilities(amplitudes)
+            probabilities = cirq.state_vector_to_probabilities(amplitudes)
             _, counts = np.unique(measurements, return_counts=True)
             empirical_probs = counts / len(measurements)
             empirical_probs = np.pad(
@@ -581,7 +581,7 @@ def _coupled_qubit_pairs(qubits: List["cirq.GridQubit"]) -> List[GridQubitPair]:
             if neighbor in qubit_set:
                 pairs.append((qubit, neighbor))
 
-        add_pair(devices.GridQubit(qubit.row, qubit.col + 1))
-        add_pair(devices.GridQubit(qubit.row + 1, qubit.col))
+        add_pair(cirq.GridQubit(qubit.row, qubit.col + 1))
+        add_pair(cirq.GridQubit(qubit.row + 1, qubit.col))
 
     return pairs
