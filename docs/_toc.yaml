@@ -67,3 +67,7 @@ toc:
   path: /cirq/experiments/toric_code
 - title: "Ground State"
   path: /cirq/experiments/toric_code/toric_code_ground_state
+
+- heading: "Rabi oscillations"
+- title: "Rabi Oscillation Experiment"
+  path: /cirq/experiments/benchmarks/rabi_oscillations.ipynb
