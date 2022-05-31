@@ -87,7 +87,7 @@ class CrossEntropyResult:
         )
 
     def _json_dict_(self):
-        return protocols.dataclass_json_dict(self)
+        return cirq.dataclass_json_dict(self)
 
     def __repr__(self) -> str:
         args = (
