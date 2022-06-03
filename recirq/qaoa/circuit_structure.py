@@ -20,11 +20,6 @@ import numpy as np
 import cirq
 import cirq_google as cg
 
-try:
-    from cirq.interop.quirk import QuirkQubitPermutationGate
-except ImportError:
-    from cirq.contrib.quirk import QuirkQubitPermutationGate
-
 
 @dataclass(frozen=True)
 class HomogeneousCircuitStats:
@@ -70,7 +65,7 @@ MOMENT_GATE_CLASSES = [
     cirq.ZPowGate,
     cg.SycamoreGate,
     cirq.MeasurementGate,
-    QuirkQubitPermutationGate,
+    cirq.QubitPermutationGate,
 ]
 
 
@@ -182,7 +177,7 @@ def validate_well_structured(circuit: cirq.Circuit,
             if hit_permutation:
                 pass  # fine
             hit_measurement = True
-        elif mom_class == QuirkQubitPermutationGate:
+        elif mom_class == cirq.QubitPermutationGate:
             if not allow_terminal_permutations:
                 raise BadlyStructuredCircuitError(
                     "Circuit contains permutation gates")

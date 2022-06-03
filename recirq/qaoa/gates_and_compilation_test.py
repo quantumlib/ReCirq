@@ -5,14 +5,8 @@ import numpy as np
 import pytest
 
 import cirq
-from recirq.qaoa.circuit_structure import validate_well_structured
-
-try:
-    from cirq.interop.quirk import QuirkQubitPermutationGate
-except ImportError:
-    from cirq.contrib.quirk import QuirkQubitPermutationGate
 from cirq.testing import random_special_unitary
-
+from recirq.qaoa.circuit_structure import validate_well_structured
 from recirq.qaoa.gates_and_compilation import ZZSwap, compile_problem_unitary_to_zzswap, \
     ProblemUnitary, DriverUnitary, SwapNetworkProblemUnitary, \
     compile_problem_unitary_to_swap_network, compile_swap_network_to_zzswap, \
@@ -20,7 +14,6 @@ from recirq.qaoa.gates_and_compilation import ZZSwap, compile_problem_unitary_to
     compile_driver_unitary_to_rx, compile_single_qubit_gates, compile_to_syc, \
     measure_with_final_permutation, compile_out_virtual_z, compile_to_non_negligible, \
     _hardware_graph, compile_problem_unitary_to_hardware_graph
-
 from recirq.qaoa.problems import random_plus_minus_1_weights
 
 
@@ -95,7 +88,7 @@ def test_swap_network_problem_unitary():
     for i1, i2, w in problem.edges.data('weight'):
         circuit.append(
             cirq.ZZPowGate(exponent=2 * gamma * w / np.pi, global_shift=-0.5).on(q[i1], q[i2]))
-    circuit += QuirkQubitPermutationGate('i', 'name', list(range(n))[::-1]).on(*q)
+    circuit += cirq.QubitPermutationGate(list(range(n))[::-1]).on(*q)
     u2 = circuit.unitary()
     np.testing.assert_allclose(u1, u2)
 
@@ -109,7 +102,7 @@ def test_compile_problem_unitary_to_swap_network_p1():
     c1 = cirq.Circuit(ProblemUnitary(problem_graph=problem, gamma=0.123).on(*q))
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
-    assert isinstance(c2.moments[-1].operations[0].gate, QuirkQubitPermutationGate)
+    assert isinstance(c2.moments[-1].operations[0].gate, cirq.QubitPermutationGate)
 
     u1 = c1.unitary()
     u2 = c2.unitary()
@@ -128,7 +121,7 @@ def test_compile_problem_unitary_to_swap_network_p2():
     )
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
-    assert not isinstance(c2.moments[-1].operations[0].gate, QuirkQubitPermutationGate)
+    assert not isinstance(c2.moments[-1].operations[0].gate, cirq.QubitPermutationGate)
     u1 = c1.unitary()
     u2 = c2.unitary()
     np.testing.assert_allclose(u1, u2)
@@ -377,7 +370,7 @@ def test_measure_with_final_permutation(p):
         permutation.append(final_qubits.index(q))
     c1_prime = (
             c1
-            + QuirkQubitPermutationGate('', '', permutation).on(*qubits)
+            + cirq.QubitPermutationGate(permutation).on(*qubits)
             + cirq.measure(*qubits, key='z')
     )
     cirq.testing.assert_circuits_with_terminal_measurements_are_equivalent(c1_prime, c6, atol=1e-5)

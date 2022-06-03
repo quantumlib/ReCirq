@@ -7,18 +7,14 @@ import numpy as np
 import cirq
 from recirq.qaoa.problems import _validate_problem_graph
 
-
-#TODO(mpharrigan): We should change this to use non-private functions
+# TODO(mpharrigan): We should change this to use non-private functions
 try:
     from cirq_google.optimizers.convert_to_sycamore_gates import swap_rzz, rzz
 except ImportError:
-    from cirq_google.transformers.analytical_decompositions.two_qubit_to_sycamore import _swap_rzz as swap_rzz
-    from cirq_google.transformers.analytical_decompositions.two_qubit_to_sycamore import _rzz as rzz
-
-try:
-    from cirq.interop.quirk import QuirkQubitPermutationGate
-except ImportError:
-    from cirq.contrib.quirk import QuirkQubitPermutationGate
+    from cirq_google.transformers.analytical_decompositions.two_qubit_to_sycamore import (
+        _swap_rzz as swap_rzz,
+        _rzz as rzz
+    )
 
 from recirq.qaoa.circuit_structure import validate_well_structured
 
@@ -118,7 +114,7 @@ class SwapNetworkProblemUnitary(ProblemUnitary):
 
     def _decompose_(self, qubits) -> 'cirq.OP_TREE':
         yield from super()._decompose_(qubits)
-        yield QuirkQubitPermutationGate('', '', list(range(len(qubits)))[::-1]).on(*qubits)
+        yield cirq.QubitPermutationGate(list(range(len(qubits)))[::-1]).on(*qubits)
 
     def _circuit_diagram_info_(
             self,
@@ -171,7 +167,7 @@ def compile_problem_unitary_to_swap_network(circuit: cirq.Circuit) -> cirq.Circu
     # And tack it on
     if len(permute_i) > 0:
         new_moments.append(cirq.Moment([
-            QuirkQubitPermutationGate('', '', permute_i).on(*needs_permute)
+            cirq.QubitPermutationGate(permute_i).on(*needs_permute)
         ]))
 
     return cirq.Circuit(new_moments)
@@ -668,10 +664,10 @@ def measure_with_final_permutation(
     mapping = {}
     if stats.has_permutation:
         for op in c2.moments[-1].operations:
-            if isinstance(op.gate, QuirkQubitPermutationGate):
+            if isinstance(op.gate, cirq.QubitPermutationGate):
                 # do something with it
                 permuted_qs = op.qubits
-                gate = op.gate  # type: QuirkQubitPermutationGate
+                gate = op.gate  # type: cirq.QubitPermutationGate
                 for i, q in enumerate(permuted_qs):
                     mapping[q] = permuted_qs[gate.permutation[i]]
         c2.moments.pop(-1)

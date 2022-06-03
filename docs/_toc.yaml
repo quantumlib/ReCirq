@@ -1,16 +1,15 @@
 toc:
-- title: "Research using Cirq"
-  path: /cirq/experiments
-
 - heading: "Guide"
+- title: "Research using Cirq"
+  path: /cirq/experiments/research
 - title: "Data collection idioms"
   path: /cirq/experiments/guide/data_collection_idioms
-- title: "Best practices"
-  path: /cirq/experiments/guide/best_practices
 - title: "Data collection"
   path: /cirq/experiments/guide/data_collection
 - title: "Data analysis"
   path: /cirq/experiments/guide/data_analysis
+- title: "Best practices"
+  path: /cirq/experiments/guide/best_practices
 
 - heading: "QAOA"
 - title: "Overview"
@@ -74,3 +73,7 @@ toc:
   path: /cirq/experiments/toric_code
 - title: "Ground State"
   path: /cirq/experiments/toric_code/toric_code_ground_state
+
+- heading: "Rabi oscillations"
+- title: "Rabi Oscillation Experiment"
+  path: /cirq/experiments/benchmarks/rabi_oscillations.ipynb
