@@ -28,6 +28,12 @@ toc:
   path: /cirq/experiments/qaoa/hardware_grid_circuits
 - title: "Routing with tket"
   path: /cirq/experiments/qaoa/routing_with_tket
+- title: "QAOA Max-Cut"
+  path: /cirq/experiments/qaoa/qaoa_maxcut
+- title: "QAOA: Ising Model"
+  path: /cirq/experiments/qaoa/qaoa_ising
+- title: "Binary Paintshop"
+  path: /cirq/experiments/qaoa/binary_paintshop
 
 - heading: "Quantum Chess"
 - title: "Overview"
