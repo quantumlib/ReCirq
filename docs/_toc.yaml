@@ -35,15 +35,7 @@ toc:
 - title: "Binary Paintshop"
   path: /cirq/experiments/qaoa/binary_paintshop
 
-- heading: "Quantum Chess"
-- title: "Overview"
-  path: /cirq/experiments/quantum_chess
-- title: "Concepts"
-  path: /cirq/experiments/quantum_chess/concepts
-- title: "Quantum Chess REST API"
-  path: /cirq/experiments/quantum_chess/quantum_chess_rest_api
-- title: "Quantum Chess client"
-  path: /cirq/experiments/quantum_chess/quantum_chess_client
+- include: /cirq/experiments/unitary/_toc.yaml
 
 - heading: "Hartree-Fock VQE"
 - title: "Overview"
