@@ -396,7 +396,7 @@ class DynamicLookAheadHeuristicCircuitTransformer(CircuitTransformer):
           circuit: The circuit to transform.
         """
         initial_mapping = imu.calculate_initial_mapping(self.device, circuit)
-        updater = su.SwapUpdater(circuit, self.device.qubit_set(), initial_mapping)
+        updater = su.SwapUpdater(circuit, self.device.qubits, initial_mapping)
         return cirq.Circuit(updater.add_swaps())
 
 
