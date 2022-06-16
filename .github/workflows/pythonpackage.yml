@@ -50,12 +50,6 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Test with pytest
-        run: |
-          pip install pytest
-          # RECIRQ_CHESS_TEST_SEED: make quantum_chess tests determnistic
-          # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations
-          RECIRQ_CHESS_TEST_SEED=789 RECIRQ_IMPORT_FAILSAFE=y pytest -v
   nbformat:
     name: Notebook formatting
     runs-on: ubuntu-latest
