@@ -62,15 +62,14 @@ def create_particle_conserving_matrix(theta: float,
                                  np.linspace(0, 2 * np.pi, 5)))
 def test_corrected_sqrt_iswap_ops(delta: float, chi: float, gamma: float
                                   ) -> None:
-
     a, b = cirq.LineQubit.range(2)
 
-    matrix = cirq.unitary(cirq.Circuit(_corrected_sqrt_iswap_ops(
+    matrix = cirq.Circuit(_corrected_sqrt_iswap_ops(
         qubits=(a, b),
         parameters=ParticleConservingParameters(
             delta=delta,
             chi=chi,
-            gamma=gamma))))
+            gamma=gamma))).unitary(qubit_order=(a, b), dtype=np.complex128)
 
     expected = create_particle_conserving_matrix(
         np.pi / 4, -delta, -chi, -gamma, 0)
@@ -80,10 +79,9 @@ def test_corrected_sqrt_iswap_ops(delta: float, chi: float, gamma: float
 
 @pytest.mark.parametrize('theta', np.linspace(0, 2 * np.pi, 5))
 def test_corr_hop_gate(theta: float) -> None:
-
     a, b = cirq.LineQubit.range(2)
 
-    matrix = cirq.unitary(cirq.Circuit(_corrected_gk_ops(
+    matrix = cirq.Circuit(_corrected_gk_ops(
         qubits=(a, b),
         angle=theta,
         phase_exponent=0.0,
@@ -91,7 +89,7 @@ def test_corr_hop_gate(theta: float) -> None:
             theta=theta,
             delta=0,
             chi=0,
-            gamma=0))))
+            gamma=0))).unitary(qubit_order=(a, b), dtype=np.complex128)
 
     expected = create_particle_conserving_matrix(theta, 0, 0, 0, 0)
 
@@ -100,10 +98,9 @@ def test_corr_hop_gate(theta: float) -> None:
 
 @pytest.mark.parametrize('cphase', np.linspace(-0.32, -0.8 * np.pi, 5))
 def test_corrected_cphase_ops(cphase: float) -> None:
-
     a, b = cirq.LineQubit.range(2)
 
-    matrix = cirq.unitary(cirq.Circuit(_corrected_cphase_ops(
+    matrix = cirq.Circuit(_corrected_cphase_ops(
         qubits=(a, b),
         angle=cphase,
         parameters=ParticleConservingParameters(
@@ -111,10 +108,8 @@ def test_corrected_cphase_ops(cphase: float) -> None:
             delta=0,
             chi=0,
             gamma=0,
-            phi=0))))
-
+            phi=0))).unitary(qubit_order=(a, b), dtype=np.complex128)
     expected = create_particle_conserving_matrix(0, 0, 0, 0, cphase)
-
     assert cirq.equal_up_to_global_phase(matrix, expected)
 
 
@@ -130,4 +125,3 @@ def test_corrected_cphase_ops_throws() -> None:
                 chi=0,
                 gamma=0,
                 phi=np.pi / 24))
-
