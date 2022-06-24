@@ -68,4 +68,4 @@ toc:
 
 - heading: "Rabi oscillations"
 - title: "Rabi Oscillation Experiment"
-  path: /cirq/experiments/benchmarks/rabi_oscillations.ipynb
+  path: /cirq/experiments/benchmarks/rabi_oscillations
