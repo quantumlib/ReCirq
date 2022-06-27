@@ -49,23 +49,6 @@ included:
     description: Use t|ket> to map QAOA to a generic device.
     path: /cirq/experiments/qaoa/routing_with_tket
 
-- heading: Quantum Chess
-  description: A chess variant that uses and teaches superposition, entanglement, interference and more.
-  options:
-    - cards
-  items:
-  - heading: Overview
-    path: /cirq/experiments/quantum_chess
-  - heading: Concepts
-    description: Necessary concepts to play quantum chess on hardware.
-    path: /cirq/experiments/quantum_chess/concepts
-  - heading: Quantum Chess REST API
-    description: A server for playing Quantum Chess.
-    path: /cirq/experiments/quantum_chess/quantum_chess_rest_api
-  - heading: Quantum Chess client
-    description: A client to play with the Quantum Chess REST server.
-    path: /cirq/experiments/quantum_chess/quantum_chess_client
-
 - heading: Hartree-Fock VQE
   description: How to run the Hartree-Fock Variational Quantum Eigensolver experiment.
   options:
