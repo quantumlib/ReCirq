@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Embeddings of Fermi-Hubbard problem on a chip."""
-
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import cirq
@@ -20,7 +20,7 @@ import cirq
 GridQubitPairs = List[Tuple[cirq.GridQubit, cirq.GridQubit]]
 
 
-@cirq.json_serializable_dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True)
 class LineLayout:
     """Mapping of problem qubits to two parallel lines on a grid.
 
@@ -81,6 +81,10 @@ class LineLayout:
         self._up_qubits = up_qubits
         self._down_qubits = down_qubits
 
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
+
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls}
@@ -127,7 +131,7 @@ class LineLayout:
                             draw_grid_coords)
 
 
-@cirq.json_serializable_dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True)
 class ZigZagLayout:
     """Mapping of problem qubits to two zig-zag lines on a grid.
 
@@ -228,6 +232,9 @@ class ZigZagLayout:
 
         self._up_qubits = up_qubits
         self._down_qubits = down_qubits
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
