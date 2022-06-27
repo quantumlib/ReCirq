@@ -57,14 +57,14 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
     return err_graph
 
 
-def _qubit_index_edges(device: cg.GridDevice):
+def _qubit_index_edges(device: cg.SerializableDevice):
     """Helper function in `_device_to_tket_device`"""
     dev_graph = ccr.gridqubits_to_graph_device(device.metadata.qubit_set)
     for n1, n2 in dev_graph.edges:
         yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
 
 
-def _device_to_tket_device(device):
+def _device_to_tket_device(device: cg.SerializableDevice):
     """Custom function to turn a device into a pytket device.
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
@@ -87,7 +87,7 @@ def tk_to_cirq_qubit(tk: 'Qubit'):
 
 
 def place_on_device(circuit: cirq.Circuit,
-                    device: cg.GridDevice,
+                    device: cg.SerializableDevice,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
