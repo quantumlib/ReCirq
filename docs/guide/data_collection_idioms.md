@@ -13,8 +13,8 @@ We introduce the concepts by way of example.
 
 In the first tutorial, we run a simple readout-like experiment in two steps:
 
- 1. [Data Collection](Readout-Data-Collection.ipynb)
- 2. [Analysis](Readout-Analysis.ipynb)
+ 1. [Data Collection](data_collection)
+ 2. [Analysis](data_analysis)
 
 In the future, we can explore documenting more complicated set-ups like
 
