@@ -1,134 +1,100 @@
 included:
 - heading: ReCirq Guide
   description: How to use and contribute to ReCirq.
+  options:
+    - cards
   items:
   - heading: Research with ReCirq
     description: How to use this code.
     path: /cirq/experiments/research
-    icon:
-      name: menu_book
   - heading: ReCirq experiment structure
     description: How ReCirq experiments are structured.
     path: /cirq/experiments/guide/data_collection_idioms
-    icon:
-      name: menu_book
   - heading: Data collection
     description: How ReCirq experiments collect data.
     path: /cirq/experiments/guide/data_collection
-    icon:
-      name: menu_book
   - heading: Data analysis
     description: How ReCirq experiments analyze data.
     path: /cirq/experiments/guide/data_analysis
-    icon:
-      name: menu_book
   - heading: Best practices
     description: Additional advice on writing ReCirq experiments.
     path: /cirq/experiments/guide/best_practices
-    icon:
-      name: menu_book
 
 - heading: QAOA
   description: Tutorials and examples with the Quantum Approximate Optimization Algorithm.
+  options:
+    - cards
   items:
   - heading: Overview
     path: /cirq/experiments/qaoa
-    icon:
-      name: menu_book
   - heading: Example problems
     description: Introductory QAOA problems.
     path: /cirq/experiments/qaoa/example_problems
-    icon:
-      name: menu_book
   - heading: Tasks
     description: QAOA experiment Task object.
     path: /cirq/experiments/qaoa/tasks
-    icon:
-      name: menu_book
   - heading: Precomputed analysis
     description: QAOA analysis with precomputed optimal angles.
     path: /cirq/experiments/qaoa/precomputed_analysis
-    icon:
-      name: menu_book
   - heading: Landscape analysis
     description: QAOA analysis with a hardware landscape.
     path: /cirq/experiments/qaoa/landscape_analysis
-    icon:
-      name: menu_book
   - heading: Optimization analysis
     description: QAOA analysis with an optimization path.
     path: /cirq/experiments/qaoa/optimization_analysis
-    icon:
-      name: menu_book
   - heading: Hardware grid circuits
     description: QAOA on grid-shaped hardware.
     path: /cirq/experiments/qaoa/hardware_grid_circuits
-    icon:
-      name: menu_book
   - heading: Routing with tket
     description: Use t|ket> to map QAOA to a generic device.
     path: /cirq/experiments/qaoa/routing_with_tket
-    icon:
-      name: menu_book
 
 - heading: Hartree-Fock VQE
   description: How to run the Hartree-Fock Variational Quantum Eigensolver experiment.
+  options:
+    - cards
   items:
   - heading: Overview
     path: /cirq/experiments/hfvqe
-    icon:
-      name: menu_book
   - heading: Quickstart
     description: A short tutorial to show HFVQE in action.
     path: /cirq/experiments/hfvqe/quickstart
-    icon:
-      name: menu_book
   - heading: Molecular data
     description: How to make molecule files for use with HFVQE.
     path: /cirq/experiments/hfvqe/molecular_data
-    icon:
-      name: menu_book
 
 - heading: Fermi-Hubbard
   description: Simulating spin and charge dynamics with a Fermi-Hubbard model.
+  options:
+    - cards
   items:
   - heading: Overview
     path: /cirq/experiments/fermi_hubbard
-    icon:
-      name: menu_book
   - heading: Experiment example
     description: End-to-end with a single instance of the Fermi-Hubbard experiment.
     path: /cirq/experiments/fermi_hubbard/experiment_example
-    icon:
-      name: menu_book
   - heading: Spin-charge separation results
     description: Experimental data collected and analyzed.
     path: /cirq/experiments/fermi_hubbard/publication_results
-    icon:
-      name: menu_book
 
 - heading: Quantum Scrambling
   description: Use out-of-time-order (OTOC) correlators to demonstrate quantum scrambling.
+  options:
+    - cards
   items:
   - heading: Overview
     path: /cirq/experiments/otoc
-    icon:
-      name: menu_book
   - heading: Experiment example
     description: Build, run and plot an OTOC circuit.
     path: /cirq/experiments/otoc/otoc_example
-    icon:
-      name: menu_book
 
 - heading: Toric Code
   description: Explore the toric code model of interacting qubits.
+  options:
+    - cards
   items:
   - heading: Overview
     path: /cirq/experiments/toric_code
-    icon:
-      name: menu_book
   - heading: Ground State
     description: Create a toric code ground state.
     path: /cirq/experiments/toric_code/toric_code_ground_state
-    icon:
-      name: menu_book
