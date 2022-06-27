@@ -24,7 +24,7 @@ def _get_stats_from_print_line(s) -> Dict[str, str]:
 
 
 def test_latency_with_simulator():
-    tester = rep_rate.RepRateCalculator(device=cg.Foxtail,
+    tester = rep_rate.RepRateCalculator(device=cg.Sycamore23,
                                         sampler=cirq.Simulator(),
                                         gate=cirq.ISWAP**0.5)
     latencies = tester.get_latency_samples(50)
@@ -58,7 +58,7 @@ def test_latency_with_simulator():
 
 
 def test_rep_rate_with_simulator():
-    tester = rep_rate.RepRateCalculator(device=cg.Foxtail,
+    tester = rep_rate.RepRateCalculator(device=cg.Sycamore23,
                                         sampler=cirq.Simulator(),
                                         gate=cirq.ISWAP**0.5)
     tester.print_rep_rate(parameterized=True,
