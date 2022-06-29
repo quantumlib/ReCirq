@@ -1,7 +1,7 @@
 # Simulation of spin and charge dynamics in the Fermi-Hubbard model
 
 This module contains an implementation of code to simulate the dynamics of the 
-one-dimensional Fermi-Hubbard model on Google's Quantum Computing Service
+one-dimensional Fermi-Hubbard model on Google's Quantum Computing Service.
 
 ## Overview
 
