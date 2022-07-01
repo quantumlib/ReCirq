@@ -20,7 +20,7 @@ import cirq
 GridQubitPairs = List[Tuple[cirq.GridQubit, cirq.GridQubit]]
 
 
-@cirq.json_serializable_dataclass(init=False, unsafe_hash=True)
+@dataclass(init=False, unsafe_hash=True)
 class LineLayout:
     """Mapping of problem qubits to two parallel lines on a grid.
 
@@ -126,8 +126,11 @@ class LineLayout:
                             self.interaction_pairs,
                             draw_grid_coords)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass(init=False, unsafe_hash=True)
+
+@dataclass(init=False, unsafe_hash=True)
 class ZigZagLayout:
     """Mapping of problem qubits to two zig-zag lines on a grid.
 
@@ -286,6 +289,9 @@ class ZigZagLayout:
             self.down_qubits,
             self.interaction_even_pairs + self.interaction_odd_pairs,
             draw_grid_coords)
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 
 def _find_line_qubits(

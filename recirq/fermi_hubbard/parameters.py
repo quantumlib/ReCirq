@@ -32,7 +32,7 @@ from recirq.fermi_hubbard.layouts import (
 Real = Union[int, float]
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class Hamiltonian:
     """Single spin-chain Fermi-Hubbard Hamiltonian description.
 
@@ -205,6 +205,8 @@ class Hamiltonian:
 
         return openfermion.DiagonalCoulombHamiltonian(one_body, two_body)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 class SingleParticle:
     """Base class for initial states that define single particle on a chain."""
@@ -226,7 +228,7 @@ class SingleParticle:
         """
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class FixedSingleParticle(SingleParticle):
     """Fixed array of particle amplitudes.
 
@@ -248,8 +250,11 @@ class FixedSingleParticle(SingleParticle):
                              f'{sites_count} sites')
         return np.array(self.potential)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass
+
+@dataclass
 class UniformSingleParticle(SingleParticle):
     """Uniform single particle amplitudes initial state."""
     pass
@@ -261,8 +266,11 @@ class UniformSingleParticle(SingleParticle):
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         return np.full(sites_count, 1.0 / np.sqrt(sites_count))
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass(init=False)
+
+@dataclass(init=False)
 class PhasedGaussianSingleParticle(SingleParticle):
     """Gaussian shaped particle density distribution initial state.
 
@@ -309,6 +317,9 @@ class PhasedGaussianSingleParticle(SingleParticle):
                                            self.sigma,
                                            self.position)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
+
 
 class TrappingPotential:
     """Base class for initial states defined by trapping potential on a chain.
@@ -351,7 +362,7 @@ class TrappingPotential:
             self.get_potential(sites_count), j)
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class FixedTrappingPotential(TrappingPotential):
     """Fixed array describing trapping potential."""
     particles: int
@@ -371,8 +382,11 @@ class FixedTrappingPotential(TrappingPotential):
                              f'{sites_count} sites')
         return np.array(self.potential)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass(init=False)
+
+@dataclass(init=False)
 class UniformTrappingPotential(TrappingPotential):
     """Uniform trapping potential initial state."""
     particles: int
@@ -387,8 +401,11 @@ class UniformTrappingPotential(TrappingPotential):
     def get_potential(self, sites_count: int) -> np.ndarray:
         return np.zeros(sites_count)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass(init=False)
+
+@dataclass(init=False)
 class GaussianTrappingPotential(TrappingPotential):
     """Gaussian shaped trapping potential for creating the initial state.
 
@@ -432,6 +449,9 @@ class GaussianTrappingPotential(TrappingPotential):
                                                     self.sigma) ** 2)
         return np.array([gaussian(x) for x in np.linspace(0, 1, sites_count)])
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
+
 
 ChainInitialState = Union[FixedSingleParticle,
                           PhasedGaussianSingleParticle,
@@ -442,7 +462,7 @@ ChainInitialState = Union[FixedSingleParticle,
 """Initial state that describes independent, noninteracting chain."""
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class IndependentChainsInitialState:
     """Initial state with two independent, noninteracting chains."""
 
@@ -475,12 +495,15 @@ class IndependentChainsInitialState:
     def down_particles(self) -> int:
         return self.down.particles
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
+
 
 InitialState = IndependentChainsInitialState
 """Arbitrary initial state type."""
 
 
-@cirq.json_serializable_dataclass
+@dataclass
 class FermiHubbardParameters:
     """Parameters of a Fermi-Hubbard problem instance.
 
@@ -541,6 +564,9 @@ class FermiHubbardParameters:
             other_interacting = not np.allclose(other.hamiltonian.u, 0.0)
             return interacting == other_interacting
         return False
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 
 def _check_normalized(array: Iterable[Number]) -> None:
