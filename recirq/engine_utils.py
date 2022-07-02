@@ -182,7 +182,7 @@ class ZerosSampler(work.Sampler):
                             for _, _, gate in meas})
                     for p in cirq.to_resolvers(params)
                 ]
-            except NameError:
+            except AttributeError:
                 # Delete once past cirq 0.14
                 results = [
                     cirq.Result(
@@ -205,7 +205,7 @@ class ZerosSampler(work.Sampler):
                             (repetitions, n_qubits), dtype=int)})
                     for p in cirq.to_resolvers(params)
                 ]
-            except NameError:
+            except AttributeError:
                 # Delete once past cirq 0.14
                 results = [
                     cirq.Result(
