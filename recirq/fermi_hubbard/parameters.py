@@ -13,6 +13,7 @@
 # limitations under the License.
 """Containers to represent Fermi-Hubbard problem."""
 
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Optional, Tuple, Type, Union
 
 import abc

@@ -13,6 +13,7 @@
 # limitations under the License.
 """Routines and data types for experiment execution and life cycle."""
 
+from dataclasses import dataclass
 from typing import (
     Callable, Dict, IO, Iterable, Optional, Tuple, Type, Union, cast)
 

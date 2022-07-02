@@ -13,6 +13,7 @@
 # limitations under the License.
 """Embeddings of Fermi-Hubbard problem on a chip."""
 
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import cirq
