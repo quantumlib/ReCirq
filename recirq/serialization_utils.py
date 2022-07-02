@@ -148,7 +148,6 @@ class BitArray:
             }
         else:
             d = {
-                'cirq_type': 'recirq.' + self.__class__.__name__,
                 'shape': self.bits.shape,
                 'packedbits': packed_bits.tobytes().hex(),
             }
