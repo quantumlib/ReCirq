@@ -140,12 +140,19 @@ class BitArray:
     def _json_dict_(self):
         packed_bits = np.packbits(self.bits)
         assert packed_bits.dtype == np.uint8, packed_bits.dtype
-        d = {
-            'shape': self.bits.shape,
-            'packedbits': packed_bits.tobytes().hex(),
-        }
-        if cirq.__version__ < '0.15':
-            d['cirq_type'] = 'recirq.' + self.__class__.__name__
+        if cirq.__version__ <= '0.15':
+            d = {
+                'cirq_type': 'recirq.' + self.__class__.__name__,
+                'shape': self.bits.shape,
+                'packedbits': packed_bits.tobytes().hex(),
+            }
+        else:
+            d = {
+                'cirq_type': 'recirq.' + self.__class__.__name__,
+                'shape': self.bits.shape,
+                'packedbits': packed_bits.tobytes().hex(),
+            }
+
         return d
 
     @classmethod
