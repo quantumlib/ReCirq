@@ -13,6 +13,7 @@
 # limitations under the License.
 """Routines and data types for experiment execution and life cycle."""
 
+from dataclasses import dataclass
 from typing import (
     Callable, Dict, IO, Iterable, Optional, Tuple, Type, Union, cast)
 
@@ -31,7 +32,7 @@ from recirq.fermi_hubbard.layouts import (
 from recirq.fermi_hubbard.parameters import FermiHubbardParameters
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class ExperimentResult:
     """Accumulated results of a single Fermi-Hubbard circuit run.
 
@@ -54,8 +55,11 @@ class ExperimentResult:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls}
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass
+
+@dataclass
 class ExperimentRun:
     """Single Fermi-Hubbard circuit execution run data.
 
@@ -91,8 +95,11 @@ class ExperimentRun:
     def calibration_timestamp_sec(self) -> float:
         return self.calibration_timestamp_usec / 1000.
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass
+
+@dataclass
 class FermiHubbardExperiment:
     """Results of a Fermi-Hubbard experiment execution for fixed parameters.
 
@@ -116,6 +123,9 @@ class FermiHubbardExperiment:
             **ExperimentRun.cirq_resolvers(),
             **FermiHubbardParameters.cirq_resolvers(),
         }
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 
 def save_experiment(experiment: FermiHubbardExperiment,
