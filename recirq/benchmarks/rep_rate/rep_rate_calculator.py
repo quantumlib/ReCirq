@@ -119,10 +119,13 @@ class RepRateCalculator:
             sampler: Sampler to test for rep rate.
             gate: two-qubit gate to use for sample circuits.
         """
+        if device.metadata is None:
+            raise ValueError("Invalid device: device must contain metadata.")
+
         self.device = device
         self.sampler = sampler
         self.gate = gate
-        self.qubits = list(self.device.qubits)
+        self.qubits = sorted(self.device.metadata.qubit_set) if self.device.metadata is not None else []
 
         # log of print statements for testing
         self.print_log = ''
