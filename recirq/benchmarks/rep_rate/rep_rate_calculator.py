@@ -131,10 +131,11 @@ class RepRateCalculator:
         self.print_log = ''
 
     @classmethod
-    def from_engine(cls,
-                    engine: cg.Engine,
-                    processor_id: str,
-                    gate_set: Optional[cg.SerializableGateSet] = None):
+    def from_engine(
+        cls,
+        engine: cg.Engine,
+        processor_id: str,
+    ):
         """
         Constructs a RepRateTester using a cirq_google.Engine object.
         Uses the device from the device specification from the API
@@ -145,14 +146,9 @@ class RepRateCalculator:
             gate_set: gate set to use.  Defaults to square root of iswap
             processor_id: Processor to test on.
         """
-        gate_set = gate_set or cg.SQRT_ISWAP_GATESET
-        device = engine.get_processor(processor_id).get_device(
-            gate_sets=[gate_set])
-        sampler = engine.sampler(processor_id=processor_id, gate_set=gate_set)
-        gate = cirq.ISWAP**0.5
-        if gate_set == cg.SYC_GATESET:
-            gate = cg.SYC
-        return cls(device, sampler, gate)
+        device = engine.get_processor(processor_id).get_device()
+        sampler = engine.sampler(processor_id=processor_id)
+        return cls(device, sampler, cg.SYC)
 
     def _flush_print_log(self) -> None:
         """Remove print log used for debugging."""
