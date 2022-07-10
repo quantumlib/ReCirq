@@ -217,7 +217,7 @@ class ZerosSampler(work.Sampler):
         return results[0]
 
 
-@dataclass(frozen=True)
+@dataclass
 class QuantumProcessor:
     """Grouping of relevant info
 
