@@ -14,6 +14,13 @@ import cirq_google as cg
 import numpy as np
 
 
+_VALID_ENTANGLING_GATES = [
+    cirq.CZ,
+    cirq.SQRT_ISWAP,
+    cg.SYC,
+]
+
+
 def _latency_circuit(qubits: List[cirq.Qid]) -> cirq.Circuit:
     """Circuit for measuring round-trip latency.
 
@@ -118,6 +125,9 @@ class RepRateCalculator:
             device: Device object to use to construct circuits.
             sampler: Sampler to test for rep rate.
             gate: two-qubit gate to use for sample circuits.
+
+        Raises:
+            ValueError: If the device does not contain metadata.
         """
         if device.metadata is None:
             raise ValueError("Invalid device: device must contain metadata.")
@@ -125,7 +135,7 @@ class RepRateCalculator:
         self.device = device
         self.sampler = sampler
         self.gate = gate
-        self.qubits = sorted(self.device.metadata.qubit_set) if self.device.metadata is not None else []
+        self.qubits = sorted(device.metadata.qubit_set)
 
         # log of print statements for testing
         self.print_log = ''
@@ -135,6 +145,7 @@ class RepRateCalculator:
         cls,
         engine: cg.Engine,
         processor_id: str,
+        gate: cirq.Gate = cirq.CZ
     ):
         """
         Constructs a RepRateTester using a cirq_google.Engine object.
@@ -143,12 +154,18 @@ class RepRateCalculator:
 
         Args:
             engine: cirq_google.Engine to use for device and sampler.
-            gate_set: gate set to use.  Defaults to square root of iswap
             processor_id: Processor to test on.
+            gate: Entangling gate to use. Defaults to cirq.CZ.
+
+        Raises:
+            ValueError: If gate is not a supported entangling gate.
         """
+        if gate not in _VALID_ENTANGLING_GATES:
+            raise ValueError(f'{gate} is not supported. Supported entangling gates: {_VALID_ENTANGLING_GATES}')
+
         device = engine.get_processor(processor_id).get_device()
         sampler = engine.sampler(processor_id=processor_id)
-        return cls(device, sampler, cg.SYC)
+        return cls(device, sampler, gate)
 
     def _flush_print_log(self) -> None:
         """Remove print log used for debugging."""
