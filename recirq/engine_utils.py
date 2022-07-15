@@ -24,7 +24,7 @@ import numpy as np
 
 import cirq
 import cirq_google as cg
-from cirq import work, study, circuits, ops
+from cirq import work, circuits, ops
 from cirq_google.engine.engine_job import TERMINAL_STATES
 
 
@@ -101,7 +101,7 @@ class EngineSampler(work.Sampler):
             repetitions: int = 1,
     ) -> 'cirq.Result':
         if param_resolver is None:
-            param_resolver = study.ParamResolver({})
+            param_resolver = cirq.ParamResolver({})
         return self.engine.run(
             program=program,
             program_id=_get_program_id(program),
@@ -173,26 +173,47 @@ class ZerosSampler(work.Sampler):
         elif len(meas) > 1:
             for _, m, _ in meas:
                 assert len(m.qubits) == 1
-            results = [
-                study.Result(
-                    params=p,
-                    measurements={gate.key: np.zeros(
-                        (repetitions, 1), dtype=int)
-                        for _, _, gate in meas})
-                for p in study.to_resolvers(params)
-            ]
+            try:
+                results = [
+                    cirq.ResultDict(
+                        params=p,
+                        measurements={gate.key: np.zeros(
+                            (repetitions, 1), dtype=int)
+                            for _, _, gate in meas})
+                    for p in cirq.to_resolvers(params)
+                ]
+            except AttributeError:
+                # Delete once past cirq 0.14
+                results = [
+                    cirq.Result(
+                        params=p,
+                        measurements={gate.key: np.zeros(
+                            (repetitions, 1), dtype=int)
+                            for _, _, gate in meas})
+                    for p in cirq.to_resolvers(params)
+                ]
         else:
             assert len(meas) == 1
             i, op, gate = meas[0]
             n_qubits = len(op.qubits)
             k = gate.key
-            results = [
-                study.Result(
-                    params=p,
-                    measurements={k: np.zeros(
-                        (repetitions, n_qubits), dtype=int)})
-                for p in study.to_resolvers(params)
-            ]
+            try:
+                results = [
+                    cirq.ResultDict(
+                        params=p,
+                        measurements={k: np.zeros(
+                            (repetitions, n_qubits), dtype=int)})
+                    for p in cirq.to_resolvers(params)
+                ]
+            except AttributeError:
+                # Delete once past cirq 0.14
+                results = [
+                    cirq.Result(
+                        params=p,
+                        measurements={k: np.zeros(
+                            (repetitions, n_qubits), dtype=int)})
+                    for p in cirq.to_resolvers(params)
+                ]
         return results
 
     async def run_async(self, program: 'cirq.Circuit',
@@ -200,7 +221,7 @@ class ZerosSampler(work.Sampler):
         program_id = _get_program_id(program)
 
         await asyncio.sleep(0.1)
-        results = self.run_sweep(program, study.UnitSweep, repetitions)
+        results = self.run_sweep(program, cirq.UnitSweep, repetitions)
         print(f"Done: {program_id}")
         return results[0]
 

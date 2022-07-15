@@ -93,11 +93,18 @@ class NumpyArray:
         np.save(buffer, self.a, allow_pickle=False)
         buffer.seek(0)
         d = {
-            'cirq_type': 'recirq.' + self.__class__.__name__,
             'npy': buffer.read().hex(),
         }
+
+        if cirq.__version__ < '0.15':
+            d['cirq_type'] = 'recirq.' + self.__class__.__name__
+
         buffer.close()
         return d
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @classmethod
     def _from_json_dict_(cls, npy: str, **kwargs):
@@ -133,11 +140,23 @@ class BitArray:
     def _json_dict_(self):
         packed_bits = np.packbits(self.bits)
         assert packed_bits.dtype == np.uint8, packed_bits.dtype
-        return {
-            'cirq_type': 'recirq.' + self.__class__.__name__,
-            'shape': self.bits.shape,
-            'packedbits': packed_bits.tobytes().hex(),
-        }
+        if cirq.__version__ <= '0.15':
+            d = {
+                'cirq_type': 'recirq.' + self.__class__.__name__,
+                'shape': self.bits.shape,
+                'packedbits': packed_bits.tobytes().hex(),
+            }
+        else:
+            d = {
+                'shape': self.bits.shape,
+                'packedbits': packed_bits.tobytes().hex(),
+            }
+
+        return d
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @classmethod
     def _from_json_dict_(cls, shape: List[int], packedbits: str, **kwargs):
