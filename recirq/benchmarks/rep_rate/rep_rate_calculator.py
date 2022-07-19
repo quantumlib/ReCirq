@@ -122,7 +122,9 @@ class RepRateCalculator:
         self.device = device
         self.sampler = sampler
         self.gate = gate
-        self.qubits = list(self.device.qubits)
+        if self.device.metadata is None:
+            raise ValueError("Need qubits.")
+        self.qubits = list(self.device.metadata.qubit_set)
 
         # log of print statements for testing
         self.print_log = ''

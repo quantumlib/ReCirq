@@ -494,7 +494,8 @@ def single_qubit_matrix_to_phased_x_z_const_depth(
         A list of gates that, when applied in order, perform the desired
             operation.
     """
-    from cirq.optimizers.decompositions import _deconstruct_single_qubit_matrix_into_gate_turns
+    from cirq.transformers.analytical_decompositions.single_qubit_decompositions \
+        import _deconstruct_single_qubit_matrix_into_gate_turns
     xy_turn, xy_phase_turn, total_z_turn = _deconstruct_single_qubit_matrix_into_gate_turns(mat)
 
     return [
@@ -557,12 +558,10 @@ def compile_single_qubit_gates(
         mutate: By default, return a copy of the circuit. Otherwise,
             mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
+    assert not mutate, "cirq doesn't mutate."
+    c2 = circuit.copy()
     _SingleQubitGates().optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    c2 = cirq.drop_empty_moments(c2)
     return c2
 
 
@@ -570,7 +569,7 @@ def zzswap_as_syc(theta: float, q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Return a composite Exp[i theta ZZ] SWAP circuit with three SYC gates."""
     swz = cirq.Circuit(swap_rzz(theta, q0, q1))
     _SingleQubitGates().optimize_circuit(swz)
-    cirq.DropEmptyMoments().optimize_circuit(swz)
+    swz = cirq.drop_empty_moments(swz)
     return swz
 
 
@@ -578,7 +577,7 @@ def zz_as_syc(theta: float, q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Return an Exp[i theta ZZ] circuit with two SYC gates."""
     swz = cirq.Circuit(rzz(theta, q0, q1))
     _SingleQubitGates().optimize_circuit(swz)
-    cirq.DropEmptyMoments().optimize_circuit(swz)
+    swz = cirq.drop_empty_moments(swz)
     return swz
 
 
@@ -618,13 +617,11 @@ def compile_to_syc(circuit: cirq.Circuit,
         mutate: By default, return a copy of the circuit. Otherwise,
             mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
+    assert not mutate, 'cirq no longer mutates'
+    c2 = circuit.copy()
     _TwoQubitOperationsAsSYC().optimize_circuit(c2)
     _SingleQubitGates().optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    c2 = cirq.drop_empty_moments(c2)
     return c2
 
 
@@ -690,13 +687,10 @@ def compile_out_virtual_z(
         mutate: By default, return a copy of the circuit. Otherwise,
             mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
-
-    cirq.EjectZ().optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    assert not mutate, 'cirq no longer mutates'
+    c2 = circuit
+    c2 = cirq.eject_z(c2)
+    c2 = cirq.drop_empty_moments(c2)
     return c2
 
 
@@ -716,11 +710,8 @@ def compile_to_non_negligible(
         mutate: By default, return a copy of the circuit. Otherwise,
             mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
-
-    cirq.DropNegligible(tolerance=tolerance).optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    assert not mutate, 'cirq no longer mutates'
+    c2 = circuit
+    c2 = cirq.drop_negligible_operations(c2)
+    c2 = cirq.drop_empty_moments(c2)
     return c2

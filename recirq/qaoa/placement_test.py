@@ -6,7 +6,6 @@ import pytest
 
 import cirq
 import cirq.contrib.acquaintance as cca
-import cirq.contrib.routing as ccr
 from cirq_google import Sycamore23
 from recirq.qaoa.gates_and_compilation import compile_problem_unitary_to_arbitrary_zz, \
     compile_driver_unitary_to_rx
@@ -101,7 +100,7 @@ def test_min_weight_simple_path_anneal():
 
 
 def _fake_calib_data():
-    err_graph = ccr.gridqubits_to_graph_device(Sycamore23.qubits)
+    err_graph = Sycamore23.metadata.nx_graph
     nx.set_edge_attributes(err_graph, 0.005, 'weight')
     nx.set_node_attributes(err_graph, 0.05, 'weight')
     return err_graph
