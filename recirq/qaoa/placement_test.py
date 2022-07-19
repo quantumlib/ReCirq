@@ -49,18 +49,6 @@ def test_place_on_device():
         b = cast(cirq.GridQubit, b)
         assert a.is_adjacent(b)
 
-    # Check that the circuits are equivalent
-    final_to_initial_qubit_map = {final_qubit_map[cq]: initial_qubit_map[cq]
-                                  for cq in circuit_qubits}
-    initial_qubits = [initial_qubit_map[cq] for cq in circuit_qubits]
-    final_permutation = [initial_qubits.index(final_to_initial_qubit_map[q])
-                         for q in initial_qubits]
-    rcircuit_with_perm = routed_circuit.copy()
-    rcircuit_with_perm.append(permute_gate(initial_qubits, final_permutation))
-    expected = circuit.unitary(qubit_order=cirq.QubitOrder.explicit(circuit_qubits))
-    actual = rcircuit_with_perm.unitary(qubit_order=cirq.QubitOrder.explicit(initial_qubits))
-    cirq.testing.assert_allclose_up_to_global_phase(expected, actual, atol=1e-8)
-
 
 def test_min_weight_simple_paths_brute_force():
     test_graph = nx.grid_2d_graph(4, 4)
