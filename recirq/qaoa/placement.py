@@ -18,7 +18,15 @@ try:
     from pytket.circuit import Node, Qubit
     from pytket.passes import SequencePass, RoutingPass, PlacementPass
     from pytket.predicates import CompilationUnit, ConnectivityPredicate
-    from pytket.routing import GraphPlacement
+    try:
+        from pytket.placement import GraphPlacement
+    except ImportError:
+        from pytket.routing import GraphPlacement
+
+    try:
+        from pytket.architecture import Architecture
+    except ImportError:
+        from pytket.routing import Architecture
 except ImportError as e:
     if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
         pytket = NotImplemented
@@ -51,7 +59,9 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
 
 def _qubit_index_edges(device: cirq.Device):
     """Helper function in `_device_to_tket_device`"""
-    qubits = device.metadata.qubit_set() if device.metadata else None
+    if device.metadata is None:
+        raise ValueError("Need qubits.")
+    qubits = device.metadata.qubit_set
     dev_graph = ccr.gridqubits_to_graph_device(qubits)
     for n1, n2 in dev_graph.edges:
         yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
@@ -62,7 +72,7 @@ def _device_to_tket_device(device: cirq.Device):
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
-    return pytket.routing.Architecture(
+    return Architecture(
         list(_qubit_index_edges(device))
     )
 

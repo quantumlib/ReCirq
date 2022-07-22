@@ -8,9 +8,9 @@ REPO_DIR = pathlib.Path(__file__).parent.parent.resolve()
 print('Repo dir:', REPO_DIR)
 
 CIRQ_VERSIONS = {
-    'previous': '==0.13.0',
-    'current': '==0.14.0',
-    'next': '>=0.15.0.dev',
+    'previous': '==0.14.0',
+    'current': '==0.15.0',
+    'next': '>=1.0.0.dev',
 }
 """Give names to relative Cirq versions so CI can have consistent names while versions 
 get incremented."""

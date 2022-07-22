@@ -281,11 +281,14 @@ class ConvertToNonUniformSqrtIswapGates:
 
 
 @cirq.value_equality()
-class CPhaseEchoGate(cirq.SingleQubitGate):
+class CPhaseEchoGate(cirq.Gate):
     """Dummy gate that could be substituted by spin-echo pulses.
 
     This gate decomposes to nothing by default.
     """
+
+    def _num_qubits_(self) -> int:
+        return 1
 
     def _value_equality_values_(self):
         return ()

@@ -494,7 +494,8 @@ def single_qubit_matrix_to_phased_x_z_const_depth(
         A list of gates that, when applied in order, perform the desired
             operation.
     """
-    from cirq.optimizers.decompositions import _deconstruct_single_qubit_matrix_into_gate_turns
+    from cirq.transformers.analytical_decompositions.single_qubit_decompositions \
+        import _deconstruct_single_qubit_matrix_into_gate_turns
     xy_turn, xy_phase_turn, total_z_turn = _deconstruct_single_qubit_matrix_into_gate_turns(mat)
 
     return [
@@ -547,22 +548,16 @@ class _SingleQubitGates(cirq.PointOptimizer):
 
 
 def compile_single_qubit_gates(
-        circuit: cirq.Circuit,
-        *,
-        mutate=False) -> cirq.Circuit:
+        circuit: cirq.Circuit
+) -> cirq.Circuit:
     """Compile single qubit gates to constant-depth PhX and Z gates
 
     Args:
         circuit: The circuit
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
+    c2 = circuit.copy()
     _SingleQubitGates().optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    c2 = cirq.drop_empty_moments(c2)
     return c2
 
 
@@ -570,7 +565,7 @@ def zzswap_as_syc(theta: float, q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Return a composite Exp[i theta ZZ] SWAP circuit with three SYC gates."""
     swz = cirq.Circuit(swap_rzz(theta, q0, q1))
     _SingleQubitGates().optimize_circuit(swz)
-    cirq.DropEmptyMoments().optimize_circuit(swz)
+    swz = cirq.drop_empty_moments(swz)
     return swz
 
 
@@ -578,7 +573,7 @@ def zz_as_syc(theta: float, q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Return an Exp[i theta ZZ] circuit with two SYC gates."""
     swz = cirq.Circuit(rzz(theta, q0, q1))
     _SingleQubitGates().optimize_circuit(swz)
-    cirq.DropEmptyMoments().optimize_circuit(swz)
+    swz = cirq.drop_empty_moments(swz)
     return swz
 
 
@@ -608,23 +603,16 @@ class _TwoQubitOperationsAsSYC(cirq.PointOptimizer):
             )
 
 
-def compile_to_syc(circuit: cirq.Circuit,
-                   *,
-                   mutate=False) -> cirq.Circuit:
+def compile_to_syc(circuit: cirq.Circuit) -> cirq.Circuit:
     """Compile a QAOA circuit to SYC gates.
 
     Args:
         circuit: The circuit
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
+    c2 = circuit.copy()
     _TwoQubitOperationsAsSYC().optimize_circuit(c2)
     _SingleQubitGates().optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    c2 = cirq.drop_empty_moments(c2)
     return c2
 
 
@@ -679,24 +667,17 @@ def measure_with_final_permutation(
 
 def compile_out_virtual_z(
         circuit: cirq.Circuit,
-        *,
-        mutate=False) -> cirq.Circuit:
+        ) -> cirq.Circuit:
     """Eject Z gates from the circuit.
 
     This is a wrapper around cirq.EjectZ()
 
     Args:
         circuit: The circuit
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
-
-    cirq.EjectZ().optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    c2 = circuit
+    c2 = cirq.eject_z(c2)
+    c2 = cirq.drop_empty_moments(c2)
     return c2
 
 
@@ -704,7 +685,7 @@ def compile_to_non_negligible(
         circuit: cirq.Circuit,
         *,
         tolerance=1e-5,
-        mutate=False) -> cirq.Circuit:
+        ) -> cirq.Circuit:
     """Remove negligible gates from the circuit.
 
     This is a wrapper around cirq.DropNegligible(tolerance)
@@ -713,14 +694,8 @@ def compile_to_non_negligible(
         circuit: The circuit
         tolerance: Gates with trace distance below this value will be
             considered negligible.
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    if mutate:
-        c2 = circuit
-    else:
-        c2 = circuit.copy()
-
-    cirq.DropNegligible(tolerance=tolerance).optimize_circuit(c2)
-    cirq.DropEmptyMoments().optimize_circuit(c2)
+    c2 = circuit
+    c2 = cirq.drop_negligible_operations(c2, atol=tolerance)
+    c2 = cirq.drop_empty_moments(c2)
     return c2
