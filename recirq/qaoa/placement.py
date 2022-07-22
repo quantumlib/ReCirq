@@ -18,7 +18,15 @@ try:
     from pytket.circuit import Node, Qubit
     from pytket.passes import SequencePass, RoutingPass, PlacementPass
     from pytket.predicates import CompilationUnit, ConnectivityPredicate
-    from pytket.routing import GraphPlacement
+    try:
+        from pytket.placement import GraphPlacement
+    except ImportError:
+        from pytket.routing import GraphPlacement
+
+    try:
+        from pytket.architecture import Architecture
+    except ImportError:
+        from pytket.routing import Architecture
 except ImportError as e:
     if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
         pytket = NotImplemented
@@ -62,7 +70,7 @@ def _device_to_tket_device(device: cirq.Device):
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
-    return pytket.routing.Architecture(
+    return Architecture(
         list(_qubit_index_edges(device))
     )
 
