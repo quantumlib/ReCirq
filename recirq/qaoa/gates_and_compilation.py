@@ -548,17 +548,13 @@ class _SingleQubitGates(cirq.PointOptimizer):
 
 
 def compile_single_qubit_gates(
-        circuit: cirq.Circuit,
-        *,
-        mutate=False) -> cirq.Circuit:
+        circuit: cirq.Circuit
+) -> cirq.Circuit:
     """Compile single qubit gates to constant-depth PhX and Z gates
 
     Args:
         circuit: The circuit
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    assert not mutate, "cirq doesn't mutate."
     c2 = circuit.copy()
     _SingleQubitGates().optimize_circuit(c2)
     c2 = cirq.drop_empty_moments(c2)
@@ -607,17 +603,12 @@ class _TwoQubitOperationsAsSYC(cirq.PointOptimizer):
             )
 
 
-def compile_to_syc(circuit: cirq.Circuit,
-                   *,
-                   mutate=False) -> cirq.Circuit:
+def compile_to_syc(circuit: cirq.Circuit) -> cirq.Circuit:
     """Compile a QAOA circuit to SYC gates.
 
     Args:
         circuit: The circuit
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    assert not mutate, 'cirq no longer mutates'
     c2 = circuit.copy()
     _TwoQubitOperationsAsSYC().optimize_circuit(c2)
     _SingleQubitGates().optimize_circuit(c2)
@@ -676,18 +667,14 @@ def measure_with_final_permutation(
 
 def compile_out_virtual_z(
         circuit: cirq.Circuit,
-        *,
-        mutate=False) -> cirq.Circuit:
+        ) -> cirq.Circuit:
     """Eject Z gates from the circuit.
 
     This is a wrapper around cirq.EjectZ()
 
     Args:
         circuit: The circuit
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    assert not mutate, 'cirq no longer mutates'
     c2 = circuit
     c2 = cirq.eject_z(c2)
     c2 = cirq.drop_empty_moments(c2)
@@ -698,7 +685,7 @@ def compile_to_non_negligible(
         circuit: cirq.Circuit,
         *,
         tolerance=1e-5,
-        mutate=False) -> cirq.Circuit:
+        ) -> cirq.Circuit:
     """Remove negligible gates from the circuit.
 
     This is a wrapper around cirq.DropNegligible(tolerance)
@@ -707,11 +694,8 @@ def compile_to_non_negligible(
         circuit: The circuit
         tolerance: Gates with trace distance below this value will be
             considered negligible.
-        mutate: By default, return a copy of the circuit. Otherwise,
-            mutate in place.
     """
-    assert not mutate, 'cirq no longer mutates'
     c2 = circuit
-    c2 = cirq.drop_negligible_operations(c2)
+    c2 = cirq.drop_negligible_operations(c2, atol=tolerance)
     c2 = cirq.drop_empty_moments(c2)
     return c2
