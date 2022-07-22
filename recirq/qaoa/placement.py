@@ -59,7 +59,7 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
 
 def _qubit_index_edges(device: cirq.Device):
     """Helper function in `_device_to_tket_device`"""
-    qubits = device.metadata.qubit_set() if device.metadata else ()
+    qubits = device.metadata.qubit_set if device.metadata else ()
     dev_graph = ccr.gridqubits_to_graph_device(qubits)
     for n1, n2 in dev_graph.edges:
         yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
@@ -643,7 +643,7 @@ def _get_device_calibration(device_name: str):
         # TODO: https://github.com/quantumlib/ReCirq/issues/14
         device_obj = recirq.get_device_obj_by_name(device_name)
         dummy_graph = ccr.gridqubits_to_graph_device(
-            device_obj.metadata.qubit_set() if device_obj.metadata is not None else ()
+            device_obj.metadata.qubit_set if device_obj.metadata is not None else ()
         )
         nx.set_edge_attributes(dummy_graph, name='weight', values=0.01)
         return dummy_graph
