@@ -118,7 +118,7 @@ class ConvertToNonUniformSqrtIswapGates:
                 during decomposition.
             sin_alpha_tolerance: Tolerance for sin(alpha) value as passed to
                 corrected_cphase_ops function.
-            eject_z_gates: Whether to apply the cirq.optimizers.EjectZ optimizer
+            eject_z_gates: Whether to apply the cirq.eject_z transformer
                 on the decomposed circuit. The effect of this optimization is a
                 circuit with virtual Z gates removed; only Z gates which are
                 actually realized on the Google hardware are kept.
@@ -153,8 +153,8 @@ class ConvertToNonUniformSqrtIswapGates:
                             self._decompose_cphase_echo_gate))
 
         if self._eject_z_gates:
-            cirq.optimizers.EjectZ().optimize_circuit(decomposed)
-            cirq.optimizers.DropEmptyMoments().optimize_circuit(decomposed)
+            decomposed = cirq.eject_z(decomposed)
+            decomposed = cirq.drop_empty_moments(decomposed)
 
         return decomposed
 
