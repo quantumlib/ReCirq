@@ -478,7 +478,7 @@ def compile_driver_unitary_to_rx(circuit: cirq.Circuit, *, mutate=False):
 
 def single_qubit_matrix_to_phased_x_z_const_depth(
         mat: np.ndarray
-) -> List[cirq.SingleQubitGate]:
+) -> List[cirq.Gate]:
     """Implements a single-qubit operation with a PhasedX and Z gate.
 
     If one of the gates isn't needed, it will still be included with
