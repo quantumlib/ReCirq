@@ -27,6 +27,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Type,
     TYPE_CHECKING,
     Tuple,
     cast,
@@ -96,6 +97,10 @@ def save(params: Any, obj: Any, base_dir: str, mode: str = "x") -> str:
     return filename
 
 
+def _grid_parallel_xeb_resolver(cirq_type: str) -> Type:
+    if cirq_type == 'recirq.GridParallelXEBMetadata':
+        return GridParallelXEBMetadata
+
 def load(params: Any, base_dir: str) -> Any:
     """Load an object from a JSON file.
 
@@ -107,7 +112,9 @@ def load(params: Any, base_dir: str) -> Any:
     Returns: The loaded object.
     """
     filename = os.path.join(base_dir, params.filename)
-    return cirq.read_json(filename)
+    return cirq.read_json(filename,
+                          resolvers=cirq.DEFAULT_RESOLVERS +
+                          [_grid_parallel_xeb_resolver])
 
 
 @dataclasses.dataclass
@@ -128,6 +135,10 @@ class GridParallelXEBMetadata:
 
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def __repr__(self) -> str:
         return (
@@ -324,7 +335,7 @@ def collect_grid_parallel_two_qubit_xeb_data(
         data_collection_id = datetime.datetime.now().isoformat().replace(":", "")
     qubits = list(qubits)
     cycles = list(cycles)
-    prng = cirq.parse_random_state(seed)
+    prng = cirq.value.parse_random_state(seed)
 
     # Save metadata
     metadata_params = GridParallelXEBMetadataParameters(
