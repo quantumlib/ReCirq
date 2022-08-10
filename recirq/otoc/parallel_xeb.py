@@ -19,7 +19,6 @@ from typing import Sequence, List, Set, Tuple, Dict, Union, Optional
 import cirq
 import numpy as np
 import pybobyqa
-from cirq.experiments.cross_entropy_benchmarking import _default_interaction_sequence
 from matplotlib import pyplot as plt
 
 from recirq.otoc.utils import (
@@ -685,3 +684,29 @@ def _spin_echo_gates(idx: int) -> cirq.ops:
         cirq.PhasedXPowGate(phase_exponent=-0.5, exponent=1.0),
     ]
     return pi_pulses[idx - 1]
+
+def _default_interaction_sequence(
+    qubits: Sequence[cirq.GridQubit],
+) -> List[Set[Tuple[cirq.GridQubit, cirq.GridQubit]]]:
+    qubit_dict = {(qubit.row, qubit.col): qubit for qubit in qubits}
+    qubit_locs = set(qubit_dict)
+    num_rows = max([q.row for q in qubits]) + 1
+    num_cols = max([q.col for q in qubits]) + 1
+
+    l_s: List[Set[Tuple[cirq.GridQubit, cirq.GridQubit]]] = [set() for _ in range(4)]
+    for i in range(num_rows):
+        for j in range(num_cols - 1):
+            if (i, j) in qubit_locs and (i, j + 1) in qubit_locs:
+                l_s[j % 2 * 2].add((qubit_dict[(i, j)], qubit_dict[(i, j + 1)]))
+
+    for i in range(num_rows - 1):
+        for j in range(num_cols):
+            if (i, j) in qubit_locs and (i + 1, j) in qubit_locs:
+                l_s[i % 2 * 2 + 1].add((qubit_dict[(i, j)], qubit_dict[(i + 1, j)]))
+
+    l_final: List[Set[Tuple[cirq.GridQubit, cirq.GridQubit]]] = []
+    for gate_set in l_s:
+        if len(gate_set) != 0:
+            l_final.append(gate_set)
+
+    return l_final

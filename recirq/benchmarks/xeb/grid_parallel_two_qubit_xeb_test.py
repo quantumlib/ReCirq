@@ -6,7 +6,7 @@ from cirq.experiments import (
     collect_grid_parallel_two_qubit_xeb_data,
     compute_grid_parallel_two_qubit_xeb_results,
 )
-from cirq.experiments.grid_parallel_two_qubit_xeb import (
+from recirq.benchmarks.xeb.grid_parallel_two_qubit_xeb import (
     GridParallelXEBMetadata,
     LAYER_A,
     LAYER_B,
@@ -126,4 +126,6 @@ def test_grid_parallel_xeb_metadata_repr():
         layers=[LAYER_A, LAYER_B],
         seed=1234,
     )
-    cirq.testing.assert_equivalent_repr(metadata)
+    cirq.testing.assert_equivalent_repr(metadata,
+                                        setup_code="import recirq.benchmarks.xeb\nimport cirq")
+

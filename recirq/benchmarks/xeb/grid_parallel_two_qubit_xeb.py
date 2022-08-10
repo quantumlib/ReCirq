@@ -131,7 +131,7 @@ class GridParallelXEBMetadata:
 
     def __repr__(self) -> str:
         return (
-            "cirq.experiments.grid_parallel_two_qubit_xeb."
+            "recirq.benchmarks.xeb.grid_parallel_two_qubit_xeb."
             "GridParallelXEBMetadata("
             f"qubits={self.qubits!r}, "
             f"two_qubit_gate={self.two_qubit_gate!r}, "
