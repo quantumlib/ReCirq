@@ -127,6 +127,10 @@ class FermiHubbardExperiment:
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
 
 def save_experiment(experiment: FermiHubbardExperiment,
                     file_or_fn: Union[None, IO, pathlib.Path, str],

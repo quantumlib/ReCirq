@@ -569,6 +569,10 @@ class FermiHubbardParameters:
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
 
 def _check_normalized(array: Iterable[Number]) -> None:
     if not np.isclose(np.linalg.norm(array), 1):
