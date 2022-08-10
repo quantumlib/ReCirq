@@ -57,14 +57,14 @@ def _build_circuit(
     ret_circuit += [cirq.H(qubits[0]) for qubits in qubit_pairs]
 
     # Merge single qubit gates together and add measurements.
-    cirq.merge_single_qubit_gates_into_phxz(ret_circuit)
-    cirq.DropEmptyMoments().optimize_circuit(circuit=ret_circuit)
+    ret_circuit = cirq.merge_single_qubit_gates_to_phxz(ret_circuit)
+    ret_circuit = cirq.drop_empty_moments(ret_circuit)
     ret_circuit = run_config.flatten_circuit(ret_circuit)
 
     for i, qubit in enumerate([qubits[0] for qubits in qubit_pairs]):
         ret_circuit += cirq.measure(qubit, key=f"q{i}")
 
-    cirq.SynchronizeTerminalMeasurements().optimize_circuit(circuit=ret_circuit)
+    ret_circuit = cirq.synchronize_terminal_measurements(ret_circuit)
     logging.debug(
         f"Generated a new circuit w/ tsym={use_tsym} and depth {len(ret_circuit)}"
     )
