@@ -89,6 +89,10 @@ class CrossEntropyResult:
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     def __repr__(self) -> str:
         args = (
             f"data={[tuple(p) for p in self.data]!r}, repetitions={self.repetitions!r}"
@@ -111,6 +115,10 @@ class CrossEntropyResultDict(Mapping[Tuple["cirq.Qid", ...], CrossEntropyResult]
 
     def _json_dict_(self) -> Dict[str, Any]:
         return {"results": list(self.results.items())}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @classmethod
     def _from_json_dict_(
