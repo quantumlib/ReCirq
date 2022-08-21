@@ -1,4 +1,4 @@
-# Copyright 2022 Google
+# Copyright 2022 The Cirq Developers
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,16 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Experiments and tools for characterizing quantum operations."""
 
-from recirq.time_crystals.dtcexperiment import (
-    DTCExperiment,
-    comparison_experiments,
-    EXPERIMENT_NAME,
-    DEFAULT_BASE_DIR,
-)
-
-from recirq.time_crystals.dtc_simulation import (
-    run_comparison_experiment,
-    signal_ratio,
-    symbolic_dtc_circuit_list,
+from recirq.beyond_classical.google_v2_beyond_classical import (
+    generate_boixo_2018_beyond_classical_v2,
+    generate_boixo_2018_beyond_classical_v2_bristlecone,
+    generate_boixo_2018_beyond_classical_v2_grid,
 )

@@ -18,7 +18,15 @@ try:
     from pytket.circuit import Node, Qubit
     from pytket.passes import SequencePass, RoutingPass, PlacementPass
     from pytket.predicates import CompilationUnit, ConnectivityPredicate
-    from pytket.routing import GraphPlacement
+    try:
+        from pytket.placement import GraphPlacement
+    except ImportError:
+        from pytket.routing import GraphPlacement
+
+    try:
+        from pytket.architecture import Architecture
+    except ImportError:
+        from pytket.routing import Architecture
 except ImportError as e:
     if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
         pytket = NotImplemented
@@ -49,19 +57,20 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
     return err_graph
 
 
-def _qubit_index_edges(device):
+def _qubit_index_edges(device: cirq.Device):
     """Helper function in `_device_to_tket_device`"""
-    dev_graph = ccr.gridqubits_to_graph_device(device.qubit_set())
+    qubits = device.metadata.qubit_set if device.metadata else ()
+    dev_graph = ccr.gridqubits_to_graph_device(qubits)
     for n1, n2 in dev_graph.edges:
         yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
 
 
-def _device_to_tket_device(device):
+def _device_to_tket_device(device: cirq.Device):
     """Custom function to turn a device into a pytket device.
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
-    return pytket.routing.Architecture(
+    return Architecture(
         list(_qubit_index_edges(device))
     )
 
@@ -79,7 +88,7 @@ def tk_to_cirq_qubit(tk: 'Qubit'):
 
 
 def place_on_device(circuit: cirq.Circuit,
-                    device: cg.XmonDevice,
+                    device: cirq.Device,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
@@ -633,7 +642,9 @@ def _get_device_calibration(device_name: str):
     if processor_id is None:
         # TODO: https://github.com/quantumlib/ReCirq/issues/14
         device_obj = recirq.get_device_obj_by_name(device_name)
-        dummy_graph = ccr.gridqubits_to_graph_device(device_obj.qubits)
+        dummy_graph = ccr.gridqubits_to_graph_device(
+            device_obj.metadata.qubit_set if device_obj.metadata is not None else ()
+        )
         nx.set_edge_attributes(dummy_graph, name='weight', values=0.01)
         return dummy_graph
 

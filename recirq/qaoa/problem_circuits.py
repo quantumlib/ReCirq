@@ -181,7 +181,7 @@ def get_compiled_sk_model_circuit(
 
 def get_routed_3_regular_maxcut_circuit(
         problem_graph: nx.Graph,
-        device: cg.XmonDevice,
+        device: cirq.Device,
         gammas: Sequence[float],
         betas: Sequence[float],
 ) -> Tuple[List[cirq.Qid], cirq.Circuit, List[cirq.Qid]]:
@@ -213,7 +213,7 @@ def get_routed_3_regular_maxcut_circuit(
 
 def get_compiled_3_regular_maxcut_circuit(
         problem: ThreeRegularProblem,
-        device: cg.XmonDevice,
+        device: cirq.Device,
         gammas: Sequence[float],
         betas: Sequence[float],
 ) -> Tuple[List[cirq.Qid], cirq.Circuit, List[cirq.Qid]]:

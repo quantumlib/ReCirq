@@ -54,8 +54,8 @@ _qubits = cirq.LineQubit.range(2)
     ),
 )
 def test_known_blocks_equal(known_circuit, compiled_ops):
-    desired_u = cirq.unitary(cirq.Circuit(known_circuit))
-    actual_u = cirq.unitary(cirq.Circuit(compiled_ops))
+    desired_u = cirq.Circuit(known_circuit).unitary(dtype=np.complex128)
+    actual_u = cirq.Circuit(compiled_ops).unitary(dtype=np.complex128)
     assert cirq.equal_up_to_global_phase(actual_u, desired_u)
 
 

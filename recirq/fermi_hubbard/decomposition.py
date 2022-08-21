@@ -118,7 +118,7 @@ class ConvertToNonUniformSqrtIswapGates:
                 during decomposition.
             sin_alpha_tolerance: Tolerance for sin(alpha) value as passed to
                 corrected_cphase_ops function.
-            eject_z_gates: Whether to apply the cirq.optimizers.EjectZ optimizer
+            eject_z_gates: Whether to apply the cirq.eject_z transformer
                 on the decomposed circuit. The effect of this optimization is a
                 circuit with virtual Z gates removed; only Z gates which are
                 actually realized on the Google hardware are kept.
@@ -153,8 +153,8 @@ class ConvertToNonUniformSqrtIswapGates:
                             self._decompose_cphase_echo_gate))
 
         if self._eject_z_gates:
-            cirq.optimizers.EjectZ().optimize_circuit(decomposed)
-            cirq.optimizers.DropEmptyMoments().optimize_circuit(decomposed)
+            decomposed = cirq.eject_z(decomposed)
+            decomposed = cirq.drop_empty_moments(decomposed)
 
         return decomposed
 
@@ -281,11 +281,14 @@ class ConvertToNonUniformSqrtIswapGates:
 
 
 @cirq.value_equality()
-class CPhaseEchoGate(cirq.SingleQubitGate):
+class CPhaseEchoGate(cirq.Gate):
     """Dummy gate that could be substituted by spin-echo pulses.
 
     This gate decomposes to nothing by default.
     """
+
+    def _num_qubits_(self) -> int:
+        return 1
 
     def _value_equality_values_(self):
         return ()

@@ -12,15 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from recirq.time_crystals.dtcexperiment import (
-    DTCExperiment,
-    comparison_experiments,
-    EXPERIMENT_NAME,
-    DEFAULT_BASE_DIR,
-)
-
-from recirq.time_crystals.dtc_simulation import (
-    run_comparison_experiment,
-    signal_ratio,
-    symbolic_dtc_circuit_list,
+from recirq.benchmarks.xeb.grid_parallel_two_qubit_xeb import (
+    collect_grid_parallel_two_qubit_xeb_data,
+    compute_grid_parallel_two_qubit_xeb_results,
 )
