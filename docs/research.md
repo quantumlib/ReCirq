@@ -1,4 +1,4 @@
-# Research Experiments using Cirq
+# Research experiments with ReCirq
 
 In addition to software for building and testing circuits (Cirq),
 we have a library of research experiments using Cirq -- [ReCirq](https://github.com/quantumlib/ReCirq)!
