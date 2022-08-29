@@ -1,6 +1,6 @@
 toc:
-- heading: "Guide"
-- title: "Research using Cirq"
+- heading: "ReGuide"
+- title: "Research with ReCirq"
   path: /cirq/experiments/research
 - title: "Data collection idioms"
   path: /cirq/experiments/guide/data_collection_idioms
