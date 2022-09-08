@@ -90,7 +90,7 @@ class Hamiltonian:
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     @property
     def interactions_count(self) -> int:
@@ -243,7 +243,7 @@ class FixedSingleParticle(SingleParticle):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         if sites_count != len(self.amplitudes):
@@ -262,7 +262,7 @@ class UniformSingleParticle(SingleParticle):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         return np.full(sites_count, 1.0 / np.sqrt(sites_count))
@@ -310,7 +310,7 @@ class PhasedGaussianSingleParticle(SingleParticle):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         return _phased_gaussian_amplitudes(sites_count,
@@ -375,7 +375,7 @@ class FixedTrappingPotential(TrappingPotential):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     def get_potential(self, sites_count: int) -> np.ndarray:
         if sites_count != len(self.potential):
@@ -397,7 +397,7 @@ class UniformTrappingPotential(TrappingPotential):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     def get_potential(self, sites_count: int) -> np.ndarray:
         return np.zeros(sites_count)
@@ -442,7 +442,7 @@ class GaussianTrappingPotential(TrappingPotential):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     def get_potential(self, sites_count: int) -> np.ndarray:
         def gaussian(x: int) -> float:
@@ -480,6 +480,7 @@ class IndependentChainsInitialState:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **FixedSingleParticle.cirq_resolvers(),
             **PhasedGaussianSingleParticle.cirq_resolvers(),
             **FixedTrappingPotential.cirq_resolvers(),
@@ -527,6 +528,7 @@ class FermiHubbardParameters:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **Hamiltonian.cirq_resolvers(),
             **IndependentChainsInitialState.cirq_resolvers(),
             **LineLayout.cirq_resolvers(),

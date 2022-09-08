@@ -84,7 +84,7 @@ class LineLayout:
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     @property
     def up_qubits(self) -> List[cirq.GridQubit]:
@@ -235,7 +235,7 @@ class ZigZagLayout:
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     @property
     def up_qubits(self) -> List[cirq.GridQubit]:
