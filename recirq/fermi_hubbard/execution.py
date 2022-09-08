@@ -53,7 +53,7 @@ class ExperimentResult:
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
@@ -88,6 +88,7 @@ class ExperimentRun:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **ExperimentResult.cirq_resolvers()
         }
 
@@ -120,12 +121,17 @@ class FermiHubbardExperiment:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **ExperimentRun.cirq_resolvers(),
             **FermiHubbardParameters.cirq_resolvers(),
         }
 
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
 
 def save_experiment(experiment: FermiHubbardExperiment,
