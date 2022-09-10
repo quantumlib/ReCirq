@@ -92,6 +92,10 @@ class Hamiltonian:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     @property
     def interactions_count(self) -> int:
         return self.sites_count - 1
@@ -245,6 +249,10 @@ class FixedSingleParticle(SingleParticle):
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         if sites_count != len(self.amplitudes):
             raise ValueError(f'Fixed single particle not compatible with '
@@ -263,6 +271,10 @@ class UniformSingleParticle(SingleParticle):
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         return np.full(sites_count, 1.0 / np.sqrt(sites_count))
@@ -311,6 +323,10 @@ class PhasedGaussianSingleParticle(SingleParticle):
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         return _phased_gaussian_amplitudes(sites_count,
@@ -377,6 +393,10 @@ class FixedTrappingPotential(TrappingPotential):
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     def get_potential(self, sites_count: int) -> np.ndarray:
         if sites_count != len(self.potential):
             raise ValueError(f'Fixed potential not compatible with '
@@ -398,6 +418,10 @@ class UniformTrappingPotential(TrappingPotential):
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_potential(self, sites_count: int) -> np.ndarray:
         return np.zeros(sites_count)
@@ -444,6 +468,10 @@ class GaussianTrappingPotential(TrappingPotential):
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     def get_potential(self, sites_count: int) -> np.ndarray:
         def gaussian(x: int) -> float:
             return self.scale * np.exp(-0.5 * ((x - self.center) /
@@ -488,6 +516,10 @@ class IndependentChainsInitialState:
             **UniformSingleParticle.cirq_resolvers(),
             **UniformTrappingPotential.cirq_resolvers()
         }
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @property
     def up_particles(self) -> int:
@@ -534,6 +566,10 @@ class FermiHubbardParameters:
             **LineLayout.cirq_resolvers(),
             **ZigZagLayout.cirq_resolvers(),
         }
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @property
     def sites_count(self) -> int:
