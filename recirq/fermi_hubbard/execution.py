@@ -55,6 +55,10 @@ class ExperimentResult:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
 
@@ -92,6 +96,10 @@ class ExperimentRun:
             **ExperimentResult.cirq_resolvers()
         }
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     @property
     def calibration_timestamp_sec(self) -> float:
         return self.calibration_timestamp_usec / 1000.
@@ -125,6 +133,10 @@ class FermiHubbardExperiment:
             **ExperimentRun.cirq_resolvers(),
             **FermiHubbardParameters.cirq_resolvers(),
         }
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
