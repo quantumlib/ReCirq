@@ -86,6 +86,10 @@ class LineLayout:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
 
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
     @property
     def up_qubits(self) -> List[cirq.GridQubit]:
         return self._up_qubits
@@ -236,6 +240,10 @@ class ZigZagLayout:
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @property
     def up_qubits(self) -> List[cirq.GridQubit]:
