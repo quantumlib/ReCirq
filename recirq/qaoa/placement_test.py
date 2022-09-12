@@ -11,7 +11,7 @@ from recirq.qaoa.gates_and_compilation import compile_problem_unitary_to_arbitra
     compile_driver_unitary_to_rx
 from recirq.qaoa.placement import place_line_on_device, place_on_device, \
     min_weight_simple_paths_brute_force, min_weight_simple_path_greedy, path_weight, \
-    min_weight_simple_path_anneal, pytket
+    min_weight_simple_path_anneal
 from recirq.qaoa.problem_circuits import get_generic_qaoa_circuit
 
 
@@ -22,7 +22,6 @@ def permute_gate(qubits: Sequence[cirq.Qid], permutation: List[int]):
     ).on(*qubits)
 
 
-@pytest.mark.skipif(pytket is NotImplemented, reason='Pytket is not installed.')
 def test_place_on_device():
     problem_graph = nx.random_regular_graph(d=3, n=10)
     nx.set_edge_attributes(problem_graph, values=1, name='weight')

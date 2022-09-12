@@ -9,30 +9,6 @@ import numpy as np
 import cirq
 import cirq.contrib.routing as ccr
 import cirq_google as cg
-
-try:
-    # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
-    # dependency. We do this for CI testing against the next, pre-release Cirq version.
-    import pytket
-    import pytket.extensions.cirq
-    from pytket.circuit import Node, Qubit
-    from pytket.passes import SequencePass, RoutingPass, PlacementPass
-    from pytket.predicates import CompilationUnit, ConnectivityPredicate
-    try:
-        from pytket.placement import GraphPlacement
-    except ImportError:
-        from pytket.routing import GraphPlacement
-
-    try:
-        from pytket.architecture import Architecture
-    except ImportError:
-        from pytket.routing import Architecture
-except ImportError as e:
-    if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
-        pytket = NotImplemented
-    else:
-        raise e
-
 import recirq
 
 
@@ -57,36 +33,6 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
     return err_graph
 
 
-def _qubit_index_edges(device: cirq.Device):
-    """Helper function in `_device_to_tket_device`"""
-    qubits = device.metadata.qubit_set if device.metadata else ()
-    dev_graph = ccr.gridqubits_to_graph_device(qubits)
-    for n1, n2 in dev_graph.edges:
-        yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
-
-
-def _device_to_tket_device(device: cirq.Device):
-    """Custom function to turn a device into a pytket device.
-
-    This supports any device that supports `ccr.xmon_device_to_graph`.
-    """
-    return Architecture(
-        list(_qubit_index_edges(device))
-    )
-
-
-def tk_to_cirq_qubit(tk: 'Qubit'):
-    """Convert a tket Qubit to either a LineQubit or GridQubit.
-
-    """
-    ind = tk.index
-    return (
-        cirq.LineQubit(ind[0])
-        if len(ind) == 1
-        else cirq.GridQubit(*ind)
-    )
-
-
 def place_on_device(circuit: cirq.Circuit,
                     device: cirq.Device,
                     ) -> Tuple[cirq.Circuit,
@@ -106,25 +52,9 @@ def place_on_device(circuit: cirq.Circuit,
         initial_map: Initial placement of qubits
         final_map: The final placement of qubits after action of the circuit
     """
-    tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
-    tk_device = _device_to_tket_device(device)
-
-    unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
-    passes = SequencePass([
-        PlacementPass(GraphPlacement(tk_device)),
-        RoutingPass(tk_device)])
-    passes.apply(unit)
-    valid = unit.check_all_predicates()
-    if not valid:
-        raise RuntimeError("Routing failed")
-
-    initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                   for n1, n2 in unit.initial_map.items()}
-    final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                 for n1, n2 in unit.final_map.items()}
-    routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
-
-    return routed_circuit, initial_map, final_map
+    router = cirq.RouteCQC(device.metadata.nx_graph)
+    routed_circuit, initial_map, swap_map = router.route_circuit(circuit)
+    return routed_circuit, initial_map, {lq: swap_map[initial_map[lq]] for lq in initial_map}
 
 
 def path_weight(graph: nx.Graph, path,
