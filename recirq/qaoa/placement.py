@@ -66,7 +66,7 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
 
 
 def _qubit_index_edges(device: cirq.Device):
-    """Helper function in `_device_to_tket_device`"""
+    """Helper function in `_device_to_tket_device`."""
     qubits = device.metadata.qubit_set if device.metadata else ()
     dev_graph = ccr.gridqubits_to_graph_device(qubits)
     for n1, n2 in dev_graph.edges:
@@ -75,6 +75,7 @@ def _qubit_index_edges(device: cirq.Device):
 
 def _device_to_tket_device(device: cirq.Device):
     """Custom function to turn a device into a pytket device.
+
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
     return Architecture(
@@ -83,8 +84,7 @@ def _device_to_tket_device(device: cirq.Device):
 
 
 def tk_to_cirq_qubit(tk: 'Qubit'):
-    """Convert a tket Qubit to either a LineQubit or GridQubit.
-    """
+    """Convert a tket Qubit to either a LineQubit or GridQubit."""
     ind = tk.index
     return (
         cirq.LineQubit(ind[0])
@@ -123,6 +123,7 @@ def place_on_device(circuit: cirq.Circuit,
     # Else use TKET for routing
     tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
     tk_device = _device_to_tket_device(device)
+
     unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
     passes = SequencePass([
         PlacementPass(GraphPlacement(tk_device)),
