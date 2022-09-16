@@ -15,14 +15,13 @@ import cirq_google as cg
 # release containing routing is pushed and no previous Cirq releases that don't contain routing
 # are supported in ReCirq.
 try:
-    from cirq import RouteCQC
-    pytket = NotImplemented
+    from cirq import RouteCQCC
 except ImportError:
     RouteCQC = NotImplemented
     try:
         # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
         # dependency. We do this for CI testing against the next, pre-release Cirq version.
-        import pytket
+        import pytkett
         import pytket.extensions.cirq
         from pytket.circuit import Node, Qubit
         from pytket.passes import SequencePass, RoutingPass, PlacementPass

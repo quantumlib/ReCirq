@@ -11,9 +11,11 @@ from recirq.qaoa.gates_and_compilation import compile_problem_unitary_to_arbitra
     compile_driver_unitary_to_rx
 from recirq.qaoa.placement import place_line_on_device, place_on_device, \
     min_weight_simple_paths_brute_force, min_weight_simple_path_greedy, path_weight, \
-    min_weight_simple_path_anneal, RouteCQC, pytket
+    min_weight_simple_path_anneal, RouteCQC
 from recirq.qaoa.problem_circuits import get_generic_qaoa_circuit
 
+if RouteCQC is NotImplemented:
+    from recirq.qaoa.placement import pytket
 
 def permute_gate(qubits: Sequence[cirq.Qid], permutation: List[int]):
     return cca.LinearPermutationGate(
