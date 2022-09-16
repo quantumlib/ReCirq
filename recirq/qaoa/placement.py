@@ -10,36 +10,39 @@ import cirq
 import cirq.contrib.routing as ccr
 import cirq_google as cg
 
+# Try importing routing utilities from Cirq. If they don't exist try importing tket for routing.
+# This block of code can be replaced with a simple `from cirq import RouteCQC` once a Cirq
+# release containing routing is pushed and no previous Cirq releases that don't contain routing
+# are supported in ReCirq.
 try:
     from cirq import RouteCQC
-except ImportError as e:
-    if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
-        RouteCQC = NotImplemented
-    else:
-        raise e
-
-try:
-    # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
-    # dependency. We do this for CI testing against the next, pre-release Cirq version.
-    import pytket
-    import pytket.extensions.cirq
-    from pytket.circuit import Node, Qubit
-    from pytket.passes import SequencePass, RoutingPass, PlacementPass
-    from pytket.predicates import CompilationUnit, ConnectivityPredicate
+    pytket = NotImplemented
+except ImportError:
+    RouteCQC = NotImplemented
     try:
-        from pytket.placement import GraphPlacement
-    except ImportError:
-        from pytket.routing import GraphPlacement
+        # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
+        # dependency. We do this for CI testing against the next, pre-release Cirq version.
+        import pytket
+        import pytket.extensions.cirq
+        from pytket.circuit import Node, Qubit
+        from pytket.passes import SequencePass, RoutingPass, PlacementPass
+        from pytket.predicates import CompilationUnit, ConnectivityPredicate
+        try:
+            from pytket.placement import GraphPlacement
+        except ImportError:
+            from pytket.routing import GraphPlacement
 
-    try:
-        from pytket.architecture import Architecture
+        try:
+            from pytket.architecture import Architecture
+        except ImportError:
+            from pytket.routing import Architecture
     except ImportError:
-        from pytket.routing import Architecture
-except ImportError as e:
-    if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
-        pytket = NotImplemented
-    else:
-        raise e
+        if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
+            pytket = NotImplemented
+        else:
+            raise ImportError(
+                "Routing utilities don't exist in this version of Cirq and pytket is not installed."
+                )
 
 import recirq
 
@@ -113,33 +116,33 @@ def place_on_device(circuit: cirq.Circuit,
         final_map: The final placement of qubits after action of the circuit
     """
 
-    if RouteCQC is not NotImplemented:
-        # If routing utilities exist in imported Cirq version use Cirq for routing
-        router = cirq.RouteCQC(device.metadata.nx_graph)
-        routed_circuit, initial_map, swap_map = router.route_circuit(circuit)
-        device.validate_circuit(routed_circuit)
-        return routed_circuit, initial_map, {lq: swap_map[initial_map[lq]] for lq in initial_map}
+    if RouteCQC is NotImplemented:
+        # Use TKET for routing
+        tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
+        tk_device = _device_to_tket_device(device)
 
-    # Else use TKET for routing
-    tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
-    tk_device = _device_to_tket_device(device)
+        unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
+        passes = SequencePass([
+            PlacementPass(GraphPlacement(tk_device)),
+            RoutingPass(tk_device)])
+        passes.apply(unit)
+        valid = unit.check_all_predicates()
+        if not valid:
+            raise RuntimeError("Routing failed")
 
-    unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
-    passes = SequencePass([
-        PlacementPass(GraphPlacement(tk_device)),
-        RoutingPass(tk_device)])
-    passes.apply(unit)
-    valid = unit.check_all_predicates()
-    if not valid:
-        raise RuntimeError("Routing failed")
+        initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
+                       for n1, n2 in unit.initial_map.items()}
+        final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
+                     for n1, n2 in unit.final_map.items()}
+        routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
 
-    initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                   for n1, n2 in unit.initial_map.items()}
-    final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                 for n1, n2 in unit.final_map.items()}
-    routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
+        return routed_circuit, initial_map, final_map
+    
+    # Else use Cirq for routing
+    router = cirq.RouteCQC(device.metadata.nx_graph)
+    routed_circuit, initial_map, swap_map = router.route_circuit(circuit)
+    return routed_circuit, initial_map, {lq: swap_map[initial_map[lq]] for lq in initial_map}
 
-    return routed_circuit, initial_map, final_map
 
 
 def path_weight(graph: nx.Graph, path,
