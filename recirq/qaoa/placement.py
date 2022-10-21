@@ -21,7 +21,7 @@ except ImportError:
     try:
         # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
         # dependency. We do this for CI testing against the next, pre-release Cirq version.
-        import pytkett
+        import pytket
         import pytket.extensions.cirq
         from pytket.circuit import Node, Qubit
         from pytket.passes import SequencePass, RoutingPass, PlacementPass
