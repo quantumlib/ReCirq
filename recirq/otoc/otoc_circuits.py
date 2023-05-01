@@ -458,7 +458,7 @@ def _compile_moments(
     ops_dict: Union[_GATE_CORRECTIONS, List[_GATE_CORRECTIONS]],
     layer_by_layer_cal: bool = False,
 ) -> List[Union[cirq.Moment, Sequence[cirq.Moment]]]:
-    """Outputs the cirq.Moment(s) for each two-qubit layer based on the the pairs that interact
+    """Outputs the cirq.Moment(s) for each two-qubit layer based on the pairs that interact
     in each layer and the gates associated with them.
     """
     moment_list = []
