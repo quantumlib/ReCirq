@@ -13,9 +13,10 @@
 # limitations under the License.
 
 """General data processing functions"""
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 
 import cirq
+import collections
 import numpy as np
 import pandas
 import scipy
@@ -24,20 +25,18 @@ from openfermion import QubitOperator
 from recirq.seniority_zero.scheduling import SnakeMeasurementGroup
 
 
-def multi_measurement_histogram(result: Union[cirq.Result, pandas.DataFrame], keys: List[str]):
+def multi_measurement_histogram(
+    result: Union[cirq.Result, pandas.DataFrame],
+    keys: List[str]
+) -> collections.Counter:
     """Converts either a cirq.Result or pandas.Dataframe to a histogram
 
-    ####### ASSUMES EACH KEY IS ASSIGNED TO A MEASUREMENT WITH 1 RESULT #######
+    Note: assumes each key is assigned to a measurement of a single qubit
     """
     if isinstance(result, cirq.Result):
         return result.multi_measurement_histogram(keys=keys)
 
-    import collections
-
-    from cirq.study.result import _key_to_str, _tuple_of_big_endian_int
-    from cirq.value import big_endian_int_to_bits
-
-    fixed_keys = [_key_to_str(key) for key in keys]
+    fixed_keys = [cirq.study.result._key_to_str(key) for key in keys]
     c: collections.Counter = collections.Counter()
     if len(fixed_keys) == 0:
         c[None] += result.repetitions
@@ -47,10 +46,10 @@ def multi_measurement_histogram(result: Union[cirq.Result, pandas.DataFrame], ke
     for row_id in data_grouped.index:
         row = data_grouped.loc[row_id]
         sample = tuple(
-            np.array(big_endian_int_to_bits(row[key], bit_count=bit_count), dtype=bool)
+            np.array(cirq.value.big_endian_int_to_bits(row[key], bit_count=bit_count), dtype=bool)
             for key, bit_count in zip(fixed_keys, bit_counts)
         )
-        c[_tuple_of_big_endian_int(sample)] += row['size']
+        c[cirq.study.result._tuple_of_big_endian_int(sample)] += row['size']
     return c
 
 
@@ -60,7 +59,7 @@ def vectorize_expvals(
     covars: Optional[Dict] = None,
     distribute_with_covars: Optional[bool] = False,
     zz_flag: Optional[bool] = False,
-):
+) -> Tuple[np.ndarray, np.ndarray]:
     '''Convert a set of expectation values to a vector in a fixed basis.
 
     Args:
@@ -114,7 +113,7 @@ def vectorize_expvals(
     return expval_vec, new_covariance_matrix
 
 
-def indexing_function(num_qubits, operator):
+def indexing_function(num_qubits: int, operator: QubitOperator) -> List:
     """Turn a single operator into sparse vector form.
 
     We define our vector basis in order:
@@ -164,7 +163,7 @@ def energy_from_expvals(
     covars: Optional[Dict] = None,
     distribute_with_covars: Optional[bool] = False,
     zz_flag: Optional[bool] = False,
-):
+) -> Tuple[float, float]:
     '''Take a set of measured expectation values and estimate an energy
 
     Args:
@@ -206,7 +205,7 @@ def energy_from_expvals(
     return energy, variance
 
 
-def order_parameter_from_expvals(num_qubits: int, expvals: Dict):
+def order_parameter_from_expvals(num_qubits: int, expvals: Dict) -> float:
     """Calculate the superconducting order parameter from expectation values
 
     Args:
@@ -225,7 +224,7 @@ def order_parameter_from_expvals(num_qubits: int, expvals: Dict):
     return order_parameter
 
 
-def order_parameter_var_from_expvals(num_qubits: int, expvals: Dict, covars: Dict):
+def order_parameter_var_from_expvals(num_qubits: int, expvals: Dict, covars: Dict) -> float:
     """Calculate the superconducting order parameter variance
 
     Args:
@@ -255,7 +254,7 @@ def get_ls_echo_fidelity(
     qubits: List,
     group: SnakeMeasurementGroup,
     postselect: Optional[bool] = False,
-):
+) -> Tuple[float, float]:
     """Extract an estimate of lochschmidt echo fidelity.
 
     Args:
@@ -306,7 +305,7 @@ def get_ls_echo_fidelity(
 
 def get_signed_count(
     frame: pandas.DataFrame, msmt_qubits: List[cirq.GridQubit], all_qubits: List[cirq.GridQubit]
-):
+) -> Tuple[int, int]:
     """Calculate a signed count from a pandas dataframe of a cirq result
 
     The signed count is the number of even parity results minus
@@ -334,7 +333,7 @@ def get_signed_count_verified(
     msmt_qubits: List[cirq.GridQubit],
     all_qubits: List[cirq.GridQubit],
     correct_number: int,
-):
+) -> Tuple[int, int, int]:
     """Calculate a signed count from a pandas dataframe with verification
 
     The signed count is the number of even parity results minus
@@ -368,7 +367,7 @@ def get_signed_count_postselected(
     msmt_qubits: List[cirq.GridQubit],
     all_qubits: List[cirq.GridQubit],
     correct_number: int,
-):
+) -> Tuple[int, int]:
     """Calculate a signed count from a pandas dataframe with postselection
 
     The signed count is the number of even parity results minus
@@ -400,7 +399,7 @@ def get_p0m_count_verified(
     msmt_qubits: List[cirq.GridQubit],
     all_qubits: List[cirq.GridQubit],
     correct_number: int,
-):
+) -> Tuple[int, int, int]:
     """Calculate counts of +, -, and 0 for a verification experiment
 
     result [pandas.DataFrame] : the dataframe to use

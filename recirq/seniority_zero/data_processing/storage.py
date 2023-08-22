@@ -17,12 +17,11 @@
 import os
 import pickle
 from abc import abstractmethod
+from typing import Hashable
 
 
 class Experiment:
-    """Generic data container for an experiment.
-
-    ##### See TemplateExperiment below for how to subclass #####
+    """Generic data container for an experiment, see TemplateExperiment below for how to subclass.
 
     Effectively just a dictionary with load and save capability, and a special
     entry called 'keyword_args' that is treated on the same level for access,
@@ -102,7 +101,7 @@ class Experiment:
 
     # Boilerplate below to make this class behave mostly like a dictionary
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Hashable):
         """Override the standard dictionary getter."""
         if key in self._data:
             return self._data[key]
@@ -111,7 +110,7 @@ class Experiment:
         else:
             raise KeyError(f"Key '{key}'' not found in dictionary.")
 
-    def __setitem__(self, key, item):
+    def __setitem__(self, key: Hashable, item):
         """Override the standard dictionary setter."""
         if key in self._data:
             if key == 'keyword_args':
@@ -130,7 +129,7 @@ class Experiment:
         """Inherit from standard dictionary boilerplate."""
         return len(self._data)
 
-    def has_key(self, k):
+    def has_key(self, k: Hashable):
         """Inherit from standard dictionary boilerplate."""
         return k in self._data or k in self._data['keyword_args']
 
@@ -150,7 +149,7 @@ class Experiment:
         """Inherit from standard dictionary boilerplate."""
         return self.__cmp__(other)
 
-    def __contains__(self, item):
+    def __contains__(self, item: Hashable):
         """Inherit from standard dictionary boilerplate."""
         return item in self._data or item in self._data['keyword_args']
 

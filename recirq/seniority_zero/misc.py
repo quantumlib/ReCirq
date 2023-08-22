@@ -20,7 +20,7 @@ import numpy as np
 from openfermion import QubitOperator
 
 
-def get_operator_from_tag(tag):
+def get_operator_from_tag(tag: Dict) -> QubitOperator:
     """Turn a EV experiment tag into the operator measured."""
     if tag['type'] == 'Z':
         assert len(tag['ham_ids']) == 1
@@ -49,7 +49,7 @@ def get_operator_from_tag(tag):
     return qop
 
 
-def get_num_circuit_copies(tag: Dict, hamiltonian: QubitOperator, factor: float):
+def get_num_circuit_copies(tag: Dict, hamiltonian: QubitOperator, factor: float) -> int:
     """Take a Hamiltonian and a set of circuits, and distribute measurements.
 
     in the circuit by the weight of the corresponding Hamiltonian term.
@@ -81,7 +81,7 @@ def get_num_circuit_copies(tag: Dict, hamiltonian: QubitOperator, factor: float)
 
 def get_standard_qubit_set(
     num_qubits: int, q0: Optional[cirq.GridQubit] = None, direction: Optional[str] = 'R'
-):
+) -> List[cirq.GridQubit]:
     '''Create a 'standard' 2xN grid of qubits
 
     The grid is returned as a loop; e.g. a grid of 8 qubits with right alignment
@@ -117,7 +117,11 @@ def get_standard_qubit_set(
     return qubits
 
 
-def get_all_standard_qubit_sets(num_qubits, all_qubits):
+def get_all_standard_qubit_sets(
+    num_qubits: int,
+    all_qubits: List[cirq.GridQubit],
+) -> List[List[cirq.GridQubit]]:
+    """Makes all standard qubit sets of a given size on a fixed lattice"""
     all_ladders = []
     for q0 in all_qubits:
         for direction in ['R', 'L', 'U', "D"]:
@@ -128,11 +132,14 @@ def get_all_standard_qubit_sets(num_qubits, all_qubits):
     return all_ladders
 
 
-def qubit_hamming_distance(q0, q1):
+def qubit_hamming_distance(q0: cirq.GridQubit, q1: cirq.GridQubit) -> int:
     return abs(q0.row - q1.row) + abs(q0.col - q1.col)
 
 
-def check_if_sq_and_preserves_computational_basis(gate, tol=1e-6):
+def check_if_sq_and_preserves_computational_basis(
+    gate: cirq.Gate,
+    tol: Optional[float]=1e-6
+) -> bool:
     """Check if a gate preserves the computational basis up to a phase
 
     Args:
@@ -161,7 +168,7 @@ def check_if_sq_and_preserves_computational_basis(gate, tol=1e-6):
     return False
 
 
-def add_echoes(circuit: cirq.Circuit, check_1q_2q_form: Optional[bool] = True):
+def add_echoes(circuit: cirq.Circuit, check_1q_2q_form: Optional[bool] = True) -> cirq.Circuit:
     """Add echoes to a circuit on all qubits in empty, active spaces
 
     To not be too smart, we add echoes only when qubits are inactive.
@@ -266,6 +273,8 @@ def check_separated_single_and_two_qubit_layers(
 
     We assume that the last layer contains measurements, and so we ignore it.
 
+    N.B. this does not return True/False, but raises an error
+
     Args:
         circuits [List[cirq.Circuit]]: the circuits to be checked
         strict [bool]: whether to enforce the strict condition above
@@ -281,7 +290,7 @@ def check_separated_single_and_two_qubit_layers(
                 raise TypeError(f'Circuit: {circuit_id}, moment: {moment_id} off-position.')
 
 
-def parallelize_circuits(*circuits):
+def parallelize_circuits(*circuits: List[cirq.Circuit]) -> cirq.Circuit:
     """Generate single circuit with two circuits acting in parallel."""
     len_new_circuit = max([len(circuit) for circuit in circuits])
     new_circuit = cirq.Circuit()
@@ -295,10 +304,11 @@ def parallelize_circuits(*circuits):
     return new_circuit
 
 
-def safe_tetris_circuits(circuit1, circuit2):
-    # Assumes that moments are in alternating 1q and 2q form,
-    # outputs a circuit that continues to follow this form.
-    # Tetrises circuit2 into circuit1 (i.e. treats)
+def safe_tetris_circuits(circuit1: cirq.Circuit, circuit2: cirq.Circuit) -> cirq.Circuit:
+    """Tetrises together two circuits, preserving alternating 1q-2q form.
+
+    The term 'tetris' means 'concatenates with shortest depth' - i.e. we try to shift all
+    gates in circuit2 as far as possible to the left."""
     if len(circuit2) == 0:
         return circuit1[:]
     if len(circuit1) == 0:
@@ -363,9 +373,8 @@ def safe_tetris_circuits(circuit1, circuit2):
     return circuit
 
 
-def safe_concatenate_circuits(circuit1, circuit2):
-    # Assumes that moments are in alternating 1q and 2q form,
-    # outputs a circuit that continues to follow this form
+def safe_concatenate_circuits(circuit1: cirq.Circuit, circuit2: cirq.Circuit) -> cirq.Circuit:
+    """Concatenates two circuits while preserving 1q-2q form."""
     if len(circuit2) == 0:
         return circuit1[:]
     if len(circuit1) == 0:
@@ -411,9 +420,8 @@ def safe_concatenate_circuits(circuit1, circuit2):
     return circuit
 
 
-def merge_faster(gate1, gate2, tol=1e-6):
-    # Merges single qubit gates to a phasedXZ gate. Works faster
-    # if the two gates are rz rotations
+def merge_faster(gate1: cirq.Gate, gate2: cirq.Gate, tol: Optional[float]=1e-6) -> cirq.Gate:
+    """Merges single qubit gates to a phasedXZ gate, is faster than cirq when gates are rz."""
     if (
         type(gate1.gate) == cirq.PhasedXZGate
         and type(gate2.gate) == cirq.PhasedXZGate

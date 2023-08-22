@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from itertools import product
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import cirq
 import numpy as np
@@ -44,7 +44,7 @@ class RGDOCI:
         self.norbs = norbs
         self.n_qubits = norbs
 
-    def get_spinorb_ints(self):
+    def get_spinorb_ints(self) -> Tuple[np.ndarray, np.ndarray]:
         r"""H = sum_{i=1}^{n}(i)(n_{i,alpha} + n_{i,beta} + g/2\sum_{i =\= j}P_{i}^ P_{j}
 
         but symmeterized for ab and ba space
@@ -72,7 +72,7 @@ class RGDOCI:
         h1 = np.kron(h1, np.eye(2))
         return h1, h2
 
-    def get_cc_spinorbs(self):
+    def get_cc_spinorbs(self) -> Tuple[np.ndarray, np.ndarray]:
         """Spin-orbitals for CC solver. 2-electron part must be antisymmeterized
 
         In this code we account for the antisymmeterization with a factor of
@@ -136,7 +136,10 @@ class RGDOCI:
                     qham += of.QubitOperator(((pp, 'Y'), (qq, 'Y')), coefficient=self.g_value / 4)
         return qham, float(constant)
 
-    def get_qubit_hamiltonian_ov_basis(self, reverse_order=False) -> Tuple[of.QubitOperator, float]:
+    def get_qubit_hamiltonian_ov_basis(
+        self,
+        reverse_order: Optional[bool]=False
+    ) -> Tuple[of.QubitOperator, float]:
         r"""sum_{p}e_{p}~N_{p} + g sum_{pq} P_{p}^P_{q}"""
         spatial_orbs = self.norbs
         qham = of.QubitOperator()
@@ -159,7 +162,11 @@ class RGDOCI:
                     qham += of.QubitOperator(((pp, 'Y'), (qq, 'Y')), coefficient=self.g_value / 4)
         return qham, float(constant)
 
-    def get_cirq_operator(self, qubits: List[cirq.Qid], ov_basis=False) -> cirq.PauliSum:
+    def get_cirq_operator(
+        self,
+        qubits: List[cirq.Qid],
+        ov_basis: Optional[bool]=False
+    ) -> cirq.PauliSum:
         """Construct the Hamiltonian as a PauliSum object
 
         This works by calling the self.get_doci_qubit_operator which can be

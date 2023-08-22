@@ -272,7 +272,7 @@ def GHZ_prep_2xn_mixed_filling(
     return circuit
 
 
-def starting_index_GHZ_prep_2xn(state_line1, state_line2) -> int:
+def starting_index_GHZ_prep_2xn(state_line1: List, state_line2: List) -> int:
     """Determines the optimal index for GHZ preparation.
 
     Finds the index on a 2xn grid that is optimally positioned
@@ -292,10 +292,7 @@ def starting_index_GHZ_prep_2xn(state_line1, state_line2) -> int:
     return starting_index
 
 
-def get_starting_qubits_all_groups_2xN(
-    qubits: List[cirq.Qid],
-    extra_shift=None
-) -> List[cirq.Qid]:
+def get_starting_qubits_all_groups_2xN(qubits: List[cirq.Qid], extra_shift=None) -> List[cirq.Qid]:
     """Get (group-dependent) list of which qubit contains the VPE information.
 
     (This uses the GHZ preparation methods above)
@@ -303,7 +300,6 @@ def get_starting_qubits_all_groups_2xN(
         qubits: 2xN ladder of qubits to be used in experiment
         extra_shift: int - whether to pre-rotate the qubits list
     """
-    print(f'Using extra shift: {extra_shift}')
     num_qubits = len(qubits)
     groups = get_tqbg_groups(qubits)
     starting_qubits = []

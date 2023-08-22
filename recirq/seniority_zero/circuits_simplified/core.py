@@ -13,18 +13,18 @@
 # limitations under the License.
 
 """Generic circuit routines"""
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Generator
 
 import cirq
 
-from seniority_zero.circuits_expt.core import starting_pair_loop_on_lattice
-from seniority_zero.circuits_simplified.gates import GSGate
+from recirq.seniority_zero.circuits_expt.core import starting_pair_loop_on_lattice
+from recirq.seniority_zero.circuits_simplified.gates import GSGate
 
 
 def brickwall_loop_layer(
     qubits: List[cirq.GridQubit], layer_params: List[float], offset: int, gate: Type[cirq.Gate]
-):
-    """Generates a layer of <gate> acting on a loop of qubits
+) -> Generator:
+    """Generates a layer of <gate> acting on a loop of qubits.
 
     We call gate(layer_params[i])(qubits[(2 * i + offset) % len(qubits)],
                                   qubits[(2 * i + offset + 1) % len(qubits)])
@@ -44,8 +44,8 @@ def brickwall_loop_layer(
 
 def brickwall_givens_swap_network(
     qubits: List[cirq.GridQubit], params: List[float], depth: int, inverse: Optional[bool] = False
-):
-    """Generates a brickwall Givens swap ansatz with fixed parameters
+) -> Generator:
+    """Generates a brickwall Givens swap ansatz with fixed parameters.
 
     Args:
         qubits [List of cirq.GridQubit]: loop of qubits to act on
@@ -68,8 +68,9 @@ def brickwall_givens_swap_network(
         yield brickwall_loop_layer(qubits, layer_params, layer_id % 2, GSGate)
 
 
-def GHZ_prep_loop_on_lattice(loop: List[cirq.GridQubit], initial_state: List[int]):
-    """Prepares a GHZ state for a loop on a square lattice with NN connectivity
+def GHZ_prep_loop_on_lattice(loop: List[cirq.GridQubit], initial_state: List[int]) -> Generator:
+    """Prepares a GHZ state for a loop on a square lattice with NN connectivity.
+
     Assumes that we start from |000+00...>, where the qubit that begins in |+>
     is given by starting_pair_loop_on_lattice(loop, initial_state)[0].
 
@@ -127,7 +128,7 @@ def GHZ_prep_loop_on_lattice(loop: List[cirq.GridQubit], initial_state: List[int
                 yield cirq.SWAP(ql, qr)
 
 
-def lochschmidt_echo(circuit: cirq.Circuit, qubits: List[cirq.GridQubit]):
+def lochschmidt_echo(circuit: cirq.Circuit, qubits: List[cirq.GridQubit]) -> Generator:
     """Makes a lochschmidt echo of a circuit - generates UU^{dag}"""
     circuit = cirq.drop_terminal_measurements(circuit)
     yield circuit
