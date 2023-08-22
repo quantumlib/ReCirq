@@ -22,7 +22,7 @@ from typing import List, Optional
 
 import cirq
 
-from recirq.seniority_zero.circuits_expt.gates_this_experiment import cmnot, cnot, gsgate, swap
+from recirq.seniority_zero.circuits_expt.gate_sets import SeniorityZeroGateSet
 from recirq.seniority_zero.misc import (
     parallelize_circuits,
     safe_concatenate_circuits,
@@ -31,9 +31,12 @@ from recirq.seniority_zero.misc import (
 from recirq.seniority_zero.scheduling import get_tqbg_groups
 
 
-def _make_lightcone(num_qubits, depth=None):
+def _make_lightcone(num_qubits: int, depth: int=None) -> List:
     """Make list of gates which are hit by a given qubit's backwards light cone.
-    Assumes a brickwall ansatz
+
+    Args:
+        num_qubits: the number of qubits in the circuit
+        depth: depth of the brick wall circuit.
     """
     if depth is None:
         depth = num_qubits // 2
@@ -66,7 +69,13 @@ def _make_lightcone(num_qubits, depth=None):
 _timelike_gates = {num_qubits: _make_lightcone(num_qubits) for num_qubits in [4, 6, 8, 10, 12]}
 
 
-def gs_layer(qubits: List, layer_params: List[float], offset: int, gate_indices: List[int]):
+def gs_layer(
+    qubits: List,
+    layer_params: List[float],
+    offset: int,
+    gate_indices: List[int],
+    gateset: SeniorityZeroGateSet,
+) -> cirq.Circuit:
     """Single even layer of the brick wall givens-swap circuit.
 
     Qubits are coupled as (dashed lines represent a single givens-swap gate)
@@ -84,7 +93,9 @@ def gs_layer(qubits: List, layer_params: List[float], offset: int, gate_indices:
     assert len(layer_params) == len(qubits) // 2
 
     circuits = [
-        gsgate(qubits[2 * i + offset], qubits[(2 * i + 1 + offset) % len(qubits)], layer_params[i])
+        gateset.gsgate(qubits[2 * i + offset],
+                       qubits[(2 * i + 1 + offset) % len(qubits)],
+                       layer_params[i])
         for i in gate_indices
     ]
     circuit = parallelize_circuits(*circuits)
@@ -96,11 +107,12 @@ def givens_swap_network(
     qubits: List,
     params: List[float],
     depth: int,
+    gateset: SeniorityZeroGateSet,
     target_qids: Optional[List[cirq.Qid]] = None,
     inverse: Optional[bool] = False,
     global_echo: Optional[bool] = False,
     echoed_layers: Optional[List] = None,
-):
+) -> cirq.Circuit:
     """Create a brick wall givens-swap circuit.
 
     Args:
@@ -146,7 +158,11 @@ def givens_swap_network(
         if echo_flag is True:
             layer_params = [-xx for xx in layer_params]
         layer_circuit = gs_layer(
-            qubits=qubits, layer_params=layer_params, offset=layer_id % 2, gate_indices=gate_indices
+            qubits=qubits,
+            layer_params=layer_params,
+            offset=layer_id % 2,
+            gate_indices=gate_indices,
+            gateset=gateset,
         )
         circuit = safe_concatenate_circuits(circuit, layer_circuit)
     if len(echoed_layers) % 2 == 1:
@@ -160,10 +176,11 @@ def GHZ_prep_2xn_mixed_filling(
     state_line1: List[int],
     state_line2: List[int],
     starting_index: int,
+    gateset: SeniorityZeroGateSet,
     inverse: Optional[bool] = False,
     global_echo: Optional[bool] = False,
-):
-    """Prepare a GHZ state on a 2xn qubit ladder
+) -> cirq.Circuit:
+    """Prepare a GHZ state on a 2xn qubit ladder.
 
     between a computational basis state and the vacuum state,
     starting from an initial qubit prepared in |0>+|1>.
@@ -180,9 +197,10 @@ def GHZ_prep_2xn_mixed_filling(
     """
 
     if global_echo is True:
-        cnot_or_cmnot = cmnot
+        cnot_or_cmnot = gateset.cmnot
     else:
-        cnot_or_cmnot = cnot
+        cnot_or_cmnot = gateset.cnot
+    swap = gateset.swap
 
     filled_indices = [
         index
@@ -254,8 +272,8 @@ def GHZ_prep_2xn_mixed_filling(
     return circuit
 
 
-def starting_index_GHZ_prep_2xn(state_line1, state_line2):
-    """Determines the optimal index for GHZ preparation
+def starting_index_GHZ_prep_2xn(state_line1, state_line2) -> int:
+    """Determines the optimal index for GHZ preparation.
 
     Finds the index on a 2xn grid that is optimally positioned
     for GHZ preparation (in terms of the resulting circuit depth)
@@ -274,9 +292,16 @@ def starting_index_GHZ_prep_2xn(state_line1, state_line2):
     return starting_index
 
 
-def get_starting_qubits_all_groups_2xN(qubits, extra_shift=None):
-    """Get (group-dependent) list of which qubit contains the VPE information
-    (This uses the depreciated GHZ preparation methods above)
+def get_starting_qubits_all_groups_2xN(
+    qubits: List[cirq.Qid],
+    extra_shift=None
+) -> List[cirq.Qid]:
+    """Get (group-dependent) list of which qubit contains the VPE information.
+
+    (This uses the GHZ preparation methods above)
+    Args:
+        qubits: 2xN ladder of qubits to be used in experiment
+        extra_shift: int - whether to pre-rotate the qubits list
     """
     print(f'Using extra shift: {extra_shift}')
     num_qubits = len(qubits)
@@ -302,8 +327,14 @@ def get_starting_qubits_all_groups_2xN(qubits, extra_shift=None):
     return starting_qubits
 
 
-def get_starting_qubits_all_groups_loop(qubits, groups, extra_shift=None):
-    """Get (group-dependent) list of which qubit contains the VPE information"""
+def get_starting_qubits_all_groups_loop(qubits, groups, extra_shift=None) -> List[cirq.Qid]:
+    """Get (group-dependent) list of which qubit contains the VPE information.
+
+    Args:
+        qubits: 2xN ladder of qubits to be used in experiment
+        groups: list of SnakeMeasurementGroups defining the measurement settings
+        extra_shift: int - whether to pre-rotate the qubits list
+    """
     num_qubits = len(qubits)
     starting_qubits = []
     for group in groups:
@@ -322,22 +353,31 @@ def get_starting_qubits_all_groups_loop(qubits, groups, extra_shift=None):
     return starting_qubits
 
 
-def starting_index_loop_on_lattice(loop: List[cirq.GridQubit], initial_state: List[int]):
-    """Finds the starting index of an optimal circuit to
-    produce a GHZ state on a lattice.
+def starting_index_loop_on_lattice(loop: List[cirq.Qid], initial_state: List[int]) -> int:
+    """Finds the starting index of an optimal circuit to produce a GHZ state on a lattice.
+
+    Args:
+        loop: 2xN ladder of qubits to be used in experiment
+        initial_state: initial state of experiment
     """
     pair = starting_pair_loop_on_lattice(loop, initial_state)
     q0id = loop.index(pair[0])
     return q0id
 
 
-def starting_pair_loop_on_lattice(loop: List[cirq.GridQubit], initial_state: List[int]):
-    """Finds the starting pair of an optimal circuit to
-    produce a GHZ state on a lattice.
+def starting_pair_loop_on_lattice(
+    loop: List[cirq.Qid],
+    initial_state: List[int]
+) -> List[cirq.Qid]:
+    """Finds the starting pair of an optimal circuit to produce a GHZ state on a lattice.
 
-    Assumes that a Bell state will first be prepared on these
-    two qubits, then copied to the rest of the system around
-    the loop."""
+    Assumes that a Bell state will first be prepared on these two qubits, then copied to the rest
+    of the system around the loop.
+
+    Args:
+        loop: 2xN ladder of qubits to be used in experiment
+        initial_state: initial state of experiment
+    """
     adjacent_pairs = [
         (q0, q1) for q0id, q0 in enumerate(loop) for q1 in loop[q0id + 1 :] if q0.is_adjacent(q1)
     ]
@@ -359,16 +399,26 @@ def starting_pair_loop_on_lattice(loop: List[cirq.GridQubit], initial_state: Lis
 
 
 def GHZ_prep_loop_on_lattice(
-    loop: List[cirq.GridQubit],
+    loop: List[cirq.Qid],
     initial_state: List[int],
+    gateset: SeniorityZeroGateSet,
     global_echo: Optional[bool] = False,
     inverse: Optional[bool] = False,
-):
+) -> cirq.Circuit:
+    """Makes a circuit to prepare a GHZ state using the connectivity of a loop on a lattice.
+
+    Args:
+        loop: 2xN ladder of qubits to be used in experiment
+        initial_state: initial state of experiment
+        global_echo: whether or not the system has had prod_i X_i applied
+        inverse: flag to invert the circuit
+    """
 
     if global_echo is True:
-        cnot_or_cmnot = cmnot
+        cnot_or_cmnot = gateset.cmnot
     else:
-        cnot_or_cmnot = cnot
+        cnot_or_cmnot = gateset.cnot
+    swap = gateset.swap
 
     init_pair = starting_pair_loop_on_lattice(loop, initial_state)
     circuit_list = [cnot_or_cmnot(init_pair[0], init_pair[1])]

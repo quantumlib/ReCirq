@@ -18,7 +18,7 @@ import cirq
 import numpy as np
 
 
-def gsgate_from_sqrt_swap(q0, q1, theta):
+def gsgate_from_sqrt_swap(q0: cirq.Qid, q1:cirq.Qid, theta: float) -> cirq.Circuit:
     """GS(theta) is a product of a Givens rotation (by theta) and a swap"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
@@ -45,7 +45,7 @@ def gsgate_from_sqrt_swap(q0, q1, theta):
     return circuit
 
 
-def gsgate_from_cz(q0: cirq.Qid, q1: cirq.Qid, theta: float):
+def gsgate_from_cz(q0: cirq.Qid, q1: cirq.Qid, theta: float) -> cirq.Circuit:
     """GS(theta) is a product of a Givens rotation (by theta) and a swap"""
     circuit = cirq.Circuit()
     if theta > 0:
@@ -98,7 +98,8 @@ def gsgate_from_cz(q0: cirq.Qid, q1: cirq.Qid, theta: float):
     return circuit
 
 
-def cnot_from_cz(q0, q1):
+def cnot_from_cz(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Fixed construction of a cnot from a cz to preserve 1q-2q layers"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
         [cirq.PhasedXZGate(x_exponent=0.5, axis_phase_exponent=-0.5, z_exponent=0).on(q1)]
@@ -111,7 +112,8 @@ def cnot_from_cz(q0, q1):
     return circuit
 
 
-def cnot_from_sqrt_swap(q0, q1):
+def cnot_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Fixed construction of a cnot from sqrt_swap to preserve 1q-2q layers"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
         [
@@ -140,7 +142,7 @@ def cnot_from_sqrt_swap(q0, q1):
     return circuit
 
 
-def cmnot_from_sqrt_swap(q0, q1):
+def cmnot_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """CMNOT is a NOT controlled by the |0> state of the control qubit"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
@@ -170,7 +172,7 @@ def cmnot_from_sqrt_swap(q0, q1):
     return circuit
 
 
-def cmnot_from_cz(q0, q1):
+def cmnot_from_cz(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """CMNOT is a NOT controlled by the |0> state of the control qubit"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
@@ -184,7 +186,8 @@ def cmnot_from_cz(q0, q1):
     return circuit
 
 
-def swap_from_sqrt_swap(q0, q1):
+def swap_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Fixed construction of a swap gate from sqrt swap to preserve 1q-2q moment structure"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
         [
@@ -202,7 +205,8 @@ def swap_from_sqrt_swap(q0, q1):
     return circuit
 
 
-def swap_from_cz(q0, q1):
+def swap_from_cz(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Fixed construction of a swap gate from cz to preserve 1q-2q moment structure"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
         [cirq.PhasedXZGate(x_exponent=0.5, axis_phase_exponent=-0.5, z_exponent=0).on(q1)]
@@ -236,11 +240,13 @@ def swap_from_cz(q0, q1):
     return circuit
 
 
-def swap_diagonalization_gate_from_cz(q0, q1):
+def swap_diagonalization_gate_from_cz(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Fixed construction of a swap-diag gate from cz to preserve 1q-2q moment structure"""
     return gsgate_from_cz(q0, q1, np.pi / 4)
 
 
-def swap_diagonalization_gate_from_sqrtswap(q0, q1):
+def swap_diagonalization_gate_from_sqrtswap(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Fixed construction of a swap-diag gate from sqrt swap to preserve 1q-2q moment structure"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
         [
@@ -259,11 +265,12 @@ def swap_diagonalization_gate_from_sqrtswap(q0, q1):
     return circuit
 
 
-def xxyy_diag_from_cz(q0, q1):
+def xxyy_diag_from_cz(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
+    """Fixed construction of an XXYY-diag gate from cz to preserve 1q-2q moment structure"""
     return gsgate_from_cz(q0, q1, np.pi / 4)
 
 
-def xxyy_diag_from_sqrt_swap(q0, q1):
+def xxyy_diag_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Rotates 0.5*(XX+YY+IZ+ZI) -> ZI and 0.5*(IZ+ZI-XX-YY) -> IZ"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
@@ -275,7 +282,7 @@ def xxyy_diag_from_sqrt_swap(q0, q1):
     return circuit
 
 
-def rzz_from_cz(q0, q1, theta):
+def rzz_from_cz(q0: cirq.Qid, q1: cirq.Qid, theta: float) -> cirq.Circuit:
     """Rotates by exp(i*theta*ZZ) using a CZ gate"""
     moment_1q1 = cirq.Moment(
         [cirq.PhasedXZGate(x_exponent=0.5, axis_phase_exponent=-0.5, z_exponent=0).on(q1)]
@@ -296,11 +303,11 @@ def rzz_from_cz(q0, q1, theta):
     return circuit
 
 
-def rzz_from_sqrt_swap(q0, q1, theta):
+def rzz_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid, theta: float)-> cirq.Circuit:
     raise NotImplementedError
 
 
-def yyzz_diag_from_cz(q0, q1):
+def yyzz_diag_from_cz(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Rotates YY -> ZI and ZZ -> IZ"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
@@ -320,7 +327,7 @@ def yyzz_diag_from_cz(q0, q1):
     return circuit
 
 
-def xxzz_diag_from_cz(q0, q1):
+def xxzz_diag_from_cz(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Rotates XX -> ZI and ZZ -> IZ"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
@@ -337,7 +344,7 @@ def xxzz_diag_from_cz(q0, q1):
     return circuit
 
 
-def yyzz_diag_from_sqrt_swap(q0, q1):
+def yyzz_diag_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Rotates YY -> ZI and ZZ -> IZ"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(
@@ -370,7 +377,7 @@ def yyzz_diag_from_sqrt_swap(q0, q1):
     return circuit
 
 
-def xxzz_diag_from_sqrt_swap(q0, q1):
+def xxzz_diag_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid) -> cirq.Circuit:
     """Rotates XX -> ZI and ZZ -> IZ"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(

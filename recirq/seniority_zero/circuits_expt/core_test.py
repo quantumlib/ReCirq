@@ -25,6 +25,7 @@ from recirq.seniority_zero.circuits_expt.core import (
     givens_swap_network,
     starting_index_GHZ_prep_2xn,
 )
+from recirq.seniority_zero.circuits_expt.gate_sets import CZ_GATESET
 from recirq.seniority_zero.scheduling import get_tqbg_groups
 
 
@@ -32,7 +33,7 @@ def test_givens_swap_network():
     qubits = [cirq.GridQubit(0, j) for j in range(6)]
     params = np.random.uniform(0, 1, 9)
     depth = 3
-    circuit = givens_swap_network(qubits, params, depth)
+    circuit = givens_swap_network(qubits, params, depth, CZ_GATESET)
     assert len(circuit) == 19  # 6 gates per layer * 3 layers + initial gate
 
 
@@ -43,7 +44,7 @@ def test_GHZ_prep_2xn_mixed_filling():
     state_line2 = [1, 0, 1]
     starting_index = starting_index_GHZ_prep_2xn(state_line1, state_line2)
     circuit = GHZ_prep_2xn_mixed_filling(
-        qubit_line1, qubit_line2, state_line1, state_line2, starting_index
+        qubit_line1, qubit_line2, state_line1, state_line2, starting_index, CZ_GATESET
     )
     assert len(circuit) == 11  # 2 x CNOT + 1 x SWAP compiled from CZ
 
@@ -53,7 +54,7 @@ def test_GHZ_prep_loop_on_lattice():
     qubit_line2 = [cirq.GridQubit(1, j) for j in reversed(range(3))]
     loop = qubit_line1 + qubit_line2
     initial_state = [0, 1, 0, 1, 0, 1]
-    circuit = GHZ_prep_loop_on_lattice(loop, initial_state)
+    circuit = GHZ_prep_loop_on_lattice(loop, initial_state, CZ_GATESET)
     assert len(circuit) == 11
 
 

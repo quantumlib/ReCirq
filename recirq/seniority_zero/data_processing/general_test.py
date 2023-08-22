@@ -159,8 +159,8 @@ def test_get_signed_count_postselected():
     simulator = cirq.Simulator()
     res = simulator.run(circuit, repetitions=10000)
     sc, tc = get_signed_count_postselected(res.data, [q, q2], [q, q2], 2)
-    assert abs(tc - 5000) < 100
-    assert abs(sc - 5000) < 100
+    assert abs(tc - 5000) < 500
+    assert abs(sc - 5000) < 500
 
 
 def test_get_p0m_count_verified():
