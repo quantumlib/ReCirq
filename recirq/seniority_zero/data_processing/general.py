@@ -315,9 +315,9 @@ def get_signed_count(
     the number of 1's.)
 
     result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [list[cirq.GridQubit]] : the qubits to calculate the
+    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
         signed count across
-    all_qubits [list[cirq.GridQubit]] : list of all qubits
+    all_qubits [List[cirq.GridQubit]] : list of all qubits
     """
     if isinstance(frame, cirq.Result):
         return get_signed_count(frame.data, msmt_qubits, all_qubits)
@@ -343,9 +343,9 @@ def get_signed_count_verified(
     the number of 1's.)
 
     result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [list[cirq.GridQubit]] : the qubits to calculate the
+    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
         signed count across
-    all_qubits [list[cirq.GridQubit]] : list of all qubits
+    all_qubits [List[cirq.GridQubit]] : list of all qubits
     correct_number: How many of all_qubits (excluding msmt_qubits)
         should be equal to 1.
     """
@@ -377,9 +377,9 @@ def get_signed_count_postselected(
     the number of 1's.)
 
     result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [list[cirq.GridQubit]] : the qubits to calculate the
+    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
         signed count across
-    all_qubits [list[cirq.GridQubit]] : list of all qubits
+    all_qubits [List[cirq.GridQubit]] : list of all qubits
     correct_number: How many of all_qubits should be equal to 1.
     """
     if type(frame) == cirq.Result:
@@ -403,9 +403,9 @@ def get_p0m_count_verified(
     """Calculate counts of +, -, and 0 for a verification experiment
 
     result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [list[cirq.GridQubit]] : the qubits to calculate the
+    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
         signed count across
-    all_qubits [list[cirq.GridQubit]] : list of all qubits
+    all_qubits [List[cirq.GridQubit]] : list of all qubits
     correct_number: How many of all_qubits (excluding msmt_qubits)
         should be equal to 1.
     """

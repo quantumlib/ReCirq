@@ -85,7 +85,7 @@ def gs_layer(
     |_________________|
 
     Args:
-        qubits [List[cirq.Qid]]: array with the indexing for the qubit
+        qubits [List[cirq.Qid]: array with the indexing for the qubit
         layer_params [List[float]]: array of length len(qubits)//2 with
             the parameters for the givens rotations of the layer
         odd_flag [bool]: whether this is an even or odd layer
@@ -116,16 +116,16 @@ def givens_swap_network(
     """Create a brick wall givens-swap circuit.
 
     Args:
-        qubits [list]: array with the indexing for the qubit
-        params [list]: array of length depth*(len(qubits)//2)
+        qubits : array with the indexing for the qubit
+        params : array of length depth*(len(qubits)//2)
             with the parameters for the givens rotations
-        depth [int]: depth of the BrickLayer network
-        inverse [bool]: whether to invert the circuit (the GS gate is
+        depth : depth of the BrickLayer network
+        inverse : whether to invert the circuit (the GS gate is
             self-inverse, so this just requires flipping the order of
             application)
-        global_echo [bool]: whether the circuit has incurred a global
+        global_echo : whether the circuit has incurred a global
             echo (i.e. prod_i X_i before and afterwards)
-        echoed_layers [List]: which layers to put additional echos **before**.
+        echoed_layers : which layers to put additional echos **before**.
     """
 
     num_qubits = len(qubits)
@@ -189,11 +189,11 @@ def GHZ_prep_2xn_mixed_filling(
     and linear coupling along both lines.
 
     Args:
-        qubit_line1 [list]: list of qubits on line 1
-        qubit_line2 [list]: list of qubits on line 2
-        state_line1 [list]: computational basis state on line 1
-        state_line2 [list]: computational basis state on line 2
-        starting_index [int]: where to begin filling from.
+        qubit_line1 : list of qubits on line 1
+        qubit_line2 : list of qubits on line 2
+        state_line1 : computational basis state on line 1
+        state_line2 : computational basis state on line 2
+        starting_index : where to begin filling from.
     """
 
     if global_echo is True:
@@ -279,8 +279,8 @@ def starting_index_GHZ_prep_2xn(state_line1: List, state_line2: List) -> int:
     for GHZ preparation (in terms of the resulting circuit depth)
 
     Args:
-        state_line1 [list]: computational basis state on line 1
-        state_line2 [list]: computational basis state on line 2
+        state_line1 : computational basis state on line 1
+        state_line2 : computational basis state on line 2
     """
 
     filled_indices = [
