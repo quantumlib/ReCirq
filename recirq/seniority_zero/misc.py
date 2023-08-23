@@ -324,15 +324,11 @@ def safe_tetris_circuits(circuit1: cirq.Circuit, circuit2: cirq.Circuit) -> cirq
     test_set_1r = set([len(gate.qubits) for gate in moment_1r])
     test_set_2l = set([len(gate.qubits) for gate in moment_2l])
     if len(test_set_1r) != 1:
-        print(moment_1r)
-        print(moment_1l)
-        print(moment_2l)
-        raise ValueError('Circuit 1 not in correct form')
+        raise ValueError('Circuit 1 not in correct form, moments {}, {}'.format(
+            moment_1r, moment_2l))
     if len(test_set_2l) != 1:
-        print(moment_1r)
-        print(moment_1l)
-        print(moment_2l)
-        raise ValueError('Circuit 2 not in correct form')
+        raise ValueError('Circuit 2 not in correct form, moments {}, {}'.format(
+            moment_1r, moment_2l))
     (gate_type_1r,) = test_set_1r
     (gate_type_2l,) = test_set_2l
 
@@ -353,10 +349,8 @@ def safe_tetris_circuits(circuit1: cirq.Circuit, circuit2: cirq.Circuit) -> cirq
         moment_1l = circuit1[moment_to_tetris_to + 1]
         test_set_1l = set([len(gate.qubits) for gate in moment_1l])
         if len(test_set_1l) != 1:
-            print(moment_1r)
-            print(moment_1l)
-            print(moment_2l)
-            raise ValueError('Circuit 1 not in correct form')
+            raise ValueError('Circuit 1 not in correct form, moments {}, {}, {}'.format(
+                moment_1r, moment_1l, moment_2l))
         (gate_type_1l,) = test_set_1l
         if gate_type_1l == gate_type_2l:
             circuit = safe_concatenate_circuits(
@@ -385,13 +379,11 @@ def safe_concatenate_circuits(circuit1: cirq.Circuit, circuit2: cirq.Circuit) ->
     test_set_2l = set([len(gate.qubits) for gate in moment_2l])
 
     if len(test_set_1r) != 1:
-        print(moment_1r)
-        print(moment_2l)
-        raise ValueError('Circuit 1 not in correct form')
+        raise ValueError('Circuit 1 not in correct form, moments {}, {}'.format(
+            moment_1r, moment_2l))
     if len(test_set_2l) != 1:
-        print(moment_1r)
-        print(moment_2l)
-        raise ValueError('Circuit 2 not in correct form')
+        raise ValueError('Circuit 2 not in correct form, moments {}, {}'.format(
+            moment_1r, moment_2l))
     (gate_type_1r,) = test_set_1r
     (gate_type_2l,) = test_set_2l
 
