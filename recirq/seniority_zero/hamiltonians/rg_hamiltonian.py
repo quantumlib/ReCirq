@@ -37,8 +37,9 @@ class RGDOCI:
 
         P_{i} = a_{ibeta}a_{ialpha}
 
-        :param g_value: Interaction parameter for RG model
-        :param norbs: Number of spatial orbitals
+        Args:
+            g_value: Interaction parameter for RG model
+            norbs: Number of spatial orbitals
         """
         self.g_value = g_value
         self.norbs = norbs
@@ -48,7 +49,6 @@ class RGDOCI:
         r"""H = sum_{i=1}^{n}(i)(n_{i,alpha} + n_{i,beta} + g/2\sum_{i =\= j}P_{i}^ P_{j}
 
         but symmeterized for ab and ba space
-        :return:
         """
         spatial_orbs = self.norbs
         h1 = np.diag(np.arange(spatial_orbs) + 1)
@@ -176,11 +176,11 @@ class RGDOCI:
         The returned object is useful because we can directly use it to compute
         expectation values from cirq simulator objects.
 
-        :param qubits: list of qubits where the order corresponds to basis order
+        Args:
+            qubits: list of qubits where the order corresponds to basis order
                        used.  if ov_basis flag then [0, N/2, 1, N/2 + 1, ...]
                        else [0, 1, ..., N].
-        :param bool ov_basis: flag for which basis ordering to use [ov, occ-virt]
-        :return: cirq.PauliSum representing the Hamiltonian
+            bool ov_basis: flag for which basis ordering to use [ov, occ-virt]
         """
         if len(qubits) != self.norbs:
             raise ValueError("Number of qubits is not consistent with the problem size")

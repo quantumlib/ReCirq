@@ -24,6 +24,7 @@ class GSGate(cirq.Gate):
 
     def __init__(self, angle: float):
         """Givens-swap gate: a product of Givens rotation gate and swap.
+
         Args:
             angle[float]: the angle to rotate by
         """
@@ -78,7 +79,8 @@ class ZIpXYRotationGate(cirq.Gate):
     """A rotation exp[i * (-angle / 2) * (IZ + ZI + XX + YY)]"""
 
     def __init__(self, angle: float):
-        """Givens-swap gate: a product of Givens rotation gate and swap.
+        """A rotation exp[i * (-angle / 2) * (IZ + ZI + XX + YY)]
+
         Args:
             angle[float]: the angle to rotate by
         """
@@ -116,7 +118,8 @@ class ZImXYRotationGate(cirq.Gate):
     """A rotation exp[i * (-angle / 2) * (IZ + ZI - (XX + YY))]"""
 
     def __init__(self, angle: float):
-        """Givens-swap gate: a product of Givens rotation gate and swap.
+        """A rotation exp[i * (-angle / 2) * (IZ + ZI - (XX + YY))]
+
         Args:
             angle[float]: the angle to rotate by
         """
@@ -154,7 +157,8 @@ class ZZRotationGate(cirq.Gate):
     """A rotation around ZZ"""
 
     def __init__(self, angle: float):
-        """Givens-swap gate: a product of Givens rotation gate and swap.
+        """A rotation around ZZ
+
         Args:
             angle[float]: the angle to rotate by
         """

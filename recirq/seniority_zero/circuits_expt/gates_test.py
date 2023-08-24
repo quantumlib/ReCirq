@@ -30,6 +30,7 @@ from recirq.seniority_zero.circuits_expt.gates import (
 
 def givens_gate(a, b, theta) -> cirq.Circuit:
     """Implements the givens rotation with sqrt(iswap).
+
     The inverse(sqrt(iswap)) is made with z before and after"""
     givens_gate = cirq.Circuit(
         [

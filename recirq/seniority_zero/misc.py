@@ -82,7 +82,7 @@ def get_num_circuit_copies(tag: Dict, hamiltonian: QubitOperator, factor: float)
 def get_standard_qubit_set(
     num_qubits: int, q0: Optional[cirq.GridQubit] = None, direction: Optional[str] = 'R'
 ) -> List[cirq.GridQubit]:
-    '''Create a 'standard' 2xN grid of qubits
+    """Create a 'standard' 2xN grid of qubits
 
     The grid is returned as a loop; e.g. a grid of 8 qubits with right alignment
     takes the form:
@@ -97,7 +97,7 @@ def get_standard_qubit_set(
         direction: 'R', 'L', 'U', or 'D'. The direction to go from q0 to
             form the loop. We make a right-hand turn upon reaching
             qubit num_qubits//2 and again the qubit after.
-    '''
+    """
     if q0 is None:
         q0 = cirq.GridQubit(0, 0)
     if direction == 'R':
@@ -263,7 +263,7 @@ def add_echoes(circuit: cirq.Circuit, check_1q_2q_form: Optional[bool] = True) -
 def check_separated_single_and_two_qubit_layers(
     circuits: List[cirq.Circuit], strict: Optional[bool] = True
 ):
-    '''Checks whether a set of circuits satisfy the 1q-2q layer form.
+    """Checks whether a set of circuits satisfy the 1q-2q layer form.
 
     In the loose 1q-2q layer form, we simply require that each moment in the
     circuit either contains single-qubit or two-qubit gates.
@@ -278,7 +278,7 @@ def check_separated_single_and_two_qubit_layers(
     Args:
         circuits [List[cirq.Circuit]]: the circuits to be checked
         strict [bool]: whether to enforce the strict condition above
-    '''
+    """
     for circuit_id, circuit in enumerate(circuits):
         for moment_id, moment in enumerate(circuit[:-1]):
             test_set = set([len(gate.qubits) for gate in moment])

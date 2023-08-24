@@ -22,9 +22,6 @@ def rotate_list(items: List, shift: int, clockwise: bool = True) -> List:
         items (List): list to rotate
         shift (int): how much to rotate
         clockwise (bool): whether to rotate clockwise
-
-    Returns:
-        List
     """
     if clockwise:
         return items[-shift:] + items[:-shift]
@@ -57,8 +54,8 @@ def get_tqbg_groups(n_qubits: int) -> List[SnakeMeasurementGroup]:
     By complete, we mean that each pair of virtual indices is guaranteed
     to appear in at least one group.
 
-    Returns:
-        List[SnakeMeasurementGroup]
+    Args:
+        n_qubits: number of qubits in loop
     """
 
     # This used to take in a list of qubits rather than the number;

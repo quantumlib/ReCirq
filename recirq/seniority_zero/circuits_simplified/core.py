@@ -47,8 +47,12 @@ def brickwall_givens_swap_network(
 ) -> Generator:
     """Generates a brickwall Givens swap ansatz with fixed parameters.
 
+    By 'brickwall' we mean a 1D ansatz with alternating odd / even 2Q gates of the same structure
+    and layers of single-qubit gates in between. This looks like a brick wall when you draw it.
+
     Args:
-        qubits [List of cirq.GridQubit]: loop of qubits to act on
+        qubits [List of cirq.GridQubit]: loop of qubits to act on; i.e. we will couple each
+            qubit with the qubit next to it, and qubits[-1] with qubits[0]
         params [List of float]: list of parameters. Parameters are
             ordered first by their layer, then by the position of the
             qubits they act on in the loop

@@ -31,7 +31,10 @@ def multi_measurement_histogram(
 ) -> collections.Counter:
     """Converts either a cirq.Result or pandas.Dataframe to a histogram
 
-    Note: assumes each key is assigned to a measurement of a single qubit
+    Args:
+        result: container with data to be turned into a histogram.
+        keys: list of keys to be histogrammed. Note: assumes each key is assigned to a measurement
+            of a single qubit
     """
     if isinstance(result, cirq.Result):
         return result.multi_measurement_histogram(keys=keys)
@@ -314,10 +317,11 @@ def get_signed_count(
     (I.e. for a single qubit, the signed count is the number of 0's minus
     the number of 1's.)
 
-    result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
-        signed count across
-    all_qubits [List[cirq.GridQubit]] : list of all qubits
+    Args:
+        frame [pandas.DataFrame] : the dataframe to use
+        msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
+            signed count across
+        all_qubits [List[cirq.GridQubit]] : list of all qubits
     """
     if isinstance(frame, cirq.Result):
         return get_signed_count(frame.data, msmt_qubits, all_qubits)
@@ -342,12 +346,13 @@ def get_signed_count_verified(
     (I.e. for a single qubit, the signed count is the number of 0's minus
     the number of 1's.)
 
-    result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
-        signed count across
-    all_qubits [List[cirq.GridQubit]] : list of all qubits
-    correct_number: How many of all_qubits (excluding msmt_qubits)
-        should be equal to 1.
+    Args:
+        frame [pandas.DataFrame] : the dataframe to use
+        msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
+            signed count across
+        all_qubits [List[cirq.GridQubit]] : list of all qubits
+        correct_number: How many of all_qubits (excluding msmt_qubits)
+            should be equal to 1.
     """
     if type(frame) == cirq.Result:
         return get_signed_count_verified(frame.data, msmt_qubits, all_qubits, correct_number)
@@ -376,11 +381,12 @@ def get_signed_count_postselected(
     (I.e. for a single qubit, the signed count is the number of 0's minus
     the number of 1's.)
 
-    result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
-        signed count across
-    all_qubits [List[cirq.GridQubit]] : list of all qubits
-    correct_number: How many of all_qubits should be equal to 1.
+    Args:
+        frame [pandas.DataFrame] : the dataframe to use
+        msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
+            signed count across
+        all_qubits [List[cirq.GridQubit]] : list of all qubits
+        correct_number: How many of all_qubits should be equal to 1.
     """
     if type(frame) == cirq.Result:
         return get_signed_count_postselected(frame.data, msmt_qubits, all_qubits, correct_number)
@@ -402,12 +408,13 @@ def get_p0m_count_verified(
 ) -> Tuple[int, int, int]:
     """Calculate counts of +, -, and 0 for a verification experiment
 
-    result [pandas.DataFrame] : the dataframe to use
-    msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
-        signed count across
-    all_qubits [List[cirq.GridQubit]] : list of all qubits
-    correct_number: How many of all_qubits (excluding msmt_qubits)
-        should be equal to 1.
+    Args:
+        frame [pandas.DataFrame] : the dataframe to use
+        msmt_qubits [List[cirq.GridQubit]] : the qubits to calculate the
+            signed count across
+        all_qubits [List[cirq.GridQubit]] : list of all qubits
+        correct_number: How many of all_qubits (excluding msmt_qubits)
+            should be equal to 1.
     """
     if type(frame) == cirq.Result:
         return get_p0m_count_verified(frame.data, msmt_qubits, all_qubits, correct_number)

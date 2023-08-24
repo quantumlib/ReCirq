@@ -31,7 +31,7 @@ from recirq.seniority_zero.misc import (
 from recirq.seniority_zero.scheduling import get_tqbg_groups
 
 
-def _make_lightcone(num_qubits: int, depth: int=None) -> List:
+def _make_lightcone(num_qubits: int, depth: int=None) -> List[cirq.Gate]:
     """Make list of gates which are hit by a given qubit's backwards light cone.
 
     Args:
