@@ -75,7 +75,7 @@ def main(*, out_fn: str = 'ci-requirements.txt', relative_cirq_version: str = 'c
     core_reqs = _set_cirq_version(core_reqs, relative_cirq_version)
 
     extras_require = [
-        'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard', 'qml_lfe'
+        'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard', 'qml_lfe', 'seniority_zero',
     ]
     extras_require = {
         r: _parse_requirements(pathlib.Path(REPO_DIR / f'recirq/{r}/extra-requirements.txt'))
