@@ -13,21 +13,34 @@
 # limitations under the License.
 """Module for simulating 1D Floquet XXZ dynamics and measuring the transferred magnetization.
 
-You can initialize a KPZ experiment for a particular number of cycles, t, using KPZExperiment,
-which, by default, uses the minimum of 2*t qubits. You can then run the experiment using either
-its run_experiment_amplitudes() method or its run_experiment() method. The former requires you
-to input a Cirq sampler that supports statevector simulations, whereas the latter requires only
-one that can sample bitstrings, closer to what is done in the experiment. A
-KPZExperimentResultsFromAplitudes or KPZExperimentResults object is returned, from which the
+This module allows you to perform a numerical version of the experiment detailed in
+[arXiv:2306.09333](https://arxiv.org/abs/2306.09333). In particular, it is conjectured that the
+late-time dynamics of the 1D Heisenberg spin chain (or the corresponding Floquet system) are
+described by the Kardar-Parisi-Zhang (KPZ) universality class. By studying higher moments of
+the transferred magnetization, one can see disagreement from the KPZ predictions, at least at
+times accessible to us. To measure these moments, we initialize a 1D chain of qubits in product
+states sampled from Eq. 3 of [arXiv:2306.09333](https://arxiv.org/abs/2306.09333). Then we apply
+alternating layers of fSim gates to implement the Floquet dynamics. Finally, we measure the qubits
+and check how many excitations crossed the center of the chain. Twice this quantity is the
+transferred magnetization.
+
+The class `KPZExperiment` sets up this experiment for a particular number, $t$, of cycles of fSim
+gates, where a cycle is depicted in Figure 1 of [arXiv:2306.09333](https://arxiv.org/abs/2306.09333).
+By default, the simulation uses the minimum number of qubits, $2t$. You can then run the
+experiment using either the `run_experiment_amplitudes()` method or the `run_experiment()` method.
+The former requires you to input a Cirq sampler that supports statevector simulations, whereas the
+latter requires only one that can sample bitstrings, closer to what is done in the experiment. A
+`KPZExperimentResultsFromAmplitudes` or `KPZExperimentResults` object is returned, from which the
 probability distribution of the transferred magnetization can be seen, as well as its first
 four moments. The statistical uncertainties of the moments can be computed using the methods
-jackknife_mean(), jackknife_var(), jackknife_skw(), and jackknife_kur().
+`jackknife_mean()`, `jackknife_variance()`, `jackknife_skew()`, and `jackknife_kurtosis()`.
 
-run_experiment() differs from what is done on hardware in several important ways. It does not
-include any of the post-selection that we do as part of our error mitigation (since in this
-tutorial, it is run on a noiseless simulator). Further, in the experiment, we use 46 qubits
-for all cycles instead of 2*t qubits. On hardware, we also use the same initial bitstrings
-across cycle numbers, whereas here they are chosen independently.
+The `run_experiment()` method differs from what is done on hardware in several important ways.
+It does not include any of the post-selection that we do as part of our error mitigation
+(since in this tutorial, it is run on a noiseless simulator). Further, in the experiment,
+we use 46 qubits for all cycles instead of $2t$ qubits, which is beyond brute-force classical
+simulation. On hardware, we also use the same initial bitstrings across cycle numbers, whereas
+here they are chosen independently.
 
 """
 
@@ -44,38 +57,30 @@ import matplotlib.pyplot as plt
 rng = np.random.default_rng()
 
 
-def _dec_to_binary(d, n):
-    i = np.arange(n)
-    return (
-        np.floor(np.outer(d, 1 / 2**i)) - np.floor(np.outer(d, 1 / 2 ** (i + 1))) * 2
-    ).astype("int")
-
-
-def _dec_to_binary_right(d, n):
+def _dec_to_binary_right(d : Union[np.ndarray, int], n : int) -> Union[np.ndarray, int]:
     i = np.arange(n // 2)
     return (
         np.floor(np.outer(d, 1 / 2**i)) - np.floor(np.outer(d, 1 / 2 ** (i + 1))) * 2
     ).astype("int")
 
 
-class KPZExperimentResultsFromAplitudes:
+class KPZExperimentResultsFromAmplitudes:
     """A class for processing and storing numerical KPZ results.
 
-    An object of this type is returned by KPZExperiment.run_experiment_amplitudes(),
-    which uses statevector simulations to obtain the probabilities, pR[nR], of having
-    nR excitations on the right side of the chain, given the array of initial
-    bitstrings, initial_states. The probabilities and initial bitstrings are used to
-    obtain the probability distribution of the transferred magnetization, p_M, which
-    can be plotted with the plot_histogram() method and is also used to compute
-    the first four moments.
+    An object of this type is returned by `KPZExperiment.run_experiment_amplitudes()`,
+    which uses statevector simulations to obtain the probabilities, `prob_right[trial, nR]`, of having
+    `nR` excitations on the right side of the chain, given the initial state `initial_states[trial]`.
+    The probabilities and initial bitstrings are used to obtain the probability distribution of
+    the transferred magnetization, `transferred_magnetization_probs`, which can be plotted with the
+    `plot_histogram()` method and is also used to compute the first four moments.
     """
 
-    def __init__(self, pR: np.ndarray, initial_states: np.ndarray):
+    def __init__(self, prob_right: np.ndarray, initial_states: np.ndarray):
         """
         Args:
-            pR: pR[trial, num_right] is the probability of measuring num_right excitations
-                on the right side of the chain, given the initial state initial_states[trial].
-            initial_states: An array of the initial bitstrings used in the experiment.
+            `prob_right`: `prob_right[trial, num_right]` is the probability of measuring num_right excitations
+                on the right side of the chain, given the initial state `initial_states[trial]`.
+            `initial_states`: An array of the initial bitstrings used in the experiment.
         """
 
         num_trials, n = initial_states.shape
@@ -83,51 +88,51 @@ class KPZExperimentResultsFromAplitudes:
         self.num_initial_states = num_trials
         self.num_right_initial = num_right
 
-        self.M = np.arange(-n // 2, n // 2 + 1) * 2
-        p_M = np.zeros((num_trials, n + 1))
+        self.transferred_magnetization_vals = np.arange(-n // 2, n // 2 + 1) * 2
+        transferred_magnetization_probs = np.zeros((num_trials, n + 1))
         for trial in range(num_trials):
-            p_M[trial, (n // 2 - num_right[trial]) : (n - num_right[trial] + 1)] = pR[
+            transferred_magnetization_probs[trial, (n // 2 - num_right[trial]) : (n - num_right[trial] + 1)] = prob_right[
                 trial, :
             ]
-        self.p_M_all = p_M
-        self.p_M = np.mean(p_M, 0)
+        self.transferred_magnetization_probs_all = transferred_magnetization_probs
+        self.transferred_magnetization_probs = np.mean(transferred_magnetization_probs, 0)
         self.mean = self._mean()
         self.variance = self._variance()
         self.skewness = self._skewness()
         self.kurtosis = self._kurtosis()
 
     def _mean(self) -> float:
-        return self.p_M @ self.M
+        return self.transferred_magnetization_probs @ self.transferred_magnetization_vals
 
     def _variance(self) -> float:
-        return self.p_M @ (self.M - self.mean) ** 2
+        return self.transferred_magnetization_probs @ (self.transferred_magnetization_vals - self.mean) ** 2
 
     def _skewness(self) -> float:
-        return self.p_M @ (self.M - self.mean) ** 3 / self.variance ** (3 / 2)
+        return self.transferred_magnetization_probs @ (self.transferred_magnetization_vals - self.mean) ** 3 / self.variance ** (3 / 2)
 
     def _kurtosis(self) -> float:
-        return self.p_M @ (self.M - self.mean) ** 4 / self.variance**2 - 3
+        return self.transferred_magnetization_probs @ (self.transferred_magnetization_vals - self.mean) ** 4 / self.variance**2 - 3
 
     def _mean_excluding_i(self, i: int) -> float:
-        p_M = np.mean(np.delete(self.p_M_all, i, axis=0), axis=0)
-        return p_M @ self.M
+        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        return p @ self.transferred_magnetization_vals
 
-    def _var_excluding_i(self, i: int) -> float:
-        p_M = np.mean(np.delete(self.p_M_all, i, axis=0), axis=0)
-        mean_i = p_M @ self.M
-        return p_M @ (self.M - mean_i) ** 2
+    def _variance_excluding_i(self, i: int) -> float:
+        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        mean_i = p @ self.transferred_magnetization_vals
+        return p @ (self.transferred_magnetization_vals - mean_i) ** 2
 
-    def _skw_excluding_i(self, i: int) -> float:
-        p_M = np.mean(np.delete(self.p_M_all, i, axis=0), axis=0)
-        mean_i = p_M @ self.M
-        var_i = p_M @ (self.M - mean_i) ** 2
-        return p_M @ (self.M - mean_i) ** 3 / var_i ** (3 / 2)
+    def _skew_excluding_i(self, i: int) -> float:
+        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        mean_i = p @ self.transferred_magnetization_vals
+        variance_i = p @ (self.transferred_magnetization_vals - mean_i) ** 2
+        return p @ (self.transferred_magnetization_vals - mean_i) ** 3 / variance_i ** (3 / 2)
 
-    def _kur_excluding_i(self, i: int) -> float:
-        p_M = np.mean(np.delete(self.p_M_all, i, axis=0), axis=0)
-        mean_i = p_M @ self.M
-        var_i = p_M @ (self.M - mean_i) ** 2
-        return p_M @ (self.M - mean_i) ** 4 / var_i**2 - 3
+    def _kurtosis_excluding_i(self, i: int) -> float:
+        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        mean_i = p @ self.transferred_magnetization_vals
+        variance_i = p @ (self.transferred_magnetization_vals - mean_i) ** 2
+        return p @ (self.transferred_magnetization_vals - mean_i) ** 4 / variance_i**2 - 3
 
     def jackknife_mean(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
@@ -136,30 +141,29 @@ class KPZExperimentResultsFromAplitudes:
         mean_i = [self._mean_excluding_i(i) for i in range(self.num_initial_states)]
         return np.std(mean_i) * np.sqrt(self.num_initial_states - 1)
 
-    def jackknife_var(self) -> float:
+    def jackknife_variance(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             return 0
-        var_i = [self._var_excluding_i(i) for i in range(self.num_initial_states)]
-        return np.std(var_i) * np.sqrt(self.num_initial_states - 1)
+        variance_i = [self._variance_excluding_i(i) for i in range(self.num_initial_states)]
+        return np.std(variance_i) * np.sqrt(self.num_initial_states - 1)
 
-    def jackknife_skw(self) -> float:
+    def jackknife_skew(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             return 0
-        skw_i = [self._skw_excluding_i(i) for i in range(self.num_initial_states)]
-        return np.std(skw_i) * np.sqrt(self.num_initial_states - 1)
+        skew_i = [self._skew_excluding_i(i) for i in range(self.num_initial_states)]
+        return np.std(skew_i) * np.sqrt(self.num_initial_states - 1)
 
-    def jackknife_kur(self) -> float:
+    def jackknife_kurtosis(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             return 0
-        kur_i = [self._kur_excluding_i(i) for i in range(self.num_initial_states)]
-        return np.std(kur_i) * np.sqrt(self.num_initial_states - 1)
+        kurtosis_i = [self._kurtosis_excluding_i(i) for i in range(self.num_initial_states)]
+        return np.std(kurtosis_i) * np.sqrt(self.num_initial_states - 1)
 
     def plot_histogram(self, ax: Optional[Union[None, plt.Axes]] = None) -> plt.Axes:
-        """
-        Plot a histogram of transferred magnetization.
+        """Plot a histogram of transferred magnetization.
         Args:
             ax: Optional. A matplotlib axes on which to draw the histogram.
 
@@ -169,8 +173,8 @@ class KPZExperimentResultsFromAplitudes:
         """
         if not ax:
             fig, ax = plt.subplots(facecolor="white", dpi=200)
-        bins = np.append(self.M // 2, self.M[-1] // 2 + 1) - 0.5
-        ax.hist(self.M // 2, weights=self.p_M, bins=bins, edgecolor="k")
+        bins = np.append(self.transferred_magnetization_vals // 2, self.transferred_magnetization_vals[-1] // 2 + 1) - 0.5
+        ax.hist(self.transferred_magnetization_vals // 2, weights=self.transferred_magnetization_probs, bins=bins, edgecolor="k")
         ax.tick_params(direction="in", top=True, right=True)
         ax.set_xlabel("Number of 1s that crossed center, $\mathcal{M}/2$")
         ax.set_ylabel("Probability")
@@ -180,11 +184,11 @@ class KPZExperimentResultsFromAplitudes:
 class KPZExperimentResults:
     """A class for processing and storing KPZ experiment results.
 
-    An object of this type is returned by KPZExperiment.run_experiment(), which uses
-    the run() method of the Cirq sampler to sample final bitstrings given the initial
-    bitstrings specified by the initial_states array. The outputs of sampler.run() are
-    inputted as raw_results. Pooling these results together, the transferred
-    magnetization is computed. Its histogram can be visualized using the plot_histogram()
+    An object of this type is returned by `KPZExperiment.run_experiment()`, which uses
+    the `run()` method of the Cirq sampler to sample final bitstrings given the initial
+    bitstrings specified by the initial_states array. The outputs of `sampler.run()` are
+    inputted as `raw_results`. Pooling these results together, the transferred
+    magnetization is computed. Its histogram can be visualized using the `plot_histogram()`
     method. The first four moments can also be computed, as well as their statistical
     uncertainties.
     """
@@ -230,15 +234,15 @@ class KPZExperimentResults:
         tm = np.delete(self.transferred_magnetization, i, axis=axis)
         return np.mean(tm.flatten())
 
-    def _var_excluding_i(self, i: int, axis: Optional[int] = 0) -> float:
+    def _variance_excluding_i(self, i: int, axis: Optional[int] = 0) -> float:
         tm = np.delete(self.transferred_magnetization, i, axis=axis)
         return np.var(tm.flatten())
 
-    def _skw_excluding_i(self, i: int, axis: Optional[int] = 0) -> float:
+    def _skew_excluding_i(self, i: int, axis: Optional[int] = 0) -> float:
         tm = np.delete(self.transferred_magnetization, i, axis=axis)
         return sstats.skew(tm.flatten())
 
-    def _kur_excluding_i(self, i: int, axis: Optional[int] = 0) -> float:
+    def _kurtosis_excluding_i(self, i: int, axis: Optional[int] = 0) -> float:
         tm = np.delete(self.transferred_magnetization, i, axis=axis)
         return sstats.kurtosis(tm.flatten(), fisher=True)
 
@@ -250,7 +254,7 @@ class KPZExperimentResults:
         mean_i = [self._mean_excluding_i(i) for i in range(self.num_initial_states)]
         return np.std(mean_i) * np.sqrt(self.num_initial_states - 1)
 
-    def jackknife_var(self) -> float:
+    def jackknife_variance(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             axis = 1
@@ -258,10 +262,10 @@ class KPZExperimentResults:
         else:
             axis = 0
             tot = self.num_initial_states
-        var_i = [self._var_excluding_i(i, axis=axis) for i in range(tot)]
-        return np.std(var_i) * np.sqrt(tot - 1)
+        variance_i = [self._variance_excluding_i(i, axis=axis) for i in range(tot)]
+        return np.std(variance_i) * np.sqrt(tot - 1)
 
-    def jackknife_skw(self) -> float:
+    def jackknife_skew(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             axis = 1
@@ -269,10 +273,10 @@ class KPZExperimentResults:
         else:
             axis = 0
             tot = self.num_initial_states
-        skw_i = [self._skw_excluding_i(i, axis=axis) for i in range(tot)]
-        return np.std(skw_i) * np.sqrt(tot - 1)
+        skew_i = [self._skew_excluding_i(i, axis=axis) for i in range(tot)]
+        return np.std(skew_i) * np.sqrt(tot - 1)
 
-    def jackknife_kur(self) -> float:
+    def jackknife_kurtosis(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             axis = 1
@@ -280,8 +284,8 @@ class KPZExperimentResults:
         else:
             axis = 0
             tot = self.num_initial_states
-        kur_i = [self._kur_excluding_i(i, axis=axis) for i in range(tot)]
-        return np.std(kur_i) * np.sqrt(tot - 1)
+        kurtosis_i = [self._kur_excluding_i(i, axis=axis) for i in range(tot)]
+        return np.std(kurtosis_i) * np.sqrt(tot - 1)
 
     def plot_histogram(self, ax: Optional[Union[None, plt.Axes]] = None) -> plt.Axes:
         """
@@ -315,16 +319,16 @@ class KPZExperiment:
 
     This class implements 1D Floquet XXZ dynamics, realized as alternating layers of fSim
     gates. The initial states, parameterized by mu, interpolate between an
-    infinite-temperature/maximally mixed state at mu=0 and a pure domain wall
-    state at mu=inf. (See Eq. 3 of https://arxiv.org/pdf/2306.09333.pdf.) The transferred
+    infinite-temperature/maximally mixed state at $\mu=0$ and a pure domain wall
+    state at $\mu=\infty$. (See Eq. 3 of [arXiv:2306.09333](https://arxiv.org/pdf/2306.09333.pdf).) The transferred
     magnetization (the number of 1s that cross the center) is measured and
     its moments are computed.
 
-    The fSim gates are parameterized by theta and phi. The isotropic Heisenberg point, at which
-    the KPZ conjecture applies, corresponds to phi = 2*theta.
+    The fSim gates are parameterized by `theta` and `phi`. The isotropic Heisenberg point, at which
+    the KPZ conjecture applies, corresponds to `phi = 2*theta`.
 
-    The transferred magnetization is independent of system size up to N/2 cycles, where N
-    is the number of qubits. Therefore, in this class, we use 2*t qubits to simulate cycle t.
+    The transferred magnetization is independent of system size up to $N/2$ cycles, where $N$
+    is the number of qubits. Therefore, in this class, we use $2t$ qubits to simulate cycle $t$.
     In the experiment, we use 46 qubits to simulate cycles 0-23.
 
     """
@@ -341,12 +345,12 @@ class KPZExperiment:
         """
 
         Args:
-            num_cycles: The number of cycles to simulate.
-            mu: A parameter that controls the initial state.
-            num_init_states: The number of initial bitstrings to sample.
-            theta: fSim swap angle in radians.
-            phi: fSim cphase angle in radians.
-            num_qubits: The number of qubits to use. Defaults to 2*num_cycles. The actual
+            `num_cycles`: The number of cycles to simulate.
+            `mu`: A parameter that controls the initial state.
+            `num_init_states`: The number of initial bitstrings to sample.
+            `theta`: fSim swap angle in radians.
+            `phi`: fSim cphase angle in radians.
+            `num_qubits`: The number of qubits to use. Defaults to `2*num_cycles`. The actual
                 experiment uses 46.
         """
 
@@ -433,8 +437,8 @@ class KPZExperiment:
         """Run the experiment using the provided Cirq sampler.
 
         Args:
-            sampler: The cirq sampler to use for the simulation.
-            reps: The number of bitstrings to sample per initial state.
+            `sampler`: The cirq sampler to use for the simulation.
+            `reps`: The number of bitstrings to sample per initial state.
 
         Returns:
             A KPZExperimentResults object containing the measured bitstrings and histogram of
@@ -449,16 +453,16 @@ class KPZExperiment:
         return KPZExperimentResults(result, self.initial_states)
 
     def run_experiment_amplitudes(
-        self, sampler: cirq.Sampler
-    ) -> KPZExperimentResultsFromAplitudes:
+        self,
+        sampler: cirq.SimulatesAmplitudes
+    ) -> KPZExperimentResultsFromAmplitudes:
         """Run the experiment using the provided Cirq sampler. Computes amplitudes instead of sampling bitstrings.
-            reps is not used.
 
         Args:
-            sampler: The cirq sampler to use for the simulation.
+            `sampler`: The cirq sampler to use for the simulation.
 
         Returns:
-            A KPZExperimentResultsFromAmplitudes object containing the measured bitstrings and histogram of
+            A `KPZExperimentResultsFromAmplitudes` object containing the measured bitstrings and histogram of
             transferred magnetization, as well as the extracted moments.
 
         """
@@ -466,13 +470,13 @@ class KPZExperiment:
         all_states = np.arange(2**self.num_qubits)
         binary_states = _dec_to_binary_right(all_states, self.num_qubits)
         num_right = np.sum(binary_states, 1)
-        del binary_states
-        pR = np.zeros((self.num_init_states, self.num_qubits // 2 + 1))
+        del binary_states # this is exponentially large; delete to save memory
+        prob_right = np.zeros((self.num_init_states, self.num_qubits // 2 + 1))
         for idx, (qc, initial_bitstr) in tqdm(
             enumerate(zip(self.circuits, self.initial_states)),
             total=self.num_init_states,
         ):
-            nR0 = np.sum(initial_bitstr)
+            num_right_initial = np.sum(initial_bitstr)
             probs = (
                 np.abs(
                     sampler.compute_amplitudes(
@@ -481,7 +485,7 @@ class KPZExperiment:
                 )
                 ** 2
             )
-            for nR in np.arange(min(self.num_qubits // 2 + 1, nR0 + 1)):
-                pR[idx, nR] = probs @ (num_right == nR)
+            for num_right_val in np.arange(min(self.num_qubits // 2 + 1, num_right_initial + 1)):
+                prob_right[idx, num_right_val] = probs @ (num_right == num_right_val)
 
-        return KPZExperimentResultsFromAplitudes(pR, self.initial_states)
+        return KPZExperimentResultsFromAmplitudes(prob_right, self.initial_states)
