@@ -57,7 +57,7 @@ import matplotlib.pyplot as plt
 rng = np.random.default_rng()
 
 
-def _dec_to_binary_right(d : Union[np.ndarray, int], n : int) -> Union[np.ndarray, int]:
+def _dec_to_binary_right(d: Union[np.ndarray, int], n: int) -> Union[np.ndarray, int]:
     i = np.arange(n // 2)
     return (
         np.floor(np.outer(d, 1 / 2**i)) - np.floor(np.outer(d, 1 / 2 ** (i + 1))) * 2
@@ -91,48 +91,79 @@ class KPZExperimentResultsFromAmplitudes:
         self.transferred_magnetization_vals = np.arange(-n // 2, n // 2 + 1) * 2
         transferred_magnetization_probs = np.zeros((num_trials, n + 1))
         for trial in range(num_trials):
-            transferred_magnetization_probs[trial, (n // 2 - num_right[trial]) : (n - num_right[trial] + 1)] = prob_right[
-                trial, :
-            ]
+            transferred_magnetization_probs[
+                trial, (n // 2 - num_right[trial]) : (n - num_right[trial] + 1)
+            ] = prob_right[trial, :]
         self.transferred_magnetization_probs_all = transferred_magnetization_probs
-        self.transferred_magnetization_probs = np.mean(transferred_magnetization_probs, 0)
+        self.transferred_magnetization_probs = np.mean(
+            transferred_magnetization_probs, 0
+        )
         self.mean = self._mean()
         self.variance = self._variance()
         self.skewness = self._skewness()
         self.kurtosis = self._kurtosis()
 
     def _mean(self) -> float:
-        return self.transferred_magnetization_probs @ self.transferred_magnetization_vals
+        return (
+            self.transferred_magnetization_probs @ self.transferred_magnetization_vals
+        )
 
     def _variance(self) -> float:
-        return self.transferred_magnetization_probs @ (self.transferred_magnetization_vals - self.mean) ** 2
+        return (
+            self.transferred_magnetization_probs
+            @ (self.transferred_magnetization_vals - self.mean) ** 2
+        )
 
     def _skewness(self) -> float:
-        return self.transferred_magnetization_probs @ (self.transferred_magnetization_vals - self.mean) ** 3 / self.variance ** (3 / 2)
+        return (
+            self.transferred_magnetization_probs
+            @ (self.transferred_magnetization_vals - self.mean) ** 3
+            / self.variance ** (3 / 2)
+        )
 
     def _kurtosis(self) -> float:
-        return self.transferred_magnetization_probs @ (self.transferred_magnetization_vals - self.mean) ** 4 / self.variance**2 - 3
+        return (
+            self.transferred_magnetization_probs
+            @ (self.transferred_magnetization_vals - self.mean) ** 4
+            / self.variance**2
+            - 3
+        )
 
     def _mean_excluding_i(self, i: int) -> float:
-        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        p = np.mean(
+            np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0
+        )
         return p @ self.transferred_magnetization_vals
 
     def _variance_excluding_i(self, i: int) -> float:
-        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        p = np.mean(
+            np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0
+        )
         mean_i = p @ self.transferred_magnetization_vals
         return p @ (self.transferred_magnetization_vals - mean_i) ** 2
 
     def _skew_excluding_i(self, i: int) -> float:
-        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        p = np.mean(
+            np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0
+        )
         mean_i = p @ self.transferred_magnetization_vals
         variance_i = p @ (self.transferred_magnetization_vals - mean_i) ** 2
-        return p @ (self.transferred_magnetization_vals - mean_i) ** 3 / variance_i ** (3 / 2)
+        return (
+            p
+            @ (self.transferred_magnetization_vals - mean_i) ** 3
+            / variance_i ** (3 / 2)
+        )
 
     def _kurtosis_excluding_i(self, i: int) -> float:
-        p = np.mean(np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0)
+        p = np.mean(
+            np.delete(self.transferred_magnetization_probs_all, i, axis=0), axis=0
+        )
         mean_i = p @ self.transferred_magnetization_vals
         variance_i = p @ (self.transferred_magnetization_vals - mean_i) ** 2
-        return p @ (self.transferred_magnetization_vals - mean_i) ** 4 / variance_i**2 - 3
+        return (
+            p @ (self.transferred_magnetization_vals - mean_i) ** 4 / variance_i**2
+            - 3
+        )
 
     def jackknife_mean(self) -> float:
         """Compute the statistical uncertainty using the remove-one jackknife"""
@@ -145,7 +176,9 @@ class KPZExperimentResultsFromAmplitudes:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             return 0
-        variance_i = [self._variance_excluding_i(i) for i in range(self.num_initial_states)]
+        variance_i = [
+            self._variance_excluding_i(i) for i in range(self.num_initial_states)
+        ]
         return np.std(variance_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_skew(self) -> float:
@@ -159,7 +192,9 @@ class KPZExperimentResultsFromAmplitudes:
         """Compute the statistical uncertainty using the remove-one jackknife"""
         if self.num_initial_states == 1:
             return 0
-        kurtosis_i = [self._kurtosis_excluding_i(i) for i in range(self.num_initial_states)]
+        kurtosis_i = [
+            self._kurtosis_excluding_i(i) for i in range(self.num_initial_states)
+        ]
         return np.std(kurtosis_i) * np.sqrt(self.num_initial_states - 1)
 
     def plot_histogram(self, ax: Optional[Union[None, plt.Axes]] = None) -> plt.Axes:
@@ -173,8 +208,19 @@ class KPZExperimentResultsFromAmplitudes:
         """
         if not ax:
             fig, ax = plt.subplots(facecolor="white", dpi=200)
-        bins = np.append(self.transferred_magnetization_vals // 2, self.transferred_magnetization_vals[-1] // 2 + 1) - 0.5
-        ax.hist(self.transferred_magnetization_vals // 2, weights=self.transferred_magnetization_probs, bins=bins, edgecolor="k")
+        bins = (
+            np.append(
+                self.transferred_magnetization_vals // 2,
+                self.transferred_magnetization_vals[-1] // 2 + 1,
+            )
+            - 0.5
+        )
+        ax.hist(
+            self.transferred_magnetization_vals // 2,
+            weights=self.transferred_magnetization_probs,
+            bins=bins,
+            edgecolor="k",
+        )
         ax.tick_params(direction="in", top=True, right=True)
         ax.set_xlabel("Number of 1s that crossed center, $\mathcal{M}/2$")
         ax.set_ylabel("Probability")
@@ -453,8 +499,7 @@ class KPZExperiment:
         return KPZExperimentResults(result, self.initial_states)
 
     def run_experiment_amplitudes(
-        self,
-        sampler: cirq.SimulatesAmplitudes
+        self, sampler: cirq.SimulatesAmplitudes
     ) -> KPZExperimentResultsFromAmplitudes:
         """Run the experiment using the provided Cirq sampler. Computes amplitudes instead of sampling bitstrings.
 
@@ -470,7 +515,7 @@ class KPZExperiment:
         all_states = np.arange(2**self.num_qubits)
         binary_states = _dec_to_binary_right(all_states, self.num_qubits)
         num_right = np.sum(binary_states, 1)
-        del binary_states # this is exponentially large; delete to save memory
+        del binary_states  # this is exponentially large; delete to save memory
         prob_right = np.zeros((self.num_init_states, self.num_qubits // 2 + 1))
         for idx, (qc, initial_bitstr) in tqdm(
             enumerate(zip(self.circuits, self.initial_states)),
@@ -485,7 +530,9 @@ class KPZExperiment:
                 )
                 ** 2
             )
-            for num_right_val in np.arange(min(self.num_qubits // 2 + 1, num_right_initial + 1)):
+            for num_right_val in np.arange(
+                min(self.num_qubits // 2 + 1, num_right_initial + 1)
+            ):
                 prob_right[idx, num_right_val] = probs @ (num_right == num_right_val)
 
         return KPZExperimentResultsFromAmplitudes(prob_right, self.initial_states)

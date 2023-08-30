@@ -140,7 +140,9 @@ def test_size_independence():
     expt1 = kpz.KPZExperiment(cycles, mu, _TRIALS, theta, phi)
     res1 = expt1.run_experiment_amplitudes(_SAMPLER)
 
-    expt2 = kpz.KPZExperiment(cycles, mu, _TRIALS, theta, phi, num_qubits=2 * cycles + 2)
+    expt2 = kpz.KPZExperiment(
+        cycles, mu, _TRIALS, theta, phi, num_qubits=2 * cycles + 2
+    )
     res2 = expt2.run_experiment_amplitudes(_SAMPLER)
 
     d_mean = np.sqrt(res1.jackknife_mean() ** 2 + res2.jackknife_mean() ** 2)
@@ -157,7 +159,9 @@ def test_size_independence():
 
 
 def test_bitstring_sampler():
-    theta = rng.random() * (np.pi / 2)*0.8 + (np.pi / 2)*0.1 # when theta is close to 0 or pi/2, many reps needed
+    theta = (
+        rng.random() * (np.pi / 2) * 0.8 + (np.pi / 2) * 0.1
+    )  # when theta is close to 0 or pi/2, many reps needed
     # because variance is small, so exclude large and small theta
     phi = rng.random() * np.pi
     mu = rng.random()
@@ -165,20 +169,33 @@ def test_bitstring_sampler():
     expt = kpz.KPZExperiment(cycles, mu, _TRIALS, theta, phi)
     res1 = expt.run_experiment_amplitudes(_SAMPLER)
     res2 = expt.run_experiment(_SAMPLER, _REPS)
-    
-    assert np.isclose(res1.mean, res2.mean, rtol=4/np.sqrt(_REPS))
-    assert np.isclose(res1.variance, res2.variance, rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.skewness, res2.skewness, rtol=5/np.sqrt(_REPS), atol=0.01)
-    assert np.isclose(res1.kurtosis, res2.kurtosis, rtol=5/np.sqrt(_REPS), atol=0.01)
-    
-    assert np.isclose(res1.jackknife_mean(), res2.jackknife_mean(), rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.jackknife_variance(), res2.jackknife_variance(), rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.jackknife_skew(), res2.jackknife_skew(), rtol=5/np.sqrt(_REPS), atol=0.01)
-    assert np.isclose(res1.jackknife_kurtosis(), res2.jackknife_kurtosis(), rtol=5/np.sqrt(_REPS), atol=0.01)
+
+    assert np.isclose(res1.mean, res2.mean, rtol=4 / np.sqrt(_REPS))
+    assert np.isclose(res1.variance, res2.variance, rtol=5 / np.sqrt(_REPS))
+    assert np.isclose(res1.skewness, res2.skewness, rtol=5 / np.sqrt(_REPS), atol=0.01)
+    assert np.isclose(res1.kurtosis, res2.kurtosis, rtol=5 / np.sqrt(_REPS), atol=0.01)
+
+    assert np.isclose(
+        res1.jackknife_mean(), res2.jackknife_mean(), rtol=5 / np.sqrt(_REPS)
+    )
+    assert np.isclose(
+        res1.jackknife_variance(), res2.jackknife_variance(), rtol=5 / np.sqrt(_REPS)
+    )
+    assert np.isclose(
+        res1.jackknife_skew(), res2.jackknife_skew(), rtol=5 / np.sqrt(_REPS), atol=0.01
+    )
+    assert np.isclose(
+        res1.jackknife_kurtosis(),
+        res2.jackknife_kurtosis(),
+        rtol=5 / np.sqrt(_REPS),
+        atol=0.01,
+    )
 
 
 def test_bitstring_sampler_muinf():
-    theta = rng.random() * (np.pi / 2)*0.8 + (np.pi / 2)*0.1 # when theta is close to 0 or pi/2, many reps needed
+    theta = (
+        rng.random() * (np.pi / 2) * 0.8 + (np.pi / 2) * 0.1
+    )  # when theta is close to 0 or pi/2, many reps needed
     # because variance is small, so exclude large and small theta
     phi = rng.random() * np.pi
     mu = np.inf
@@ -193,4 +210,8 @@ def test_bitstring_sampler_muinf():
     d_var = np.sqrt(res1.jackknife_variance() ** 2 + res2.jackknife_variance() ** 2)
     assert np.isclose(res1.variance, res2.variance, atol=4 * d_var)
 
-    d_skw = n
+    d_skw = np.sqrt(res1.jackknife_skew() ** 2 + res2.jackknife_skew() ** 2)
+    assert np.isclose(res1.skewness, res2.skewness, atol=4 * d_skw)
+
+    d_kur = np.sqrt(res1.jackknife_kurtosis() ** 2 + res2.jackknife_kurtosis() ** 2)
+    assert np.isclose(res1.kurtosis, res2.kurtosis, atol=4 * d_kur)
