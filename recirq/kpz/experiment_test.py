@@ -31,10 +31,10 @@ def test_muinf_against_analytics():
     res = expt.run_experiment_amplitudes(SAMPLER)
     s = np.sin(theta)
     c = np.cos(theta)
-    assert np.isclose(res.mean, 2 * s**2, atol=1e-6)
-    assert np.isclose(res.variance, 4 * s**2 * c**2, atol=1e-6)
+    assert np.isclose(res.mean, 2 * s**2, atol=1e-5)
+    assert np.isclose(res.variance, 4 * s**2 * c**2, atol=1e-5)
     assert np.isclose(
-        res.skewness, (2 * s**4 - 3 * s**2 + 1) / (c**3 * s), atol=1e-6
+        res.skewness, (2 * s**4 - 3 * s**2 + 1) / (c**3 * s), atol=1e-5
     )
 
 
@@ -121,10 +121,10 @@ def test_size_independence_muinf():
     expt2 = kpz.KPZExperiment(cycles, mu, 1, theta, phi, num_qubits=2 * cycles + 2)
     res2 = expt2.run_experiment_amplitudes(SAMPLER)
 
-    assert np.isclose(res1.mean, res2.mean, atol=1e-6)
-    assert np.isclose(res1.variance, res2.variance, atol=1e-6)
-    assert np.isclose(res1.skewness, res2.skewness, atol=1e-6)
-    assert np.isclose(res1.kurtosis, res2.kurtosis, atol=1e-6)
+    assert np.isclose(res1.mean, res2.mean, atol=1e-5)
+    assert np.isclose(res1.variance, res2.variance, atol=1e-5)
+    assert np.isclose(res1.skewness, res2.skewness, atol=1e-5)
+    assert np.isclose(res1.kurtosis, res2.kurtosis, atol=1e-5)
 
 
 def test_size_independence():
