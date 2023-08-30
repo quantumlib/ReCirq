@@ -284,7 +284,7 @@ class KPZExperimentResults:
         else:
             axis = 0
             tot = self.num_initial_states
-        kurtosis_i = [self._kur_excluding_i(i, axis=axis) for i in range(tot)]
+        kurtosis_i = [self._kurtosis_excluding_i(i, axis=axis) for i in range(tot)]
         return np.std(kurtosis_i) * np.sqrt(tot - 1)
 
     def plot_histogram(self, ax: Optional[Union[None, plt.Axes]] = None) -> plt.Axes:

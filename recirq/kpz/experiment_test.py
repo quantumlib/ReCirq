@@ -55,7 +55,7 @@ def test_randmu_against_analytics():
     d_mean = res.jackknife_mean()
     assert np.isclose(res.mean, 2 * s**2 * np.tanh(mu), atol=4 * d_mean)
 
-    d_var = res.jackknife_var()
+    d_var = res.jackknife_variance()
     var_analytic = 2 * s**2 * (1 + np.cos(2 * theta) * np.tanh(mu) ** 2)
     assert np.isclose(res.variance, var_analytic, atol=4 * d_var)
 
@@ -173,7 +173,7 @@ def test_bitstring_sampler():
     assert np.isclose(res1.jackknife_mean(), res2.jackknife_mean(), rtol=5/np.sqrt(_REPS))
     assert np.isclose(res1.jackknife_variance(), res2.jackknife_variance(), rtol=5/np.sqrt(_REPS))
     assert np.isclose(res1.jackknife_skew(), res2.jackknife_skew(), rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.jackknife_kurtosis(), res2.jackknife_kur(), rtol=5/np.sqrt(_REPS))
+    assert np.isclose(res1.jackknife_kurtosis(), res2.jackknife_kurtosis(), rtol=5/np.sqrt(_REPS))
 
 
 def test_bitstring_sampler_muinf():
