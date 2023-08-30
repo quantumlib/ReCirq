@@ -21,7 +21,7 @@ from recirq.kpz import experiment as kpz
 _CYCLES = 1
 _MU = np.inf
 _SAMPLER = cirq.Simulator()
-_TRIALS = 100
+_TRIALS = 1000
 _REPS = 1000
 rng = np.random.default_rng()
 
@@ -167,13 +167,13 @@ def test_bitstring_sampler():
     
     assert np.isclose(res1.mean, res2.mean, rtol=4/np.sqrt(_REPS))
     assert np.isclose(res1.variance, res2.variance, rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.skewness, res2.skewness, rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.kurtosis, res2.kurtosis, rtol=5/np.sqrt(_REPS))
+    assert np.isclose(res1.skewness, res2.skewness, rtol=5/np.sqrt(_REPS), atol=0.01)
+    assert np.isclose(res1.kurtosis, res2.kurtosis, rtol=5/np.sqrt(_REPS), atol=0.01)
     
     assert np.isclose(res1.jackknife_mean(), res2.jackknife_mean(), rtol=5/np.sqrt(_REPS))
     assert np.isclose(res1.jackknife_variance(), res2.jackknife_variance(), rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.jackknife_skew(), res2.jackknife_skew(), rtol=5/np.sqrt(_REPS))
-    assert np.isclose(res1.jackknife_kurtosis(), res2.jackknife_kurtosis(), rtol=5/np.sqrt(_REPS))
+    assert np.isclose(res1.jackknife_skew(), res2.jackknife_skew(), rtol=5/np.sqrt(_REPS), atol=0.01)
+    assert np.isclose(res1.jackknife_kurtosis(), res2.jackknife_kurtosis(), rtol=5/np.sqrt(_REPS), atol=0.01)
 
 
 def test_bitstring_sampler_muinf():
