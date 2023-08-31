@@ -261,8 +261,8 @@ class KPZExperimentResults:
         self.num_initial_states = num_trials
         self.num_right_initial = num_right
 
-        bitstrs = np.array([res.measurements["m"] for res in raw_results])
-        self.num_right_final = np.sum(bitstrs[:, :, n // 2 :], 2)
+        self.bitstrs = np.array([res.measurements["m"] for res in raw_results])
+        self.num_right_final = np.sum(self.bitstrs[:, :, n // 2 :], 2)
 
         self.transferred_magnetization = self._transferred_magnetization()
         self.mean = self._mean()
