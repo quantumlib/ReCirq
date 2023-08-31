@@ -69,3 +69,7 @@ toc:
 - heading: "Rabi oscillations"
 - title: "Rabi Oscillation Experiment"
   path: /cirq/experiments/benchmarks/rabi_oscillations
+
+- heading: "Kardar-Parisi-Zhang"
+- title: "KPZ and the Heisenberg Spin Chain"
+  path: /cirq/experiments/kpz/kpz
