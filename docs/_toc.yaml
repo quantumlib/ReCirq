@@ -71,5 +71,5 @@ toc:
   path: /cirq/experiments/benchmarks/rabi_oscillations
 
 - heading: "Kardar-Parisi-Zhang"
-- title: "Kardar-Parisi-Zhang and the Heisenberg Spin Chain"
+- title: "KPZ and the Heisenberg Spin Chain"
   path: /cirq/experiments/kpz/kpz
