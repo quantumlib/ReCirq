@@ -166,14 +166,20 @@ class KPZExperimentResultsFromAmplitudes:
         )
 
     def jackknife_mean(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the mean using the remove-one jackknife.
+        If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
+        is returned.
+        """
         if self.num_initial_states == 1:
             return 0
         mean_i = [self._mean_excluding_i(i) for i in range(self.num_initial_states)]
         return np.std(mean_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_variance(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the variance using the remove-one jackknife.
+        If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
+        is returned.
+        """
         if self.num_initial_states == 1:
             return 0
         variance_i = [
@@ -182,14 +188,20 @@ class KPZExperimentResultsFromAmplitudes:
         return np.std(variance_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_skew(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the skewness using the remove-one jackknife.
+        If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
+        is returned.
+        """
         if self.num_initial_states == 1:
             return 0
         skew_i = [self._skew_excluding_i(i) for i in range(self.num_initial_states)]
         return np.std(skew_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_kurtosis(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the kurtosis using the remove-one jackknife.
+        If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
+        is returned.
+        """
         if self.num_initial_states == 1:
             return 0
         kurtosis_i = [
@@ -293,7 +305,10 @@ class KPZExperimentResults:
         return sstats.kurtosis(tm.flatten(), fisher=True)
 
     def jackknife_mean(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the mean using the remove-one jackknife.
+        In the case that there is only one initial state, use the standard deviation of
+        the measured transferred magnetization to estimate the uncertainty instead.
+        """
         if self.num_initial_states == 1:
             tm = self.transferred_magnetization.flatten()
             return np.std(tm) / np.sqrt(len(tm))
@@ -301,7 +316,11 @@ class KPZExperimentResults:
         return np.std(mean_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_variance(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the variance using the remove-one jackknife.
+        One initial state is removed, and the variation depending on which state is removed
+        is used to estimate the uncertainty. In the case that there is only one initial state,
+        a repetition is removed instead.
+        """
         if self.num_initial_states == 1:
             axis = 1
             tot = self.transferred_magnetization.size
@@ -312,7 +331,11 @@ class KPZExperimentResults:
         return np.std(variance_i) * np.sqrt(tot - 1)
 
     def jackknife_skew(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the skewness using the remove-one jackknife.
+        One initial state is removed, and the variation depending on which state is removed
+        is used to estimate the uncertainty. In the case that there is only one initial state,
+        a repetition is removed instead.
+        """
         if self.num_initial_states == 1:
             axis = 1
             tot = self.transferred_magnetization.size
@@ -323,7 +346,11 @@ class KPZExperimentResults:
         return np.std(skew_i) * np.sqrt(tot - 1)
 
     def jackknife_kurtosis(self) -> float:
-        """Compute the statistical uncertainty using the remove-one jackknife"""
+        """Compute the statistical uncertainty of the kurtosis using the remove-one jackknife.
+        One initial state is removed, and the variation depending on which state is removed
+        is used to estimate the uncertainty. In the case that there is only one initial state,
+        a repetition is removed instead.
+        """
         if self.num_initial_states == 1:
             axis = 1
             tot = self.transferred_magnetization.size
