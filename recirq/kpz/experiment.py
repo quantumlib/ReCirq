@@ -551,9 +551,9 @@ class KPZExperiment:
             num_right_initial = np.sum(initial_bitstr)
             probs = (
                 np.abs(
-                    sampler.compute_amplitudes(
-                        cirq.drop_terminal_measurements(qc), all_states
-                    )
+                    sampler.simulate(
+                        cirq.drop_terminal_measurements(qc)
+                    ).final_state_vector
                 )
                 ** 2
             )
