@@ -98,3 +98,11 @@ included:
   - heading: Ground State
     description: Create a toric code ground state.
     path: /cirq/experiments/toric_code/toric_code_ground_state
+
+- heading: Kardar-Parisi-Zhang Physics
+  description: Probe the dynamics of transferred magnetization in the Heisenberg spin chain.
+  options:
+    - cards
+  items:
+  - heading: Experiment example
+    path: /cirq/experiments/kpz/kpz
