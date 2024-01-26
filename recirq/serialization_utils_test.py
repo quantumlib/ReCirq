@@ -27,6 +27,17 @@ import pytest
 import cirq
 
 
+@recirq.json_serializable_dataclass(
+    namespace="recirq.test_task", registry=recirq.Registry, frozen=True
+)
+class TestTask:
+    dataset_id: str
+
+    @property
+    def fn(self):
+        return f"{self.dataset_id}"
+
+
 def test_bits_roundtrip():
     bitstring = np.asarray([0, 1, 0, 1, 1, 1, 1, 0, 0, 1])
     b = recirq.BitArray(bitstring)
@@ -36,13 +47,16 @@ def test_bits_roundtrip():
 
     buffer.seek(0)
     text = buffer.read()
-    assert text == """{
+    assert (
+        text
+        == """{
   "cirq_type": "recirq.BitArray",
   "shape": [
     10
   ],
   "packedbits": "5e40"
 }"""
+    )
 
     buffer.seek(0)
     b2 = recirq.read_json(buffer)
@@ -81,11 +95,11 @@ def test_bitstrings_roundtrip_big():
 def test_numpy_roundtrip(tmpdir):
     re = np.random.uniform(0, 1, 100)
     im = np.random.uniform(0, 1, 100)
-    a = re + 1.j * im
+    a = re + 1.0j * im
     a = np.reshape(a, (10, 10))
     ba = recirq.NumpyArray(a)
 
-    fn = f'{tmpdir}/hello.json'
+    fn = f"{tmpdir}/hello.json"
     cirq.to_json(ba, fn)
     ba2 = recirq.read_json(fn)
 
@@ -94,9 +108,13 @@ def test_numpy_roundtrip(tmpdir):
 
 def test_str_and_repr():
     bits = np.array([0, 1, 0, 1])
-    assert str(recirq.BitArray(bits)) == 'recirq.BitArray([0 1 0 1])'
-    assert repr(recirq.BitArray(bits)) == 'recirq.BitArray(array([0, 1, 0, 1]))'
+    assert str(recirq.BitArray(bits)) == "recirq.BitArray([0 1 0 1])"
+    assert repr(recirq.BitArray(bits)) == "recirq.BitArray(array([0, 1, 0, 1]))"
 
     nums = np.array([1, 2, 3, 4])
-    assert str(recirq.NumpyArray(nums)) == 'recirq.NumpyArray([1 2 3 4])'
-    assert repr(recirq.NumpyArray(nums)) == 'recirq.NumpyArray(array([1, 2, 3, 4]))'
+    assert str(recirq.NumpyArray(nums)) == "recirq.NumpyArray([1 2 3 4])"
+    assert repr(recirq.NumpyArray(nums)) == "recirq.NumpyArray(array([1, 2, 3, 4]))"
+
+
+def test_json_serializable_class():
+    assert TestTask._json_namespace_() == "recirq.test_task"
