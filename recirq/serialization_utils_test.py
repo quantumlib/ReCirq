@@ -118,3 +118,6 @@ def test_str_and_repr():
 
 def test_json_serializable_class():
     assert TestTask._json_namespace_() == "recirq.test_task"
+    test_task = TestTask(dataset_id="duck")
+    json_text = cirq.to_json(test_task)
+    assert test_task == recirq.read_json(json_text=json_text)

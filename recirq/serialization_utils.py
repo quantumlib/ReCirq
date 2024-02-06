@@ -213,8 +213,9 @@ def json_serializable_dataclass(_cls: Optional[Type] = None,
 
         cls._json_namespace_ = classmethod(lambda obj: namespace)
 
-        cls._json_dict_ = classmethod(lambda obj: cirq.obj_to_dict_helper(
-            obj, [f.name for f in dataclasses.fields(cls)]))
+        cls._json_dict_ = lambda obj: cirq.obj_to_dict_helper(
+            obj, [f.name for f in dataclasses.fields(cls)]
+        )
 
         if registry is not None:
             if namespace is not None:
