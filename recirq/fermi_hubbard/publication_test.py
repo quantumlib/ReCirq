@@ -22,10 +22,10 @@ def try_fetch_publication_data():
     Note that this will not run as part of CI, to avoid external URL fetches.
     """
     base_dir = "fermi_hubbard_data"
-    fetch_publication_data(base_dir=base_dir, exclude=["trapping_3u3d"])
+    fetch_publication_data(base_dir=base_dir, exclude=("trapping_3u3d",))
 
     for path in ("gaussians_1u1d_nofloquet", "gaussians_1u1d", "trapping_2u2d"):
-        assert os.path.exists(base_dir + os.path.sep + path)
+        assert os.path.exists(os.path.join(base_dir, path))
 
     fetch_publication_data(base_dir=base_dir)
-    assert os.path.exists(base_dir + os.path.sep + "trapping_3u3d")
+    assert os.path.exists(os.path.join(base_dir, "trapping_3u3d"))
