@@ -16,25 +16,49 @@
 
 See also the notebooks in this directory demonstrating usage of these analysis routines.
 """
-
-from typing import Callable, Dict, cast, Sequence, Any, Tuple, List
+import datetime
+from typing import Callable, Dict, cast, Sequence, Any, Tuple, List, TypeVar, Iterable
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
 import cirq
-from cirq_google.workflow import (
-    ExecutableGroupResult, SharedRuntimeInfo,
-    QuantumRuntimeConfiguration,
-    ExecutableResult)
-from recirq.otoc.loschmidt.tilted_square_lattice import TiltedSquareLatticeLoschmidtSpec
+import cirq_google as cg
+
+try:
+    from cirq_google.workflow import (
+        ExecutableGroupResult, SharedRuntimeInfo,
+        QuantumRuntimeConfiguration,
+        ExecutableResult)
+    from recirq.otoc.loschmidt.tilted_square_lattice import TiltedSquareLatticeLoschmidtSpec
+
+    workflow = True
+except ImportError as e:
+    import os
+
+    if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
+        workflow = False
+    else:
+        raise ImportError(f"This functionality requires a Cirq >= 0.14: {e}")
 
 CYCLES_PER_MACROCYCLE = 4
 """Each macrocycle has 4 'cycles' for the four directions in the tilted square lattice."""
 
 U_APPLICATION_COUNT = 2
 """In the echo, we apply the random circuit forwards and backwards, for two total applications."""
+
+BASE_GB_COLS = ['run_id', 'processor_str', 'n_repetitions']
+"""Basic grouping of runs."""
+
+WH_GB_COLS = BASE_GB_COLS + ['width', 'height']
+"""Additionally group by the width and height of the rectangle of qubits."""
+
+A_GB_COLS = BASE_GB_COLS + ['q_area']
+"""Additionally group by the quantum area (n_qubits*depth)."""
+
+WHD_GB_COLS = WH_GB_COLS + ['macrocycle_depth']
+"""Additionally group by width, height, and depth."""
 
 
 def to_ground_state_prob(result: cirq.Result) -> float:
@@ -47,6 +71,23 @@ def to_ground_state_prob(result: cirq.Result) -> float:
     the system was initialized in the all-zeros state.
     """
     return np.mean(np.sum(result.measurements["z"], axis=1) == 0).item()
+
+
+T = TypeVar('T')
+
+
+def assert_one_unique_val(vals: Iterable[T]) -> T:
+    """Extract one unique value from a column.
+
+    Raises `AssertionError` if there is not exactly one unique value.
+
+    Can be used during groupby aggregation to preserve a column you expect to
+    have one consistent value in a given group.
+    """
+    vals = list(set(vals))
+    if len(vals) != 1:
+        raise AssertionError("Expected one unique value")
+    return vals[0]
 
 
 def groupby_all_except(df: pd.DataFrame, *, y_cols: Sequence[Any], agg_func: Any) \
@@ -86,15 +127,15 @@ def groupby_all_except(df: pd.DataFrame, *, y_cols: Sequence[Any], agg_func: Any
 
 
 def _results_to_dataframe(
-        results: ExecutableGroupResult,
-        func: Callable[[ExecutableResult, QuantumRuntimeConfiguration, SharedRuntimeInfo], Dict]
+        results: 'ExecutableGroupResult',
+        func: Callable[['ExecutableResult', 'QuantumRuntimeConfiguration', 'SharedRuntimeInfo'], Dict]
 ) -> pd.DataFrame:
     """Call a function on each result in an `ExecutableGroupResult` to construct a DataFrame."""
     return pd.DataFrame([func(result, results.runtime_configuration, results.shared_runtime_info)
                          for result in results.executable_results])
 
 
-def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFrame:
+def loschmidt_results_to_dataframe(results: 'ExecutableGroupResult') -> pd.DataFrame:
     """Process an `ExecutableGroupResult`.
 
     This function performs the data analysis using `to_ground_state_prob` and
@@ -109,13 +150,13 @@ def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFra
     we do U and/or its inverse.
     """
 
-    def _to_record(result: ExecutableResult,
-                   rt_config: QuantumRuntimeConfiguration,
-                   shared_rt_info: SharedRuntimeInfo) -> Dict:
+    def _to_record(result: 'ExecutableResult',
+                   rt_config: 'QuantumRuntimeConfiguration',
+                   shared_rt_info: 'SharedRuntimeInfo') -> Dict:
         success_prob = to_ground_state_prob(result.raw_data)
-        spec = cast(TiltedSquareLatticeLoschmidtSpec, result.spec)
+        spec = cast('TiltedSquareLatticeLoschmidtSpec', result.spec)
 
-        return {
+        record = {
             'run_id': shared_rt_info.run_id,
             'width': spec.topology.width,
             'height': spec.topology.height,
@@ -129,6 +170,13 @@ def loschmidt_results_to_dataframe(results: ExecutableGroupResult) -> pd.DataFra
             'success_probability': success_prob,
             'processor_str': str(rt_config.processor_record),
         }
+
+        if isinstance(result.raw_data, cg.EngineResult):
+            record['job_finished_time'] = result.raw_data.job_finished_time
+        else:
+            record['job_finished_time'] = datetime.datetime.fromtimestamp(0)
+
+        return record
 
     return _results_to_dataframe(results, _to_record)
 
@@ -152,17 +200,29 @@ def agg_vs_macrocycle_depth(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
         vs_depth_df: A new, aggregated dataframe.
         vs_depth_gb_cols: The named of the columns used in the final groupby operation.
     """
-    means_df, means_gb_cols = groupby_all_except(
-        df.drop(['n_qubits', 'q_area'], axis=1),
-        y_cols=('instance_i', 'success_probability'),
-        agg_func={'success_probability': ['mean', 'std']}
-    )
-    vs_depth_df, vs_depth_gb_cols = groupby_all_except(
-        means_df,
-        y_cols=('macrocycle_depth', 'success_probability_mean', 'success_probability_std'),
-        agg_func=list
-    )
-    return vs_depth_df, vs_depth_gb_cols
+
+    # 1. Average over random circuit instances.
+    means_y_cols = {
+        'success_probability_mean': ('success_probability', 'mean'),
+        'success_probability_std': ('success_probability', 'std'),
+        'job_finished_time': ('job_finished_time', 'last'),
+    }
+    means_df = df.groupby(WHD_GB_COLS).agg(**means_y_cols)
+
+    # 2. Group these averaged quantities into lists.
+    # (a) first "ungroup" macrocycle_depth
+    means_df = means_df.reset_index('macrocycle_depth')
+
+    # (b) now do the list aggregation.
+    vs_depth_y_cols = {
+        'macrocycle_depth': list,
+        'success_probability_mean': list,
+        'success_probability_std': list,
+        'job_finished_time': 'last',
+    }
+
+    vs_depth_df = means_df.groupby(WH_GB_COLS).agg(vs_depth_y_cols)
+    return vs_depth_df, WH_GB_COLS
 
 
 def fit_vs_macrocycle_depth(df):
@@ -172,7 +232,7 @@ def fit_vs_macrocycle_depth(df):
         df: The dataframe from `loschmidt_results_to_dataframe`.
 
     Returns:
-        fitted_df: A new dataframe containing fit parameters.
+        fit_df: A new dataframe containing fit parameters.
         exp_ansatz_vs_macrocycle_depth: The function used for the fit. This is
             a * f^depth. The depth in this expression is the number of macrocycles
             multiplied by four (to give the number of cycles) and multiplied by two
@@ -196,15 +256,17 @@ def fit_vs_macrocycle_depth(df):
         row['f_err'] = f_err
         return row
 
-    y_cols = ['instance_i', 'macrocycle_depth', 'q_area', 'success_probability']
-    agged, _ = groupby_all_except(
-        df,
-        y_cols=y_cols,
-        agg_func=list,
-    )
-    fitted_df = agged.apply(_fit, axis=1) \
-        .drop(y_cols, axis=1)
-    return fitted_df, exp_ansatz_vs_macrocycle_depth
+    vs_size_y_cols = {
+        'macrocycle_depth': list,
+        'success_probability': list,
+        'job_finished_time': 'last',
+        'n_qubits': assert_one_unique_val,
+    }
+    vs_size_df = df.groupby(WH_GB_COLS).agg(vs_size_y_cols)
+
+    fit_df_y_cols = ['job_finished_time', 'n_qubits', 'a', 'f', 'a_err', 'f_err']
+    fit_df = vs_size_df.apply(_fit, axis=1).loc[:, fit_df_y_cols]
+    return fit_df, exp_ansatz_vs_macrocycle_depth
 
 
 def agg_vs_q_area(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
@@ -228,18 +290,22 @@ def agg_vs_q_area(df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
         vs_q_area_df: A new, aggregated dataframe.
         vs_q_area_gb_cols: The named of the columns used in the final groupby operation.
     """
-    means_df, means_gb_cols = groupby_all_except(
-        df.drop(['width', 'height', 'n_qubits'], axis=1),
-        y_cols=('instance_i', 'success_probability'),
-        agg_func={'success_probability': ['mean', 'std']}
-    )
-    vs_q_area_df, vs_q_area_gb_cols = groupby_all_except(
-        means_df,
-        y_cols=('q_area', 'macrocycle_depth',
-                'success_probability_mean', 'success_probability_std'),
-        agg_func=list,
-    )
-    return vs_q_area_df, vs_q_area_gb_cols
+    means_y_cols = {
+        'success_probability_mean': ('success_probability', 'mean'),
+        'success_probability_std': ('success_probability', 'std'),
+        'job_finished_time': ('job_finished_time', 'last'),
+    }
+    means_df = df.groupby(A_GB_COLS).agg(**means_y_cols)
+
+    means_df = means_df.reset_index('q_area')
+    vs_q_area_y_cols = {
+        'q_area': list,
+        'success_probability_mean': list,
+        'success_probability_std': list,
+        'job_finished_time': 'last',
+    }
+    vs_q_area_df = means_df.groupby(BASE_GB_COLS).agg(vs_q_area_y_cols)
+    return vs_q_area_df, BASE_GB_COLS
 
 
 def fit_vs_q_area(df):
@@ -269,12 +335,13 @@ def fit_vs_q_area(df):
         row['f_err'] = f_err
         return row
 
-    y_cols = ['q_area', 'n_qubits', 'instance_i', 'macrocycle_depth', 'success_probability']
-    agged, _ = groupby_all_except(
-        df.drop(['width', 'height'], axis=1),
-        y_cols=y_cols,
-        agg_func=list,
-    )
-    fit_df = agged.apply(_fit, axis=1).drop(y_cols, axis=1)
+    vs_q_area_y_cols = {
+        'q_area': list,
+        'success_probability': list,
+        'job_finished_time': 'last',
+    }
+    vs_q_area_df = df.groupby(BASE_GB_COLS).agg(vs_q_area_y_cols)
 
+    fit_df_y_cols = ['job_finished_time', 'a', 'f', 'a_err', 'f_err']
+    fit_df = vs_q_area_df.apply(_fit, axis=1).loc[:, fit_df_y_cols]
     return fit_df, exp_ansatz_vs_q_area
