@@ -1,3 +1,5 @@
+"""Trial wavefunction circuit ansatz primitives."""
+
 import itertools
 from typing import Iterable, List, Tuple
 
@@ -9,10 +11,6 @@ from openfermion.circuits.primitives.state_preparation import (
 )
 from openfermion.linalg.givens_rotations import givens_decomposition
 from openfermion.linalg.sparse_tools import jw_sparse_givens_rotation
-
-###############################################################################
-# Gates
-###############################################################################
 
 
 class GeminalStatePreparationGate(cirq.Gate):
@@ -50,8 +48,10 @@ class GeminalStatePreparationGate(cirq.Gate):
     def num_qubits(self):
         return 4
 
-    def _circuit_diagram_info_(self, args: 'cirq.CircuitDiagramInfoArgs') -> Tuple[str, ...]:
-        return ('G',) * self.num_qubits()
+    def _circuit_diagram_info_(
+        self, args: "cirq.CircuitDiagramInfoArgs"
+    ) -> Tuple[str, ...]:
+        return ("G",) * self.num_qubits()
 
 
 class ControlledGeminalStatesPreparationGate(cirq.Gate):
@@ -74,7 +74,9 @@ class ControlledGeminalStatesPreparationGate(cirq.Gate):
             yield cirq.CNOT(comp_qubits[4 * i - 2], comp_qubits[4 * i])
             yield cirq.SWAP(comp_qubits[4 * i], comp_qubits[4 * i + 2])
         for i, angle in enumerate(self.angles):
-            yield GeminalStatePreparationGate(angle, 1)(*comp_qubits[4 * i : 4 * (i + 1)])
+            yield GeminalStatePreparationGate(angle, 1)(
+                *comp_qubits[4 * i : 4 * (i + 1)]
+            )
 
     def num_qubits(self):
         return 1 + 4 * len(self.angles)
@@ -110,7 +112,9 @@ class SlaterDeterminantPreparationGate(cirq.Gate):
             for qubit in qubits[:n_occupied]:
                 yield cirq.X(qubit)
         yield cirq.ZPowGate(exponent=exponent)(qubits[0])
-        yield _ops_from_givens_rotations_circuit_description(qubits, circuit_description)
+        yield _ops_from_givens_rotations_circuit_description(
+            qubits, circuit_description
+        )
 
     def num_qubits(self):
         return self.orbitals.shape[1]
@@ -191,7 +195,9 @@ def get_geminal_states_prod(angles: Iterable[float]) -> np.ndarray:
 
 def jw_slater_determinant(slater_determinant_matrix):
     """A version of openfermion.jw_slater_determinant that preserves phase."""
-    decomposition, left_unitary, diagonal = givens_decomposition(slater_determinant_matrix)
+    decomposition, left_unitary, diagonal = givens_decomposition(
+        slater_determinant_matrix
+    )
     circuit_description = list(reversed(decomposition))
     start_orbitals = range(slater_determinant_matrix.shape[0])
     n_qubits = slater_determinant_matrix.shape[1]
@@ -252,8 +258,12 @@ def get_jordan_wigner_string(n_pairs: int, reverse: bool = False) -> Iterable[in
         reverse: Whether to return the inverse permutation. Defaults to False.
     """
     if reverse:
-        return itertools.chain(range(0, 4 * n_pairs, 2), reversed(range(1, 4 * n_pairs, 2)))
-    return itertools.chain(*zip(range(2 * n_pairs), reversed(range(2 * n_pairs, 4 * n_pairs))))
+        return itertools.chain(
+            range(0, 4 * n_pairs, 2), reversed(range(1, 4 * n_pairs, 2))
+        )
+    return itertools.chain(
+        *zip(range(2 * n_pairs), reversed(range(2 * n_pairs, 4 * n_pairs)))
+    )
 
 
 ###############################################################################
@@ -261,7 +271,9 @@ def get_jordan_wigner_string(n_pairs: int, reverse: bool = False) -> Iterable[in
 ###############################################################################
 
 
-def get_geminal_and_slater_det_overlap(*, angles: Iterable[float], orbitals: np.ndarray) -> complex:
+def get_geminal_and_slater_det_overlap(
+    *, angles: Iterable[float], orbitals: np.ndarray
+) -> complex:
     """Returns the overlap between geminal states and a Slater determinant.
 
         angles: The angles defining the geminal states.
@@ -270,7 +282,9 @@ def get_geminal_and_slater_det_overlap(*, angles: Iterable[float], orbitals: np.
     The Slater determinant state is transformed using Jordan-Wigner.
     """
 
-    return np.dot(get_geminal_states_prod(angles), jw_slater_determinant(orbitals)).item()
+    return np.dot(
+        get_geminal_states_prod(angles), jw_slater_determinant(orbitals)
+    ).item()
 
 
 def get_geminal_and_slater_det_overlap_circuit(
@@ -311,9 +325,9 @@ def get_geminal_and_slater_det_overlap_circuit(
     yield get_phase_state_preparation_gate(phase)(ancilla)
 
     reverse_jw_indices = tuple(get_jordan_wigner_string(n_pairs, True))
-    basis_change_op = ControlledSlaterDeterminantPreparationGate(orbitals[:, reverse_jw_indices])(
-        ancilla, *(comp_qubits[i] for i in reverse_jw_indices)
-    )
+    basis_change_op = ControlledSlaterDeterminantPreparationGate(
+        orbitals[:, reverse_jw_indices]
+    )(ancilla, *(comp_qubits[i] for i in reverse_jw_indices))
 
     def keep(operation):
         return len(operation.qubits) <= 2
@@ -341,7 +355,11 @@ def get_geminal_and_slater_det_overlap_circuit(
 
 
 def get_geminal_and_slater_det_overlap_via_simulation(
-    *, angles: np.ndarray, orbitals: np.ndarray, phase: float = 0, fold_in_measurement: bool = False
+    *,
+    angles: np.ndarray,
+    orbitals: np.ndarray,
+    phase: float = 0,
+    fold_in_measurement: bool = False,
 ) -> complex:
     """
     Gets the overlap by simulating the Hadamard test.
@@ -369,7 +387,9 @@ def get_geminal_and_slater_det_overlap_via_simulation(
             fold_in_measurement=fold_in_measurement,
         )
     )
-    final_state = cirq.Simulator().simulate(circuit, qubit_order=qubits).final_state_vector
+    final_state = (
+        cirq.Simulator().simulate(circuit, qubit_order=qubits).final_state_vector
+    )
 
     if fold_in_measurement:
         measurement = cirq.Circuit(
