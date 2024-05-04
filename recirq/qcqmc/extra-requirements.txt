@@ -1,0 +1,14 @@
+filelock
+fqe
+joblib
+ipie>=0.7.0
+numpy>=1.23.5
+scipy
+openfermion
+openfermionpyscf
+pandas
+pfapack
+pyscf>=2.1.* # For Python 3.10 compatability.
+qsim
+qsimcirq>=0.14.0
+seaborn
