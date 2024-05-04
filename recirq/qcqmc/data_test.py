@@ -6,7 +6,6 @@ from recirq.qcqmc.data import DEFAULT_BASE_DATA_DIR, get_integrals_path
 
 def test_default_base_data_dir():
     assert ".." not in str(DEFAULT_BASE_DATA_DIR), "should be resolved path"
-    print(DEFAULT_BASE_DATA_DIR)
     assert DEFAULT_BASE_DATA_DIR.exists()
     assert DEFAULT_BASE_DATA_DIR.is_dir()
     assert DEFAULT_BASE_DATA_DIR.name == "data"
