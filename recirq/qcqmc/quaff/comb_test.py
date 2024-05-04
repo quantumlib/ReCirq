@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 def test_get_num_perms_with_inversion_number():
@@ -15,10 +15,14 @@ def test_get_num_perms_with_inversion_number():
         binom = quaff.binom(n)
         total = math.factorial(n)
         counter = collections.Counter(
-            quaff.get_inversion_number(perm) for perm in itertools.permutations(range(n))
+            quaff.get_inversion_number(perm)
+            for perm in itertools.permutations(range(n))
         )
         assert sum(counter.values()) == total
-        assert sum(num_perms_with_inversion_number[n, i] for i in range(binom + 1)) == total
+        assert (
+            sum(num_perms_with_inversion_number[n, i] for i in range(binom + 1))
+            == total
+        )
         for i in range(binom + 1):
             assert counter[i] == num_perms_with_inversion_number[n, i]
 

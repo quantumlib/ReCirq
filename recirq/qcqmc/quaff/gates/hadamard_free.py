@@ -5,7 +5,7 @@ from typing import Any, Tuple
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import indexing, linalg, random, testing
+from recirq.qcqmc.quaff import indexing, linalg, random, testing
 
 
 @dataclass
@@ -47,7 +47,7 @@ class HadamardFreeGate(cirq.Gate):
 
     @classmethod
     def _json_namespace_(cls):
-        return 'qc_afqmc.quaff'
+        return "recirq.qcqmc.quaff"
 
     def _num_qubits_(self):
         return self._num_qubits
@@ -62,7 +62,9 @@ class HadamardFreeGate(cirq.Gate):
             return True
         if self.parity_shift.any():
             return True
-        if not np.array_equal(self.parity_matrix, np.eye(self._num_qubits, dtype=linalg.DTYPE)):
+        if not np.array_equal(
+            self.parity_matrix, np.eye(self._num_qubits, dtype=linalg.DTYPE)
+        ):
             return True
         if not np.isclose(self.phase_constant, 0):
             return True
@@ -236,7 +238,9 @@ class HadamardFreeGate(cirq.Gate):
         II_indices = np.ix_(I_indices, I_indices)
         if not np.array_equal(self.parity_matrix[HH_indices], np.eye(k)):
             return False
-        if not np.array_equal(self.parity_matrix[II_indices], np.eye(self._num_qubits - k)):
+        if not np.array_equal(
+            self.parity_matrix[II_indices], np.eye(self._num_qubits - k)
+        ):
             return False
         if self.parity_matrix[np.ix_(H_indices, I_indices)].any():
             return False
@@ -267,7 +271,8 @@ class HadamardFreeGate(cirq.Gate):
     def to_phase_then_parity(self) -> Tuple[Any, Any]:
         new_Γ = self.parity_matrix.T @ self.phase_matrix @ self.parity_matrix
         new_Z = (np.diag(new_Γ) // 2) + (
-            self.parity_matrix.T @ (self.phase_shift + (self.phase_matrix @ self.parity_shift))
+            self.parity_matrix.T
+            @ (self.phase_shift + (self.phase_matrix @ self.parity_shift))
         )
         new_phase_constant = (
             self.phase_constant
@@ -286,9 +291,9 @@ class HadamardFreeGate(cirq.Gate):
     def unitary(self):
         N = 2**self._num_qubits
         input_bitstrings = indexing.get_all_bitstrings(self._num_qubits)
-        output_bitstrings = (self.parity_matrix @ input_bitstrings.transpose((1, 0))).transpose(
-            (1, 0)
-        ) % 2
+        output_bitstrings = (
+            self.parity_matrix @ input_bitstrings.transpose((1, 0))
+        ).transpose((1, 0)) % 2
         output_bitstrings ^= self.parity_shift[np.newaxis, :]
         output_indices = indexing.bitstrings_to_indices(output_bitstrings)
         U = np.zeros((N, N), dtype=np.complex128)

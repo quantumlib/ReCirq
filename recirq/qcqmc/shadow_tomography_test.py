@@ -1,8 +1,8 @@
 import cirq
 import numpy as np
 
-from qc_afqmc import quaff, trial_wf
-from qc_afqmc.shadow_tomography import (
+from recirq.qcqmc import quaff, trial_wf
+from recirq.qcqmc.shadow_tomography import (
     get_amplitudes_from_samples_via_big_unitary,
     get_amplitudes_from_samples_via_clifford_simulation,
     get_amplitudes_from_samples_via_simulation,
@@ -22,12 +22,15 @@ def test_get_amplitudes_from_samples():
     ]
 
     clifford_circuits = [
-        cirq.Circuit(clifford.on(*part)) for clifford, part in zip(clifford_gates, qubit_partition)
+        cirq.Circuit(clifford.on(*part))
+        for clifford, part in zip(clifford_gates, qubit_partition)
     ]
     inverse_cliffords = [cirq.inverse(cliff) for cliff in clifford_circuits]
 
     raw_samples = rng.choice([0, 1], size=(200, nq))
-    valid_configurations = list(trial_wf._get_bitstrings_a_b(n_elec=nq // 2, n_orb=nq // 2))
+    valid_configurations = list(
+        trial_wf._get_bitstrings_a_b(n_elec=nq // 2, n_orb=nq // 2)
+    )
 
     amps3 = get_amplitudes_from_samples_via_clifford_simulation(
         inverse_cliffords=inverse_cliffords,
@@ -70,12 +73,15 @@ def test_get_amplitudes_from_samples_2():
     ]
 
     clifford_circuits = [
-        cirq.Circuit(clifford.on(*part)) for clifford, part in zip(clifford_gates, qubit_partition)
+        cirq.Circuit(clifford.on(*part))
+        for clifford, part in zip(clifford_gates, qubit_partition)
     ]
     inverse_cliffords = [cirq.inverse(cliff) for cliff in clifford_circuits]
 
     raw_samples = rng.choice([0, 1], size=(200, nq))
-    valid_configurations = list(trial_wf._get_bitstrings_a_b(n_elec=nq // 2, n_orb=nq // 2))
+    valid_configurations = list(
+        trial_wf._get_bitstrings_a_b(n_elec=nq // 2, n_orb=nq // 2)
+    )
 
     amps3 = get_amplitudes_from_samples_via_clifford_simulation(
         inverse_cliffords=inverse_cliffords,

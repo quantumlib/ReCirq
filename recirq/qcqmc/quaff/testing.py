@@ -3,7 +3,7 @@ from typing import Any, Tuple
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import linalg
+from recirq.qcqmc.quaff import linalg
 
 
 def assert_consistent_unitary_round_trip(num_qubits, gate_type, seed):

@@ -4,11 +4,12 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 @pytest.mark.parametrize(
-    "num_qubits, seed", [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(3)]
+    "num_qubits, seed",
+    [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(3)],
 )
 def test_CZ_layer(num_qubits, seed):
     rng = np.random.default_rng(seed)
@@ -34,7 +35,8 @@ def test_cz_layer_basis_change_stage_gate(num_qubits):
 
 
 @pytest.mark.parametrize(
-    "num_qubits, seed", [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(10)]
+    "num_qubits, seed",
+    [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(10)],
 )
 def test_phase_poly(num_qubits, seed):
     rng = np.random.default_rng(seed)
@@ -94,7 +96,8 @@ def test_cz_layer_gate_str():
 
 
 @pytest.mark.parametrize(
-    "num_qubits, seed", [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(40)]
+    "num_qubits, seed",
+    [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(40)],
 )
 def test_cz_layer_gate(num_qubits, seed):
     rng = np.random.default_rng(seed)
@@ -108,4 +111,7 @@ def test_cz_layer_gate(num_qubits, seed):
 
 def test_cz_layer_basis_change_stage_str():
     print(str(quaff.CZLayerBasisChangeStageGate(3, 2)))
-    assert str(quaff.CZLayerBasisChangeStageGate(3, 2)) == "CZLayerBasisChangeStageGate(3, 2)"
+    assert (
+        str(quaff.CZLayerBasisChangeStageGate(3, 2))
+        == "CZLayerBasisChangeStageGate(3, 2)"
+    )

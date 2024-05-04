@@ -4,7 +4,7 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 @pytest.mark.parametrize("n, seed", ((n, quaff.random_seed()) for n in range(1, 7)))

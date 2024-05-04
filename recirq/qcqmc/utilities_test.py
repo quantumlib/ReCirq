@@ -1,6 +1,9 @@
 import numpy as np
 
-from qc_afqmc.utilities import iterate_permutation_matrices, iterate_virtual_permutation_matrices
+from recirq.qcqmc.utilities import (
+    iterate_permutation_matrices,
+    iterate_virtual_permutation_matrices,
+)
 
 
 def test_iterate_permutation_matrices():
@@ -14,7 +17,9 @@ def test_iterate_permutation_matrices():
     assert len(dim_3_matrices) == 6
 
     for mat in dim_3_matrices:
-        np.testing.assert_array_almost_equal(np.diag(np.ones((3,))), mat @ np.transpose(mat))
+        np.testing.assert_array_almost_equal(
+            np.diag(np.ones((3,))), mat @ np.transpose(mat)
+        )
 
 
 def test_iterate_virtual_permutation_matrices():

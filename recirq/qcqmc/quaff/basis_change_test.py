@@ -2,14 +2,17 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 @pytest.mark.parametrize(
-    "num_qubits, seed", [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(10)]
+    "num_qubits, seed",
+    [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(10)],
 )
 def test_unitary_round_trip(num_qubits, seed):
-    quaff.testing.assert_consistent_unitary_round_trip(num_qubits, quaff.BasisChangeGate, seed)
+    quaff.testing.assert_consistent_unitary_round_trip(
+        num_qubits, quaff.BasisChangeGate, seed
+    )
 
 
 @pytest.mark.parametrize(
@@ -120,7 +123,9 @@ def test_combined_networks(n, seed):
     clearing_network, nw_tri_matrix = quaff.get_clearing_network(gate.matrix, qubits)
     reversal_network = list(quaff.get_reversal_network(nw_tri_matrix, qubits))
 
-    unitary = cirq.Circuit([op, clearing_network, reversal_network]).unitary(qubit_order=qubits)
+    unitary = cirq.Circuit([op, clearing_network, reversal_network]).unitary(
+        qubit_order=qubits
+    )
     assert np.allclose(unitary, np.eye(2**n))
 
     reversed_networks_circuit = cirq.Circuit(
@@ -131,7 +136,8 @@ def test_combined_networks(n, seed):
 
 
 @pytest.mark.parametrize(
-    "num_qubits, seed", [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(10)]
+    "num_qubits, seed",
+    [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(10)],
 )
 def test_inverse(num_qubits, seed):
     gate = quaff.BasisChangeGate.random(num_qubits, seed=seed)
@@ -141,7 +147,8 @@ def test_inverse(num_qubits, seed):
 
 
 @pytest.mark.parametrize(
-    "num_qubits, seed", [(n, quaff.random_seed()) for n in range(3, 8) for _ in range(10)]
+    "num_qubits, seed",
+    [(n, quaff.random_seed()) for n in range(3, 8) for _ in range(10)],
 )
 def test_basis_change_gate_decompose(num_qubits, seed):
     gate = quaff.BasisChangeGate.random(num_qubits, seed=seed)

@@ -7,8 +7,14 @@ import numpy as np
 import qsimcirq
 from pytz import timezone
 
-from qc_afqmc.blueprint import BlueprintData, BlueprintParams
-from qc_afqmc.utilities import Data, get_noise_model, OUTDIRS, Params, SINGLE_PRECISION_DEFAULT
+from recirq.qcqmc.blueprint import BlueprintData, BlueprintParams
+from recirq.qcqmc.utilities import (
+    Data,
+    get_noise_model,
+    OUTDIRS,
+    Params,
+    SINGLE_PRECISION_DEFAULT,
+)
 
 
 @dataclass(frozen=True, repr=False)
@@ -38,7 +44,9 @@ class SimulatedExperimentParams(Params):
     def __post_init__(self):
         """A little special sauce to make sure that these end up as a tuple."""
         if self.noise_model_params is not None:
-            object.__setattr__(self, "noise_model_params", tuple(self.noise_model_params))
+            object.__setattr__(
+                self, "noise_model_params", tuple(self.noise_model_params)
+            )
 
     @property
     def path_string(self) -> str:
@@ -106,7 +114,9 @@ def get_samples_from_simulation(
     sampled_bitstrings = []
 
     if noise_model is not None:
-        circuit = cirq.Circuit(noise_model.noisy_moments(circuit, sorted(circuit.all_qubits())))
+        circuit = cirq.Circuit(
+            noise_model.noisy_moments(circuit, sorted(circuit.all_qubits()))
+        )
 
     for i, resolver in enumerate(resolvers):
         results = simulator.run(

@@ -12,35 +12,41 @@ from fqe.algorithm.low_rank import evolve_fqe_givens, evolve_fqe_givens_sector
 from fqe.bitstring import integer_index
 from fqe.wavefunction import Wavefunction as FqeWavefunction
 
-from qc_afqmc.analysis import (
+from recirq.qcqmc.analysis import (
     build_analysis,
     get_variational_energy,
     OverlapAnalysisData,
     OverlapAnalysisParams,
 )
-from qc_afqmc.blueprint import BlueprintParamsRobustShadow, BlueprintParamsTrialWf, build_blueprint
-from qc_afqmc.experiment import build_experiment, SimulatedExperimentParams
-from qc_afqmc.fqe_conversion_utils import fill_in_wfn_from_cirq
-from qc_afqmc.hamiltonian import (
+from recirq.qcqmc.blueprint import (
+    BlueprintParamsRobustShadow,
+    BlueprintParamsTrialWf,
+    build_blueprint,
+)
+from recirq.qcqmc.experiment import build_experiment, SimulatedExperimentParams
+from recirq.qcqmc.fqe_conversion_utils import fill_in_wfn_from_cirq
+from recirq.qcqmc.hamiltonian import (
     build_hamiltonian_from_file,
     build_hamiltonian_from_pyscf,
     HamiltonianData,
     LoadFromFileHamiltonianParams,
     PyscfHamiltonianParams,
 )
-from qc_afqmc.trial_wf import (
+from recirq.qcqmc.trial_wf import (
     _get_fqe_wavefunctions,
     build_pp_plus_trial_wavefunction,
     PerfectPairingPlusTrialWavefunctionParams,
     TrialWavefunctionData,
 )
-from qc_afqmc.utilities import Data, Params
+from recirq.qcqmc.utilities import Data, Params
 
 VERBOSE_EXECUTION = True
 
 
 def nested_params_iter(params: Params, yield_self: bool = True) -> Iterator[Params]:
-    for thing in tuple(getattr(params, field.name) for field in dataclasses.fields(params)):
+    for thing in tuple(
+        getattr(params, field.name) for field in dataclasses.fields(params)
+    ):
         if isinstance(thing, Params):
             yield from nested_params_iter(thing)
 
@@ -49,7 +55,10 @@ def nested_params_iter(params: Params, yield_self: bool = True) -> Iterator[Para
 
 
 def load_dependencies(
-    params: Params, *, run_if_file_not_found: bool = False, save_if_fall_back_to_run: bool = False
+    params: Params,
+    *,
+    run_if_file_not_found: bool = False,
+    save_if_fall_back_to_run: bool = False,
 ):
     dependencies: Dict[Params, Data] = {}
     for dependency in nested_params_iter(params, yield_self=False):
@@ -75,7 +84,9 @@ def run(
         return load_data(params)
 
     dependencies = load_dependencies(
-        params, run_if_file_not_found=run_dependencies_if_necessary, save_if_fall_back_to_run=save
+        params,
+        run_if_file_not_found=run_dependencies_if_necessary,
+        save_if_fall_back_to_run=save,
     )
 
     if lock is None:
@@ -109,7 +120,9 @@ def run(
             data = build_analysis(params, dependencies=dependencies)
 
         else:
-            raise NotImplementedError(f"Generating data for {params} is not implemented.")
+            raise NotImplementedError(
+                f"Generating data for {params} is not implemented."
+            )
 
         if save:
             save_data(data, lock=lock)
@@ -120,11 +133,16 @@ def run(
 
 
 def save_data(
-    data: Data, *, lock: Optional[BaseFileLock] = None, do_print: bool = VERBOSE_EXECUTION
+    data: Data,
+    *,
+    lock: Optional[BaseFileLock] = None,
+    do_print: bool = VERBOSE_EXECUTION,
 ) -> None:
     """A utility function that calls a more specific save method."""
     params = data.params
-    assert isinstance(data, Data), f"data must inherit from of type Data but is {type(data)}"
+    assert isinstance(
+        data, Data
+    ), f"data must inherit from of type Data but is {type(data)}"
     assert isinstance(params, Params), f"data has invalid params of type {type(params)}"
 
     if lock is None:
@@ -139,7 +157,9 @@ def save_data(
         if isinstance(data, TrialWavefunctionData):
             hamiltonian_data = load_data(data.params.hamiltonian_params)
             assert isinstance(hamiltonian_data, HamiltonianData)
-            save_wavefunction_for_ipie(trial_wf_data=data, hamiltonian_data=hamiltonian_data)
+            save_wavefunction_for_ipie(
+                trial_wf_data=data, hamiltonian_data=hamiltonian_data
+            )
         elif isinstance(data, OverlapAnalysisData):
             save_overlap_analysis_wavefunctions_for_ipie(data)
 
@@ -175,7 +195,10 @@ def load_data(
 
         elif run_if_file_not_found:
             results = run(
-                params, save=save_if_fall_back_to_run, run_dependencies_if_necessary=True, lock=lock
+                params,
+                save=save_if_fall_back_to_run,
+                run_dependencies_if_necessary=True,
+                lock=lock,
             )
 
         else:
@@ -208,12 +231,12 @@ def load_data_from_gzip_file(
     if not path.exists():
         raise FileNotFoundError(f"No file found at {path}")
 
-    lock_path = path.with_suffix('.lock')
+    lock_path = path.with_suffix(".lock")
     lock = FileLock(lock_path)
 
     with lock:
         if do_print:
-            print('\nLoading : ')
+            print("\nLoading : ")
             print(f"File: {path}")
 
         results = cirq.read_json_gzip(path)
@@ -255,7 +278,9 @@ def save_overlap_analysis_wavefunctions_for_ipie(data: OverlapAnalysisData):
     assert isinstance(hamiltonian_data, HamiltonianData)
 
     save_wavefunction_for_ipie(
-        hamiltonian_data=hamiltonian_data, trial_wf_data=trial_wf_data, overlap_analysis_data=data
+        hamiltonian_data=hamiltonian_data,
+        trial_wf_data=trial_wf_data,
+        overlap_analysis_data=data,
     )
 
 
@@ -317,7 +342,9 @@ def _get_overlap_export_data(
     fill_in_wfn_from_cirq(unrotated_fqe_wf, reconstructed_wf, integer_fermion_qubit_map)
 
     rotated_fqe_wf = rotate_wavefunction_explicitly(
-        unrotated_fqe_wf, trial_wf_data.one_body_basis_change_mat, trial_wf_data.params.n_qubits
+        unrotated_fqe_wf,
+        trial_wf_data.one_body_basis_change_mat,
+        trial_wf_data.params.n_qubits,
     )
 
     unrotated_fqe_wf.scale(norm)
@@ -337,7 +364,9 @@ def _get_overlap_export_data(
     )
 
 
-def print_wfn_export_data(xd: _IPieExportData, *, fci_energy: float, ansatz_energy: float):
+def print_wfn_export_data(
+    xd: _IPieExportData, *, fci_energy: float, ansatz_energy: float
+):
     print("Rotated Wavefunction")
     xd.rotated_fqe_wf.print_wfn()
 
@@ -376,7 +405,11 @@ def save_wavefunction_for_ipie(
     xd: _IPieExportData
     if overlap_analysis_data is not None:
         xd = _get_overlap_export_data(
-            overlap_analysis_data, trial_wf_data, hamiltonian_data, threshold=threshold, k=k
+            overlap_analysis_data,
+            trial_wf_data,
+            hamiltonian_data,
+            threshold=threshold,
+            k=k,
         )
     else:
         xd = _get_trial_wf_export_data(trial_wf_data)
@@ -419,9 +452,9 @@ class OccCoef:
 
     def to_h5_dict(self, suffix: str = ""):
         return {
-            f'occa{suffix}': self.occa,
-            f'occb{suffix}': self.occb,
-            f'coeffs{suffix}': self.coeffs,
+            f"occa{suffix}": self.occa,
+            f"occb{suffix}": self.occb,
+            f"coeffs{suffix}": self.coeffs,
         }
 
 
@@ -450,7 +483,9 @@ def get_occa_occb_coeff(fqe_wf: FqeWavefunction, threshold: float = 1e-5) -> Occ
         _get_sector_data(sector, threshold, occa_list, occb_list, coeffs)
 
     return OccCoef(
-        occa=np.asarray(occa_list), occb=np.asarray(occb_list), coeffs=np.asarray(coeffs)
+        occa=np.asarray(occa_list),
+        occb=np.asarray(occb_list),
+        coeffs=np.asarray(coeffs),
     )
 
 
@@ -482,7 +517,9 @@ def get_fqe_wf_from_occ_coeff(
 
     for sector_key in fqe_wf.sectors():
         sector = fqe_wf.sector(sector_key)
-        _set_sector_data(sector, threshold, occ_coeff.occa, occ_coeff.occb, occ_coeff.coeffs)
+        _set_sector_data(
+            sector, threshold, occ_coeff.occa, occ_coeff.occb, occ_coeff.coeffs
+        )
 
     return fqe_wf
 

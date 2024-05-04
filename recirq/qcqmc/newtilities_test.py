@@ -3,19 +3,22 @@ import fqe
 import numpy as np
 import pytest
 
-import qc_afqmc
-import qc_afqmc.newtilities as newtilities
-from qc_afqmc.analysis import OverlapAnalysisParams
-from qc_afqmc.blueprint import BlueprintParamsTrialWf
-from qc_afqmc.experiment import SimulatedExperimentParams
-from qc_afqmc.hamiltonian import LoadFromFileHamiltonianParams, PyscfHamiltonianParams
-from qc_afqmc.trial_wf import (
+import recirq.qcqmc
+import recirq.qcqmc.newtilities as newtilities
+from recirq.qcqmc.analysis import OverlapAnalysisParams
+from recirq.qcqmc.blueprint import BlueprintParamsTrialWf
+from recirq.qcqmc.experiment import SimulatedExperimentParams
+from recirq.qcqmc.hamiltonian import (
+    LoadFromFileHamiltonianParams,
+    PyscfHamiltonianParams,
+)
+from recirq.qcqmc.trial_wf import (
     _get_qubits_a_b_reversed,
     LayerSpec,
     PerfectPairingPlusTrialWavefunctionParams,
 )
 
-assert qc_afqmc, 'Need to import the base package to register deserializers.'
+assert recirq.qcqmc, "Need to import the base package to register deserializers."
 
 
 def test_serialize_hamiltonian_params():
@@ -31,7 +34,7 @@ def test_serialize_trial_wf_params():
     )
 
     params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -48,9 +51,12 @@ def test_serialize_trial_wf_params_2():
     )
 
     params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
-        heuristic_layers=(LayerSpec("givens", "cross_pair"), LayerSpec("charge_charge", "in_pair")),
+        heuristic_layers=(
+            LayerSpec("givens", "cross_pair"),
+            LayerSpec("charge_charge", "in_pair"),
+        ),
         restricted=True,
     )
 
@@ -64,7 +70,7 @@ def test_serialize_blueprint_params():
     )
 
     trial_wf_params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -73,7 +79,7 @@ def test_serialize_blueprint_params():
 
     qubits = _get_qubits_a_b_reversed(n_orb=trial_wf_params.n_orb)
     params = BlueprintParamsTrialWf(
-        name='TEST_blueprint',
+        name="TEST_blueprint",
         trial_wf_params=trial_wf_params,
         n_cliffords=1,
         qubit_partition=(qubits,),
@@ -90,7 +96,7 @@ def test_serialize_experiment_params():
     )
 
     trial_wf_params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -99,7 +105,7 @@ def test_serialize_experiment_params():
 
     qubits = _get_qubits_a_b_reversed(n_orb=trial_wf_params.n_orb)
     blueprint_params = BlueprintParamsTrialWf(
-        name='TEST_blueprint_exp_3',
+        name="TEST_blueprint_exp_3",
         trial_wf_params=trial_wf_params,
         n_cliffords=200,
         qubit_partition=(qubits,),
@@ -107,7 +113,7 @@ def test_serialize_experiment_params():
     )
 
     params = SimulatedExperimentParams(
-        name='TEST_experiment_2',
+        name="TEST_experiment_2",
         blueprint_params=blueprint_params,
         n_samples_per_clifford=100,
         noise_model_name="ConstantTwoQubitGateDepolarizingNoiseModel",
@@ -124,7 +130,7 @@ def test_serialize_analysis_params():
     )
 
     trial_wf_params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -133,7 +139,7 @@ def test_serialize_analysis_params():
 
     qubits = _get_qubits_a_b_reversed(n_orb=trial_wf_params.n_orb)
     blueprint_params = BlueprintParamsTrialWf(
-        name='TEST_blueprint_analysis',
+        name="TEST_blueprint_analysis",
         trial_wf_params=trial_wf_params,
         n_cliffords=100,
         qubit_partition=(qubits,),
@@ -141,7 +147,7 @@ def test_serialize_analysis_params():
     )
 
     experiment_params = SimulatedExperimentParams(
-        name='TEST_experiment_analysis',
+        name="TEST_experiment_analysis",
         blueprint_params=blueprint_params,
         n_samples_per_clifford=100,
         noise_model_name="ConstantTwoQubitGateDepolarizingNoiseModel",
@@ -162,7 +168,7 @@ def test_nested_iterates():
     )
 
     trial_wf_params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -170,22 +176,26 @@ def test_nested_iterates():
     )
 
     blueprint_params = BlueprintParamsTrialWf(
-        name='TEST_blueprint_exp_2',
+        name="TEST_blueprint_exp_2",
         trial_wf_params=trial_wf_params,
         n_cliffords=200,
-        qubit_partition=(tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),),
+        qubit_partition=(
+            tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),
+        ),
         seed=3,
     )
 
     params = SimulatedExperimentParams(
-        name='TEST_experiment_2',
+        name="TEST_experiment_2",
         blueprint_params=blueprint_params,
         n_samples_per_clifford=100,
         noise_model_name="ConstantTwoQubitGateDepolarizingNoiseModel",
         noise_model_params=(0.01,),
     )
 
-    test = list(thing for thing in newtilities.nested_params_iter(params, yield_self=False))
+    test = list(
+        thing for thing in newtilities.nested_params_iter(params, yield_self=False)
+    )
 
     assert len(test) == 3
     assert test[0] == hamiltonian_params
@@ -204,26 +214,26 @@ def test_hamiltonian_save_load_delete():
     )
 
     newtilities.try_delete_data_file(params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
 
     hamiltonian = newtilities.run(params, save=False)
 
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".lock").exists()
 
     hamiltonian = newtilities.run(params)
 
-    assert params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".lock").exists()
 
     loaded_hamiltonian = newtilities.load_data(params)
 
     assert loaded_hamiltonian == hamiltonian
 
     newtilities.try_delete_data_file(params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
 
 
 def test_pp_wf_save_load_delete():
@@ -232,7 +242,7 @@ def test_pp_wf_save_load_delete():
     )
 
     params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -241,27 +251,27 @@ def test_pp_wf_save_load_delete():
 
     newtilities.try_delete_data_file(params)
     newtilities.try_delete_data_file(hamiltonian_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.h5').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".h5").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".lock").exists()
 
     trial_wf = newtilities.run(params, save=False, run_dependencies_if_necessary=True)
 
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.h5').exists()
-    assert params.base_path.with_suffix('.lock').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".h5").exists()
+    assert params.base_path.with_suffix(".lock").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert hamiltonian_params.base_path.with_suffix(".lock").exists()
 
     trial_wf = newtilities.run(params, run_dependencies_if_necessary=True)
 
-    assert params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.h5').exists()
-    assert params.base_path.with_suffix('.lock').exists()
-    assert hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".h5").exists()
+    assert params.base_path.with_suffix(".lock").exists()
+    assert hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert hamiltonian_params.base_path.with_suffix(".lock").exists()
 
     loaded_trial_wf = newtilities.load_data(params)
 
@@ -269,11 +279,11 @@ def test_pp_wf_save_load_delete():
 
     newtilities.try_delete_data_file(params)
     newtilities.try_delete_data_file(hamiltonian_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.h5').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".h5").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".lock").exists()
 
 
 def test_blueprint_save_load_delete():
@@ -282,7 +292,7 @@ def test_blueprint_save_load_delete():
     )
 
     trial_wf_params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -290,33 +300,35 @@ def test_blueprint_save_load_delete():
     )
 
     params = BlueprintParamsTrialWf(
-        name='TEST_blueprint',
+        name="TEST_blueprint",
         trial_wf_params=trial_wf_params,
         n_cliffords=10,
-        qubit_partition=(tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),),
+        qubit_partition=(
+            tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),
+        ),
         seed=30,
     )
 
     newtilities.try_delete_data_file(params)
     newtilities.try_delete_data_file(trial_wf_params)
     newtilities.try_delete_data_file(hamiltonian_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not trial_wf_params.base_path.with_suffix('.gzip').exists()
-    assert not trial_wf_params.base_path.with_suffix('.h5').exists()
-    assert not trial_wf_params.base_path.with_suffix('.lock').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not trial_wf_params.base_path.with_suffix(".gzip").exists()
+    assert not trial_wf_params.base_path.with_suffix(".h5").exists()
+    assert not trial_wf_params.base_path.with_suffix(".lock").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".lock").exists()
 
     blueprint = newtilities.run(params, run_dependencies_if_necessary=True)
 
-    assert params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.lock').exists()
-    assert trial_wf_params.base_path.with_suffix('.gzip').exists()
-    assert trial_wf_params.base_path.with_suffix('.h5').exists()
-    assert trial_wf_params.base_path.with_suffix('.lock').exists()
-    assert hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".lock").exists()
+    assert trial_wf_params.base_path.with_suffix(".gzip").exists()
+    assert trial_wf_params.base_path.with_suffix(".h5").exists()
+    assert trial_wf_params.base_path.with_suffix(".lock").exists()
+    assert hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert hamiltonian_params.base_path.with_suffix(".lock").exists()
 
     loaded_blueprint = newtilities.load_data(params)
 
@@ -327,13 +339,13 @@ def test_blueprint_save_load_delete():
     newtilities.try_delete_data_file(params)
     newtilities.try_delete_data_file(trial_wf_params)
     newtilities.try_delete_data_file(hamiltonian_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not trial_wf_params.base_path.with_suffix('.gzip').exists()
-    assert not trial_wf_params.base_path.with_suffix('.h5').exists()
-    assert not trial_wf_params.base_path.with_suffix('.lock').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not trial_wf_params.base_path.with_suffix(".gzip").exists()
+    assert not trial_wf_params.base_path.with_suffix(".h5").exists()
+    assert not trial_wf_params.base_path.with_suffix(".lock").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".lock").exists()
 
 
 def test_experiment_save_load_delete():
@@ -342,7 +354,7 @@ def test_experiment_save_load_delete():
     )
 
     trial_wf_params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=hamiltonian_params,
         heuristic_layers=(),
         do_pp=True,
@@ -350,15 +362,17 @@ def test_experiment_save_load_delete():
     )
 
     blueprint_params = BlueprintParamsTrialWf(
-        name='TEST_blueprint_2',
+        name="TEST_blueprint_2",
         trial_wf_params=trial_wf_params,
         n_cliffords=10,
-        qubit_partition=(tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),),
+        qubit_partition=(
+            tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),
+        ),
         seed=17,
     )
 
     params = SimulatedExperimentParams(
-        name='TEST_experiment_3',
+        name="TEST_experiment_3",
         blueprint_params=blueprint_params,
         n_samples_per_clifford=10,
         noise_model_name="None",
@@ -369,27 +383,27 @@ def test_experiment_save_load_delete():
     newtilities.try_delete_data_file(blueprint_params)
     newtilities.try_delete_data_file(trial_wf_params)
     newtilities.try_delete_data_file(hamiltonian_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not blueprint_params.base_path.with_suffix('.gzip').exists()
-    assert not blueprint_params.base_path.with_suffix('.lock').exists()
-    assert not trial_wf_params.base_path.with_suffix('.gzip').exists()
-    assert not trial_wf_params.base_path.with_suffix('.h5').exists()
-    assert not trial_wf_params.base_path.with_suffix('.lock').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not blueprint_params.base_path.with_suffix(".gzip").exists()
+    assert not blueprint_params.base_path.with_suffix(".lock").exists()
+    assert not trial_wf_params.base_path.with_suffix(".gzip").exists()
+    assert not trial_wf_params.base_path.with_suffix(".h5").exists()
+    assert not trial_wf_params.base_path.with_suffix(".lock").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".lock").exists()
 
     experiment = newtilities.run(params, run_dependencies_if_necessary=True)
 
-    assert params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.lock').exists()
-    assert blueprint_params.base_path.with_suffix('.gzip').exists()
-    assert blueprint_params.base_path.with_suffix('.lock').exists()
-    assert trial_wf_params.base_path.with_suffix('.gzip').exists()
-    assert trial_wf_params.base_path.with_suffix('.h5').exists()
-    assert trial_wf_params.base_path.with_suffix('.lock').exists()
-    assert hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".lock").exists()
+    assert blueprint_params.base_path.with_suffix(".gzip").exists()
+    assert blueprint_params.base_path.with_suffix(".lock").exists()
+    assert trial_wf_params.base_path.with_suffix(".gzip").exists()
+    assert trial_wf_params.base_path.with_suffix(".h5").exists()
+    assert trial_wf_params.base_path.with_suffix(".lock").exists()
+    assert hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert hamiltonian_params.base_path.with_suffix(".lock").exists()
 
     loaded_experiment = newtilities.load_data(params)
 
@@ -401,15 +415,15 @@ def test_experiment_save_load_delete():
     newtilities.try_delete_data_file(blueprint_params)
     newtilities.try_delete_data_file(trial_wf_params)
     newtilities.try_delete_data_file(hamiltonian_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not blueprint_params.base_path.with_suffix('.gzip').exists()
-    assert not blueprint_params.base_path.with_suffix('.lock').exists()
-    assert not trial_wf_params.base_path.with_suffix('.gzip').exists()
-    assert not trial_wf_params.base_path.with_suffix('.h5').exists()
-    assert not trial_wf_params.base_path.with_suffix('.lock').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.gzip').exists()
-    assert not hamiltonian_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not blueprint_params.base_path.with_suffix(".gzip").exists()
+    assert not blueprint_params.base_path.with_suffix(".lock").exists()
+    assert not trial_wf_params.base_path.with_suffix(".gzip").exists()
+    assert not trial_wf_params.base_path.with_suffix(".h5").exists()
+    assert not trial_wf_params.base_path.with_suffix(".lock").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".gzip").exists()
+    assert not hamiltonian_params.base_path.with_suffix(".lock").exists()
 
 
 def test_fqe_occ_mapping():
@@ -431,7 +445,9 @@ def test_fqe_occ_mapping():
         indb = fqe_graph.index_alpha(beta_str)
         assert np.isclose(coeff, fqe_wf.sector((n_elec, 0)).coeff[inda, indb])
 
-    fqe_wf_from_coeff = newtilities.get_fqe_wf_from_occ_coeff(occ_coeff, n_elec, 0, n_orb)
+    fqe_wf_from_coeff = newtilities.get_fqe_wf_from_occ_coeff(
+        occ_coeff, n_elec, 0, n_orb
+    )
     sector_from_coeff = fqe_wf_from_coeff.sector((n_elec, 0))
     assert np.allclose(sector_from_coeff.coeff, sector.coeff)
 
@@ -455,23 +471,23 @@ def test_pyscf_ham_save_load_delete():
     )
 
     newtilities.try_delete_data_file(params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.chk').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".chk").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
 
     pyscf_ham = newtilities.run(params, save=False, run_dependencies_if_necessary=True)
 
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.chk').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".chk").exists()
     # Note that this behavior differs from the usual. Even if we don't ask for
     # the data to be saved we still get a .chk file from running pyscf.
-    assert params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".lock").exists()
 
     pyscf_ham = newtilities.run(params, run_dependencies_if_necessary=True)
 
-    assert params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.chk').exists()
-    assert params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".chk").exists()
+    assert params.base_path.with_suffix(".lock").exists()
 
     loaded_pyscf_ham = newtilities.load_data(params)
 
@@ -479,9 +495,9 @@ def test_pyscf_ham_save_load_delete():
 
     newtilities.try_delete_data_file(params)
     newtilities.try_delete_data_file(params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.chk').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".chk").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
 
 
 @pytest.mark.slow()
@@ -504,7 +520,7 @@ def test_pp_wf_with_pyscf_ham_save_load_delete():
     )
 
     params = PerfectPairingPlusTrialWavefunctionParams(
-        name='TEST_pp',
+        name="TEST_pp",
         hamiltonian_params=pyscf_params,
         heuristic_layers=(),
         do_pp=True,
@@ -513,27 +529,27 @@ def test_pp_wf_with_pyscf_ham_save_load_delete():
 
     newtilities.try_delete_data_file(params)
     newtilities.try_delete_data_file(pyscf_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.h5').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not pyscf_params.base_path.with_suffix('.gzip').exists()
-    assert not pyscf_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".h5").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not pyscf_params.base_path.with_suffix(".gzip").exists()
+    assert not pyscf_params.base_path.with_suffix(".lock").exists()
 
     trial_wf = newtilities.run(params, save=False, run_dependencies_if_necessary=True)
 
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.h5').exists()
-    assert params.base_path.with_suffix('.lock').exists()
-    assert not pyscf_params.base_path.with_suffix('.gzip').exists()
-    assert pyscf_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".h5").exists()
+    assert params.base_path.with_suffix(".lock").exists()
+    assert not pyscf_params.base_path.with_suffix(".gzip").exists()
+    assert pyscf_params.base_path.with_suffix(".lock").exists()
 
     trial_wf = newtilities.run(params, run_dependencies_if_necessary=True)
 
-    assert params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.h5').exists()
-    assert params.base_path.with_suffix('.lock').exists()
-    assert pyscf_params.base_path.with_suffix('.gzip').exists()
-    assert pyscf_params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".h5").exists()
+    assert params.base_path.with_suffix(".lock").exists()
+    assert pyscf_params.base_path.with_suffix(".gzip").exists()
+    assert pyscf_params.base_path.with_suffix(".lock").exists()
 
     loaded_trial_wf = newtilities.load_data(params)
 
@@ -541,11 +557,11 @@ def test_pp_wf_with_pyscf_ham_save_load_delete():
 
     newtilities.try_delete_data_file(params)
     newtilities.try_delete_data_file(pyscf_params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.h5').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
-    assert not pyscf_params.base_path.with_suffix('.gzip').exists()
-    assert not pyscf_params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".h5").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
+    assert not pyscf_params.base_path.with_suffix(".gzip").exists()
+    assert not pyscf_params.base_path.with_suffix(".lock").exists()
 
 
 def test_load_pyscf_ham_from_gzip_file():
@@ -567,17 +583,19 @@ def test_load_pyscf_ham_from_gzip_file():
     )
 
     newtilities.try_delete_data_file(params)
-    assert not params.base_path.with_suffix('.gzip').exists()
-    assert not params.base_path.with_suffix('.chk').exists()
-    assert not params.base_path.with_suffix('.lock').exists()
+    assert not params.base_path.with_suffix(".gzip").exists()
+    assert not params.base_path.with_suffix(".chk").exists()
+    assert not params.base_path.with_suffix(".lock").exists()
 
     pyscf_ham = newtilities.run(params, run_dependencies_if_necessary=True)
 
-    assert params.base_path.with_suffix('.gzip').exists()
-    assert params.base_path.with_suffix('.chk').exists()
-    assert params.base_path.with_suffix('.lock').exists()
+    assert params.base_path.with_suffix(".gzip").exists()
+    assert params.base_path.with_suffix(".chk").exists()
+    assert params.base_path.with_suffix(".lock").exists()
 
-    loaded_pyscf_ham = newtilities.load_data_from_gzip_file(params.base_path.with_suffix('.gzip'))
+    loaded_pyscf_ham = newtilities.load_data_from_gzip_file(
+        params.base_path.with_suffix(".gzip")
+    )
 
     assert loaded_pyscf_ham == pyscf_ham
 

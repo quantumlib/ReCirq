@@ -6,7 +6,7 @@ from openfermion import (
     get_number_preserving_sparse_operator,
 )
 
-from qc_afqmc.hamiltonian import (
+from recirq.qcqmc.hamiltonian import (
     build_hamiltonian_from_file,
     build_hamiltonian_from_pyscf,
     LoadFromFileHamiltonianParams,
@@ -26,12 +26,12 @@ def test_load_from_file_hamiltonian_runs():
 
 
 @pytest.mark.parametrize(
-    'integral_key, n_orb, n_elec, do_eri_restore',
+    "integral_key, n_orb, n_elec, do_eri_restore",
     [
-        ('fh_sto3g', 2, 2, False),
-        ('pabi_def2svp', 2, 2, False),
-        ('h4_sto3g', 4, 4, False),
-        ('diamond_dzvp/cas66', 6, 6, True),
+        ("fh_sto3g", 2, 2, False),
+        ("pabi_def2svp", 2, 2, False),
+        ("h4_sto3g", 4, 4, False),
+        ("diamond_dzvp/cas66", 6, 6, True),
     ],
 )
 def test_hamiltonian_energy_consistent(
@@ -63,10 +63,10 @@ def test_pyscf_h4_consistent_with_file():
         n_orb=4,
         n_elec=4,
         geometry=(
-            ('H', (0, 0, 0)),
-            ('H', (0, 0, 1.23)),
-            ('H', (1.23, 0, 0)),
-            ('H', (1.23, 0, 1.23)),
+            ("H", (0, 0, 0)),
+            ("H", (0, 0, 1.23)),
+            ("H", (1.23, 0, 0)),
+            ("H", (1.23, 0, 1.23)),
         ),
         basis="sto3g",
         multiplicity=1,
@@ -76,7 +76,11 @@ def test_pyscf_h4_consistent_with_file():
     pyscf_hamiltonian = build_hamiltonian_from_pyscf(pyscf_params)
 
     from_file_params = LoadFromFileHamiltonianParams(
-        name="test hamiltonian", integral_key='h4_sto3g', n_orb=4, n_elec=4, do_eri_restore=False
+        name="test hamiltonian",
+        integral_key="h4_sto3g",
+        n_orb=4,
+        n_elec=4,
+        do_eri_restore=False,
     )
 
     from_file_hamiltonian = build_hamiltonian_from_file(from_file_params)
@@ -84,8 +88,12 @@ def test_pyscf_h4_consistent_with_file():
     np.testing.assert_almost_equal(
         pyscf_hamiltonian.e_core, from_file_hamiltonian.e_core, decimal=10
     )
-    np.testing.assert_almost_equal(pyscf_hamiltonian.e_hf, from_file_hamiltonian.e_hf, decimal=10)
-    np.testing.assert_almost_equal(pyscf_hamiltonian.e_fci, from_file_hamiltonian.e_fci, decimal=10)
+    np.testing.assert_almost_equal(
+        pyscf_hamiltonian.e_hf, from_file_hamiltonian.e_hf, decimal=10
+    )
+    np.testing.assert_almost_equal(
+        pyscf_hamiltonian.e_fci, from_file_hamiltonian.e_fci, decimal=10
+    )
 
 
 def test_pyscf_saves_chk_without_overwrite():
@@ -94,10 +102,10 @@ def test_pyscf_saves_chk_without_overwrite():
         n_orb=4,
         n_elec=4,
         geometry=(
-            ('H', (0, 0, 0)),
-            ('H', (0, 0, 1.23)),
-            ('H', (1.23, 0, 0)),
-            ('H', (1.23, 0, 1.23)),
+            ("H", (0, 0, 0)),
+            ("H", (0, 0, 1.23)),
+            ("H", (1.23, 0, 0)),
+            ("H", (1.23, 0, 1.23)),
         ),
         basis="sto3g",
         multiplicity=1,
@@ -123,10 +131,10 @@ def test_pyscf_saves_chk_with_overwrite():
         n_orb=4,
         n_elec=4,
         geometry=(
-            ('H', (0, 0, 0)),
-            ('H', (0, 0, 1.23)),
-            ('H', (1.23, 0, 0)),
-            ('H', (1.23, 0, 1.23)),
+            ("H", (0, 0, 0)),
+            ("H", (0, 0, 1.23)),
+            ("H", (1.23, 0, 0)),
+            ("H", (1.23, 0, 1.23)),
         ),
         basis="sto3g",
         multiplicity=1,

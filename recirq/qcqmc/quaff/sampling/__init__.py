@@ -1,4 +1,4 @@
-from qc_afqmc.quaff import testing
+from recirq.qcqmc.quaff import testing
 
 from .boolean_sampler import BooleanSampler
 from .clifford_sampler import (

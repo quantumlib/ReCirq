@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from qc_afqmc.quaff import indexing, linalg, sampling
+from recirq.qcqmc.quaff import indexing, linalg, sampling
 
 SEED = 2349230498
 RNG = np.random.default_rng(SEED)
@@ -31,7 +31,9 @@ def random_matrix(
     return rng.integers(0, high, (height, width), dtype=dtype)
 
 
-def random_symmetric_matrix(n: int, *, seed=None, high=2, dtype=linalg.DTYPE) -> np.ndarray:
+def random_symmetric_matrix(
+    n: int, *, seed=None, high=2, dtype=linalg.DTYPE
+) -> np.ndarray:
     matrix = random_matrix(n, seed=seed, high=high, dtype=dtype)
     for i, j in itertools.combinations(range(n), 2):
         matrix[j, i] = matrix[i, j]
@@ -59,7 +61,9 @@ def random_invertible_matrix(n: int, seed=None) -> np.ndarray:
 
     Returns: A uniformly random non-singula matrix.
     """
-    return np.array(sampling.InvertibleMatrixSampler(n).sample(np.random.default_rng(seed)))
+    return np.array(
+        sampling.InvertibleMatrixSampler(n).sample(np.random.default_rng(seed))
+    )
 
 
 def random_nw_tri_matrix(n: int, seed=None) -> np.ndarray:

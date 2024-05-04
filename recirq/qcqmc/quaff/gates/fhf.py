@@ -6,9 +6,9 @@ from typing import cast, Optional, Tuple
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import linalg, sampling, testing
-from qc_afqmc.quaff.gates.hadamard_free import HadamardFreeGate
-from qc_afqmc.quaff.gates.single_qubit_layer import SingleQubitLayerGate
+from recirq.qcqmc.quaff import linalg, sampling, testing
+from recirq.qcqmc.quaff.gates.hadamard_free import HadamardFreeGate
+from recirq.qcqmc.quaff.gates.single_qubit_layer import SingleQubitLayerGate
 
 
 def _recover_permutation(matrix: np.ndarray) -> Optional[np.ndarray]:
@@ -35,7 +35,9 @@ class FHFGate(cirq.Gate):
     hadamards: dataclasses.InitVar[np.ndarray] = None
     second_H_free_gate: dataclasses.InitVar[np.ndarray] = None
 
-    def __post_init__(self, num_qubits, first_H_free_gate, hadamards, second_H_free_gate):
+    def __post_init__(
+        self, num_qubits, first_H_free_gate, hadamards, second_H_free_gate
+    ):
         self._num_qubits = num_qubits
         if first_H_free_gate is None:
             self.F1 = HadamardFreeGate(num_qubits)
@@ -52,7 +54,12 @@ class FHFGate(cirq.Gate):
 
     @classmethod
     def _from_json_dict_(cls, _num_qubits, F1, H, F2, **kwargs):
-        return cls(num_qubits=_num_qubits, first_H_free_gate=F1, hadamards=H, second_H_free_gate=F2)
+        return cls(
+            num_qubits=_num_qubits,
+            first_H_free_gate=F1,
+            hadamards=H,
+            second_H_free_gate=F2,
+        )
 
     def _json_dict_(self):
         print(cirq.dataclass_json_dict(self))
@@ -60,7 +67,7 @@ class FHFGate(cirq.Gate):
 
     @classmethod
     def _json_namespace_(cls):
-        return 'qc_afqmc.quaff'
+        return "recirq.qcqmc.quaff"
 
     def _num_qubits_(self):
         return self._num_qubits
@@ -116,14 +123,24 @@ class FHFGate(cirq.Gate):
         for i, j in itertools.product(range(self._num_qubits), repeat=2):
             if (
                 ((not self.H[i]) and (not self.H[j]) and self.F2.phase_matrix[i, j])
-                or (self.H[i] and (not self.H[j]) and S[i] > S[j] and self.F2.phase_matrix[i, j])
+                or (
+                    self.H[i]
+                    and (not self.H[j])
+                    and S[i] > S[j]
+                    and self.F2.phase_matrix[i, j]
+                )
                 or (
                     (not self.H[i])
                     and (not self.H[j])
                     and S[i] > S[j]
                     and self.F2.parity_matrix[i, j]
                 )
-                or (self.H[i] and self.H[j] and S[i] < S[j] and self.F2.parity_matrix[i, j])
+                or (
+                    self.H[i]
+                    and self.H[j]
+                    and S[i] < S[j]
+                    and self.F2.parity_matrix[i, j]
+                )
                 or (self.H[i] and (not self.H[j]) and self.F2.parity_matrix[i, j])
             ):
                 return False
@@ -239,7 +256,9 @@ class FHFGate(cirq.Gate):
 
         first_H_free_gate = HadamardFreeGate(
             num_qubits=num_qubits,
-            parity_matrix=np.array(sample.first_parity_matrix, dtype=linalg.DTYPE)[inv_perm],
+            parity_matrix=np.array(sample.first_parity_matrix, dtype=linalg.DTYPE)[
+                inv_perm
+            ],
             phase_matrix=np.array(sample.first_phase_matrix, dtype=linalg.DTYPE)[
                 np.ix_(inv_perm, inv_perm)
             ],

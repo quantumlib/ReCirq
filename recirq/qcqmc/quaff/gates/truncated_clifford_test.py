@@ -2,10 +2,17 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc.quaff import DEFAULT_RESOLVERS, HadamardFreeGate, random_seed, TruncatedCliffordGate
+from recirq.qcqmc.quaff import (
+    DEFAULT_RESOLVERS,
+    HadamardFreeGate,
+    random_seed,
+    TruncatedCliffordGate,
+)
 
 
-@pytest.mark.parametrize("n, seed", ((n, random_seed()) for n in range(1, 6) for _ in range(5)))
+@pytest.mark.parametrize(
+    "n, seed", ((n, random_seed()) for n in range(1, 6) for _ in range(5))
+)
 def test_truncated_clifford_to_fhf_gate(n, seed):
     A = TruncatedCliffordGate.random(n, seed=seed)
     assert A.validate()
@@ -71,7 +78,9 @@ def test_truncated_clifford_str():
     assert str(gate) == "TruncatedCliffordGate(n=2, CX=01|10)"
 
 
-@pytest.mark.parametrize("n, seed", ((n, random_seed()) for n in range(1, 6) for _ in range(5)))
+@pytest.mark.parametrize(
+    "n, seed", ((n, random_seed()) for n in range(1, 6) for _ in range(5))
+)
 def test_truncated_clifford_json(n, seed):
     gate = TruncatedCliffordGate.random(n, seed)
     json = cirq.to_json(gate)

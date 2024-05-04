@@ -4,7 +4,7 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 def assert_hadamard_free_gate_unitary_is_good(n, gate):
@@ -16,7 +16,11 @@ def assert_hadamard_free_gate_unitary_is_good(n, gate):
         a = quaff.index_to_bitstring(n, i)
         b = quaff.index_to_bitstring(n, j)
         if np.array_equal(a, ((gate.parity_matrix @ b) + gate.parity_shift) % 2):
-            phase = (a @ gate.phase_matrix @ a) + (2 * gate.phase_shift @ a) + gate.phase_constant
+            phase = (
+                (a @ gate.phase_matrix @ a)
+                + (2 * gate.phase_shift @ a)
+                + gate.phase_constant
+            )
             assert np.isclose(1j**phase, U[i, j])
         else:
             assert np.isclose(U[i, j], 0)

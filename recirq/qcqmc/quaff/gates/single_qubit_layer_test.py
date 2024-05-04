@@ -2,7 +2,7 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 def test_single_qubit_layer_gate_bad():
@@ -11,7 +11,8 @@ def test_single_qubit_layer_gate_bad():
 
 
 @pytest.mark.parametrize(
-    "num_qubits, seed", [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(2)]
+    "num_qubits, seed",
+    [(n, quaff.random_seed()) for n in range(1, 6) for _ in range(2)],
 )
 def test_single_qubit_layer_gate_pow(num_qubits, seed):
     rng = np.random.default_rng(seed)

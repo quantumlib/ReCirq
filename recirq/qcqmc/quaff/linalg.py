@@ -2,7 +2,7 @@ from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import numpy as np
 
-from qc_afqmc.quaff import indexing
+from recirq.qcqmc.quaff import indexing
 
 DTYPE = np.uint8
 
@@ -97,7 +97,9 @@ def get_coordinates(
     if include_basis:
         free_columns = sorted(set(range(m)) - set(pivots))
         solution_rank = len(free_columns)
-        solution_basis = np.tensordot(np.ones(solution_rank, dtype=DTYPE), solution, axes=0)
+        solution_basis = np.tensordot(
+            np.ones(solution_rank, dtype=DTYPE), solution, axes=0
+        )
         if not solution_rank:
             return solution, solution_basis
         solution_basis = np.zeros((solution_rank, m), dtype=DTYPE)
@@ -144,13 +146,17 @@ def get_min_in_span(vector: np.ndarray, matrix: np.ndarray) -> np.ndarray:
     for j in range(n_cols):
         ansatz = np.eye(1, n_cols - j, dtype=DTYPE).flatten()
         suffix = (ansatz + vector[j:]) % 2
-        solution, solution_basis = get_coordinates(suffix, matrix[:, j:], include_basis=True)
+        solution, solution_basis = get_coordinates(
+            suffix, matrix[:, j:], include_basis=True
+        )
         if solution is not None:
             new_vector = (dot(solution, matrix) + vector) % 2
             if not len(solution_basis):
                 return new_vector
             new_basis = np.array([dot(b, matrix) for b in solution_basis])
-            return np.concatenate((get_min_in_span(new_vector[:j], new_basis[:, :j]), ansatz))
+            return np.concatenate(
+                (get_min_in_span(new_vector[:j], new_basis[:, :j]), ansatz)
+            )
 
 
 def get_lexicographic_basis(matrix: np.ndarray) -> np.ndarray:
@@ -171,7 +177,9 @@ def is_nw_tri(matrix: np.ndarray) -> bool:
     return np.array_equiv(np.triu(np.flip(matrix, axis=0), 1), 0)
 
 
-def with_qubits_reversed(operator: np.ndarray, num_qubits: Optional[int] = None) -> np.ndarray:
+def with_qubits_reversed(
+    operator: np.ndarray, num_qubits: Optional[int] = None
+) -> np.ndarray:
     """Appends a qubit reversal to the given operator.
 
     Args:
@@ -187,7 +195,9 @@ def with_qubits_reversed(operator: np.ndarray, num_qubits: Optional[int] = None)
     if num_qubits is None:
         num_qubits = indexing.log2(N)
     axes = list(reversed(range(num_qubits))) + [num_qubits]
-    return np.transpose(operator.reshape((2,) * num_qubits + (M,)), axes=axes).reshape((N, M))
+    return np.transpose(operator.reshape((2,) * num_qubits + (M,)), axes=axes).reshape(
+        (N, M)
+    )
 
 
 def apply_affine_transform_to_bitstrings(
@@ -227,7 +237,9 @@ def apply_affine_transform_to_state_vector(
     N = 2**n
     bitstrings = indexing.get_all_bitstrings(n)
     assert bitstrings.shape == (N, n)
-    new_bitstrings = apply_affine_transform_to_bitstrings(matrix, bitstrings, offset=offset)
+    new_bitstrings = apply_affine_transform_to_bitstrings(
+        matrix, bitstrings, offset=offset
+    )
     assert new_bitstrings.shape == (N, n)
     new_indices = indexing.bitstrings_to_indices(new_bitstrings)
     assert new_indices.shape == (N,)

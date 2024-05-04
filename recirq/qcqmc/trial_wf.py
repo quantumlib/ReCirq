@@ -30,9 +30,9 @@ from scipy.linalg import expm
 from scipy.optimize import minimize
 from scipy.sparse import csc_matrix
 
-from qc_afqmc.afqmc_circuits import GeminalStatePreparationGate
-from qc_afqmc.hamiltonian import HamiltonianData, HamiltonianParams
-from qc_afqmc.utilities import Data, OUTDIRS, Params
+from recirq.qcqmc.afqmc_circuits import GeminalStatePreparationGate
+from recirq.qcqmc.hamiltonian import HamiltonianData, HamiltonianParams
+from recirq.qcqmc.utilities import Data, OUTDIRS, Params
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,9 @@ class FermionicMode:
 
     def __post_init__(self):
         if self.spin not in ["a", "b"]:
-            raise ValueError(f'spin is set to {self.spin}, it should be either "a" or "b".')
+            raise ValueError(
+                f'spin is set to {self.spin}, it should be either "a" or "b".'
+            )
 
     @classmethod
     def _json_namespace_(cls):
@@ -186,7 +188,8 @@ def _get_qubits_a_b(*, n_orb: int) -> Tuple[cirq.GridQubit, ...]:
     # threading through a row of alpha orbitals in ascending order followed by a
     # row of beta orbitals in ascending order.
     return tuple(
-        [cirq.GridQubit(0, i) for i in range(n_orb)] + [cirq.GridQubit(1, i) for i in range(n_orb)]
+        [cirq.GridQubit(0, i) for i in range(n_orb)]
+        + [cirq.GridQubit(1, i) for i in range(n_orb)]
     )
 
 
@@ -238,7 +241,9 @@ def _get_fermion_qubit_map_pp_plus(*, n_qubits: int) -> Dict[int, cirq.GridQubit
         raise NotImplementedError()
 
 
-def _get_mode_qubit_map_pp_plus(*, n_qubits: int) -> Dict[FermionicMode, cirq.GridQubit]:
+def _get_mode_qubit_map_pp_plus(
+    *, n_qubits: int
+) -> Dict[FermionicMode, cirq.GridQubit]:
     """A map from Fermionic modes to qubits for our particular circuits.
 
     This function dispatches to _get_fermion_qubit_map_pp_plus, and ultimately
@@ -260,7 +265,9 @@ def _get_mode_qubit_map_pp_plus(*, n_qubits: int) -> Dict[FermionicMode, cirq.Gr
 
 
 def _get_reorder_func(
-    *, mode_qubit_map: Mapping[FermionicMode, cirq.Qid], ordered_qubits: Sequence[cirq.Qid]
+    *,
+    mode_qubit_map: Mapping[FermionicMode, cirq.Qid],
+    ordered_qubits: Sequence[cirq.Qid],
 ) -> Callable[[int, int], int]:
     """This is a helper function that allows us to reorder fermionic modes.
 
@@ -314,7 +321,9 @@ def _get_pp_plus_gate_generators(
     return pair_gate_generators + heuristic_gate_generators
 
 
-def _get_ansatz_qubit_wf(*, ansatz_circuit: cirq.Circuit, ordered_qubits: Sequence[cirq.Qid]):
+def _get_ansatz_qubit_wf(
+    *, ansatz_circuit: cirq.Circuit, ordered_qubits: Sequence[cirq.Qid]
+):
     return cirq.final_state_vector(
         ansatz_circuit, qubit_order=list(ordered_qubits), dtype=np.complex128
     )
@@ -392,7 +401,8 @@ def get_and_check_energy(
     params: PerfectPairingPlusTrialWavefunctionParams,
 ) -> Tuple[float, float]:
     ansatz_qubit_wf = _get_ansatz_qubit_wf(
-        ansatz_circuit=ansatz_circuit, ordered_qubits=params.qubits_jordan_wigner_ordered
+        ansatz_circuit=ansatz_circuit,
+        ordered_qubits=params.qubits_jordan_wigner_ordered,
     )
 
     fqe_ham, e_core, sparse_ham = get_rotated_hamiltonians(
@@ -412,7 +422,9 @@ def get_and_check_energy(
         two_body_params=two_body_params,
         wf=initial_wf,
         gate_generators=_get_pp_plus_gate_generators(
-            n_elec=params.n_elec, heuristic_layers=params.heuristic_layers, do_pp=params.do_pp
+            n_elec=params.n_elec,
+            heuristic_layers=params.heuristic_layers,
+            do_pp=params.do_pp,
         ),
         n_orb=params.n_orb,
         restricted=params.restricted,
@@ -452,7 +464,11 @@ def build_pp_plus_trial_wavefunction(
     )  ## Necessary for perfect pairing wavefunction to make sense.
 
     if params.do_optimization:
-        (one_body_params, two_body_params, one_body_basis_change_mat) = get_pp_plus_params(
+        (
+            one_body_params,
+            two_body_params,
+            one_body_basis_change_mat,
+        ) = get_pp_plus_params(
             hamiltonian_data=hamiltonian_data,
             restricted=params.restricted,
             random_parameter_scale=params.random_parameter_scale,
@@ -529,7 +545,9 @@ def get_rotated_hamiltonians(
     mol_ham.rotate_basis(one_body_basis_change_mat)
     fermion_operator_ham = of.get_fermion_operator(mol_ham)
 
-    reorder_func = _get_reorder_func(mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits)
+    reorder_func = _get_reorder_func(
+        mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits
+    )
     fermion_operator_ham_qubit_ordered = of.reorder(
         fermion_operator_ham, reorder_func, num_modes=n_qubits
     )
@@ -553,16 +571,22 @@ def get_energy_and_check_sanity(
     """A method that checks for consistency and returns the ansatz energy."""
 
     unrotated_fqe_wf_as_cirq = convert_fqe_wf_to_cirq(
-        fqe_wf=unrotated_fqe_wf, mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits
+        fqe_wf=unrotated_fqe_wf,
+        mode_qubit_map=mode_qubit_map,
+        ordered_qubits=ordered_qubits,
     )
-    ansatz_energy = np.real_if_close((np.conj(circuit_wf) @ sparse_ham @ circuit_wf)).item()
+    ansatz_energy = np.real_if_close(
+        (np.conj(circuit_wf) @ sparse_ham @ circuit_wf)
+    ).item()
     assert isinstance(ansatz_energy, float)
 
     fqe_energy = np.real(fqe_wf.expectationValue(fqe_ham) + e_core)
     print(csc_matrix(circuit_wf))
     print(csc_matrix(unrotated_fqe_wf_as_cirq))
     np.testing.assert_array_almost_equal(ansatz_energy, fqe_energy)
-    np.testing.assert_array_almost_equal(circuit_wf, unrotated_fqe_wf_as_cirq, decimal=5)
+    np.testing.assert_array_almost_equal(
+        circuit_wf, unrotated_fqe_wf_as_cirq, decimal=5
+    )
     return ansatz_energy
 
 
@@ -702,7 +726,12 @@ def get_8_qubit_circuits(
     )
 
     ansatz_circuit = (
-        cirq.Circuit([cirq.X(fermion_index_to_qubit_map[4]), cirq.X(fermion_index_to_qubit_map[6])])
+        cirq.Circuit(
+            [
+                cirq.X(fermion_index_to_qubit_map[4]),
+                cirq.X(fermion_index_to_qubit_map[6]),
+            ]
+        )
         + ansatz_circuit
     )
 
@@ -798,7 +827,9 @@ def get_12_qubit_circuits(
                 cirq.H(fermion_index_to_qubit_map[8]),
                 cirq.CNOT(fermion_index_to_qubit_map[8], fermion_index_to_qubit_map[0]),
                 cirq.CNOT(fermion_index_to_qubit_map[8], fermion_index_to_qubit_map[2]),
-                cirq.SWAP(fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[10]),
+                cirq.SWAP(
+                    fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[10]
+                ),
                 cirq.SWAP(fermion_index_to_qubit_map[2], fermion_index_to_qubit_map[6]),
             ]
         )
@@ -918,12 +949,22 @@ def get_16_qubit_circuits(
         cirq.Circuit(
             [
                 cirq.H(fermion_index_to_qubit_map[10]),
-                cirq.CNOT(fermion_index_to_qubit_map[10], fermion_index_to_qubit_map[2]),
-                cirq.SWAP(fermion_index_to_qubit_map[2], fermion_index_to_qubit_map[12]),
-                cirq.CNOT(fermion_index_to_qubit_map[10], fermion_index_to_qubit_map[4]),
-                cirq.CNOT(fermion_index_to_qubit_map[12], fermion_index_to_qubit_map[0]),
+                cirq.CNOT(
+                    fermion_index_to_qubit_map[10], fermion_index_to_qubit_map[2]
+                ),
+                cirq.SWAP(
+                    fermion_index_to_qubit_map[2], fermion_index_to_qubit_map[12]
+                ),
+                cirq.CNOT(
+                    fermion_index_to_qubit_map[10], fermion_index_to_qubit_map[4]
+                ),
+                cirq.CNOT(
+                    fermion_index_to_qubit_map[12], fermion_index_to_qubit_map[0]
+                ),
                 cirq.SWAP(fermion_index_to_qubit_map[4], fermion_index_to_qubit_map[8]),
-                cirq.SWAP(fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[14]),
+                cirq.SWAP(
+                    fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[14]
+                ),
             ]
         )
         + ansatz_circuit
@@ -970,18 +1011,24 @@ def get_circuits(
         raise NotImplementedError(f"No circuits for n_orb = {n_orb}")
 
     return circ_func(
-        two_body_params=two_body_params, n_elec=n_elec, heuristic_layers=heuristic_layers
+        two_body_params=two_body_params,
+        n_elec=n_elec,
+        heuristic_layers=heuristic_layers,
     )
 
 
-def get_two_body_params_from_qchem_amplitudes(qchem_amplitudes: np.ndarray) -> np.ndarray:
+def get_two_body_params_from_qchem_amplitudes(
+    qchem_amplitudes: np.ndarray,
+) -> np.ndarray:
     """Translates perfect pairing amplitudes from qchem to rotation angles.
 
     qchem style: 1 |1100> + t_i |0011>
     our style: cos(\theta_i) |1100> + sin(\theta_i) |0011>
     """
 
-    two_body_params = np.arccos(1 / np.sqrt(1 + qchem_amplitudes**2)) * np.sign(qchem_amplitudes)
+    two_body_params = np.arccos(1 / np.sqrt(1 + qchem_amplitudes**2)) * np.sign(
+        qchem_amplitudes
+    )
 
     # Numpy casts the array improperly to a float when we only have one parameter.
     two_body_params = np.atleast_1d(two_body_params)
@@ -1001,12 +1048,16 @@ def convert_fqe_wf_to_cirq(
     n_qubits = len(mode_qubit_map)
     fermion_op = fqe.openfermion_utils.fqe_to_fermion_operator(fqe_wf)
 
-    reorder_func = _get_reorder_func(mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits)
+    reorder_func = _get_reorder_func(
+        mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits
+    )
     fermion_op = of.reorder(fermion_op, reorder_func, num_modes=n_qubits)
 
     qubit_op = of.jordan_wigner(fermion_op)
 
-    return fqe.qubit_wavefunction_from_vacuum(qubit_op, list(cirq.LineQubit.range(n_qubits)))
+    return fqe.qubit_wavefunction_from_vacuum(
+        qubit_op, list(cirq.LineQubit.range(n_qubits))
+    )
 
 
 def get_one_body_cluster_coef(
@@ -1048,7 +1099,9 @@ def get_evolved_wf(
         wf = wf.time_evolve(two_body_params[param_num], gate_generator)
         param_num += 1
 
-    one_body_cluster_op = get_one_body_cluster_coef(one_body_params, n_orb, restricted=restricted)
+    one_body_cluster_op = get_one_body_cluster_coef(
+        one_body_params, n_orb, restricted=restricted
+    )
 
     if restricted:
         one_body_ham = fqe.get_restricted_hamiltonian((1j * one_body_cluster_op,))
@@ -1058,7 +1111,9 @@ def get_evolved_wf(
     rotated_wf = wf.time_evolve(1.0, one_body_ham)
 
     if initial_orbital_rotation is not None:
-        rotated_wf = fqe.algorithm.low_rank.evolve_fqe_givens(rotated_wf, initial_orbital_rotation)
+        rotated_wf = fqe.algorithm.low_rank.evolve_fqe_givens(
+            rotated_wf, initial_orbital_rotation
+        )
 
     return rotated_wf, wf
 
@@ -1122,13 +1177,17 @@ def get_indices_heuristic_layer_cross_spin(n_elec) -> Iterator[Tuple[int, int]]:
 def get_charge_charge_generator(indices: Tuple[int, int]) -> of.FermionOperator:
     # Returns the generator for density evolution between the indices
 
-    fop_string = "{:d}^ {:d} {:d}^ {:d}".format(indices[0], indices[0], indices[1], indices[1])
+    fop_string = "{:d}^ {:d} {:d}^ {:d}".format(
+        indices[0], indices[0], indices[1], indices[1]
+    )
     gate_generator = of.FermionOperator(fop_string, 1.0)
 
     return gate_generator
 
 
-def get_charge_charge_gate(qubits: Tuple[cirq.Qid, ...], param: float) -> cirq.Operation:
+def get_charge_charge_gate(
+    qubits: Tuple[cirq.Qid, ...], param: float
+) -> cirq.Operation:
     return cirq.CZ(qubits[0], qubits[1]) ** (-param / np.pi)
 
 
@@ -1183,7 +1242,10 @@ def get_layer_generators(layer_spec: LayerSpec, n_elec: int):
 
     indices_list = get_layer_indices(layer_spec, n_elec)
 
-    gate_funcs = {"givens": get_givens_generator, "charge_charge": get_charge_charge_generator}
+    gate_funcs = {
+        "givens": get_givens_generator,
+        "charge_charge": get_charge_charge_generator,
+    }
     gate_func = gate_funcs[layer_spec.base_gate]
 
     return [gate_func(indices) for indices in indices_list]
@@ -1208,7 +1270,9 @@ def get_heuristic_circuit(
 
     for layer_spec in layer_specs:
         params_slice = params[len(gates) :]
-        gates += get_layer_gates(layer_spec, n_elec, params_slice, fermion_index_to_qubit_map)
+        gates += get_layer_gates(
+            layer_spec, n_elec, params_slice, fermion_index_to_qubit_map
+        )
 
     return cirq.Circuit(gates)
 
@@ -1278,14 +1342,21 @@ def evaluate_gradient_and_cost_function(
             the one-body gradients.
     """
     phi = get_evolved_wf(
-        one_body_params, two_body_params, initial_wf, gate_generators, n_orb, restricted=restricted
+        one_body_params,
+        two_body_params,
+        initial_wf,
+        gate_generators,
+        n_orb,
+        restricted=restricted,
     )[0]
     lam = copy.deepcopy(phi)
     lam = lam.apply(fqe_ham)
     cost_val = fqe.vdot(lam, phi) + e_core
 
     # 1body
-    one_body_cluster_op = get_one_body_cluster_coef(one_body_params, n_orb, restricted=restricted)
+    one_body_cluster_op = get_one_body_cluster_coef(
+        one_body_params, n_orb, restricted=restricted
+    )
     tril = np.tril_indices(n_orb, k=-1)
     if restricted:
         one_body_ham = fqe.get_restricted_hamiltonian((-1j * one_body_cluster_op,))
@@ -1429,7 +1500,9 @@ def get_pp_plus_params(
                 return 1e6, 1e6
 
         if use_fast_gradients:
-            res = minimize(fast_obj_grad, params, jac=True, method='BFGS', callback=progress_cb)
+            res = minimize(
+                fast_obj_grad, params, jac=True, method="BFGS", callback=progress_cb
+            )
         else:
             res = minimize(objective, params, callback=progress_cb)
         if res.fun < best:
@@ -1454,7 +1527,9 @@ def get_pp_plus_params(
         initial_orbital_rotation=initial_orbital_rotation,
     )
 
-    one_body_cluster_mat = get_one_body_cluster_coef(one_body_params, n_orb, restricted=restricted)
+    one_body_cluster_mat = get_one_body_cluster_coef(
+        one_body_params, n_orb, restricted=restricted
+    )
     # We need to change the ordering to match OpenFermion's abababab ordering
     if not restricted:
         index_rearrangement = np.asarray(
@@ -1467,18 +1542,24 @@ def get_pp_plus_params(
 
     if initial_orbital_rotation is not None:
         if restricted:
-            one_body_basis_change_mat = initial_orbital_rotation @ one_body_basis_change_mat
+            one_body_basis_change_mat = (
+                initial_orbital_rotation @ one_body_basis_change_mat
+            )
         else:
             big_initial_orbital_rotation = np.zeros_like(one_body_basis_change_mat)
 
             for i in range(len(initial_orbital_rotation)):
                 for j in range(len(initial_orbital_rotation)):
-                    big_initial_orbital_rotation[2 * i, 2 * j] = initial_orbital_rotation[i, j]
-                    big_initial_orbital_rotation[2 * i + 1, 2 * j + 1] = initial_orbital_rotation[
-                        i, j
-                    ]
+                    big_initial_orbital_rotation[
+                        2 * i, 2 * j
+                    ] = initial_orbital_rotation[i, j]
+                    big_initial_orbital_rotation[
+                        2 * i + 1, 2 * j + 1
+                    ] = initial_orbital_rotation[i, j]
 
-            one_body_basis_change_mat = big_initial_orbital_rotation @ one_body_basis_change_mat
+            one_body_basis_change_mat = (
+                big_initial_orbital_rotation @ one_body_basis_change_mat
+            )
 
     if do_print:
         print("Hartree-Fock Energy:")

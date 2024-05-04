@@ -4,16 +4,20 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc.analysis import build_analysis, get_variational_energy, OverlapAnalysisParams
-from qc_afqmc.blueprint import BlueprintParamsTrialWf, build_blueprint
-from qc_afqmc.experiment import build_experiment, SimulatedExperimentParams
-from qc_afqmc.hamiltonian import HamiltonianData
-from qc_afqmc.trial_wf import TrialWavefunctionData
-from qc_afqmc.utilities import Data, Params
+from recirq.qcqmc.analysis import (
+    build_analysis,
+    get_variational_energy,
+    OverlapAnalysisParams,
+)
+from recirq.qcqmc.blueprint import BlueprintParamsTrialWf, build_blueprint
+from recirq.qcqmc.experiment import build_experiment, SimulatedExperimentParams
+from recirq.qcqmc.hamiltonian import HamiltonianData
+from recirq.qcqmc.trial_wf import TrialWavefunctionData
+from recirq.qcqmc.utilities import Data, Params
 
 
 @pytest.mark.parametrize(
-    'blueprint_seed, n_cliffords, n_samples_per_clifford, target_error',
+    "blueprint_seed, n_cliffords, n_samples_per_clifford, target_error",
     [(1, 10, 1, 1e-1), (1, 100, 10, 2e-2), (1, 200, 10, 1e-2)],
 )
 def test_small_experiment_partition_match_reversed_partition_same_seed(
@@ -31,18 +35,23 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
     }
 
     blueprint_params_1 = BlueprintParamsTrialWf(
-        name='blueprint_test_analysis',
-        trial_wf_params=trial_wf_params,
-        n_cliffords=n_cliffords,
-        qubit_partition=(tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),),
-        seed=blueprint_seed,
-    )
-    blueprint_params_2 = BlueprintParamsTrialWf(
-        name='blueprint_test_analysis',
+        name="blueprint_test_analysis",
         trial_wf_params=trial_wf_params,
         n_cliffords=n_cliffords,
         qubit_partition=(
-            tuple(qubit for qubit in reversed(trial_wf_params.qubits_jordan_wigner_ordered)),
+            tuple(qubit for qubit in trial_wf_params.qubits_jordan_wigner_ordered),
+        ),
+        seed=blueprint_seed,
+    )
+    blueprint_params_2 = BlueprintParamsTrialWf(
+        name="blueprint_test_analysis",
+        trial_wf_params=trial_wf_params,
+        n_cliffords=n_cliffords,
+        qubit_partition=(
+            tuple(
+                qubit
+                for qubit in reversed(trial_wf_params.qubits_jordan_wigner_ordered)
+            ),
         ),
         seed=blueprint_seed,
     )
@@ -53,7 +62,7 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
     dependencies[blueprint_params_2] = blueprint_2
 
     experiment_params_1 = SimulatedExperimentParams(
-        name='experiment_test_analysis',
+        name="experiment_test_analysis",
         blueprint_params=blueprint_params_1,
         n_samples_per_clifford=n_samples_per_clifford,
         noise_model_name="None",
@@ -61,7 +70,7 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
         seed=1,
     )
     experiment_params_2 = SimulatedExperimentParams(
-        name='experiment_test_analysis',
+        name="experiment_test_analysis",
         blueprint_params=blueprint_params_2,
         n_samples_per_clifford=n_samples_per_clifford,
         noise_model_name="None",
@@ -75,20 +84,26 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
     dependencies[experiment_params_2] = experiment_2
 
     analysis_params_1 = OverlapAnalysisParams(
-        'test_analysis', experiment_params=experiment_params_1, k_to_calculate=(1,)
+        "test_analysis", experiment_params=experiment_params_1, k_to_calculate=(1,)
     )
     analysis_params_2 = OverlapAnalysisParams(
-        'test_analysis', experiment_params=experiment_params_2, k_to_calculate=(1,)
+        "test_analysis", experiment_params=experiment_params_2, k_to_calculate=(1,)
     )
 
     analysis_1 = build_analysis(analysis_params_1, dependencies=dependencies)
     analysis_2 = build_analysis(analysis_params_2, dependencies=dependencies)
 
     energy_1 = get_variational_energy(
-        analysis_data=analysis_1, trial_wf_data=trial_wf, hamiltonian_data=hamiltonian_data, k=1
+        analysis_data=analysis_1,
+        trial_wf_data=trial_wf,
+        hamiltonian_data=hamiltonian_data,
+        k=1,
     )
     energy_2 = get_variational_energy(
-        analysis_data=analysis_2, trial_wf_data=trial_wf, hamiltonian_data=hamiltonian_data, k=1
+        analysis_data=analysis_2,
+        trial_wf_data=trial_wf,
+        hamiltonian_data=hamiltonian_data,
+        k=1,
     )
 
     print(energy_1)
@@ -97,23 +112,51 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
     print(trial_wf.ansatz_energy - energy_1)
     print(trial_wf.ansatz_energy - energy_2)
 
-    print(analysis_1.reconstructed_wf_for_k['1'])
-    print(analysis_2.reconstructed_wf_for_k['1'])
+    print(analysis_1.reconstructed_wf_for_k["1"])
+    print(analysis_2.reconstructed_wf_for_k["1"])
 
     assert np.abs(energy_1 - energy_2) < target_error
 
 
 @pytest.mark.parametrize(
-    'qubit_partition',
+    "qubit_partition",
     [
         # One part
-        ((cirq.GridQubit(0, 0), cirq.GridQubit(0, 1), cirq.GridQubit(1, 1), cirq.GridQubit(1, 0)),),
+        (
+            (
+                cirq.GridQubit(0, 0),
+                cirq.GridQubit(0, 1),
+                cirq.GridQubit(1, 1),
+                cirq.GridQubit(1, 0),
+            ),
+        ),
         # One part (shuffled)
-        ((cirq.GridQubit(1, 1), cirq.GridQubit(0, 1), cirq.GridQubit(0, 0), cirq.GridQubit(1, 0)),),
+        (
+            (
+                cirq.GridQubit(1, 1),
+                cirq.GridQubit(0, 1),
+                cirq.GridQubit(0, 0),
+                cirq.GridQubit(1, 0),
+            ),
+        ),
         # One part (shuffled again)
-        ((cirq.GridQubit(0, 1), cirq.GridQubit(1, 0), cirq.GridQubit(1, 1), cirq.GridQubit(0, 0)),),
+        (
+            (
+                cirq.GridQubit(0, 1),
+                cirq.GridQubit(1, 0),
+                cirq.GridQubit(1, 1),
+                cirq.GridQubit(0, 0),
+            ),
+        ),
         # One part (shuffled to sorted order)
-        ((cirq.GridQubit(0, 0), cirq.GridQubit(0, 1), cirq.GridQubit(1, 0), cirq.GridQubit(1, 1)),),
+        (
+            (
+                cirq.GridQubit(0, 0),
+                cirq.GridQubit(0, 1),
+                cirq.GridQubit(1, 0),
+                cirq.GridQubit(1, 1),
+            ),
+        ),
         # Two parts
         (
             (cirq.GridQubit(0, 0), cirq.GridQubit(0, 1)),
@@ -178,7 +221,7 @@ def test_small_experiment_partitioned(
     dependencies: Dict[Params, Data] = {trial_wf_params: trial_wf}
 
     blueprint_params = BlueprintParamsTrialWf(
-        name='blueprint_test_analysis',
+        name="blueprint_test_analysis",
         trial_wf_params=trial_wf_params,
         n_cliffords=150,
         qubit_partition=qubit_partition,
@@ -189,7 +232,7 @@ def test_small_experiment_partitioned(
     dependencies[blueprint_params] = blueprint
 
     experiment_params = SimulatedExperimentParams(
-        name='experiment_test_analysis',
+        name="experiment_test_analysis",
         blueprint_params=blueprint_params,
         n_samples_per_clifford=10,
         noise_model_name="None",
@@ -201,14 +244,17 @@ def test_small_experiment_partitioned(
     dependencies[experiment_params] = experiment
 
     analysis_params = OverlapAnalysisParams(
-        'test_analysis', experiment_params=experiment_params, k_to_calculate=(1,)
+        "test_analysis", experiment_params=experiment_params, k_to_calculate=(1,)
     )
 
     analysis = build_analysis(analysis_params, dependencies=dependencies)
 
     energy = get_variational_energy(
-        analysis_data=analysis, trial_wf_data=trial_wf, hamiltonian_data=hamiltonian_data, k=1
+        analysis_data=analysis,
+        trial_wf_data=trial_wf,
+        hamiltonian_data=hamiltonian_data,
+        k=1,
     )
-    print(analysis.reconstructed_wf_for_k['1'])
+    print(analysis.reconstructed_wf_for_k["1"])
 
     assert np.abs(trial_wf.ansatz_energy - energy) < 2.5e-2 * len(qubit_partition)

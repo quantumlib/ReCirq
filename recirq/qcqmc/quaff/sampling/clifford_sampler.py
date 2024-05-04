@@ -6,8 +6,8 @@ from typing import Iterable, NamedTuple, Optional, Tuple
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import comb, indexing, linalg, testing
-from qc_afqmc.quaff.sampling.sampler import SingleParameterSampler
+from recirq.qcqmc.quaff import comb, indexing, linalg, testing
+from recirq.qcqmc.quaff.sampling.sampler import SingleParameterSampler
 
 QuantumMallowsSample = Tuple[Tuple[bool, ...], Tuple[int, ...]]
 QuantumMallowsRandomness = Tuple[int, ...]
@@ -52,7 +52,9 @@ class QuantumMallowsSampler(SingleParameterSampler):
                         break
             yield i, k - 1, h, threshold - 1 - r
 
-    def randomness_to_sample(self, randomness: QuantumMallowsRandomness) -> QuantumMallowsSample:
+    def randomness_to_sample(
+        self, randomness: QuantumMallowsRandomness
+    ) -> QuantumMallowsSample:
         H = np.zeros(self.n, dtype=bool)
         S = np.zeros(self.n, dtype=int)
         A = list(range(self.n))
@@ -67,7 +69,8 @@ class QuantumMallowsSampler(SingleParameterSampler):
 
     def unique_samples_iter(self) -> Iterable[QuantumMallowsSample]:
         return itertools.product(
-            itertools.product((False, True), repeat=self.n), itertools.permutations(range(self.n))
+            itertools.product((False, True), repeat=self.n),
+            itertools.permutations(range(self.n)),
         )
 
     def sample_multiplicity(self, sample: QuantumMallowsSample):
@@ -102,7 +105,11 @@ class CliffordSample:
     def _from_json_dict_(cls, **kwargs):
         return cls(
             **{
-                key: (linalg.tuple_of_tuples(val) if key.endswith("matrix") else tuple(val))
+                key: (
+                    linalg.tuple_of_tuples(val)
+                    if key.endswith("matrix")
+                    else tuple(val)
+                )
                 for key, val in kwargs.items()
                 if key != "cirq_type"
             }
@@ -113,7 +120,7 @@ class CliffordSample:
 
     @classmethod
     def _json_namespace_(cls):
-        return 'qc_afqmc.quaff'
+        return "recirq.qcqmc.quaff"
 
     def num_qubits(self):
         return len(self.parity_shift)
@@ -147,7 +154,9 @@ class CliffordSampler(SingleParameterSampler):
         self.n = n
         self.mallows_sampler = QuantumMallowsSampler(n)
 
-    def sample_randomness(self, rng: Optional[np.random.Generator]) -> CliffordRandomness:
+    def sample_randomness(
+        self, rng: Optional[np.random.Generator]
+    ) -> CliffordRandomness:
         rng = np.random.default_rng(rng)
         binom = comb.binom(self.n)
         return CliffordRandomness(
@@ -158,7 +167,9 @@ class CliffordSampler(SingleParameterSampler):
             phase_shift_randomness=tuple(rng.integers(0, 2, self.n)),
         )
 
-    def _get_Δ_and_Γ_indices(self, H: np.ndarray, S: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_Δ_and_Γ_indices(
+        self, H: np.ndarray, S: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         Δ_indices, Γ_indices = [], []
         for j, i in itertools.combinations(range(self.n), 2):
             if H[j]:
@@ -178,8 +189,12 @@ class CliffordSampler(SingleParameterSampler):
                 else:
                     Δ_indices.append((i, j))
         return (
-            tuple(np.array(Δ_indices).T) if Δ_indices else (np.zeros(0, dtype=int),) * 2,
-            tuple(np.array(Γ_indices).T) if Γ_indices else (np.zeros(0, dtype=int),) * 2,
+            tuple(np.array(Δ_indices).T)
+            if Δ_indices
+            else (np.zeros(0, dtype=int),) * 2,
+            tuple(np.array(Γ_indices).T)
+            if Γ_indices
+            else (np.zeros(0, dtype=int),) * 2,
         )
 
     def randomness_to_sample(self, randomness: CliffordRandomness) -> CliffordSample:
@@ -203,7 +218,9 @@ class CliffordSampler(SingleParameterSampler):
 
         special_bits = []
 
-        for i, k, h, j in self.mallows_sampler._parse_randomness(randomness.mallows_randomness):
+        for i, k, h, j in self.mallows_sampler._parse_randomness(
+            randomness.mallows_randomness
+        ):
             S[i] = A.pop(k)
             H[i] = h
             n_extra_bits = 2 * (self.n - i) - k - 1 if h else k
@@ -267,10 +284,18 @@ class CliffordSampler(SingleParameterSampler):
         binom = comb.binom(self.n)
         return all(
             (
-                testing.is_boolean_tuple_of_len(randomness.parity_matrix_randomness, binom),
-                testing.is_boolean_tuple_of_len(randomness.phase_matrix_randomness, binom + self.n),
-                testing.is_boolean_tuple_of_len(randomness.parity_shift_randomness, self.n),
-                testing.is_boolean_tuple_of_len(randomness.phase_shift_randomness, self.n),
+                testing.is_boolean_tuple_of_len(
+                    randomness.parity_matrix_randomness, binom
+                ),
+                testing.is_boolean_tuple_of_len(
+                    randomness.phase_matrix_randomness, binom + self.n
+                ),
+                testing.is_boolean_tuple_of_len(
+                    randomness.parity_shift_randomness, self.n
+                ),
+                testing.is_boolean_tuple_of_len(
+                    randomness.phase_shift_randomness, self.n
+                ),
             )
         )
 
@@ -285,7 +310,8 @@ class CliffordSampler(SingleParameterSampler):
         triu_indices = indexing.triu_indices(self.n)
 
         for H, S in itertools.product(
-            itertools.product((0, 1), repeat=self.n), itertools.permutations(range(self.n))
+            itertools.product((0, 1), repeat=self.n),
+            itertools.permutations(range(self.n)),
         ):
             Δ_indices, Γ_indices = self._get_Δ_and_Γ_indices(H, S)
             H_indices = np.flatnonzero(H)
@@ -312,7 +338,9 @@ class CliffordSampler(SingleParameterSampler):
                     Γ2[Γ_indices] = Γ2_bits
                     Γ2[Γ_indices[::-1]] = Γ2_bits
 
-                for X, Z in itertools.product(itertools.product((0, 1), repeat=self.n), repeat=2):
+                for X, Z in itertools.product(
+                    itertools.product((0, 1), repeat=self.n), repeat=2
+                ):
                     yield CliffordSample(
                         first_parity_matrix=tuple(tuple(row) for row in Δ1),
                         first_phase_matrix=tuple(tuple(row) for row in Γ1),

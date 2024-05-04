@@ -59,12 +59,13 @@ class Sampler(metaclass=abc.ABCMeta):
 
     def __str__(self):
         arg_str = ", ".join(
-            f"{key}={val}" for key, val in zip(self.parameter_names(), self.parameter_values())
+            f"{key}={val}"
+            for key, val in zip(self.parameter_names(), self.parameter_values())
         )
         return f"{self.name()}({arg_str})"
 
     def __repr__(self):
-        return f"qc_afqmc.quaff.{self}"
+        return f"recirq.qcqmc.quaff.{self}"
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):

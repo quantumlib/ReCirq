@@ -3,11 +3,13 @@ from typing import Any, Iterable, Optional, Sequence
 import cirq
 import sympy
 
-from qc_afqmc.quaff import cz_layer
-from qc_afqmc.quaff.gates.truncated_clifford import TruncatedCliffordGate
+from recirq.qcqmc.quaff import cz_layer
+from recirq.qcqmc.quaff.gates.truncated_clifford import TruncatedCliffordGate
 
 
-def get_truncated_clifford_resolver(gate: TruncatedCliffordGate, suffix: Optional[Any] = None):
+def get_truncated_clifford_resolver(
+    gate: TruncatedCliffordGate, suffix: Optional[Any] = None
+):
     if suffix is None:
         suffix = ""
     else:
@@ -35,7 +37,9 @@ def get_truncated_cliffords_resolver(gates: Iterable[TruncatedCliffordGate]):
     return resolver
 
 
-def get_parameterized_truncated_clifford_ops(qubits, suffix: Optional[Any] = None) -> cirq.OP_TREE:
+def get_parameterized_truncated_clifford_ops(
+    qubits, suffix: Optional[Any] = None
+) -> cirq.OP_TREE:
     if suffix is None:
         suffix = ""
     else:

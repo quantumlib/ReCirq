@@ -3,7 +3,7 @@ from typing import Iterable, List, Sequence, Tuple
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import indexing, linalg, random
+from recirq.qcqmc.quaff import indexing, linalg, random
 
 
 class BasisChangeGate(cirq.Gate):
@@ -21,7 +21,9 @@ class BasisChangeGate(cirq.Gate):
     def _unitary_(self):
         N = 2 ** self.num_qubits()
         bitstrings = indexing.get_all_bitstrings(self.num_qubits())
-        LHS = np.tensordot(bitstrings, np.ones(N, dtype=linalg.DTYPE), axes=0).transpose((0, 2, 1))
+        LHS = np.tensordot(
+            bitstrings, np.ones(N, dtype=linalg.DTYPE), axes=0
+        ).transpose((0, 2, 1))
         RHS = np.tensordot(
             (bitstrings @ self.matrix.T) % 2, np.ones(N, dtype=linalg.DTYPE), axes=0
         ).transpose((2, 0, 1))
@@ -50,7 +52,9 @@ class BasisChangeGate(cirq.Gate):
 
     def __str__(self):
         return "BasisChangeGate([{}])".format(
-            ",".join("[{}]".format(",".join(str(e) for e in row)) for row in self.matrix)
+            ",".join(
+                "[{}]".format(",".join(str(e) for e in row)) for row in self.matrix
+            )
         )
 
     @classmethod
@@ -91,7 +95,9 @@ class BasisChangeGate(cirq.Gate):
         if not isinstance(other, type(self)):
             raise TypeError("Can only matmul by an instance of BasisChangeGate")
         if self.num_qubits() != other.num_qubits():
-            raise ValueError("Can only matmal basis change gates with the same number of qubits.")
+            raise ValueError(
+                "Can only matmal basis change gates with the same number of qubits."
+            )
         return type(self)((self.matrix @ other.matrix) % 2)
 
     def _decompose_(self, qubits):
@@ -155,7 +161,9 @@ def get_clearing_network(
                 values[i] = (u + v) % 2
             values[i + 1] = rhs
 
-            op = BasisChangeGate(np.array([[1, a * (1 - b)], [a, b]]))(*qubits[i : i + 2])
+            op = BasisChangeGate(np.array([[1, a * (1 - b)], [a, b]]))(
+                *qubits[i : i + 2]
+            )
             ops.append(op)
 
     assert np.array_equal(labels, np.arange(n))

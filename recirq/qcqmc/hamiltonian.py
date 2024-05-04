@@ -12,8 +12,8 @@ from fqe.openfermion_utils import integrals_to_fqe_restricted
 from openfermionpyscf._run_pyscf import compute_integrals  # type: ignore
 from pyscf import ao2mo, fci, gto, scf
 
-from qc_afqmc.data import get_integrals_path
-from qc_afqmc.utilities import Data, OUTDIRS, Params
+from recirq.qcqmc.data import get_integrals_path
+from recirq.qcqmc.utilities import Data, OUTDIRS, Params
 
 
 @dataclass(frozen=True, repr=False)
@@ -74,7 +74,9 @@ class PyscfHamiltonianParams(Params):
 
     def __post_init__(self):
         """A little special sauce to make sure that this ends up as a tuple."""
-        object.__setattr__(self, 'geometry', tuple((i[0], tuple(i[1])) for i in self.geometry))
+        object.__setattr__(
+            self, "geometry", tuple((i[0], tuple(i[1])) for i in self.geometry)
+        )
 
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
@@ -152,7 +154,9 @@ class HamiltonianData(Data):
         )
 
 
-def load_integrals(*, filepath: Union[str, Path]) -> Tuple[float, np.ndarray, np.ndarray, float]:
+def load_integrals(
+    *, filepath: Union[str, Path]
+) -> Tuple[float, np.ndarray, np.ndarray, float]:
     """Load integrals from a checkpoint file.
 
     Args:
@@ -168,7 +172,9 @@ def load_integrals(*, filepath: Union[str, Path]) -> Tuple[float, np.ndarray, np
 
 
 def spinorb_from_spatial(
-    one_body_integrals: np.ndarray, two_body_integrals: np.ndarray, EQ_TOLERANCE: float = 1e-9
+    one_body_integrals: np.ndarray,
+    two_body_integrals: np.ndarray,
+    EQ_TOLERANCE: float = 1e-9,
 ) -> Tuple[np.ndarray, np.ndarray]:
     n_qubits = 2 * one_body_integrals.shape[0]
 
@@ -185,17 +191,17 @@ def spinorb_from_spatial(
             for r in range(n_qubits // 2):
                 for s in range(n_qubits // 2):
                     # Mixed spin
-                    two_body_coefficients[2 * p, 2 * q + 1, 2 * r + 1, 2 * s] = two_body_integrals[
-                        p, q, r, s
-                    ]
-                    two_body_coefficients[2 * p + 1, 2 * q, 2 * r, 2 * s + 1] = two_body_integrals[
-                        p, q, r, s
-                    ]
+                    two_body_coefficients[
+                        2 * p, 2 * q + 1, 2 * r + 1, 2 * s
+                    ] = two_body_integrals[p, q, r, s]
+                    two_body_coefficients[
+                        2 * p + 1, 2 * q, 2 * r, 2 * s + 1
+                    ] = two_body_integrals[p, q, r, s]
 
                     # Same spin
-                    two_body_coefficients[2 * p, 2 * q, 2 * r, 2 * s] = two_body_integrals[
-                        p, q, r, s
-                    ]
+                    two_body_coefficients[
+                        2 * p, 2 * q, 2 * r, 2 * s
+                    ] = two_body_integrals[p, q, r, s]
                     two_body_coefficients[
                         2 * p + 1, 2 * q + 1, 2 * r + 1, 2 * s + 1
                     ] = two_body_integrals[p, q, r, s]
@@ -212,10 +218,14 @@ def _assert_real(x: np.complex_, tol=1e-8) -> float:
     return float(x.real)
 
 
-def build_hamiltonian_from_file(params: LoadFromFileHamiltonianParams) -> HamiltonianData:
+def build_hamiltonian_from_file(
+    params: LoadFromFileHamiltonianParams,
+) -> HamiltonianData:
     """Function for loading a Hamiltonian from a file."""
     filepath = get_integrals_path(name=params.integral_key)
-    e_core, one_body_integrals, two_body_integrals_psqr, e_fci = load_integrals(filepath=filepath)
+    e_core, one_body_integrals, two_body_integrals_psqr, e_fci = load_integrals(
+        filepath=filepath
+    )
 
     n_orb = params.n_orb
 
@@ -225,10 +235,14 @@ def build_hamiltonian_from_file(params: LoadFromFileHamiltonianParams) -> Hamilt
 
     # We have to reshape to a four index tensor and reorder the indices from
     # chemist's ordering to physicist's.
-    two_body_integrals_psqr = two_body_integrals_psqr.reshape((n_orb, n_orb, n_orb, n_orb))
+    two_body_integrals_psqr = two_body_integrals_psqr.reshape(
+        (n_orb, n_orb, n_orb, n_orb)
+    )
     two_body_integrals_pqrs = np.einsum("psqr->pqrs", two_body_integrals_psqr)
 
-    fqe_ham = integrals_to_fqe_restricted(h1e=one_body_integrals, h2e=two_body_integrals_pqrs)
+    fqe_ham = integrals_to_fqe_restricted(
+        h1e=one_body_integrals, h2e=two_body_integrals_pqrs
+    )
 
     initial_wf = fqe.Wavefunction([[params.n_elec, 0, params.n_orb]])
     initial_wf.set_wfn(strategy="hartree-fock")

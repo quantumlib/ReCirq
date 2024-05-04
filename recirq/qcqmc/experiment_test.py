@@ -1,9 +1,9 @@
 from typing import Tuple
 
-from qc_afqmc.blueprint import BlueprintData
-from qc_afqmc.experiment import build_experiment, SimulatedExperimentParams
-from qc_afqmc.hamiltonian import HamiltonianData
-from qc_afqmc.trial_wf import TrialWavefunctionData
+from recirq.qcqmc.blueprint import BlueprintData
+from recirq.qcqmc.experiment import SimulatedExperimentParams, build_experiment
+from recirq.qcqmc.hamiltonian import HamiltonianData
+from recirq.qcqmc.trial_wf import TrialWavefunctionData
 
 
 def test_small_experiment_raw_samples_shape(
@@ -14,7 +14,7 @@ def test_small_experiment_raw_samples_shape(
     _, _, blueprint_data = fixture_4_qubit_ham_trial_wf_and_blueprint
 
     simulated_experiment_params = SimulatedExperimentParams(
-        name='test_1',
+        name="test_1",
         blueprint_params=blueprint_data.params,
         noise_model_name="None",
         noise_model_params=(0,),
@@ -23,7 +23,8 @@ def test_small_experiment_raw_samples_shape(
     )
 
     experiment = build_experiment(
-        params=simulated_experiment_params, dependencies={blueprint_data.params: blueprint_data}
+        params=simulated_experiment_params,
+        dependencies={blueprint_data.params: blueprint_data},
     )
 
     raw_samples = experiment.raw_samples

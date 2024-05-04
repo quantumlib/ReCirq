@@ -5,11 +5,11 @@ from typing import cast
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import comb, cz_layer, indexing, linalg, sampling, testing
-from qc_afqmc.quaff.gates.fhf import FHFGate
-from qc_afqmc.quaff.gates.hadamard_free import HadamardFreeGate
-from qc_afqmc.quaff.gates.single_qubit_layer import SingleQubitLayerGate
-from qc_afqmc.quaff.linalg import BooleanMatrix, BooleanVector
+from recirq.qcqmc.quaff import comb, cz_layer, indexing, linalg, sampling, testing
+from recirq.qcqmc.quaff.gates.fhf import FHFGate
+from recirq.qcqmc.quaff.gates.hadamard_free import HadamardFreeGate
+from recirq.qcqmc.quaff.gates.single_qubit_layer import SingleQubitLayerGate
+from recirq.qcqmc.quaff.linalg import BooleanMatrix, BooleanVector
 
 
 @dataclass(eq=True, order=True)
@@ -54,7 +54,7 @@ class TruncatedCliffordGate(cirq.Gate):
 
     @classmethod
     def _json_namespace_(cls):
-        return 'qc_afqmc.quaff'
+        return "recirq.qcqmc.quaff"
 
     def __str__(self):
         args = [f"n={self._num_qubits}"]
@@ -63,12 +63,16 @@ class TruncatedCliffordGate(cirq.Gate):
         if np.any(self.CX):
             args.append(f"CX={linalg.matrix_to_tight_str(self.CX)}")
         if np.any(self.CZ) or np.any(self.P):
-            args.append(f"phase={linalg.matrix_to_tight_str(self._phase_matrix_block())}")
+            args.append(
+                f"phase={linalg.matrix_to_tight_str(self._phase_matrix_block())}"
+            )
         args_str = ", ".join(args)
         return f"{type(self).__name__}({args_str})"
 
     def copy(self):
-        return type(self)(num_qubits=self._num_qubits, H=self.H, CX=self.CX, CZ=self.CZ, P=self.P)
+        return type(self)(
+            num_qubits=self._num_qubits, H=self.H, CX=self.CX, CZ=self.CZ, P=self.P
+        )
 
     @property
     def rank(self):
@@ -86,7 +90,9 @@ class TruncatedCliffordGate(cirq.Gate):
             if self.CX != ():
                 return False
         else:
-            if not testing.is_nested_boolean_tuples_of_shape(self.CX, (self._num_qubits - k, k)):
+            if not testing.is_nested_boolean_tuples_of_shape(
+                self.CX, (self._num_qubits - k, k)
+            ):
                 return False
         return True
 
@@ -172,9 +178,13 @@ class TruncatedCliffordGate(cirq.Gate):
 
         F1 = HadamardFreeGate(num_qubits=n, parity_matrix=Δ, phase_matrix=Γ)
 
-        F2 = HadamardFreeGate(num_qubits=n, parity_matrix=np.flip(np.eye(n, dtype=linalg.DTYPE), 0))
+        F2 = HadamardFreeGate(
+            num_qubits=n, parity_matrix=np.flip(np.eye(n, dtype=linalg.DTYPE), 0)
+        )
 
-        return FHFGate(num_qubits=n, first_H_free_gate=F1, hadamards=self.H, second_H_free_gate=F2)
+        return FHFGate(
+            num_qubits=n, first_H_free_gate=F1, hadamards=self.H, second_H_free_gate=F2
+        )
 
     @classmethod
     def _from_sample(cls, sample: sampling.CliffordSample):

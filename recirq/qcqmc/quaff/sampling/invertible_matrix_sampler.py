@@ -4,8 +4,8 @@ from typing import Any, cast, Iterable, Optional, Tuple
 
 import numpy as np
 
-from qc_afqmc.quaff import comb, indexing, linalg
-from qc_afqmc.quaff.sampling.sampler import SingleParameterSampler
+from recirq.qcqmc.quaff import comb, indexing, linalg
+from recirq.qcqmc.quaff.sampling.sampler import SingleParameterSampler
 
 MallowsSample = Tuple[int, ...]
 MallowsRandomness = Tuple[int, ...]
@@ -18,7 +18,9 @@ class MallowsSampler(SingleParameterSampler):
     def randomness_iter(self) -> Iterable[MallowsRandomness]:
         return itertools.product(*(range(k) for k in 2 ** np.arange(self.n, 0, -1) - 1))
 
-    def sample_randomness(self, rng: Optional[np.random.Generator] = None) -> MallowsRandomness:
+    def sample_randomness(
+        self, rng: Optional[np.random.Generator] = None
+    ) -> MallowsRandomness:
         rng = np.random.default_rng(rng)
         return tuple(rng.integers(0, 2**m - 1) for m in np.arange(self.n, 0, -1))
 
@@ -92,9 +94,14 @@ class InvertibleMatrixSampler(SingleParameterSampler):
     def enumerated_combinations(self):
         return enumerate(itertools.combinations(range(self.n), 2))
 
-    def sample_randomness(self, rng: Optional[np.random.Generator]) -> InvertibleMatrixRandomness:
+    def sample_randomness(
+        self, rng: Optional[np.random.Generator]
+    ) -> InvertibleMatrixRandomness:
         rng = np.random.default_rng(rng)
-        return (self.mallows_sampler.sample_randomness(rng), rng.integers(0, 2, comb.binom(self.n)))
+        return (
+            self.mallows_sampler.sample_randomness(rng),
+            rng.integers(0, 2, comb.binom(self.n)),
+        )
 
     def randomness_to_sample(
         self, randomness: InvertibleMatrixRandomness

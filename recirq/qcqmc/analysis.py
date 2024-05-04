@@ -5,12 +5,12 @@ from typing import Dict, Mapping, Tuple, Union
 import cirq
 import numpy as np
 
-from qc_afqmc.blueprint import BlueprintData, BlueprintParamsTrialWf
-from qc_afqmc.experiment import ExperimentData, SimulatedExperimentParams
-from qc_afqmc.hamiltonian import HamiltonianData
-from qc_afqmc.shadow_tomography import reconstruct_wavefunctions_from_samples
-from qc_afqmc.trial_wf import get_rotated_hamiltonians, TrialWavefunctionData
-from qc_afqmc.utilities import Data, OUTDIRS, Params
+from recirq.qcqmc.blueprint import BlueprintData, BlueprintParamsTrialWf
+from recirq.qcqmc.experiment import ExperimentData, SimulatedExperimentParams
+from recirq.qcqmc.hamiltonian import HamiltonianData
+from recirq.qcqmc.shadow_tomography import reconstruct_wavefunctions_from_samples
+from recirq.qcqmc.trial_wf import get_rotated_hamiltonians, TrialWavefunctionData
+from recirq.qcqmc.utilities import Data, OUTDIRS, Params
 
 
 @dataclass(frozen=True, repr=False)
@@ -107,7 +107,9 @@ def build_analysis(
         qubits_linearly_connected=trial_wf_params.qubits_linearly_connected,
     )
 
-    return OverlapAnalysisData(params=params, _reconstructed_wf_for_k=wavefunctions_for_various_k)
+    return OverlapAnalysisData(
+        params=params, _reconstructed_wf_for_k=wavefunctions_for_various_k
+    )
 
 
 def get_variational_energy(

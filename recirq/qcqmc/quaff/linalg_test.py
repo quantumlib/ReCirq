@@ -4,7 +4,7 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 @pytest.mark.parametrize(
@@ -151,12 +151,15 @@ def test_apply_affine_transform(n, seed):
     indices = quaff.bitstrings_to_indices(bitstrings)
     assert indices.shape == (k,)
     state = sum(
-        a * cirq.one_hot(index=i, shape=N, dtype=complex) for a, i in zip(amplitudes, indices)
+        a * cirq.one_hot(index=i, shape=N, dtype=complex)
+        for a, i in zip(amplitudes, indices)
     )
     assert state.shape == (N,)
     offset = rng.integers(0, 2, n).astype(quaff.linalg.DTYPE)
     for b in (None, offset):
-        new_bitstrings = quaff.apply_affine_transform_to_bitstrings(transform, bitstrings, offset=b)
+        new_bitstrings = quaff.apply_affine_transform_to_bitstrings(
+            transform, bitstrings, offset=b
+        )
         assert new_bitstrings.shape == bitstrings.shape
         new_indices = quaff.bitstrings_to_indices(new_bitstrings)
         assert new_indices.shape == indices.shape
@@ -165,7 +168,9 @@ def test_apply_affine_transform(n, seed):
             for a, i in zip(amplitudes, new_indices)
         )
         assert expected.shape == (N,)
-        actual = quaff.apply_affine_transform_to_state_vector(transform, state, offset=b)
+        actual = quaff.apply_affine_transform_to_state_vector(
+            transform, state, offset=b
+        )
         assert np.allclose(expected, actual)
 
     state = quaff.random_state(n, rng)
@@ -176,7 +181,9 @@ def test_apply_affine_transform(n, seed):
     expected = np.dot(unitary, state)
 
     transform = np.eye(n, dtype=quaff.linalg.DTYPE)
-    actual = quaff.apply_affine_transform_to_state_vector(transform, state, offset=offset)
+    actual = quaff.apply_affine_transform_to_state_vector(
+        transform, state, offset=offset
+    )
     assert np.allclose(actual, expected)
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 @pytest.mark.parametrize(

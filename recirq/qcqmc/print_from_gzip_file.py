@@ -1,18 +1,20 @@
 import argparse
 
-from qc_afqmc.newtilities import load_data_from_gzip_file
+from recirq.qcqmc.newtilities import load_data_from_gzip_file
 
 
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("file", type=str, default=None, help="The .gzip file to load and print.")
+    parser.add_argument(
+        "file", type=str, default=None, help="The .gzip file to load and print."
+    )
     parser.add_argument(
         "-d",
         "--data",
         dest="print_data_too",
         default=False,
-        action='store_true',
+        action="store_true",
         help="Prints the data as well as the params.",
     )
 

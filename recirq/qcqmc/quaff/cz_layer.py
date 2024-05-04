@@ -5,7 +5,7 @@ from typing import cast, Iterable, Tuple
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import basis_change, gates, indexing, linalg
+from recirq.qcqmc.quaff import basis_change, gates, indexing, linalg
 
 
 def get_index_range(num_qubits: int, num_steps: int, i: int):
@@ -82,10 +82,14 @@ class CZLayerGate(cirq.Gate):
         include_final_stage: bool = True,
     ):
         counter = collections.Counter(tuple(sorted(pair)) for pair in pairs)
-        pairs = tuple(cast(Tuple[int, int], pair) for pair in sorted(counter) if counter[pair] % 2)
+        pairs = tuple(
+            cast(Tuple[int, int], pair) for pair in sorted(counter) if counter[pair] % 2
+        )
         for pair in pairs:
             if len(set(pair)) != 2:
-                raise ValueError(f"Pair {pair} is does not contain exactly two distinct elements.")
+                raise ValueError(
+                    f"Pair {pair} is does not contain exactly two distinct elements."
+                )
             for i in pair:
                 if not (0 <= i < num_qubits):
                     raise ValueError(f"Index {i} out of range [0, {num_qubits}).")
@@ -93,7 +97,9 @@ class CZLayerGate(cirq.Gate):
         self._num_qubits = num_qubits
         self.pairs = pairs
         if not (include_first_stage or include_final_stage):
-            raise ValueError("At most one of the first and final stages can be omitted.")
+            raise ValueError(
+                "At most one of the first and final stages can be omitted."
+            )
         if not (include_first_stage and include_final_stage):
             raise NotImplementedError
         self.includes_first_stage = bool(include_first_stage)

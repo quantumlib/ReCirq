@@ -3,8 +3,8 @@ import collections
 import numpy as np
 import scipy.stats
 
-from qc_afqmc.quaff import json_serialization, random
-from qc_afqmc.quaff.testing import assert_equivalent_repr
+from recirq.qcqmc.quaff import json_serialization, random
+from recirq.qcqmc.quaff.testing import assert_equivalent_repr
 
 
 def assert_sampler_consistent(sampler_cls, *args, test_json=False, **kwargs):

@@ -2,7 +2,7 @@ import cirq
 import numpy as np
 import pytest
 
-from qc_afqmc.afqmc_circuits import (
+from recirq.qcqmc.afqmc_circuits import (
     ControlledSlaterDeterminantPreparationGate,
     GeminalStatePreparationGate,
     get_computational_qubits_and_ancilla,
@@ -20,7 +20,8 @@ RNG = np.random.default_rng(5345346)
 
 
 @pytest.mark.parametrize(
-    'angle', (tuple(np.arange(20) * np.pi / 8) + tuple(5 * np.pi * (RNG.random(size=10) - 0.5)))
+    "angle",
+    (tuple(np.arange(20) * np.pi / 8) + tuple(5 * np.pi * (RNG.random(size=10) - 0.5))),
 )
 def test_geminal_state_preparation_gate(angle):
     for indicator in (False, True):
@@ -37,7 +38,7 @@ def test_geminal_state_preparation_gate(angle):
 
 
 @pytest.mark.parametrize(
-    'n_elec, n_orb, seed',
+    "n_elec, n_orb, seed",
     [
         (n_elec, n_orb, int(seed))
         for seed in RNG.integers(2 << 30, size=5)
@@ -61,8 +62,9 @@ def test_slater_determinant_preparation_gate(n_elec, n_orb, seed):
 
 
 @pytest.mark.parametrize(
-    'angle',
-    tuple(np.arange(-np.pi, 3 * np.pi, np.pi / 8)) + tuple(5 * np.pi * (RNG.random(size=5) - 0.5)),
+    "angle",
+    tuple(np.arange(-np.pi, 3 * np.pi, np.pi / 8))
+    + tuple(5 * np.pi * (RNG.random(size=5) - 0.5)),
 )
 def test_get_phase_state_preparation_gate(angle):
     gate = get_phase_state_preparation_gate(angle)
@@ -71,7 +73,7 @@ def test_get_phase_state_preparation_gate(angle):
     assert np.allclose(unitary[:, 0], state)
 
 
-@pytest.mark.parametrize('n_pairs', [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("n_pairs", [1, 2, 3, 4, 5])
 def test_jordan_wigner_string(n_pairs):
     jw_indices = list(get_jordan_wigner_string(n_pairs))
     reverse_jw_indices = list(get_jordan_wigner_string(n_pairs, True))
@@ -80,7 +82,7 @@ def test_jordan_wigner_string(n_pairs):
 
 
 @pytest.mark.parametrize(
-    'n_orbs, n_elec',
+    "n_orbs, n_elec",
     [
         (n_orbs, n_elec)
         for n_orbs in range(13)
@@ -98,13 +100,15 @@ def test_controlled_slater_determinant_preparation_gate(n_orbs, n_elec):
 
     actual_state = unitary[:, 1 << n_orbs]
     expected_state = cirq.one_hot(
-        index=(1,) * (n_elec + 1) + (0,) * (n_orbs - n_elec), shape=(2,) * (n_orbs + 1), dtype=int
+        index=(1,) * (n_elec + 1) + (0,) * (n_orbs - n_elec),
+        shape=(2,) * (n_orbs + 1),
+        dtype=int,
     ).flatten()
     assert np.allclose(actual_state, expected_state)
 
 
 @pytest.mark.parametrize(
-    'n_pairs, n_elec, seed',
+    "n_pairs, n_elec, seed",
     [
         (n_pairs, n_elec, int(seed))
         for n_pairs in (1, 2, 3)
@@ -121,25 +125,35 @@ def test_overlap_circuit(n_pairs, n_elec, seed):
     angles = 2 * np.pi * rng.random(n_pairs)
     phase = 2 * np.pi * rng.random()
 
-    kwargs = {'angles': angles, 'orbitals': orbitals}
+    kwargs = {"angles": angles, "orbitals": orbitals}
 
-    calculated_overlap = get_geminal_and_slater_det_overlap(angles=angles, orbitals=orbitals)
+    calculated_overlap = get_geminal_and_slater_det_overlap(
+        angles=angles, orbitals=orbitals
+    )
     atol = 10e-6
 
     for fold_in_measurement in (False, True):
-        kwargs['fold_in_measurement'] = fold_in_measurement
-        overlap_phase = get_geminal_and_slater_det_overlap_via_simulation(phase=phase, **kwargs)
-        overlap_re = get_geminal_and_slater_det_overlap_via_simulation(phase=0, **kwargs)
-        overlap_im = get_geminal_and_slater_det_overlap_via_simulation(phase=-np.pi / 2, **kwargs)
+        kwargs["fold_in_measurement"] = fold_in_measurement
+        overlap_phase = get_geminal_and_slater_det_overlap_via_simulation(
+            phase=phase, **kwargs
+        )
+        overlap_re = get_geminal_and_slater_det_overlap_via_simulation(
+            phase=0, **kwargs
+        )
+        overlap_im = get_geminal_and_slater_det_overlap_via_simulation(
+            phase=-np.pi / 2, **kwargs
+        )
         actual_overlap = overlap_re + 1j * overlap_im
 
-        assert np.isclose(overlap_phase, (np.exp(1j * phase) * calculated_overlap).real, atol=atol)
+        assert np.isclose(
+            overlap_phase, (np.exp(1j * phase) * calculated_overlap).real, atol=atol
+        )
         assert np.isclose(overlap_re, calculated_overlap.real, atol=atol)
         assert np.isclose(overlap_im, calculated_overlap.imag, atol=atol)
         assert np.isclose(actual_overlap, calculated_overlap, atol=atol)
 
 
-@pytest.mark.parametrize('n_pairs', [1, 2, 3, 4, 5, 6])
+@pytest.mark.parametrize("n_pairs", [1, 2, 3, 4, 5, 6])
 def test_get_computational_qubits_and_ancilla(n_pairs):
     comp_qubits, _ = get_computational_qubits_and_ancilla(4 * n_pairs)
     for i in range(n_pairs):
@@ -157,7 +171,7 @@ def test_get_computational_qubits_and_ancilla(n_pairs):
 
 
 @pytest.mark.parametrize(
-    'n_pairs, n_elec, seed',
+    "n_pairs, n_elec, seed",
     [
         (n_pairs, n_elec, int(seed))
         for n_pairs in (1, 2, 3)
@@ -196,8 +210,12 @@ def test_overlap_circuit_connectivity(n_pairs, n_elec, seed):
 
 
 @pytest.mark.parametrize(
-    'n_orbs, seed',
-    [(n_orbs, int(seed)) for n_orbs in range(1, 10) for seed in RNG.integers(2 << 30, size=2)],
+    "n_orbs, seed",
+    [
+        (n_orbs, int(seed))
+        for n_orbs in range(1, 10)
+        for seed in RNG.integers(2 << 30, size=2)
+    ],
 )
 def test_slater_determinant(n_orbs, seed):
     rng = np.random.default_rng(seed)
@@ -234,7 +252,7 @@ def test_slater_determinant(n_orbs, seed):
 
 
 @pytest.mark.parametrize(
-    'n_orbs, n_elec, orbitals, angles, expected_overlap',
+    "n_orbs, n_elec, orbitals, angles, expected_overlap",
     [
         (
             8,
@@ -281,19 +299,29 @@ def test_overlap_circuit_julia_vals(n_orbs, n_elec, orbitals, angles, expected_o
     assert orbitals.shape == (n_elec, n_orbs)
     phase = 0.0
 
-    kwargs = {'angles': angles, 'orbitals': orbitals}
+    kwargs = {"angles": angles, "orbitals": orbitals}
 
-    calculated_overlap = get_geminal_and_slater_det_overlap(angles=angles, orbitals=orbitals)
+    calculated_overlap = get_geminal_and_slater_det_overlap(
+        angles=angles, orbitals=orbitals
+    )
     atol = 10e-6
 
     for fold_in_measurement in (False, True):
-        kwargs['fold_in_measurement'] = fold_in_measurement
-        overlap_phase = get_geminal_and_slater_det_overlap_via_simulation(phase=phase, **kwargs)
-        overlap_re = get_geminal_and_slater_det_overlap_via_simulation(phase=0, **kwargs)
-        overlap_im = get_geminal_and_slater_det_overlap_via_simulation(phase=-np.pi / 2, **kwargs)
+        kwargs["fold_in_measurement"] = fold_in_measurement
+        overlap_phase = get_geminal_and_slater_det_overlap_via_simulation(
+            phase=phase, **kwargs
+        )
+        overlap_re = get_geminal_and_slater_det_overlap_via_simulation(
+            phase=0, **kwargs
+        )
+        overlap_im = get_geminal_and_slater_det_overlap_via_simulation(
+            phase=-np.pi / 2, **kwargs
+        )
         actual_overlap = overlap_re + 1j * overlap_im
 
-        assert np.isclose(overlap_phase, (np.exp(1j * phase) * calculated_overlap).real, atol=atol)
+        assert np.isclose(
+            overlap_phase, (np.exp(1j * phase) * calculated_overlap).real, atol=atol
+        )
         assert np.isclose(overlap_re, calculated_overlap.real, atol=atol)
         assert np.isclose(overlap_im, calculated_overlap.imag, atol=atol)
         assert np.isclose(actual_overlap, calculated_overlap, atol=atol)

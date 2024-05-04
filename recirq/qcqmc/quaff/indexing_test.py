@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 import pytest
 
-from qc_afqmc import quaff
+from recirq.qcqmc import quaff
 
 
 @pytest.mark.parametrize("n, big_endian", itertools.product(range(5), (0, 1)))
@@ -26,7 +26,9 @@ def test_singular_indexing(n):
     for i in range(N):
         assert i == quaff.bitstring_to_index(quaff.index_to_bitstring(n, i))
     for x in bitstrings:
-        assert np.array_equal(x, quaff.index_to_bitstring(n, quaff.bitstring_to_index(x)))
+        assert np.array_equal(
+            x, quaff.index_to_bitstring(n, quaff.bitstring_to_index(x))
+        )
 
     unit_vector_indices = quaff.get_unit_vector_indices(n)
     assert unit_vector_indices.shape == (n,)

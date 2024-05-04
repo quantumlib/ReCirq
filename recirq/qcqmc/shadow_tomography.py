@@ -1,14 +1,14 @@
 from math import gcd
-from typing import cast, Dict, Iterable, List, Sequence, Type
+from typing import Dict, Iterable, List, Sequence, Type, cast
 
 import cirq
 import numpy as np
 
-from qc_afqmc.utilities import (
+from recirq.qcqmc.utilities import (
     DO_INVERSE_SIMULATION_QUBIT_NUMBER_CUTOFF,
+    SINGLE_PRECISION_DEFAULT,
     is_expected_elementary_cirq_op,
     reorder_qubit_wavefunction,
-    SINGLE_PRECISION_DEFAULT,
 )
 
 
@@ -178,7 +178,8 @@ def get_amplitudes_from_samples_via_big_unitary(
     assert len(raw_samples_subset.shape) == 2
     amplitudes = np.zeros((len(valid_configurations),), np.complex128)
     dtype = cast(
-        Type[np.complexfloating], np.complex64 if simulate_single_precision else np.complex128
+        Type[np.complexfloating],
+        np.complex64 if simulate_single_precision else np.complex128,
     )
 
     inverse_unitaries = []
@@ -200,7 +201,9 @@ def get_amplitudes_from_samples_via_big_unitary(
             for unitary, part, config_part in zip(
                 inverse_unitaries, qubit_partition, config_partition
             ):
-                bitstring = [raw_samples_subset[j, qubit_to_index[qubit]] for qubit in part]
+                bitstring = [
+                    raw_samples_subset[j, qubit_to_index[qubit]] for qubit in part
+                ]
                 bitstring_val = cirq.big_endian_bits_to_int(bitstring)
                 sub_shadow = unitary[:, bitstring_val]
 
@@ -244,7 +247,7 @@ def get_amplitudes_from_samples_via_simulation(
     assert len(raw_samples_subset.shape) == 2
     amplitudes = np.zeros((len(valid_configurations),), np.complex128)
 
-    assert simulate_single_precision, 'TODO'
+    assert simulate_single_precision, "TODO"
     simulator = cirq.Simulator()
 
     partitioned_results = []
@@ -264,7 +267,9 @@ def get_amplitudes_from_samples_via_simulation(
 
     for j in range(n_samples):
         inverted_wavefunctions = []
-        for part, inverse, results in zip(qubit_partition, inverse_cliffords, partitioned_results):
+        for part, inverse, results in zip(
+            qubit_partition, inverse_cliffords, partitioned_results
+        ):
             result = results[j]
             inverted_wavefunctions.append(result.state_vector())
 
@@ -320,7 +325,7 @@ def get_amplitudes_from_samples_via_clifford_simulation(
     assert len(raw_samples_subset.shape) == 2
     amplitudes = np.zeros((len(valid_configurations),), np.complex128)
 
-    assert simulate_single_precision, 'TODO'
+    assert simulate_single_precision, "TODO"
     simulator = cirq.CliffordSimulator()
 
     decomposed_inverse_cliffords = []

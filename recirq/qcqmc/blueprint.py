@@ -5,13 +5,13 @@ from typing import Dict, Iterable, Iterator, List, Protocol, Sequence, Tuple, Un
 import cirq
 import numpy as np
 
-from qc_afqmc.quaff import (
+from recirq.qcqmc.quaff import (
     get_parameterized_truncated_cliffords_ops,
     get_truncated_cliffords_resolver,
     TruncatedCliffordGate,
 )
-from qc_afqmc.trial_wf import TrialWavefunctionData, TrialWavefunctionParams
-from qc_afqmc.utilities import Data, is_expected_elementary_cirq_op, OUTDIRS, Params
+from recirq.qcqmc.trial_wf import TrialWavefunctionData, TrialWavefunctionParams
+from recirq.qcqmc.utilities import Data, is_expected_elementary_cirq_op, OUTDIRS, Params
 
 
 class _CirqOptimizer(Protocol):
@@ -61,7 +61,9 @@ class BlueprintParamsTrialWf(Params):
     def __post_init__(self):
         """A little helper to ensure that tuples end up as tuples after loading."""
         object.__setattr__(
-            self, 'qubit_partition', tuple(tuple(thing) for thing in self.qubit_partition)
+            self,
+            "qubit_partition",
+            tuple(tuple(thing) for thing in self.qubit_partition),
         )
 
     @property
@@ -100,7 +102,7 @@ class BlueprintParamsRobustShadow(Params):
         """A little helper to ensure that tuples end up as tuples after loading."""
         object.__setattr__(
             self,
-            'qubit_partition',
+            "qubit_partition",
             tuple(tuple(inner for inner in thing) for thing in self.qubit_partition),
         )
 
@@ -174,7 +176,9 @@ class BlueprintData(Data):
     def __post_init__(self):
         """A little helper to ensure that tuples end up as tuples after loading."""
         object.__setattr__(
-            self, 'parameterized_clifford_circuits', tuple(self.parameterized_clifford_circuits)
+            self,
+            "parameterized_clifford_circuits",
+            tuple(self.parameterized_clifford_circuits),
         )
 
     def _json_dict_(self):
@@ -197,21 +201,27 @@ def build_blueprint_from_base_circuit(
     Args:
         base_circuit: The circuit to shadow tomographize.
     """
-    resolvers = list(_get_resolvers(params.n_cliffords, params.qubit_partition, params.seed))
+    resolvers = list(
+        _get_resolvers(params.n_cliffords, params.qubit_partition, params.seed)
+    )
 
     parameterized_clifford_ops: Iterable[cirq.OP_TREE] = get_parameterized_truncated_cliffords_ops(params.qubit_partition)  # type: ignore
 
     parameterized_clifford_circuits = tuple(
-        cirq.expand_composite(cirq.Circuit(ops), no_decomp=is_expected_elementary_cirq_op)
+        cirq.expand_composite(
+            cirq.Circuit(ops), no_decomp=is_expected_elementary_cirq_op
+        )
         for ops in parameterized_clifford_ops
     )
 
-    parameterized_clifford_circuit = sum(parameterized_clifford_circuits, cirq.Circuit())
+    parameterized_clifford_circuit = sum(
+        parameterized_clifford_circuits, cirq.Circuit()
+    )
 
     compiled_circuit = cirq.Circuit([base_circuit, parameterized_clifford_circuit])
 
     circuit_with_measurement = compiled_circuit + cirq.Circuit(
-        cirq.measure(*params.qubits, key='all')
+        cirq.measure(*params.qubits, key="all")
     )
 
     apply_optimizer_suite = {0: apply_optimizer_suite_0}[params.optimizer_suite]
@@ -233,8 +243,8 @@ def build_blueprint(
     if isinstance(params, BlueprintParamsRobustShadow):
         base_circuit = cirq.Circuit()
     elif isinstance(params, BlueprintParamsTrialWf):
-        assert dependencies is not None, 'Provide trial_wf'
-        assert params.trial_wf_params in dependencies, 'trial_wf dependency'
+        assert dependencies is not None, "Provide trial_wf"
+        assert params.trial_wf_params in dependencies, "trial_wf dependency"
         trial_wf = dependencies[params.trial_wf_params]
         assert isinstance(trial_wf, TrialWavefunctionData)
         base_circuit = trial_wf.superposition_circuit
