@@ -55,6 +55,39 @@ class GeminalStatePreparationGate(cirq.Gate):
         return ("G",) * self.num_qubits()
 
 
+class ControlledGeminalStatesPreparationGate(cirq.Gate):
+
+    def __init__(self, angles: Iterable[float]):
+        self.angles = tuple(angles)
+
+    def _decompose_(self, qubits):
+        # assumes connectivity
+        # 2 4 6 8 10 12 .......
+        # 1 3 5 7 9  11 .......
+        #                  0
+        ancilla = qubits[0]
+        comp_qubits = qubits[1:]
+        middle = get_ancilla_col(self.n_pairs) // 2
+        yield cirq.CNOT(ancilla, comp_qubits[4 * middle + 2])
+        for i in range(middle - 1, -1, -1):
+            yield cirq.CNOT(comp_qubits[4 * i + 6], comp_qubits[4 * i + 4])
+            yield cirq.SWAP(comp_qubits[4 * i + 4], comp_qubits[4 * i + 2])
+        for i in range(middle + 1, self.n_pairs):
+            yield cirq.CNOT(comp_qubits[4 * i - 2], comp_qubits[4 * i])
+            yield cirq.SWAP(comp_qubits[4 * i], comp_qubits[4 * i + 2])
+        for i, angle in enumerate(self.angles):
+            yield GeminalStatePreparationGate(angle, 1)(
+                *comp_qubits[4 * i : 4 * (i + 1)]
+            )
+
+    def num_qubits(self):
+        return 1 + 4 * len(self.angles)
+
+    @property
+    def n_pairs(self) -> int:
+        return len(self.angles)
+
+
 class SlaterDeterminantPreparationGate(cirq.Gate):
     def __init__(self, orbitals: np.ndarray, from_reference: bool = False):
         """Prepares a Slater determinant using the Jordan Wigner representation.
