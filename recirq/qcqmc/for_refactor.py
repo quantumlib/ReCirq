@@ -1,17 +1,15 @@
 import abc
 import dataclasses
 import hashlib
-import itertools
-import os
 import pathlib
-from dataclasses import asdict, dataclass
-from typing import Dict, Optional, Sequence, Union
+from dataclasses import dataclass
+from typing import Optional, Sequence, Union
 
 import cirq
 import numpy as np
-from scipy.sparse import coo_matrix
 
 
+# should go in Dedicated module
 @dataclass(frozen=True, repr=False)
 class Params(abc.ABC):
     name: str
@@ -26,7 +24,9 @@ class Params(abc.ABC):
 
         return all(
             array_compatible_eq(thing1, thing2)
-            for thing1, thing2 in zip(dataclasses.astuple(self), dataclasses.astuple(other))
+            for thing1, thing2 in zip(
+                dataclasses.astuple(self), dataclasses.astuple(other)
+            )
         )
 
     @property
@@ -52,7 +52,9 @@ class Params(abc.ABC):
         fields = dataclasses.fields(self)
         # adjusted_fields = [f for f in fields if getattr(self, f.name) != f.default]
         adjusted_fields = [
-            f for f in fields if not array_compatible_eq(getattr(self, f.name), f.default)
+            f
+            for f in fields
+            if not array_compatible_eq(getattr(self, f.name), f.default)
         ]
 
         return (
@@ -67,6 +69,7 @@ class Params(abc.ABC):
         return "recirq.qcqmc"
 
 
+# Should go in dedicated module
 @dataclass(frozen=True, eq=False)
 class Data(abc.ABC):
     params: Params
@@ -81,7 +84,9 @@ class Data(abc.ABC):
 
         return all(
             array_compatible_eq(thing1, thing2)
-            for thing1, thing2 in zip(dataclasses.astuple(self), dataclasses.astuple(other))
+            for thing1, thing2 in zip(
+                dataclasses.astuple(self), dataclasses.astuple(other)
+            )
         )
 
     @classmethod
@@ -110,6 +115,7 @@ def array_compatible_eq(thing1, thing2):
         return NotImplemented
 
 
+# DELETE?
 class ConstantTwoQubitGateDepolarizingNoiseModel(cirq.NoiseModel):
     """Applies noise to each two qubit gate individually at the end of every moment."""
 
@@ -128,7 +134,10 @@ class ConstantTwoQubitGateDepolarizingNoiseModel(cirq.NoiseModel):
             return operation
 
 
-def get_noise_model(name: str, params: Optional[Sequence[float]]) -> Union[None, cirq.NoiseModel]:
+# Move to experiment.py
+def get_noise_model(
+    name: str, params: Optional[Sequence[float]]
+) -> Union[None, cirq.NoiseModel]:
     if name == "ConstantTwoQubitGateDepolarizingNoiseModel":
         assert params is not None
         assert len(params) == 1
@@ -139,58 +148,12 @@ def get_noise_model(name: str, params: Optional[Sequence[float]]) -> Union[None,
         raise NotImplementedError("Noise model not implemented")
 
 
-def count_circuit_elements(circuit: cirq.Circuit) -> Dict[str, int]:
-    """A helper method to count the number of gates and moments in a circuit."""
-    num_one_qubit_gates = 0
-    num_two_qubit_gates = 0
-    for moment in circuit:
-        for op in moment:
-            if isinstance(op, cirq.ops.GateOperation):
-                if len(op.qubits) == 2:
-                    num_two_qubit_gates += 1
-                if len(op.qubits) == 1:
-                    num_one_qubit_gates += 1
-
-    return {
-        "Moments": len(circuit),
-        "Single Qubit Gates": num_one_qubit_gates,
-        "Two Qubit Gates": num_two_qubit_gates,
-    }
-
-
-def iterate_permutation_matrices(dim: int):
-    """A helper function that iterates over dim x dim permutation matrices."""
-    for perm in itertools.permutations(range(dim)):
-        # We generate the indices of the non-zero entries.
-        data = np.asarray([1.0] * dim)
-        xs = []
-        ys = []
-        for i in range(dim):
-            xs.append(i)
-            ys.append(perm[i])
-
-        xs = np.asarray(xs)
-        ys = np.asarray(ys)
-
-        mat = coo_matrix((data, (xs, ys)), shape=(dim, dim))
-
-        yield mat.todense()
-
-
-def iterate_virtual_permutation_matrices(n_orb, n_elec):
-    # TODO: Test to see if this is useful once orbital optimization code is improved.
-    n_virt = n_orb - n_elec // 2
-
-    for mat in iterate_permutation_matrices(n_virt):
-        base_mat = np.eye(n_orb)
-
-        base_mat[n_elec // 2 : n_orb, n_elec // 2 : n_orb] = mat
-
-        yield base_mat
-
-
+# move to shadow tomography
 def reorder_qubit_wavefunction(
-    *, wf: np.ndarray, qubits_old_order: Sequence[cirq.Qid], qubits_new_order: Sequence[cirq.Qid]
+    *,
+    wf: np.ndarray,
+    qubits_old_order: Sequence[cirq.Qid],
+    qubits_new_order: Sequence[cirq.Qid],
 ) -> np.ndarray:
     """Reorders the amplitudes of wf based on permutation of qubits.
 
@@ -208,6 +171,7 @@ def reorder_qubit_wavefunction(
     return wf
 
 
+# move to cirq_op or something
 def is_expected_elementary_cirq_op(op: cirq.Operation) -> bool:
     """Checks whether op is one of the operations that we expect when decomposing a quaff op."""
     to_keep = isinstance(

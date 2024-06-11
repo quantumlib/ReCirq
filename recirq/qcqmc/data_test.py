@@ -1,14 +1,7 @@
 import h5py
 import pytest
 
-from recirq.qcqmc.data import DEFAULT_BASE_DATA_DIR, get_integrals_path
-
-
-def test_default_base_data_dir():
-    assert ".." not in str(DEFAULT_BASE_DATA_DIR), "should be resolved path"
-    assert DEFAULT_BASE_DATA_DIR.exists()
-    assert DEFAULT_BASE_DATA_DIR.is_dir()
-    assert DEFAULT_BASE_DATA_DIR.name == "data"
+from recirq.qcqmc.data import get_integrals_path
 
 
 @pytest.mark.parametrize("name", ["fh_sto3g", "n2_ccpvtz"])

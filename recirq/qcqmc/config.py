@@ -28,6 +28,7 @@ class OutputDirectories:
     DEFAULT_BLUEPRINT_DIRECTORY: str = "./data/blueprints/"
     DEFAULT_EXPERIMENT_DIRECTORY: str = "./data/experiments/"
     DEFAULT_ANALYSIS_DIRECTORY: str = "./data/analyses/"
+    DEFAULT_INTEGRALS_DIR = "./data/integrals/"
 
     def make_output_directories(self) -> None:
         """Make the output directories given in OUTDIRS"""

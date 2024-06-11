@@ -1,17 +1,17 @@
 from pathlib import Path
 
-DEFAULT_BASE_DATA_DIR = (Path(__file__).parent / "data").resolve()
+from recirq.qcqmc.config import OUTDIRS
 
 
 def get_integrals_path(
-    name: str, *, base_data_dir: Path = DEFAULT_BASE_DATA_DIR
+    name: str, *, integrals_dir: str = OUTDIRS.DEFAULT_INTEGRALS_DIR
 ) -> Path:
     """Find integral data file by name.
 
     Args:
         name: The molecule name.
     """
-    return Path(base_data_dir) / "integrals" / name / "hamiltonian.chk"
+    return Path(integrals_dir) / name / "hamiltonian.chk"
 
 
 _MOLECULE_INFO = {"fh_sto3g"}
