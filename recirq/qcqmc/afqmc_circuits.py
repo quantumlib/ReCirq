@@ -56,6 +56,17 @@ class GeminalStatePreparationGate(cirq.Gate):
 
 
 class ControlledGeminalStatesPreparationGate(cirq.Gate):
+    """A multi-qubit gate that prepares N geminal states conditioned on the state of the 0th qubit.
+
+    Given an initial state a|0> + b|1> for the 0th qubit, a series of CNOT and
+    SWAP gates create a len(self.angles)-qubit GHZ state distributed between the
+    0th qubit and the 4n-1st qubit for n=1, 2, ..., len(self.angles).  This GHZ
+    state controls the action of each GeminalStatePreparationGate, resulting in
+    a final state that is a|0>|0....0> + b|1>|geminal 1>|geminal 2>...
+
+    Args:
+        self.angle: The N angles for the geminal states.
+    """
 
     def __init__(self, angles: Iterable[float]):
         self.angles = tuple(angles)
