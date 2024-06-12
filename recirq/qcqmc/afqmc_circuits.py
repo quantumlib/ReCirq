@@ -41,9 +41,12 @@ class GeminalStatePreparationGate(cirq.Gate):
         Givens rotation on qubits a, c followed by two CNOTs copying a to b
         and c to d.
 
+        See: https://github.com/quantumlib/ReCirq/issues/348 for tracking issue
+        on how indicator is used in experiment.
+
         Args:
             angle: The angle θ.
-            indicator: The bit b. TODO(wjhuggins) how is this used in the experiment?
+            indicator: The bit b.
         """
         self.angle = -angle + np.pi / 2
         self.indicator = indicator
