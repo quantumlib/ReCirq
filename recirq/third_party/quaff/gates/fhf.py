@@ -6,9 +6,9 @@ from typing import cast, Optional, Tuple
 import cirq
 import numpy as np
 
-from recirq.qcqmc.quaff import linalg, sampling, testing
-from recirq.qcqmc.quaff.gates.hadamard_free import HadamardFreeGate
-from recirq.qcqmc.quaff.gates.single_qubit_layer import SingleQubitLayerGate
+from recirq.third_party.quaff import linalg, sampling, testing
+from recirq.third_party.quaff.gates.hadamard_free import HadamardFreeGate
+from recirq.third_party.quaff.gates.single_qubit_layer import SingleQubitLayerGate
 
 
 def _recover_permutation(matrix: np.ndarray) -> Optional[np.ndarray]:
@@ -67,7 +67,7 @@ class FHFGate(cirq.Gate):
 
     @classmethod
     def _json_namespace_(cls):
-        return "recirq.qcqmc.quaff"
+        return "recirq.third_party.quaff"
 
     def _num_qubits_(self):
         return self._num_qubits

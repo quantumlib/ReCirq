@@ -2,7 +2,7 @@ import cirq
 import numpy as np
 import pytest
 
-from recirq.qcqmc.quaff import (
+from recirq.third_party.quaff import (
     DEFAULT_RESOLVERS,
     HadamardFreeGate,
     random_seed,

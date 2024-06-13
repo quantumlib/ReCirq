@@ -5,7 +5,7 @@ from typing import cast, Iterable, Tuple
 import cirq
 import numpy as np
 
-from recirq.qcqmc.quaff import basis_change, gates, indexing, linalg
+from recirq.third_party.quaff import basis_change, gates, indexing, linalg
 
 
 def get_index_range(num_qubits: int, num_steps: int, i: int):

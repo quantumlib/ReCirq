@@ -3,8 +3,8 @@ from typing import Any, Iterable, Optional, Tuple
 
 import numpy as np
 
-from recirq.qcqmc.quaff import linalg, testing
-from recirq.qcqmc.quaff.sampling.sampler import Randomness, Sample, Sampler
+from recirq.third_party.quaff import linalg, testing
+from recirq.third_party.quaff.sampling.sampler import Randomness, Sample, Sampler
 
 
 class BooleanSampler(Sampler):

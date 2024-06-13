@@ -6,8 +6,8 @@ from typing import Iterable, NamedTuple, Optional, Tuple
 import cirq
 import numpy as np
 
-from recirq.qcqmc.quaff import comb, indexing, linalg, testing
-from recirq.qcqmc.quaff.sampling.sampler import SingleParameterSampler
+from recirq.third_party.quaff import comb, indexing, linalg, testing
+from recirq.third_party.quaff.sampling.sampler import SingleParameterSampler
 
 QuantumMallowsSample = Tuple[Tuple[bool, ...], Tuple[int, ...]]
 QuantumMallowsRandomness = Tuple[int, ...]
@@ -120,7 +120,7 @@ class CliffordSample:
 
     @classmethod
     def _json_namespace_(cls):
-        return "recirq.qcqmc.quaff"
+        return "recirq.third_party.quaff"
 
     def num_qubits(self):
         return len(self.parity_shift)
@@ -189,12 +189,16 @@ class CliffordSampler(SingleParameterSampler):
                 else:
                     Δ_indices.append((i, j))
         return (
-            tuple(np.array(Δ_indices).T)
-            if Δ_indices
-            else (np.zeros(0, dtype=int),) * 2,
-            tuple(np.array(Γ_indices).T)
-            if Γ_indices
-            else (np.zeros(0, dtype=int),) * 2,
+            (
+                tuple(np.array(Δ_indices).T)
+                if Δ_indices
+                else (np.zeros(0, dtype=int),) * 2
+            ),
+            (
+                tuple(np.array(Γ_indices).T)
+                if Γ_indices
+                else (np.zeros(0, dtype=int),) * 2
+            ),
         )
 
     def randomness_to_sample(self, randomness: CliffordRandomness) -> CliffordSample:

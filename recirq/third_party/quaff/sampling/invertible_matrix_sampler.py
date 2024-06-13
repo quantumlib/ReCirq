@@ -4,8 +4,8 @@ from typing import Any, cast, Iterable, Optional, Tuple
 
 import numpy as np
 
-from recirq.qcqmc.quaff import comb, indexing, linalg
-from recirq.qcqmc.quaff.sampling.sampler import SingleParameterSampler
+from recirq.third_party.quaff import comb, indexing, linalg
+from recirq.third_party.quaff.sampling.sampler import SingleParameterSampler
 
 MallowsSample = Tuple[int, ...]
 MallowsRandomness = Tuple[int, ...]
