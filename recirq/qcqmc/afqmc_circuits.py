@@ -28,7 +28,7 @@ from openfermion.linalg.sparse_tools import jw_sparse_givens_rotation
 
 
 class GeminalStatePreparationGate(cirq.Gate):
-    def __init__(self, angle: float, indicator: bool = False):
+    def __init__(self, angle: float, inline_control: bool = False):
         """A 4-qubit gate that takes to produce a geminal state
 
         This state takes |00b0〉to sin(θ) |0011〉+ cos(θ) |1100〉and |00(1-b)0〉 to |0000〉.
@@ -42,20 +42,21 @@ class GeminalStatePreparationGate(cirq.Gate):
         and c to d.
 
         See: https://github.com/quantumlib/ReCirq/issues/348 for tracking issue
-        on how indicator is used in experiment.
+        on how inline_control is used in experiment.
 
         Args:
             angle: The angle θ.
-            indicator: The bit b.
+            inline_control: When True, the state preparation is controlled by the
+                state of the third qubit.
         """
         self.angle = -angle + np.pi / 2
-        self.indicator = indicator
+        self.inline_control = inline_control
 
     def _decompose_(self, qubits):
         # assumes linear connectivity: a - c - d - b
 
         a, b, c, d = qubits
-        if not self.indicator:
+        if not self.inline_control:
             yield cirq.X(c)
         yield cirq.ZPowGate(global_shift=-1)(c)
         yield cirq.FSimGate(-self.angle + np.pi, 0)(c, a)
@@ -82,7 +83,7 @@ class ControlledGeminalStatesPreparationGate(cirq.Gate):
     a final state that is a|0>|0....0> + b|1>|geminal 1>|geminal 2>...
 
     Args:
-        self.angle: The N angles for the geminal states.
+        angles: The N angles for the geminal states.
     """
 
     def __init__(self, angles: Iterable[float]):

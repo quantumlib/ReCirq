@@ -19,6 +19,7 @@ import pytest
 from recirq.qcqmc.afqmc_circuits import (
     ControlledSlaterDeterminantPreparationGate,
     GeminalStatePreparationGate,
+    SlaterDeterminantPreparationGate,
     get_computational_qubits_and_ancilla,
     get_geminal_and_slater_det_overlap,
     get_geminal_and_slater_det_overlap_circuit,
@@ -27,7 +28,6 @@ from recirq.qcqmc.afqmc_circuits import (
     get_jordan_wigner_string,
     get_phase_state_preparation_gate,
     jw_slater_determinant,
-    SlaterDeterminantPreparationGate,
 )
 
 RNG = np.random.default_rng(5345346)
@@ -38,15 +38,15 @@ RNG = np.random.default_rng(5345346)
     (tuple(np.arange(20) * np.pi / 8) + tuple(5 * np.pi * (RNG.random(size=10) - 0.5))),
 )
 def test_geminal_state_preparation_gate(angle):
-    for indicator in (False, True):
-        gate = GeminalStatePreparationGate(angle, indicator=indicator)
+    for inline_control in (False, True):
+        gate = GeminalStatePreparationGate(angle, inline_control=inline_control)
         unitary = cirq.unitary(gate)
 
-        actual_state = unitary[:, 0b0010 if indicator else 0]
+        actual_state = unitary[:, 0b0010 if inline_control else 0]
         expected_state = get_geminal_state(angle)
         assert np.allclose(actual_state, expected_state)
 
-        actual_state = unitary[:, 0 if indicator else 0b0010]
+        actual_state = unitary[:, 0 if inline_control else 0b0010]
         expected_state = cirq.one_hot(index=0, shape=16, dtype=np.complex128)
         assert np.allclose(actual_state, expected_state)
 
