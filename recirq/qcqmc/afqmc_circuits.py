@@ -47,7 +47,12 @@ class GeminalStatePreparationGate(cirq.Gate):
         Args:
             angle: The angle θ.
             inline_control: When True, the state preparation is controlled by the
-                state of the third qubit.
+                state of the third qubit.indicator,
+                If inline_control is False, the GeminalStatePreparationGate acts on
+                |0000> to prepare the geminal state and maps |0010> to |0000>.
+                If inline_control is True, then the GeminalStatePreparationGate acts
+                on |0010> to prepare the geminal state and maps |0000> to
+                |0000>.
         """
         self.angle = -angle + np.pi / 2
         self.inline_control = inline_control
