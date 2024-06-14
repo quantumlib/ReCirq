@@ -4,5 +4,4 @@ Quaff is a Python library for manipulating, optimizing, and compiling Clifford g
 
 Quaff implements [Hadamard-Free Circuits Expose the Structure
 of the Clifford
-Group](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9435351) to write
-any clifford operation in the canonical form and can generate 
+Group](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9435351).
