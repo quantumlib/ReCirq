@@ -1,3 +1,17 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Trial wavefunction circuit ansatz primitives."""
 
 import itertools
@@ -14,7 +28,7 @@ from openfermion.linalg.sparse_tools import jw_sparse_givens_rotation
 
 
 class GeminalStatePreparationGate(cirq.Gate):
-    def __init__(self, angle: float, indicator: bool = False):
+    def __init__(self, angle: float, inline_control: bool = False):
         """A 4-qubit gate that takes to produce a geminal state
 
         This state takes |00b0〉to sin(θ) |0011〉+ cos(θ) |1100〉and |00(1-b)0〉 to |0000〉.
@@ -27,18 +41,27 @@ class GeminalStatePreparationGate(cirq.Gate):
         Givens rotation on qubits a, c followed by two CNOTs copying a to b
         and c to d.
 
+        See: https://github.com/quantumlib/ReCirq/issues/348 for tracking issue
+        on how inline_control is used in experiment.
+
         Args:
             angle: The angle θ.
-            indicator: The bit b. TODO(wjhuggins) how is this used in the experiment?
+            inline_control: When True, the state preparation is controlled by the
+                state of the third qubit.indicator,
+                If inline_control is False, the GeminalStatePreparationGate acts on
+                |0000> to prepare the geminal state and maps |0010> to |0000>.
+                If inline_control is True, then the GeminalStatePreparationGate acts
+                on |0010> to prepare the geminal state and maps |0000> to
+                |0000>.
         """
         self.angle = -angle + np.pi / 2
-        self.indicator = indicator
+        self.inline_control = inline_control
 
     def _decompose_(self, qubits):
         # assumes linear connectivity: a - c - d - b
 
         a, b, c, d = qubits
-        if not self.indicator:
+        if not self.inline_control:
             yield cirq.X(c)
         yield cirq.ZPowGate(global_shift=-1)(c)
         yield cirq.FSimGate(-self.angle + np.pi, 0)(c, a)
@@ -56,6 +79,17 @@ class GeminalStatePreparationGate(cirq.Gate):
 
 
 class ControlledGeminalStatesPreparationGate(cirq.Gate):
+    """A multi-qubit gate that prepares N geminal states conditioned on the state of the 0th qubit.
+
+    Given an initial state a|0> + b|1> for the 0th qubit, a series of CNOT and
+    SWAP gates create a len(self.angles)-qubit GHZ state distributed between the
+    0th qubit and the 4n-1st qubit for n=1, 2, ..., len(self.angles).  This GHZ
+    state controls the action of each GeminalStatePreparationGate, resulting in
+    a final state that is a|0>|0....0> + b|1>|geminal 1>|geminal 2>...
+
+    Args:
+        angles: The N angles for the geminal states.
+    """
 
     def __init__(self, angles: Iterable[float]):
         self.angles = tuple(angles)
