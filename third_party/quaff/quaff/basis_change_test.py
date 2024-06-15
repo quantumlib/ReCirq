@@ -1,8 +1,7 @@
 import cirq
 import numpy as np
 import pytest
-
-from recirq.third_party import quaff
+import quaff
 
 
 @pytest.mark.parametrize(

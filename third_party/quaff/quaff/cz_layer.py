@@ -1,11 +1,10 @@
 import collections
 import itertools
-from typing import cast, Iterable, Tuple
+from typing import Iterable, Tuple, cast
 
 import cirq
 import numpy as np
-
-from recirq.third_party.quaff import basis_change, gates, indexing, linalg
+from quaff import basis_change, gates, indexing, linalg
 
 
 def get_index_range(num_qubits: int, num_steps: int, i: int):

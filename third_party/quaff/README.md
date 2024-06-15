@@ -8,4 +8,4 @@ Group](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9435351).
 
 # Author
 
-Bryan A. O'Gorman, U.C. Berkeley.
+Bryan A. O'Gorman, U.C. Berkeley with incremental contributions from Bill Huggins (Google).

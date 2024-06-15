@@ -2,8 +2,7 @@ import itertools
 
 import numpy as np
 import pytest
-
-from recirq.third_party import quaff
+import quaff
 
 
 @pytest.mark.parametrize("n, big_endian", itertools.product(range(5), (0, 1)))

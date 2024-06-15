@@ -4,12 +4,11 @@ from typing import cast
 
 import cirq
 import numpy as np
-
-from recirq.third_party.quaff import comb, cz_layer, indexing, linalg, sampling, testing
-from recirq.third_party.quaff.gates.fhf import FHFGate
-from recirq.third_party.quaff.gates.hadamard_free import HadamardFreeGate
-from recirq.third_party.quaff.gates.single_qubit_layer import SingleQubitLayerGate
-from recirq.third_party.quaff.linalg import BooleanMatrix, BooleanVector
+from quaff import comb, cz_layer, indexing, linalg, sampling, testing
+from quaff.gates.fhf import FHFGate
+from quaff.gates.hadamard_free import HadamardFreeGate
+from quaff.gates.single_qubit_layer import SingleQubitLayerGate
+from quaff.linalg import BooleanMatrix, BooleanVector
 
 
 @dataclass(eq=True, order=True)
@@ -54,7 +53,7 @@ class TruncatedCliffordGate(cirq.Gate):
 
     @classmethod
     def _json_namespace_(cls):
-        return "recirq.third_party.quaff"
+        return "quaff"
 
     def __str__(self):
         args = [f"n={self._num_qubits}"]

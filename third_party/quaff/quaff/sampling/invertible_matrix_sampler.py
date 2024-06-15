@@ -1,11 +1,10 @@
 import itertools
 import math
-from typing import Any, cast, Iterable, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple, cast
 
 import numpy as np
-
-from recirq.third_party.quaff import comb, indexing, linalg
-from recirq.third_party.quaff.sampling.sampler import SingleParameterSampler
+from quaff import comb, indexing, linalg
+from quaff.sampling.sampler import SingleParameterSampler
 
 MallowsSample = Tuple[int, ...]
 MallowsRandomness = Tuple[int, ...]

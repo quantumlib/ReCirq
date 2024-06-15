@@ -1,14 +1,13 @@
 import dataclasses
 import itertools
 from dataclasses import dataclass
-from typing import cast, Optional, Tuple
+from typing import Optional, Tuple, cast
 
 import cirq
 import numpy as np
-
-from recirq.third_party.quaff import linalg, sampling, testing
-from recirq.third_party.quaff.gates.hadamard_free import HadamardFreeGate
-from recirq.third_party.quaff.gates.single_qubit_layer import SingleQubitLayerGate
+from quaff import linalg, sampling, testing
+from quaff.gates.hadamard_free import HadamardFreeGate
+from quaff.gates.single_qubit_layer import SingleQubitLayerGate
 
 
 def _recover_permutation(matrix: np.ndarray) -> Optional[np.ndarray]:
@@ -67,7 +66,7 @@ class FHFGate(cirq.Gate):
 
     @classmethod
     def _json_namespace_(cls):
-        return "recirq.third_party.quaff"
+        return "quaff"
 
     def _num_qubits_(self):
         return self._num_qubits

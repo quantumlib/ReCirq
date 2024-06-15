@@ -2,8 +2,7 @@ import itertools
 from typing import Optional, Tuple
 
 import numpy as np
-
-from recirq.third_party.quaff import indexing, linalg, sampling
+from quaff import indexing, linalg, sampling
 
 SEED = 2349230498
 RNG = np.random.default_rng(SEED)

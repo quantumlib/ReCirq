@@ -1,12 +1,11 @@
 import cirq
 import numpy as np
 import pytest
-
-from recirq.third_party.quaff import (
+from quaff import (
     DEFAULT_RESOLVERS,
     HadamardFreeGate,
-    random_seed,
     TruncatedCliffordGate,
+    random_seed,
 )
 
 

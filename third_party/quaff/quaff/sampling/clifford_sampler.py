@@ -5,9 +5,8 @@ from typing import Iterable, NamedTuple, Optional, Tuple
 
 import cirq
 import numpy as np
-
-from recirq.third_party.quaff import comb, indexing, linalg, testing
-from recirq.third_party.quaff.sampling.sampler import SingleParameterSampler
+from quaff import comb, indexing, linalg, testing
+from quaff.sampling.sampler import SingleParameterSampler
 
 QuantumMallowsSample = Tuple[Tuple[bool, ...], Tuple[int, ...]]
 QuantumMallowsRandomness = Tuple[int, ...]
@@ -120,7 +119,7 @@ class CliffordSample:
 
     @classmethod
     def _json_namespace_(cls):
-        return "recirq.third_party.quaff"
+        return "quaff"
 
     def num_qubits(self):
         return len(self.parity_shift)

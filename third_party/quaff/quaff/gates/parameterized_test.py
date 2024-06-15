@@ -3,8 +3,7 @@ import itertools
 import cirq
 import numpy as np
 import pytest
-
-from recirq.third_party import quaff
+import quaff
 
 
 @pytest.mark.parametrize("n, seed", ((n, quaff.random_seed()) for n in range(1, 6)))

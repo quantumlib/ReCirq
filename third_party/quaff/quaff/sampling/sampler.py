@@ -65,7 +65,7 @@ class Sampler(metaclass=abc.ABCMeta):
         return f"{self.name()}({arg_str})"
 
     def __repr__(self):
-        return f"recirq.third_party.quaff.{self}"
+        return f"quaff.{self}"
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):

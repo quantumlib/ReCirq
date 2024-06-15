@@ -4,8 +4,7 @@ from typing import Any, Tuple
 
 import cirq
 import numpy as np
-
-from recirq.third_party.quaff import indexing, linalg, random, testing
+from quaff import indexing, linalg, random, testing
 
 
 @dataclass
@@ -47,7 +46,7 @@ class HadamardFreeGate(cirq.Gate):
 
     @classmethod
     def _json_namespace_(cls):
-        return "recirq.third_party.quaff"
+        return "quaff"
 
     def _num_qubits_(self):
         return self._num_qubits

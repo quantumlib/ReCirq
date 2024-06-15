@@ -1,8 +1,7 @@
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import numpy as np
-
-from recirq.third_party.quaff import indexing
+from quaff import indexing
 
 DTYPE = np.uint8
 
