@@ -18,6 +18,12 @@ install from source:
 
 Documentation is available at https://quantumai.google/cirq/experiments.
 
+To run code relevant for the [QCQMC experiment](https://www.nature.com/articles/s41586-021-04351-z) 
+you must also install `quaff` which is vendored with recirq. From the top level of
+the recirq repository do:
+
+    pip install third_party/quaff
+
 ## See Also
 
 This code leverages [Cirq](https://github.com/quantumlib/Cirq) as a

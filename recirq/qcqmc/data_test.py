@@ -24,7 +24,6 @@ def test_default_base_data_dir():
     assert DEFAULT_BASE_DATA_DIR.is_dir()
     assert DEFAULT_BASE_DATA_DIR.name == "data"
 
-
 @pytest.mark.parametrize("name", ["fh_sto3g", "n2_ccpvtz"])
 def test_get_integrals_path(name):
     ipath = get_integrals_path(name)
