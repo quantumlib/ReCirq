@@ -96,7 +96,7 @@ def test_pyscf_h4_consistent_with_file():
     )
 
 
-def test_pyscf_saves_chk_without_overwrite():
+def test_pyscf_saves_chk_without_overwrite(tmp_path):
     pyscf_params = PyscfHamiltonianParams(
         name="TEST Square H4 chk save test",
         n_orb=4,
@@ -111,6 +111,7 @@ def test_pyscf_saves_chk_without_overwrite():
         multiplicity=1,
         charge=0,
         save_chkfile=True,
+        path_prefix=str(tmp_path),
     )
 
     chk_path = pyscf_params.base_path.with_suffix(".chk")
@@ -125,7 +126,7 @@ def test_pyscf_saves_chk_without_overwrite():
     chk_path.unlink()
 
 
-def test_pyscf_saves_chk_with_overwrite():
+def test_pyscf_saves_chk_with_overwrite(tmp_path):
     pyscf_params = PyscfHamiltonianParams(
         name="TEST Square H4 chk save test",
         n_orb=4,
@@ -141,6 +142,7 @@ def test_pyscf_saves_chk_with_overwrite():
         charge=0,
         save_chkfile=True,
         overwrite_chk_file=True,
+        path_prefix=str(tmp_path),
     )
 
     chk_path = pyscf_params.base_path.with_suffix(".chk")

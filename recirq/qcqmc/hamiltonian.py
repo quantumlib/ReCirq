@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import attrs
-import cirq
 import fqe
 import h5py
 import numpy as np
@@ -25,13 +24,14 @@ class LoadFromFileHamiltonianParams(Params):
     n_orb: int
     n_elec: int
     do_eri_restore: bool = False
+    path_prefix: str = ""
 
     def _json_dict_(self):
         return attrs.asdict(self)
 
     @property
-    def path_string(self) -> str:
-        return OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
+    def path_string(self, prefix: str = "") -> str:
+        return self.path_prefix + OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
 
 
 # xyz coordinates of an atom
@@ -62,6 +62,7 @@ class PyscfHamiltonianParams(Params):
         will be allowed to overwrite the previously saved chk file. Otherwise, if save_chkfile
         is True and overwrite_chk_file is False, then we raise a FileExistsError if the
         chk file already exists.
+    path_prefix: A prefix to prepend to the path where the data will be saved (if any)
     """
 
     name: str
@@ -77,6 +78,7 @@ class PyscfHamiltonianParams(Params):
     verbose_scf: int = 0
     save_chkfile: bool = False
     overwrite_chk_file: bool = False
+    path_prefix: str = ""
 
     def _json_dict_(self):
         return attrs.asdict(self)
@@ -84,14 +86,14 @@ class PyscfHamiltonianParams(Params):
     @property
     def path_string(self) -> str:
         """Output path string"""
-        return OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
+        return self.path_prefix + OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
 
     @property
     def chk_path(self) -> Path:
         """Path string to any checkpoint file is saved."""
         parent = self.base_path.parent
         if not parent.is_dir():
-            parent.mkdir(exist_ok=True)
+            parent.mkdir(exist_ok=True, parents=True)
         return self.base_path.with_suffix(".chk")
 
     @property
