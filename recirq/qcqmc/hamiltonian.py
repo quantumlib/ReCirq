@@ -94,7 +94,6 @@ class PyscfHamiltonianParams(Params):
             parent.mkdir(exist_ok=True)
         return self.base_path.with_suffix(".chk")
 
-
     @property
     def pyscf_molecule(self) -> gto.Mole:
         """Underlying pyscf mol instance."""
