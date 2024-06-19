@@ -4,10 +4,14 @@ from typing import Dict, Iterable, List, Sequence, Type, cast
 import cirq
 import numpy as np
 
-from recirq.qcqmc.config import (DO_INVERSE_SIMULATION_QUBIT_NUMBER_CUTOFF,
-                                 SINGLE_PRECISION_DEFAULT)
-from recirq.qcqmc.for_refactor import (is_expected_elementary_cirq_op,
-                                       reorder_qubit_wavefunction)
+from recirq.qcqmc.config import (
+    DO_INVERSE_SIMULATION_QUBIT_NUMBER_CUTOFF,
+    SINGLE_PRECISION_DEFAULT,
+)
+from recirq.qcqmc.for_refactor import (
+    is_expected_elementary_cirq_op,
+    reorder_qubit_wavefunction,
+)
 
 
 def reconstruct_wavefunctions_from_samples(
@@ -31,11 +35,22 @@ def reconstruct_wavefunctions_from_samples(
     Args:
         raw_samples: The measured bitstrings of shape (n_cliffords,
             n_samples_per_clifford, n_qubits)
-        factorized_cliffords: List of list of clifford circuits. The outer list
-            is the number of unique cliffords. The inner list is (???)
-        qubit_partition: The qubit partition (???)
-        valid_configurations: trial_wf.bitstrings (???)
-        k_to_calculate: ???
+        factorized_cliffords: A list of lists of factorized random clifford circuits.
+            Each list of clifford circuits factorized_cliffords should
+            act on the Qids in the appropiate qubit_partition.
+        qubit_partition: A list of lists of Qids to which the corresponding
+            factorized clifford circuits are applied to. Should be the same
+            length as factorized_cliffords.
+        valid_configurations: We only want to reconstruct the amplitudes of the
+            wavefunction on computational basis states with the right symmetry.
+            Each entry in the list is a list of bools which encode  valid
+            computational basis states a specific symmetry.
+        k_to_calculate: Specifying k_to_calculate lets you use the same samples
+            to estimate the amplitudes with various choices of k for the median of
+            means estimator. (1,) corresponds to just taking the mean of all the
+            samples. (3,) corresponds to dividing them into three groups and taking
+            the median of the mean of each of these groups. (1, 3) uses the samples
+            in both ways, which is useful for comparison.
         qubits_linearly_connected: The qubits in the order that the circuit was
             ran in / samples were taken in.
         qubits_jordan_wigner_ordered: The qubits in the order that is needed to
