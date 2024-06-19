@@ -1,7 +1,7 @@
 import cirq
 import numpy as np
+import quaff
 
-from recirq.qcqmc import quaff
 from recirq.qcqmc.bitstrings import get_bitstrings_a_b
 from recirq.qcqmc.shadow_tomography import (
     get_amplitudes_from_samples_via_big_unitary,
