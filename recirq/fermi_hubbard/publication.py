@@ -239,7 +239,7 @@ def fetch_publication_data(
     if base_dir is None:
         base_dir = "fermi_hubbard_data"
 
-    base_url = "https://datadryad.org/stash/downloads/file_stream/"
+    api_url = 'https://datadryad.org/api/v2/'
     data = {
         "gaussians_1u1d_nofloquet": "451326",
         "gaussians_1u1d": "451327",
@@ -249,13 +249,14 @@ def fetch_publication_data(
     if exclude is not None:
         data = {path: key for path, key in data.items() if path not in exclude}
 
-    for path, key in data.items():
-        print(f"Downloading {path}...")
-        if os.path.exists(path=base_dir + os.path.sep + path):
+    for file_name, file_id in data.items():
+        print(f"Downloading {file_name}...")
+        if os.path.exists(path=base_dir + os.path.sep + file_name):
             print("Data already exists.\n")
             continue
 
-        with urlopen(base_url + key) as stream:
+        url = f'{api_url}/files/{file_id}/download'
+        with urlopen(url) as stream:
             with ZipFile(BytesIO(stream.read())) as zfile:
                 zfile.extractall(base_dir)
 
