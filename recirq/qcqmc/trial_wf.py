@@ -70,7 +70,15 @@ def _to_tuple(x: Iterable[layer_spec.LayerSpec]) -> Sequence[layer_spec.LayerSpe
     return tuple(x)
 
 
-@attrs.frozen(repr=False)
+def _array_cmp(a: Optional[np.ndarray], b: Optional[np.ndarray]) -> bool:
+    if a is None and b is None:
+        return True
+    if a is None or b is None:
+        return False
+    return np.array_equal(a, b)
+
+
+@attrs.frozen(repr=False, eq=False)
 class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
     """Class for storing the parameters that specify the trial wavefunction.
 
@@ -112,12 +120,10 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
     initial_orbital_rotation: Optional[np.ndarray] = attrs.field(
         default=None,
         converter=lambda v: _to_numpy(v) if v is not None else None,
-        eq=attrs.cmp_using(eq=np.array_equal),
     )
     initial_two_body_qchem_amplitudes: Optional[np.ndarray] = attrs.field(
         default=None,
         converter=lambda v: _to_numpy(v) if v is not None else None,
-        eq=attrs.cmp_using(eq=np.array_equal),
     )
     do_optimization: bool = True
     use_fast_gradients: bool = False
