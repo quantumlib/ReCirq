@@ -49,6 +49,7 @@ class Params(abc.ABC):
 
     name: str
 
+    # TODO: Is this necessary?
     def __eq__(self, other):
         """A helper method to compare two dataclasses which might contain arrays."""
         if self is other:
@@ -59,9 +60,7 @@ class Params(abc.ABC):
 
         return all(
             array_compatible_eq(thing1, thing2)
-            for thing1, thing2 in zip(
-                dataclasses.astuple(self), dataclasses.astuple(other)
-            )
+            for thing1, thing2 in zip(attrs.astuple(self), attrs.astuple(other))
         )
 
     @property
@@ -84,7 +83,7 @@ class Params(abc.ABC):
         # This custom repr lets us add fields with default values without changing
         # the repr. This, in turn, lets us use the hash_key reliably even when
         # we add new fields with a default value.
-        fields = dataclasses.fields(self)
+        fields = attrs.fields(self)
         # adjusted_fields = [f for f in fields if getattr(self, f.name) != f.default]
         adjusted_fields = [
             f
