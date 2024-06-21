@@ -31,6 +31,7 @@ from recirq.qcqmc import config, data
 PositionT = Tuple[float, float, float]
 # [atom name, xyz]
 GeomT = Tuple[str, PositionT]
+HamiltonianParams = Union["HamiltonianFileParams", "PyscfHamiltonianParams"]
 
 
 def compute_integrals(
@@ -109,25 +110,26 @@ class HamiltonianFileParams(data.Params):
 class PyscfHamiltonianParams(data.Params):
     """Class for describing the parameters to get a Hamiltonian from Pyscf.
 
-    name: A name for the Hamiltonian
-    n_orb: The number of orbitals (redundant with later parameters but used
-        for validation).
-    n_elec: The number of electrons (redundant with later parameters but
-        used for validation).
-    geometry: The coordinates of each atom. An example is [('H', (0, 0, 0)),
-        ('H', (0, 0, 0.7414))]. Distances are in angstrom. Use atomic
-        symbols to specify atoms.
-    basis: The basis set, e.g., 'cc-pvtz'.
-    multiplicity: The spin multiplicity
-    charge: The total molecular charge.
-    rhf: Whether to use RHF (True) or ROHF (False).
-    verbose_scf: Setting passed to pyscf's scf verbose attribute.
-    save_chkfile: If True, then pyscf will save a chk file for this Hamiltonian.
-    overwrite_chk_file: If save_chkfile and overwrite_chk_file are both true then Pyscf
-        will be allowed to overwrite the previously saved chk file. Otherwise, if save_chkfile
-        is True and overwrite_chk_file is False, then we raise a FileExistsError if the
-        chk file already exists.
-    path_prefix: A prefix to prepend to the path where the data will be saved (if any)
+    Args:
+        name: A name for the Hamiltonian
+        n_orb: The number of orbitals (redundant with later parameters but used
+            for validation).
+        n_elec: The number of electrons (redundant with later parameters but
+            used for validation).
+        geometry: The coordinates of each atom. An example is [('H', (0, 0, 0)),
+            ('H', (0, 0, 0.7414))]. Distances are in angstrom. Use atomic
+            symbols to specify atoms.
+        basis: The basis set, e.g., 'cc-pvtz'.
+        multiplicity: The spin multiplicity
+        charge: The total molecular charge.
+        rhf: Whether to use RHF (True) or ROHF (False).
+        verbose_scf: Setting passed to pyscf's scf verbose attribute.
+        save_chkfile: If True, then pyscf will save a chk file for this Hamiltonian.
+        overwrite_chk_file: If save_chkfile and overwrite_chk_file are both true then Pyscf
+            will be allowed to overwrite the previously saved chk file. Otherwise, if save_chkfile
+            is True and overwrite_chk_file is False, then we raise a FileExistsError if the
+            chk file already exists.
+        path_prefix: A prefix to prepend to the path where the data will be saved (if any)
     """
 
     name: str
@@ -180,9 +182,6 @@ class PyscfHamiltonianParams(data.Params):
         assert molecule.nelectron == self.n_elec
 
         return molecule
-
-
-HamiltonianParams = Union[HamiltonianFileParams, PyscfHamiltonianParams]
 
 
 @attrs.frozen
