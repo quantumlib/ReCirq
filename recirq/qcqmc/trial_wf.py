@@ -1,5 +1,20 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import abc
 import copy
+import enum
 import itertools
 from typing import (
     Callable,
@@ -30,34 +45,36 @@ from scipy.linalg import expm
 from scipy.optimize import minimize
 from scipy.sparse import csc_matrix
 
-from recirq.qcqmc.afqmc_circuits import GeminalStatePreparationGate
-from recirq.qcqmc.config import OUTDIRS
-from recirq.qcqmc.for_refactor import Data, Params
-from recirq.qcqmc.hamiltonian import HamiltonianData, HamiltonianParams
+from recirq.qcqmc import afqmc_circuits, bitstrings, config, data, hamiltonian
+
+
+class Spin(enum.Enum):
+    ALPHA = 0
+    BETA = 1
 
 
 @attrs.frozen
 class FermionicMode:
-    orb_ind: int
-    spin: str  # Should be "a" or "b" only
+    """A specification of a fermionic mode.
 
-    def __attrs_post_init__(self):
-        if self.spin not in ["a", "b"]:
-            raise ValueError(
-                f'spin is set to {self.spin}, it should be either "a" or "b".'
-            )
+    Args:
+        orb_ind: The spatial orbital index.
+        spin: The spin state of the fermion mode (up or down (alpha or beta)).
+    """
+
+    orb_ind: int
+    spin: Spin
 
     @classmethod
     def _json_namespace_(cls):
         return "recirq.qcqmc"
 
     def _json_dict_(self):
-        # return cirq.dataclass_json_dict(self)
         return attrs.asdict(self)
 
     @property
     def openfermion_standard_index(self) -> int:
-        return 2 * self.orb_ind + (self.spin == "b")
+        return 2 * self.orb_ind + self.spin.value
 
 
 @attrs.frozen
@@ -83,18 +100,24 @@ class LayerSpec:
             )
 
     @classmethod
-    def _json_namespace_(self):
+    def _json_namespace_(cls):
         return "recirq.qcqmc"
 
     def _json_dict_(self):
-        # return cirq.dataclass_json_dict(self)
         return attrs.asdict(self)
 
 
 @attrs.frozen
-class TrialWavefunctionParams(Params, metaclass=abc.ABCMeta):
+class TrialWavefunctionParams(data.Params, metaclass=abc.ABCMeta):
+    """Parameters specifying a trial wavefunction.
+
+    Args:
+        name: A descriptive name for the wavefunction parameters.
+        hamiltonian_params: Hamiltonian parameters specifying the molecule.
+    """
+
     name: str
-    hamiltonian_params: HamiltonianParams
+    hamiltonian_params: hamiltonian.HamiltonianParams
 
     @property
     def bitstrings(self) -> Iterable[Tuple[bool, ...]]:
@@ -125,15 +148,35 @@ def _to_tuple(x: Iterable[LayerSpec]) -> Sequence[LayerSpec]:
 
 @attrs.frozen(repr=False)
 class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
-    """Class for storing the parameters that specify a TrialWavefunctionData.
+    """Class for storing the parameters that specify the trial wavefunction.
 
     This class specifically stores the parameters for a trial wavefunction that
     is a combination of a perfect pairing wavefunction with some number of
     hardware-efficient layers appended.
+
+    Args:
+        name: A name for the trial wavefunction.
+        hamiltonian_params: The hamiltonian parameters specifying the molecule.
+        heuristic_layers: A tuple of circuit layers to append to the perfect pairing circuit.
+        do_pp: Implement the perfect pairing circuit along with the heuristic
+            layers. Defaults to true.
+        restricted: Use a restricted perfect pairing ansatz. Defaults to false,
+            i.e. allow spin-symmetry breaking.
+        random_parameter_scale: A float to scale the random parameters by.
+        n_optimization_restarts: The number of times to restart the optimization
+            from a random guess in an attempt at global optimization.
+        seed: The random number seed to initialize the RNG with.
+        initial_orbital_rotation: An optional initial orbital rotation matrix,
+            which will be implmented as a givens circuit.
+        initial_two_body_qchem_amplitudes: Initial perfect pairing two-body
+            amplitudes using a qchem convention.
+        do_optimization: Optimize the ansatz using BFGS.
+        use_fast_gradients: Compute the parameter gradients using an anlytic
+            form. Default to false (use finite difference gradients).
     """
 
     name: str
-    hamiltonian_params: HamiltonianParams
+    hamiltonian_params: hamiltonian.HamiltonianParams
     heuristic_layers: Tuple[LayerSpec, ...] = attrs.field(converter=_to_tuple)
     do_pp: bool = True
     restricted: bool = False
@@ -167,11 +210,11 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
 
     @property
     def path_string(self) -> str:
-        return OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY + self.name
+        return config.OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY + self.name
 
     @property
     def bitstrings(self) -> Iterable[Tuple[bool, ...]]:
-        return _get_bitstrings_a_b(n_orb=self.n_orb, n_elec=self.n_elec)
+        return bitstrings.get_bitstrings_a_b(n_orb=self.n_orb, n_elec=self.n_elec)
 
     def _json_dict_(self):
         # return cirq.dataclass_json_dict(self)
@@ -209,30 +252,6 @@ def _get_qubits_a_b_reversed(*, n_orb: int) -> Tuple[cirq.GridQubit, ...]:
         [cirq.GridQubit(0, i) for i in range(n_orb)]
         + [cirq.GridQubit(1, i) for i in reversed(range(n_orb))]
     )
-
-
-def _get_bitstrings_a_b(*, n_orb: int, n_elec: int) -> Iterable[Tuple[bool, ...]]:
-    """Iterates over bitstrings with the right symmetry assuming a_b ordering.
-
-    This function assumes that the first n_orb qubits correspond to the alpha
-    orbitals and the second n_orb qubits correspond to the beta orbitals. The
-    ordering within the alpha and beta sectors doesn't matter (because we
-    iterate over all bitstrings with Hamming weight n_elec//2 in each sector.
-    """
-
-    if n_orb != n_elec:
-        raise NotImplementedError("n_orb must equal n_elec.")
-
-    initial_bitstring = tuple(False for _ in range(n_orb - n_elec // 2)) + tuple(
-        True for _ in range(n_elec // 2)
-    )
-
-    spin_sector_bitstrings = set()
-    for perm in itertools.permutations(initial_bitstring):
-        spin_sector_bitstrings.add(perm)
-
-    for bitstring_a, bitstring_b in itertools.product(spin_sector_bitstrings, repeat=2):
-        yield bitstring_a + bitstring_b
 
 
 def _get_fermion_qubit_map_pp_plus(*, n_qubits: int) -> Dict[int, cirq.GridQubit]:
@@ -449,7 +468,7 @@ def get_and_check_energy(
 def build_pp_plus_trial_wavefunction(
     params: PerfectPairingPlusTrialWavefunctionParams,
     *,
-    dependencies: Dict[Params, Data],
+    dependencies: Dict[data.Params, data.Data],
     do_print: bool = False,
 ) -> TrialWavefunctionData:
     """Builds a TrialWavefunctionData from a TrialWavefunctionParams"""
@@ -620,7 +639,9 @@ def get_4_qubit_pp_circuits(
     assert n_elec == 2
 
     fermion_index_to_qubit_map = get_4_qubit_fermion_qubit_map()
-    geminal_gate = GeminalStatePreparationGate(two_body_params[0], indicator=True)
+    geminal_gate = afqmc_circuits.afqmc_circuits.GeminalStatePreparation(
+        two_body_params[0], indicator=True
+    )
 
     ansatz_circuit = cirq.Circuit(
         cirq.decompose(
@@ -686,8 +707,12 @@ def get_8_qubit_circuits(
     """
     fermion_index_to_qubit_map = get_8_qubit_fermion_qubit_map()
 
-    geminal_gate_1 = GeminalStatePreparationGate(two_body_params[0], indicator=True)
-    geminal_gate_2 = GeminalStatePreparationGate(two_body_params[1], indicator=True)
+    geminal_gate_1 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[0], indicator=True
+    )
+    geminal_gate_2 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[1], indicator=True
+    )
 
     # We'll add the initial bit flips later.
     ansatz_circuit = cirq.Circuit(
@@ -784,9 +809,15 @@ def get_12_qubit_circuits(
 
     fermion_index_to_qubit_map = get_12_qubit_fermion_qubit_map()
 
-    geminal_gate_1 = GeminalStatePreparationGate(two_body_params[0], indicator=True)
-    geminal_gate_2 = GeminalStatePreparationGate(two_body_params[1], indicator=True)
-    geminal_gate_3 = GeminalStatePreparationGate(two_body_params[2], indicator=True)
+    geminal_gate_1 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[0], indicator=True
+    )
+    geminal_gate_2 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[1], indicator=True
+    )
+    geminal_gate_3 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[2], indicator=True
+    )
 
     # We'll add the initial bit flips later.
     ansatz_circuit = cirq.Circuit(
@@ -899,10 +930,18 @@ def get_16_qubit_circuits(
     """
     fermion_index_to_qubit_map = get_16_qubit_fermion_qubit_map()
 
-    geminal_gate_1 = GeminalStatePreparationGate(two_body_params[0], indicator=True)
-    geminal_gate_2 = GeminalStatePreparationGate(two_body_params[1], indicator=True)
-    geminal_gate_3 = GeminalStatePreparationGate(two_body_params[2], indicator=True)
-    geminal_gate_4 = GeminalStatePreparationGate(two_body_params[3], indicator=True)
+    geminal_gate_1 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[0], indicator=True
+    )
+    geminal_gate_2 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[1], indicator=True
+    )
+    geminal_gate_3 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[2], indicator=True
+    )
+    geminal_gate_4 = afqmc_circuits.GeminalStatePreparation(
+        two_body_params[3], indicator=True
+    )
 
     # We'll add the initial bit flips later.
     ansatz_circuit = cirq.Circuit(
@@ -1581,4 +1620,5 @@ def get_pp_plus_params(
         print("Two Body Rotation Parameters:")
         print(two_body_params)
 
+    return one_body_params, two_body_params, one_body_basis_change_mat
     return one_body_params, two_body_params, one_body_basis_change_mat
