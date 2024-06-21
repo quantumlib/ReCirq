@@ -1,3 +1,17 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from pathlib import Path
 from typing import Tuple, Union
 
@@ -11,13 +25,29 @@ from fqe.openfermion_utils import integrals_to_fqe_restricted
 from openfermionpyscf._run_pyscf import compute_integrals  # type: ignore
 from pyscf import ao2mo, fci, gto, scf
 
-from recirq.qcqmc.config import OUTDIRS
-from recirq.qcqmc.data import Data, Params, get_integrals_path
+from recirq.qcqmc import config, data
+
+# xyz coordinates of an atom
+PositionT = Tuple[float, float, float]
+# [atom name, xyz]
+GeomT = Tuple[str, PositionT]
 
 
 @attrs.frozen
-class LoadFromFileHamiltonianParams(Params):
-    """Class for storing the parameters that specify loading integrals from a file."""
+class HamiltonianFileParams(data.Params):
+    """Class for storing the parameters that specify loading hamiltonian integrals from a file.
+
+    Args:
+        name: A descriptive name for the hamiltonian.
+        integral_key: A string specifying the directory in data/integrals where
+            the integrals should live.
+        n_orb: The number of spatial orbitals.
+        n_elec: The total number of electrons.
+        do_eri_restore: Whether to restore 8-fold symmetry to the integrals.
+        path_prefix: An optional path string to prepend to the default
+            hamiltonian data directory (by default the integrals will be written /
+            read to ./data/hamiltonians.)
+    """
 
     name: str
     integral_key: str
@@ -30,18 +60,14 @@ class LoadFromFileHamiltonianParams(Params):
         return attrs.asdict(self)
 
     @property
-    def path_string(self, prefix: str = "") -> str:
-        return self.path_prefix + OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
-
-
-# xyz coordinates of an atom
-PositionT = Tuple[float, float, float]
-# [atom name, xyz]
-GeomT = Tuple[str, PositionT]
+    def path_string(self) -> str:
+        return (
+            self.path_prefix + config.OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
+        )
 
 
 @attrs.frozen
-class PyscfHamiltonianParams(Params):
+class PyscfHamiltonianParams(data.Params):
     """Class for describing the parameters to get a Hamiltonian from Pyscf.
 
     name: A name for the Hamiltonian
@@ -86,7 +112,9 @@ class PyscfHamiltonianParams(Params):
     @property
     def path_string(self) -> str:
         """Output path string"""
-        return self.path_prefix + OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
+        return (
+            self.path_prefix + config.OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
+        )
 
     @property
     def chk_path(self) -> Path:
@@ -98,7 +126,7 @@ class PyscfHamiltonianParams(Params):
 
     @property
     def pyscf_molecule(self) -> gto.Mole:
-        """Underlying pyscf mol instance."""
+        """Underlying pyscf.gto.Mole. instance."""
         molecule = gto.Mole()
 
         molecule.atom = self.geometry
@@ -115,12 +143,21 @@ class PyscfHamiltonianParams(Params):
         return molecule
 
 
-HamiltonianParams = Union[LoadFromFileHamiltonianParams, PyscfHamiltonianParams]
+HamiltonianParams = Union[HamiltonianFileParams, PyscfHamiltonianParams]
 
 
 @attrs.frozen
-class HamiltonianData(Data):
-    """Data class that contains information about a Hamiltonian."""
+class HamiltonianData(data.Data):
+    """Data class that contains information about a Hamiltonian.
+
+    Args:
+        params: parameters defining the hamiltonian.
+        e_core: The nuclear-nuclear repulsion energy (or any constant term from the Hamiltonian.)
+        one_body_integrals: The one-electron integrals as a matrix.
+        two_body_integrals: The two-electron integrals using the openfermion convention.
+        e_hf: The restricted hartree fock energy of the molecule.
+        e_fci: The FCI energy for the molecule / hamiltonian.
+    """
 
     params: HamiltonianParams
     e_core: float
@@ -231,10 +268,17 @@ def _cast_to_float(x: np.complex_, tol=1e-8) -> float:
 
 
 def build_hamiltonian_from_file(
-    params: LoadFromFileHamiltonianParams,
+    params: HamiltonianFileParams,
 ) -> HamiltonianData:
-    """Function for loading a Hamiltonian from a file."""
-    filepath = get_integrals_path(name=params.integral_key)
+    """Function for loading a Hamiltonian from a file.
+
+    Args:
+        params: parameters defining the hamiltonian.
+
+    Returns:
+        properly constructed HamiltonianFileParams object.
+    """
+    filepath = data.get_integrals_path(name=params.integral_key)
     e_core, one_body_integrals, two_body_integrals_psqr, e_fci = load_integrals(
         filepath=filepath
     )

@@ -13,34 +13,40 @@
 # limitations under the License.
 
 import abc
-import dataclasses
 import hashlib
 import pathlib
-from dataclasses import dataclass
 from pathlib import Path
 
+import attrs
 import numpy as np
 
 DEFAULT_BASE_DATA_DIR = (Path(__file__).parent / "data").resolve()
 
 
 def get_integrals_path(
-    name: str, *, base_data_dir: str = DEFAULT_BASE_DATA_DIR
+    name: str, *, base_data_dir: pathlib.Path = DEFAULT_BASE_DATA_DIR
 ) -> Path:
     """Find integral data file by name.
 
     Args:
         name: The molecule name.
+        base_data_dir: The base directory where the data folder should live.
     """
-    return Path(base_data_dir) / "integrals" / name / "hamiltonian.chk"
+    return base_data_dir / "integrals" / name / "hamiltonian.chk"
 
 
 _MOLECULE_INFO = {"fh_sto3g"}
 
 
 # should go in Dedicated module
-@dataclass(frozen=True, repr=False)
+@attrs.frozen
 class Params(abc.ABC):
+    """Store named parameters which will potentiall be read from a file.
+
+    Args:
+        name: The name of the parameters
+    """
+
     name: str
 
     def __eq__(self, other):
@@ -99,8 +105,14 @@ class Params(abc.ABC):
 
 
 # Should go in dedicated module
-@dataclass(frozen=True, eq=False)
+@attrs.frozen
 class Data(abc.ABC):
+    """A container for different forms of data used in qcqmc (hamiltonian, trial wavefunction, ...).
+
+    Args:
+        params: The name of the parameters
+    """
+
     params: Params
 
     def __eq__(self, other):
@@ -113,9 +125,7 @@ class Data(abc.ABC):
 
         return all(
             array_compatible_eq(thing1, thing2)
-            for thing1, thing2 in zip(
-                dataclasses.astuple(self), dataclasses.astuple(other)
-            )
+            for thing1, thing2 in zip(attrs.astuple(self), attrs.astuple(other))
         )
 
     @classmethod

@@ -1,3 +1,16 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import numpy as np
 import pytest
 from openfermion import (
@@ -7,7 +20,7 @@ from openfermion import (
 )
 
 from recirq.qcqmc.hamiltonian import (
-    LoadFromFileHamiltonianParams,
+    HamiltonianFileParams,
     PyscfHamiltonianParams,
     build_hamiltonian_from_file,
     build_hamiltonian_from_pyscf,
@@ -15,7 +28,7 @@ from recirq.qcqmc.hamiltonian import (
 
 
 def test_load_from_file_hamiltonian_runs():
-    params = LoadFromFileHamiltonianParams(
+    params = HamiltonianFileParams(
         name="test hamiltonian", integral_key="fh_sto3g", n_orb=2, n_elec=2
     )
 
@@ -37,7 +50,7 @@ def test_load_from_file_hamiltonian_runs():
 def test_hamiltonian_energy_consistent(
     integral_key: str, n_orb: int, n_elec: int, do_eri_restore: bool
 ):
-    params = LoadFromFileHamiltonianParams(
+    params = HamiltonianFileParams(
         name="test hamiltonian",
         integral_key=integral_key,
         n_orb=n_orb,
@@ -75,7 +88,7 @@ def test_pyscf_h4_consistent_with_file():
 
     pyscf_hamiltonian = build_hamiltonian_from_pyscf(pyscf_params)
 
-    from_file_params = LoadFromFileHamiltonianParams(
+    from_file_params = HamiltonianFileParams(
         name="test hamiltonian",
         integral_key="h4_sto3g",
         n_orb=4,
