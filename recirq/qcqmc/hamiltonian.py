@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 from pathlib import Path
 from typing import Tuple, Union
 
@@ -22,7 +23,6 @@ import numpy as np
 import openfermion as of
 from fqe.hamiltonians.restricted_hamiltonian import RestrictedHamiltonian
 from fqe.openfermion_utils import integrals_to_fqe_restricted
-from openfermionpyscf._run_pyscf import compute_integrals  # type: ignore
 from pyscf import ao2mo, fci, gto, scf
 
 from recirq.qcqmc import config, data
@@ -31,6 +31,45 @@ from recirq.qcqmc import config, data
 PositionT = Tuple[float, float, float]
 # [atom name, xyz]
 GeomT = Tuple[str, PositionT]
+
+
+def compute_integrals(
+    pyscf_molecule: gto.Mole, pyscf_scf: Union[scf.RHF, scf.ROHF]
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Compute the (restricted) 1-electron and 2-electron integrals in the spatial orbital basis.
+
+    From: openfermionpyscf _run_pyscf.
+
+    Args:
+        pyscf_molecule: A pyscf Mole instance.
+        pyscf_scf: A PySCF "SCF" calculation object.
+
+    Returns:
+        one_electron_integrals: An N by N array storing h_{pq}
+        two_electron_integrals: A 4-D tensor storing h_{pqrs} in using the openfermion convention.
+    """
+    # Get one electrons integrals.
+    n_orbitals = pyscf_scf.mo_coeff.shape[1]
+    one_electron_compressed = functools.reduce(
+        np.dot, (pyscf_scf.mo_coeff.T, pyscf_scf.get_hcore(), pyscf_scf.mo_coeff)
+    )
+    one_electron_integrals = one_electron_compressed.reshape(
+        n_orbitals, n_orbitals
+    ).astype(float)
+
+    # Get two electron integrals in compressed format.
+    two_electron_compressed = ao2mo.kernel(pyscf_molecule, pyscf_scf.mo_coeff)
+
+    two_electron_integrals = ao2mo.restore(
+        1, two_electron_compressed, n_orbitals  # no permutational symmetry
+    )
+    # See PQRS convention in OpenFermion.hamiltonians._molecular_data
+    # h[p,q,r,s] = (ps|qr)
+    two_electron_integrals = np.asarray(
+        two_electron_integrals.transpose(0, 2, 3, 1), order="C"
+    )
+
+    return one_electron_integrals, two_electron_integrals
 
 
 @attrs.frozen
