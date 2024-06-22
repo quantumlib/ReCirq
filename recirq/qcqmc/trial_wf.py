@@ -33,14 +33,13 @@ import attrs
 import cirq
 import fqe
 import fqe.algorithm.low_rank
-import fqe.hamiltonians.hamiltonian
+import fqe.hamiltonians.hamiltonian as fqe_ham
 import fqe.openfermion_utils
+import fqe.wavefunction as fqe_wfn
 import numpy as np
 import numpy.typing as npt
 import openfermion as of
 import scipy.optimize
-from fqe.hamiltonians.restricted_hamiltonian import RestrictedHamiltonian
-from fqe.wavefunction import Wavefunction as FqeWavefunction
 from scipy.linalg import expm
 from scipy.optimize import minimize
 from scipy.sparse import csc_matrix
@@ -49,6 +48,8 @@ from recirq.qcqmc import afqmc_circuits, bitstrings, config, data, hamiltonian
 
 
 class Spin(enum.Enum):
+    """A simple enum for distinguishing spin up (alpha) and spin down (beta) electrons."""
+
     ALPHA = 0
     BETA = 1
 
@@ -217,7 +218,6 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
         return bitstrings.get_bitstrings_a_b(n_orb=self.n_orb, n_elec=self.n_elec)
 
     def _json_dict_(self):
-        # return cirq.dataclass_json_dict(self)
         return attrs.asdict(self)
 
     @property
@@ -234,9 +234,15 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
 
 
 def _get_qubits_a_b(*, n_orb: int) -> Tuple[cirq.GridQubit, ...]:
-    # This ordering creates qubits to facilitate a Jordan Wigner string
-    # threading through a row of alpha orbitals in ascending order followed by a
-    # row of beta orbitals in ascending order.
+    """Get grid alpha/beta grid qubits in ascending order.
+
+    Args:
+        n_orb: The number of spatial orbitals.
+
+    This ordering creates qubits to facilitate a Jordan Wigner string
+    threading through a row of alpha orbitals in ascending order followed by a
+    row of beta orbitals in ascending order.
+    """
     return tuple(
         [cirq.GridQubit(0, i) for i in range(n_orb)]
         + [cirq.GridQubit(1, i) for i in range(n_orb)]
@@ -244,10 +250,16 @@ def _get_qubits_a_b(*, n_orb: int) -> Tuple[cirq.GridQubit, ...]:
 
 
 def _get_qubits_a_b_reversed(*, n_orb: int) -> Tuple[cirq.GridQubit, ...]:
-    # This ordering creates qubits to facilitate operations that need a linearly
-    # connected array of qubits with the order threading through a row of alpha
-    # orbitals in ascending order followed by a row of beta orbitals in
-    # descending order.
+    """Get grid quibts with correct spin ordering.
+
+    This ordering creates qubits to facilitate operations that need a linearly
+    connected array of qubits with the order threading through a row of alpha
+    orbitals in ascending order followed by a row of beta orbitals in
+    descending order.
+
+    Args:
+        n_orb: The number of spatial orbitals.
+    """
     return tuple(
         [cirq.GridQubit(0, i) for i in range(n_orb)]
         + [cirq.GridQubit(1, i) for i in reversed(range(n_orb))]
@@ -255,6 +267,7 @@ def _get_qubits_a_b_reversed(*, n_orb: int) -> Tuple[cirq.GridQubit, ...]:
 
 
 def _get_fermion_qubit_map_pp_plus(*, n_qubits: int) -> Dict[int, cirq.GridQubit]:
+    """Dispatcher for qubit mappings."""
     if n_qubits == 4:
         return get_4_qubit_fermion_qubit_map()
     elif n_qubits == 8:
@@ -276,6 +289,9 @@ def _get_mode_qubit_map_pp_plus(
     to get_X_qubit_fermion_qubit_map for specific values of X but it translates
     this logic to a new system that uses the FermionicMode class rather than
     opaque combinations of integers and strings.
+
+    Args:
+        n_qubits: The number of qubits.
     """
     old_fermion_qubit_map = _get_fermion_qubit_map_pp_plus(n_qubits=n_qubits)
 
@@ -284,8 +300,8 @@ def _get_mode_qubit_map_pp_plus(
     mode_qubit_map = {}
 
     for i in range(n_orb):
-        mode_qubit_map[FermionicMode(i, "a")] = old_fermion_qubit_map[2 * i]
-        mode_qubit_map[FermionicMode(i, "b")] = old_fermion_qubit_map[2 * i + 1]
+        mode_qubit_map[FermionicMode(i, Spin.ALPHA)] = old_fermion_qubit_map[2 * i]
+        mode_qubit_map[FermionicMode(i, Spin.BETA)] = old_fermion_qubit_map[2 * i + 1]
 
     return mode_qubit_map
 
@@ -307,7 +323,6 @@ def _get_reorder_func(
 
     Args:
         mode_qubit_map: A dict that shows how each FermionicMode is mapped to a qubit.
-
         ordered_qubits: An ordered sequence of qubits.
     """
     qubits = list(mode_qubit_map.values())
@@ -322,9 +337,6 @@ def _get_reorder_func(
     for i, (mode, _) in enumerate(sorted_mapping):
         openfermion_index = 2 * mode.orb_ind + (0 if mode.spin == "a" else 1)
         remapping_map[openfermion_index] = i
-
-    print("remapping_map:")
-    print(remapping_map)
 
     def remapper(index: int, _: int) -> int:
         """A function that maps from the old index to the new one.
@@ -373,7 +385,7 @@ def _get_fqe_wavefunctions(
     do_pp: bool = True,
     restricted: Optional[bool] = False,
     initial_orbital_rotation: Optional[np.ndarray] = None,
-) -> Tuple[FqeWavefunction, FqeWavefunction]:
+) -> Tuple[fqe_wfn.Wavefunction, fqe_wfn.Wavefunction]:
     initial_wf = fqe.Wavefunction([[n_elec, 0, n_orb]])
     initial_wf.set_wfn(strategy="hartree-fock")
 
@@ -477,7 +489,7 @@ def build_pp_plus_trial_wavefunction(
         print("Building Trial Wavefunction")
     np.random.seed(params.seed)
     hamiltonian_data = dependencies[params.hamiltonian_params]
-    assert isinstance(hamiltonian_data, HamiltonianData)
+    assert isinstance(hamiltonian_data, hamiltonian.HamiltonianData)
 
     assert (
         params.n_orb == params.n_elec
@@ -544,7 +556,7 @@ def build_pp_plus_trial_wavefunction(
 
 def get_rotated_hamiltonians(
     *,
-    hamiltonian_data: HamiltonianData,
+    hamiltonian_data: hamiltonian.HamiltonianData,
     one_body_basis_change_mat: np.ndarray,
     mode_qubit_map: Mapping[FermionicMode, cirq.Qid],
     ordered_qubits: Sequence[cirq.Qid],
@@ -580,8 +592,8 @@ def get_rotated_hamiltonians(
 def get_energy_and_check_sanity(
     *,
     circuit_wf: np.ndarray,
-    fqe_wf: FqeWavefunction,
-    unrotated_fqe_wf: FqeWavefunction,
+    fqe_wf: fqe_wfn.Wavefunction,
+    unrotated_fqe_wf: fqe_wfn.Wavefunction,
     fqe_ham: fqe.hamiltonians.hamiltonian.Hamiltonian,
     sparse_ham: csc_matrix,
     e_core: float,
@@ -1080,11 +1092,17 @@ def get_two_body_params_from_qchem_amplitudes(
 
 
 def convert_fqe_wf_to_cirq(
-    fqe_wf: FqeWavefunction,
+    fqe_wf: fqe_wfn.Wavefunction,
     mode_qubit_map: Mapping[FermionicMode, cirq.Qid],
     ordered_qubits: Sequence[cirq.Qid],
 ) -> np.ndarray:
-    """Converts an FQE wavefunction to one on qubits with a particular ordering."""
+    """Converts an FQE wavefunction to one on qubits with a particular ordering.
+
+    Args:
+        fqe_wf: The FQE wavefunction.
+        mode_qubit_map: A mapping from fermion modes to cirq qubits.
+        ordered_qubits:
+    """
     n_qubits = len(mode_qubit_map)
     fermion_op = fqe.openfermion_utils.fqe_to_fermion_operator(fqe_wf)
 
@@ -1126,14 +1144,29 @@ def get_one_body_cluster_coef(
 
 
 def get_evolved_wf(
-    one_body_params,
-    two_body_params,
-    wf,
-    gate_generators,
-    n_orb,
-    restricted,
+    one_body_params: np.ndarray,
+    two_body_params: np.ndarray,
+    wf: fqe.Wavefunction,
+    gate_generators: List[of.FermionOperator],
+    n_orb: int,
+    restricted: bool = True,
     initial_orbital_rotation: Optional[np.ndarray] = None,
-):
+) -> Tuple[fqe.Wavefunction, fqe.Wavefunction]:
+    """Get the wavefunction evaluated for this set of variational parameters.
+
+    Args:
+        one_body_params: The variational parameters for the one-body terms in the ansatz.
+        two_body_params: The variational parameters for the two-body terms in the ansatz.
+        wf: The FQE wavefunction to evolve.
+        gate_generators: The generators of the two-body interaction terms.
+        n_orb: The number of spatial orbitals.
+        restricted: Whether the ansatz is restricted or not.
+        initial_orbital_rotation: Any initial orbital rotation to prepend to the circuit.
+
+    Returs:
+        rotated_wf: the evolved wavefunction
+        wf: The original wavefunction
+    """
     param_num = 0
     for gate_generator in gate_generators:
         wf = wf.time_evolve(two_body_params[param_num], gate_generator)
@@ -1158,7 +1191,18 @@ def get_evolved_wf(
     return rotated_wf, wf
 
 
-def get_pair_hopping_gate_generators(n_pairs, n_elec):
+def get_pair_hopping_gate_generators(
+    n_pairs: int, n_elec: int
+) -> List[of.FermionOperator]:
+    """Get the generators of the pair-hopping unitaries.
+
+    Args:
+        n_pairs: The number of pair coupling terms.
+        n_elec: The total number of electrons.
+
+    Returns:
+        A list of gate generators
+    """
     gate_generators = []
     for pair in range(n_pairs):
         to_a = n_elec + 2 * pair
@@ -1166,7 +1210,7 @@ def get_pair_hopping_gate_generators(n_pairs, n_elec):
         from_a = n_elec - 2 * pair - 2
         from_b = n_elec - 2 * pair - 1
 
-        fop_string = "{:d} {:d} {:d}^ {:d}^".format(to_b, to_a, from_b, from_a)
+        fop_string = f"{to_b} {to_a} {from_b}^ {from_a}^"
 
         gate_generator = of.FermionOperator(fop_string, 1.0)
         gate_generator = 1j * (gate_generator - of.hermitian_conjugated(gate_generator))
@@ -1175,8 +1219,15 @@ def get_pair_hopping_gate_generators(n_pairs, n_elec):
     return gate_generators
 
 
-def get_indices_heuristic_layer_in_pair(n_elec) -> Iterator[Tuple[int, int]]:
-    # Indices that couple within a pair
+def get_indices_heuristic_layer_in_pair(n_elec: int) -> Iterator[Tuple[int, int]]:
+    """Get the indicies for the heuristic layers.
+
+    Args:
+        n_elec: The number of electrons
+
+    Returns:
+        An iterator of the indices
+    """
     n_pairs = n_elec // 2
 
     for pair in range(n_pairs):
@@ -1189,7 +1240,14 @@ def get_indices_heuristic_layer_in_pair(n_elec) -> Iterator[Tuple[int, int]]:
 
 
 def get_indices_heuristic_layer_cross_pair(n_elec) -> Iterator[Tuple[int, int]]:
-    # Indices that couple adjacent pairs
+    """Indices that couple adjacent pairs.
+
+    Args:
+        n_elec: The number of electrons
+
+    Returns:
+        An iterator of the indices
+    """
     n_pairs = n_elec // 2
 
     for pair in range(n_pairs - 1):
@@ -1202,7 +1260,14 @@ def get_indices_heuristic_layer_cross_pair(n_elec) -> Iterator[Tuple[int, int]]:
 
 
 def get_indices_heuristic_layer_cross_spin(n_elec) -> Iterator[Tuple[int, int]]:
-    # Indices that couple the two spin sectors
+    """Get indices that couple the two spin sectors.
+
+    Args:
+        n_elec: The number of electrons
+
+    Returns:
+        An iterator of the indices that couple spin sectors.
+    """
     n_pairs = n_elec // 2
 
     for pair in range(n_pairs):
@@ -1215,7 +1280,14 @@ def get_indices_heuristic_layer_cross_spin(n_elec) -> Iterator[Tuple[int, int]]:
 
 
 def get_charge_charge_generator(indices: Tuple[int, int]) -> of.FermionOperator:
-    # Returns the generator for density evolution between the indices
+    """Returns the generator for density evolution between the indices
+
+    Args:
+        indices: The indices to for charge-charge terms.:w
+
+    Returns:
+        The generator for density evolution for this pair of electrons.
+    """
 
     fop_string = "{:d}^ {:d} {:d}^ {:d}".format(
         indices[0], indices[0], indices[1], indices[1]
@@ -1228,11 +1300,27 @@ def get_charge_charge_generator(indices: Tuple[int, int]) -> of.FermionOperator:
 def get_charge_charge_gate(
     qubits: Tuple[cirq.Qid, ...], param: float
 ) -> cirq.Operation:
+    """Get the cirq charge-charge gate.
+
+    Args:
+        qubits: Two qubits you want to apply the gate to.
+        param: The parameter for the charge-charge interaction.
+
+    Returns:
+        The charge-charge gate.
+    """
     return cirq.CZ(qubits[0], qubits[1]) ** (-param / np.pi)
 
 
-def get_givens_generator(indices):
-    # Returns the generator for density evolution between the indices
+def get_givens_generator(indices: Tuple[int, int]) -> of.FermionOperator:
+    """Returns the generator for givens rotation between two orbitals.
+
+    Args:
+        indices: The two indices for the givens rotation.
+
+    Returns:
+        The givens generator for evolution for this pair of electrons.
+    """
 
     fop_string = "{:d}^ {:d}".format(indices[0], indices[1])
     gate_generator = of.FermionOperator(fop_string, 1.0)
@@ -1242,10 +1330,28 @@ def get_givens_generator(indices):
 
 
 def get_givens_gate(qubits: Tuple[cirq.Qid, ...], param: float) -> cirq.Operation:
+    """Get a the givens rotation gate on two qubits.
+
+    Args:
+        qubits: The two qubits to apply the gate to.
+        param: The parameter for the givens rotation.
+
+    Returns:
+        The givens rotation gate.
+    """
     return cirq.givens(param).on(qubits[0], qubits[1])
 
 
 def get_layer_indices(layer_spec: LayerSpec, n_elec: int) -> List[Tuple[int, int]]:
+    """Get the indices for the heuristic layers.
+
+    Args:
+        layer_spec: The layer specification.
+        n_elec: The number of electrons.
+
+    Returns:
+        A list of indices for the layer.
+    """
     indices_generators = {
         "in_pair": get_indices_heuristic_layer_in_pair(n_elec),
         "cross_pair": get_indices_heuristic_layer_cross_pair(n_elec),
@@ -1262,7 +1368,17 @@ def get_layer_gates(
     params: np.ndarray,
     fermion_index_to_qubit_map: Dict[int, cirq.GridQubit],
 ) -> List[cirq.Operation]:
-    """Gets the gates for a hardware efficient layer of the ansatz."""
+    """Gets the gates for a hardware efficient layer of the ansatz.
+
+    Args:
+        layer_spec: The layer specification.
+        n_elec: The number of electrons.
+        params: The variational parameters for the hardware efficient gate layer.
+        fermion_index_to_qubit_map: A mapping between fermion mode indices and qubits.
+
+    Returns:
+        A list of gates for the layer.
+    """
 
     indices_list = get_layer_indices(layer_spec, n_elec)
 
@@ -1277,8 +1393,18 @@ def get_layer_gates(
     return gates
 
 
-def get_layer_generators(layer_spec: LayerSpec, n_elec: int):
-    """Gets the generators for rotations in a hardware efficient layer of the ansatz."""
+def get_layer_generators(
+    layer_spec: LayerSpec, n_elec: int
+) -> List[of.FermionOperator]:
+    """Gets the generators for rotations in a hardware efficient layer of the ansatz.
+
+    Args:
+        layer_spec: The layer specification.
+        n_elec: The number of electrons.
+
+    Returns:
+        A list of generators for the layers.
+    """
 
     indices_list = get_layer_indices(layer_spec, n_elec)
 
@@ -1291,7 +1417,18 @@ def get_layer_generators(layer_spec: LayerSpec, n_elec: int):
     return [gate_func(indices) for indices in indices_list]
 
 
-def get_heuristic_gate_generators(n_elec: int, layer_specs: Sequence[LayerSpec]):
+def get_heuristic_gate_generators(
+    n_elec: int, layer_specs: Sequence[LayerSpec]
+) -> List[of.FermionOperator]:
+    """Get gate generators for the heuristic ansatz.
+
+    Args:
+        n_elec: The number of electrons.
+        layer_specs: The layer specifications.
+
+    Returns:
+        A list of generators for the layers.
+    """
     gate_generators = []
 
     for layer_spec in layer_specs:
@@ -1306,6 +1443,17 @@ def get_heuristic_circuit(
     params: np.ndarray,
     fermion_index_to_qubit_map: Dict[int, cirq.GridQubit],
 ) -> cirq.Circuit:
+    """Get a circuit for the heuristic ansatz.
+
+    Args:
+        layer_specs: The layer specs for the heuristic layers.
+        n_elec: The number of electrons.
+        params: The variational parameters for the circuit.
+        fermion_index_to_qubit_map: A mapping between fermion mode indices and qubits.
+
+    Returns:
+        A circuit for the heuristic ansatz.
+    """
     gates: List[cirq.Operation] = []
 
     for layer_spec in layer_specs:
@@ -1317,13 +1465,16 @@ def get_heuristic_circuit(
     return cirq.Circuit(gates)
 
 
-def orbital_rotation_gradient_matrix(generator_mat, a, b):
+def orbital_rotation_gradient_matrix(
+    generator_mat: np.ndarray, a: int, b: int
+) -> np.ndarray:
     """The gradient of the orbital rotation unitary with respect to its parameters.
 
     Args:
         generator_mat: The orbital rotation one-body generator matrix.
         a, b: row and column indices corresponding to the location in the matrix
             of the parameter we wish to find the gradient with respect to.
+
     Returns:
         The orbital rotation matrix gradient wrt theta_{a, b}. Corresponds to
             expression in G15 of https://arxiv.org/abs/2004.04174.
@@ -1354,8 +1505,8 @@ def orbital_rotation_gradient_matrix(generator_mat, a, b):
 
 
 def evaluate_gradient_and_cost_function(
-    initial_wf: FqeWavefunction,
-    fqe_ham: RestrictedHamiltonian,
+    initial_wf: fqe.Wavefunction,
+    fqe_ham: fqe_ham.RestrictedHamiltonian,
     n_orb: int,
     one_body_params: npt.NDArray[np.float64],
     two_body_params: npt.NDArray[np.float64],
@@ -1375,6 +1526,7 @@ def evaluate_gradient_and_cost_function(
         retricted: Whether the single-particle rotations are restricted (True)
             or unrestricted (False). Unrestricted implies different parameters
             for the alpha- and beta-spin rotations.
+
     Returns:
         cost_val: The cost function (total energy) evaluated for the input wavefunction parameters.
         grad: An array of gradients with respect to the one- and two-body
@@ -1439,7 +1591,7 @@ def evaluate_gradient_and_cost_function(
 
 def get_pp_plus_params(
     *,
-    hamiltonian_data: HamiltonianData,
+    hamiltonian_data: hamiltonian.HamiltonianData,
     restricted: bool = False,
     random_parameter_scale: float = 1.0,
     initial_orbital_rotation: Optional[np.ndarray] = None,
@@ -1449,6 +1601,28 @@ def get_pp_plus_params(
     do_print: bool = True,
     use_fast_gradients: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Optimize the PP + Hardware layer ansatz.
+
+    Args:
+        hamiltonian_data: Hamiltonian (molecular) specification.
+        restricted: Whether to use a spin-restricted ansatz or not.
+        random_parameter_scale: A float to scale the random parameters by.
+        initial_orbital_rotation: An optional initial orbital rotation matrix,
+            which will be implmented as a givens circuit.
+        heuristic_layers: A tuple of circuit layers to append to the perfect pairing circuit.
+        do_pp: Implement the perfect pairing circuit along with the heuristic
+            layers. Defaults to true.
+        n_optimization_restarts: The number of times to restart the optimization
+            from a random guess in an attempt at global optimization.
+        do_print: Whether to print optimization progress to stdout.
+        use_fast_gradients: Compute the parameter gradients anlytically using Wilcox formula.
+            Default to false (use finite difference gradients).
+
+    Returns:
+        one_body_params: Optimized one-body parameters.
+        two_body_params: Optimized two-body parameters
+        one_body_basis_change_mat: The basis change matrix including any initial orbital rotation.
+    """
     n_elec = hamiltonian_data.params.n_elec
     n_orb = hamiltonian_data.params.n_orb
     sz = 0
@@ -1620,5 +1794,4 @@ def get_pp_plus_params(
         print("Two Body Rotation Parameters:")
         print(two_body_params)
 
-    return one_body_params, two_body_params, one_body_basis_change_mat
     return one_body_params, two_body_params, one_body_basis_change_mat
