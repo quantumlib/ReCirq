@@ -14,7 +14,6 @@
 
 import abc
 import copy
-import enum
 import itertools
 from typing import (
     Callable,
@@ -74,7 +73,7 @@ class FermionicMode:
 
     @property
     def openfermion_standard_index(self) -> int:
-        return 2 * self.orb_ind + (0 if self.spin.value == "a" else 1)
+        return 2 * self.orb_ind + (0 if self.spin == "a" else 1)
 
 
 @attrs.frozen
@@ -372,35 +371,6 @@ def _get_superposition_wf(
     return cirq.final_state_vector(
         superposition_circuit, qubit_order=list(ordered_qubits), dtype=np.complex128
     )
-
-
-def _get_fqe_wavefunctions(
-    *,
-    one_body_params: np.ndarray,
-    two_body_params: np.ndarray,
-    n_orb: int,
-    n_elec: int,
-    heuristic_layers: Tuple[LayerSpec, ...],
-    do_pp: bool = True,
-    restricted: Optional[bool] = False,
-    initial_orbital_rotation: Optional[np.ndarray] = None,
-) -> Tuple[fqe_wfn.Wavefunction, fqe_wfn.Wavefunction]:
-    initial_wf = fqe.Wavefunction([[n_elec, 0, n_orb]])
-    initial_wf.set_wfn(strategy="hartree-fock")
-
-    wf, unrotated_wf = get_evolved_wf(
-        one_body_params=one_body_params,
-        two_body_params=two_body_params,
-        wf=initial_wf,
-        gate_generators=_get_pp_plus_gate_generators(
-            n_elec=n_elec, heuristic_layers=heuristic_layers, do_pp=do_pp
-        ),
-        n_orb=n_orb,
-        restricted=restricted,
-        initial_orbital_rotation=initial_orbital_rotation,
-    )
-
-    return wf, unrotated_wf
 
 
 @attrs.frozen
