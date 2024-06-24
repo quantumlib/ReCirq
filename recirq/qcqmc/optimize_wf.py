@@ -403,7 +403,9 @@ def evaluate_energy_and_gradient(
 ) -> Tuple[float, np.ndarray]:
     """Evaluate gradient and cost function for optimization.
 
-    Uses the linear scaling algorithm at the expense of three copies of the wavefunction.
+    Uses the linear scaling algorithm (see algo 2 from example:
+    https://arxiv.org/pdf/2009.02823) at the expense of three copies of the
+    wavefunction.
 
     Args:
         initial_wf: Initial state (typically Hartree--Fock).
@@ -422,6 +424,7 @@ def evaluate_energy_and_gradient(
             parameters. The first n_orb * (n_orb + 1) // 2 parameters correspond to
             the one-body gradients.
     """
+    # Build |phi> = U(theta)|phi_0>
     phi = get_evolved_wf(
         one_body_params,
         two_body_params,
@@ -430,8 +433,11 @@ def evaluate_energy_and_gradient(
         n_orb,
         restricted=restricted,
     )[0]
+    # Set |lambda> = |phi> initially
     lam = copy.deepcopy(phi)
+    # H|lambda>
     lam = lam.apply(fqe_ham)
+    # E = <lambda |phi>
     cost_val = fqe.vdot(lam, phi) + e_core
 
     # First build the 1body cluster op as a matrix
@@ -443,7 +449,8 @@ def evaluate_energy_and_gradient(
         one_body_ham = fqe.get_restricted_hamiltonian((-1j * one_body_cluster_op,))
     else:
         one_body_ham = fqe.get_sso_hamiltonian((-1j * one_body_cluster_op,))
-    # Apply U1b^{dag}
+    # |phi> = U1b U2b |phi_0>
+    # 1. Remove U1b from |phi> by U1b^dagger |phi>
     phi.time_evolve(1, one_body_ham, inplace=True)
     lam.time_evolve(1, one_body_ham, inplace=True)
     one_body_grad = np.zeros_like(one_body_params)
@@ -453,10 +460,8 @@ def evaluate_energy_and_gradient(
     # we need the row and column indices corresponding to each flattened lower triangular index.
     tril = np.tril_indices(n_orb, k=-1)
     # Now compute the gradient of the one-body orbital rotation operator for each parameter.
-    # The basic idea is to use the fact that |psi(theta)> = U_p .... U_1 # |psi_0>,
-    # and progressively move the gradient operator through the expression saving
-    # intermediate wavefunctions along the way.
-    # The gradient is then related to the overlap of a left and right wavefunction.
+    # If we write E(theta) = <phi_0| U(theta)^ H U(theta)|phi_0>
+    # Then d E(theta)/ d theta_p = -2 i Im <phi_0 | U(theta)^ H dU/dtheta_p |phi_0>
     for iparam in range(len(one_body_params)):
         mu_state = copy.deepcopy(phi)
         # get the parameter index starting from the end and working backwards.
@@ -468,6 +473,8 @@ def evaluate_energy_and_gradient(
         p += n_orb * pidx_spin
         q += n_orb * pidx_spin
         # Get the orbital rotation gradient "pre" matrix and apply it the |mu>.
+        # For the orbital rotation part we compute dU(theta)/dtheta_p using the
+        # wilcox identity (see e.g.:  https://arxiv.org/abs/2004.04174.)
         pre_matrix = orbital_rotation_gradient_matrix(-one_body_cluster_op, p, q)
         assert of.is_hermitian(1j * pre_matrix)
         if restricted:
