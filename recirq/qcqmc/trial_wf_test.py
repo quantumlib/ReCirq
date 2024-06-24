@@ -1,9 +1,24 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import cirq
 import fqe
+import fqe.hamiltonians as fqe_hams
+import fqe.wavefunction as fqe_wfn
 import numpy as np
 import pytest
 import scipy.special
-from fqe.hamiltonians.restricted_hamiltonian import RestrictedHamiltonian
 
 from recirq.qcqmc.hamiltonian import HamiltonianData
 from recirq.qcqmc.trial_wf import (FermionicMode, LayerSpec,
@@ -257,7 +272,7 @@ def test_qchem_conversion_negative(fixture_4_qubit_ham: HamiltonianData):
     assert any(ansatz_qubit_wf < 0)
 
 
-def gen_random_restricted_ham(n_orb: int) -> RestrictedHamiltonian:
+def gen_random_restricted_ham(n_orb: int) -> fqe_hams.RestrictedHamiltonian:
     """8-fold symmetry restricted hamiltonian"""
     h1e = np.random.random((n_orb,) * 2)
     h1e = h1e + h1e.T
@@ -266,20 +281,31 @@ def gen_random_restricted_ham(n_orb: int) -> RestrictedHamiltonian:
     h2e = h2e + h2e.transpose(3, 2, 1, 0)
     h2e = h2e + h2e.transpose(1, 0, 2, 3)
     h2e = np.asarray(h2e.transpose(0, 2, 3, 1), order="C")
-    fqe_ham = RestrictedHamiltonian((h1e, np.einsum("ijlk", -0.5 * h2e)))
+    fqe_ham = fqe_hams.RestrictedHamiltonian((h1e, np.einsum("ijlk", -0.5 * h2e)))
     return fqe_ham
 
 
-def get_fd_grad(
-    n_orb,
-    n_elec,
-    one_body_params,
-    two_body_params,
-    ham,
-    initial_wf,
-    dtheta=1e-4,
-    restricted=False,
+def compute_finite_difference_grad(
+    n_orb: int,
+    n_elec: int,
+    one_body_params: np.ndarray,
+    two_body_params: np.ndarray,
+    ham: fqe_hams.RestrictedHamiltonian,
+    initial_wf: fqe_wfn.Wavefunction,
+    dtheta: float = 1e-4,
+    restricted: bool = False,
 ):
+    """Compute the parameter gradient using finite differences.
+
+    Args:
+        n_orb: the number of spatial orbitals.
+        n_elec: the number of electrons.
+        one_body_params: The variational parameters for the one-body terms in the ansatz.
+        two_body_params: The variational parameters for the two-body terms in the ansatz.
+        ham: The restricted FQE Hamiltonian.
+        initial_wf: The initial wavefunction (typically Hartree--Fock)
+        restricted: Whether we're using a restricted ansatz or not.
+    """
     generators = _get_pp_plus_gate_generators(
         n_elec=n_elec, heuristic_layers=tuple(), do_pp=True
     )
@@ -372,7 +398,7 @@ def test_gradient(n_elec, n_orb, restricted):
         restricted,
         0.0,
     )
-    ob_fd_grad, tb_fd_grad = get_fd_grad(
+    ob_fd_grad, tb_fd_grad = compute_finite_difference_grad(
         n_orb,
         n_elec,
         one_body_params,
