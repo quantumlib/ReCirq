@@ -26,16 +26,8 @@ import scipy.linalg
 import scipy.optimize
 import scipy.sparse
 
-from recirq.qcqmc import (
-    afqmc_circuits,
-    afqmc_generators,
-    converters,
-    data,
-    fermion_mode,
-    hamiltonian,
-    layer_spec,
-    trial_wf,
-)
+from recirq.qcqmc import (afqmc_circuits, afqmc_generators, converters, data,
+                          fermion_mode, hamiltonian, layer_spec, trial_wf)
 
 
 def get_and_check_energy(
@@ -280,6 +272,16 @@ def get_energy_and_check_sanity(
 def get_one_body_cluster_coef(
     params: np.ndarray, n_orb: int, restricted: bool
 ) -> np.ndarray:
+    """Get the matrix elements associated with the one-body cluster operator.
+
+    Args:
+        params: The variational parameters of the one-body cluster operator.
+        n_orb: The number of spatial orbitals.
+        restricted: Whether a spin-restricted cluster operator is used.
+
+    Returns:
+        The one-body cluster operator matrix.
+    """
     if restricted:
         one_body_cluster_op = np.zeros((n_orb, n_orb), dtype=np.complex128)
     else:
