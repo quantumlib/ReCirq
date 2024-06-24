@@ -19,37 +19,15 @@ import attrs
 import cirq
 import numpy as np
 
-from recirq.qcqmc import bitstrings, config, data, fermion_mode, hamiltonian, qubit_maps
-
-
-@attrs.frozen
-class LayerSpec:
-    """A specification of a hardware-efficient layer of gates.
-
-    Args:
-        base_gate: 'charge_charge' for the e^{i n_i n_j} gate and 'givens' for a givens rotation.
-        layout: Should be 'in_pair', 'cross_pair', or 'cross_spin' only.
-    """
-
-    base_gate: str
-    layout: str
-
-    def __post_init__(self):
-        if self.base_gate not in ["charge_charge", "givens"]:
-            raise ValueError(
-                f'base_gate is set to {self.base_gate}, it should be either "charge_charge or "givens".'
-            )
-        if self.layout not in ["in_pair", "cross_pair", "cross_spin"]:
-            raise ValueError(
-                f'layout is set to {self.layout}, it should be either "cross_pair", "in_pair", or "cross_spin".'
-            )
-
-    @classmethod
-    def _json_namespace_(cls):
-        return "recirq.qcqmc"
-
-    def _json_dict_(self):
-        return attrs.asdict(self)
+from recirq.qcqmc import (
+    bitstrings,
+    config,
+    data,
+    fermion_mode,
+    hamiltonian,
+    layer_spec,
+    qubit_maps,
+)
 
 
 @attrs.frozen
@@ -87,7 +65,7 @@ def _to_numpy(x: Optional[Iterable] = None) -> Optional[np.ndarray]:
     return np.asarray(x)
 
 
-def _to_tuple(x: Iterable[LayerSpec]) -> Sequence[LayerSpec]:
+def _to_tuple(x: Iterable[layer_spec.LayerSpec]) -> Sequence[layer_spec.LayerSpec]:
     return tuple(x)
 
 
@@ -122,7 +100,9 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
 
     name: str
     hamiltonian_params: hamiltonian.HamiltonianParams
-    heuristic_layers: Tuple[LayerSpec, ...] = attrs.field(converter=_to_tuple)
+    heuristic_layers: Tuple[layer_spec.LayerSpec, ...] = attrs.field(
+        converter=_to_tuple
+    )
     do_pp: bool = True
     restricted: bool = False
     random_parameter_scale: float = 1.0

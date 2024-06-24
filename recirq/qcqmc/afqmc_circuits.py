@@ -15,8 +15,9 @@
 """Trial wavefunction circuit ansatz primitives."""
 
 import itertools
-from typing import Iterable, List, Tuple
+from typing import Dict, Iterable, Iterator, List, Sequence, Tuple
 
+import attrs
 import cirq
 import numpy as np
 import openfermion
@@ -25,6 +26,9 @@ from openfermion.circuits.primitives.state_preparation import (
 )
 from openfermion.linalg.givens_rotations import givens_decomposition
 from openfermion.linalg.sparse_tools import jw_sparse_givens_rotation
+
+from recirq.qcqmc import layer_spec as lspec
+from recirq.qcqmc import qubit_maps
 
 
 class GeminalStatePreparationGate(cirq.Gate):
@@ -434,3 +438,429 @@ def get_geminal_and_slater_det_overlap_via_simulation(
     else:
         measurement = cirq.Circuit(cirq.Z(ancilla)).unitary(qubit_order=qubits)
     return final_state.T.conj().dot(measurement.dot(final_state))
+
+
+def get_givens_gate(qubits: Tuple[cirq.Qid, ...], param: float) -> cirq.Operation:
+    """Get a the givens rotation gate on two qubits.
+
+    Args:
+        qubits: The two qubits to apply the gate to.
+        param: The parameter for the givens rotation.
+
+    Returns:
+        The givens rotation gate.
+    """
+    return cirq.givens(param).on(qubits[0], qubits[1])
+
+
+def get_charge_charge_gate(
+    qubits: Tuple[cirq.Qid, ...], param: float
+) -> cirq.Operation:
+    """Get the cirq charge-charge gate.
+
+    Args:
+        qubits: Two qubits you want to apply the gate to.
+        param: The parameter for the charge-charge interaction.
+
+    Returns:
+        The charge-charge gate.
+    """
+    return cirq.CZ(qubits[0], qubits[1]) ** (-param / np.pi)
+
+
+def get_layer_gates(
+    layer_spec: lspec.LayerSpec,
+    n_elec: int,
+    params: np.ndarray,
+    fermion_index_to_qubit_map: Dict[int, cirq.GridQubit],
+) -> List[cirq.Operation]:
+    """Gets the gates for a hardware efficient layer of the ansatz.
+
+    Args:
+        layer_spec: The layer specification.
+        n_elec: The number of electrons.
+        params: The variational parameters for the hardware efficient gate layer.
+        fermion_index_to_qubit_map: A mapping between fermion mode indices and qubits.
+
+    Returns:
+        A list of gates for the layer.
+    """
+
+    indices_list = lspec.get_layer_indices(layer_spec, n_elec)
+
+    gate_funcs = {"givens": get_givens_gate, "charge_charge": get_charge_charge_gate}
+    gate_func = gate_funcs[layer_spec.base_gate]
+
+    gates = []
+    for indices, param in zip(indices_list, params):
+        qubits = tuple(fermion_index_to_qubit_map[ind] for ind in indices)
+        gates.append(gate_func(qubits, param))
+
+    return gates
+
+
+def get_heuristic_circuit(
+    layer_specs: Sequence[lspec.LayerSpec],
+    n_elec: int,
+    params: np.ndarray,
+    fermion_index_to_qubit_map: Dict[int, cirq.GridQubit],
+) -> cirq.Circuit:
+    """Get a circuit for the heuristic ansatz.
+
+    Args:
+        layer_specs: The layer specs for the heuristic layers.
+        n_elec: The number of electrons.
+        params: The variational parameters for the circuit.
+        fermion_index_to_qubit_map: A mapping between fermion mode indices and qubits.
+
+    Returns:
+        A circuit for the heuristic ansatz.
+    """
+    gates: List[cirq.Operation] = []
+
+    for layer_spec in layer_specs:
+        params_slice = params[len(gates) :]
+        gates += get_layer_gates(
+            layer_spec, n_elec, params_slice, fermion_index_to_qubit_map
+        )
+
+    return cirq.Circuit(gates)
+
+
+def get_4_qubit_pp_circuits(
+    *,
+    two_body_params: np.ndarray,
+    n_elec: int,
+    heuristic_layers: Tuple[lspec.LayerSpec, ...],
+) -> Tuple[cirq.Circuit, cirq.Circuit]:
+    """A helper function that builds the circuits for the four qubit ansatz.
+
+    We map the fermionic orbitals to grid qubits like so:
+    3 1
+    2 0
+    """
+    assert n_elec == 2
+
+    fermion_index_to_qubit_map = qubit_maps.get_4_qubit_fermion_qubit_map()
+    geminal_gate = GeminalStatePreparationGate(two_body_params[0], inline_control=True)
+
+    ansatz_circuit = cirq.Circuit(
+        cirq.decompose(
+            geminal_gate.on(
+                fermion_index_to_qubit_map[0],
+                fermion_index_to_qubit_map[1],
+                fermion_index_to_qubit_map[2],
+                fermion_index_to_qubit_map[3],
+            )
+        )
+    )
+
+    heuristic_layer_circuit = get_heuristic_circuit(
+        heuristic_layers, n_elec, two_body_params[1:], fermion_index_to_qubit_map
+    )
+
+    ansatz_circuit += heuristic_layer_circuit
+
+    indicator = fermion_index_to_qubit_map[2]
+    superposition_circuit = cirq.Circuit([cirq.H(indicator) + ansatz_circuit])
+    ansatz_circuit = cirq.Circuit([cirq.X(indicator) + ansatz_circuit])
+
+    return superposition_circuit, ansatz_circuit
+
+
+def get_8_qubit_circuits(
+    *,
+    two_body_params: np.ndarray,
+    n_elec: int,
+    heuristic_layers: Tuple[lspec.LayerSpec, ...],
+) -> Tuple[cirq.Circuit, cirq.Circuit]:
+    """A helper function that builds the circuits for the four qubit ansatz.
+
+    We map the fermionic orbitals to grid qubits like so:
+    3 5 1 7
+    2 4 0 6
+    """
+    fermion_index_to_qubit_map = qubit_maps.get_8_qubit_fermion_qubit_map()
+
+    geminal_gate_1 = GeminalStatePreparationGate(
+        two_body_params[0], inline_control=True
+    )
+    geminal_gate_2 = GeminalStatePreparationGate(
+        two_body_params[1], inline_control=True
+    )
+
+    # We'll add the initial bit flips later.
+    ansatz_circuit = cirq.Circuit(
+        cirq.decompose(
+            geminal_gate_1.on(
+                fermion_index_to_qubit_map[2],
+                fermion_index_to_qubit_map[3],
+                fermion_index_to_qubit_map[4],
+                fermion_index_to_qubit_map[5],
+            )
+        ),
+        cirq.decompose(
+            geminal_gate_2.on(
+                fermion_index_to_qubit_map[0],
+                fermion_index_to_qubit_map[1],
+                fermion_index_to_qubit_map[6],
+                fermion_index_to_qubit_map[7],
+            )
+        ),
+    )
+
+    heuristic_layer_circuit = get_heuristic_circuit(
+        heuristic_layers, n_elec, two_body_params[2:], fermion_index_to_qubit_map
+    )
+
+    ansatz_circuit += heuristic_layer_circuit
+
+    superposition_circuit = (
+        cirq.Circuit(
+            [
+                cirq.H(fermion_index_to_qubit_map[0]),
+                cirq.CNOT(fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[6]),
+                cirq.SWAP(fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[4]),
+            ]
+        )
+        + ansatz_circuit
+    )
+
+    ansatz_circuit = (
+        cirq.Circuit(
+            [
+                cirq.X(fermion_index_to_qubit_map[4]),
+                cirq.X(fermion_index_to_qubit_map[6]),
+            ]
+        )
+        + ansatz_circuit
+    )
+
+    return superposition_circuit, ansatz_circuit
+
+
+def get_12_qubit_circuits(
+    *,
+    two_body_params: np.ndarray,
+    n_elec: int,
+    heuristic_layers: Tuple[lspec.LayerSpec, ...],
+) -> Tuple[cirq.Circuit, cirq.Circuit]:
+    """A helper function that builds the circuits for the four qubit ansatz.
+
+    We map the fermionic orbitals to grid qubits like so:
+    5 7 3 9 1 11
+    4 6 2 8 0 10
+    """
+
+    fermion_index_to_qubit_map = qubit_maps.get_12_qubit_fermion_qubit_map()
+
+    geminal_gate_1 = GeminalStatePreparationGate(
+        two_body_params[0], inline_control=True
+    )
+    geminal_gate_2 = GeminalStatePreparationGate(
+        two_body_params[1], inline_control=True
+    )
+    geminal_gate_3 = GeminalStatePreparationGate(
+        two_body_params[2], inline_control=True
+    )
+
+    # We'll add the initial bit flips later.
+    ansatz_circuit = cirq.Circuit(
+        cirq.decompose(
+            geminal_gate_1.on(
+                fermion_index_to_qubit_map[4],
+                fermion_index_to_qubit_map[5],
+                fermion_index_to_qubit_map[6],
+                fermion_index_to_qubit_map[7],
+            )
+        ),
+        cirq.decompose(
+            geminal_gate_2.on(
+                fermion_index_to_qubit_map[2],
+                fermion_index_to_qubit_map[3],
+                fermion_index_to_qubit_map[8],
+                fermion_index_to_qubit_map[9],
+            )
+        ),
+        cirq.decompose(
+            geminal_gate_3.on(
+                fermion_index_to_qubit_map[0],
+                fermion_index_to_qubit_map[1],
+                fermion_index_to_qubit_map[10],
+                fermion_index_to_qubit_map[11],
+            )
+        ),
+    )
+
+    heuristic_layer_circuit = get_heuristic_circuit(
+        heuristic_layers, n_elec, two_body_params[3:], fermion_index_to_qubit_map
+    )
+
+    ansatz_circuit += heuristic_layer_circuit
+
+    superposition_circuit = (
+        cirq.Circuit(
+            [
+                cirq.H(fermion_index_to_qubit_map[8]),
+                cirq.CNOT(fermion_index_to_qubit_map[8], fermion_index_to_qubit_map[0]),
+                cirq.CNOT(fermion_index_to_qubit_map[8], fermion_index_to_qubit_map[2]),
+                cirq.SWAP(
+                    fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[10]
+                ),
+                cirq.SWAP(fermion_index_to_qubit_map[2], fermion_index_to_qubit_map[6]),
+            ]
+        )
+        + ansatz_circuit
+    )
+
+    ansatz_circuit = (
+        cirq.Circuit(
+            [
+                cirq.X(fermion_index_to_qubit_map[6]),
+                cirq.X(fermion_index_to_qubit_map[8]),
+                cirq.X(fermion_index_to_qubit_map[10]),
+            ]
+        )
+        + ansatz_circuit
+    )
+
+    return superposition_circuit, ansatz_circuit
+
+
+def get_16_qubit_circuits(
+    *,
+    two_body_params: np.ndarray,
+    n_elec: int,
+    heuristic_layers: Tuple[lspec.LayerSpec, ...],
+) -> Tuple[cirq.Circuit, cirq.Circuit]:
+    """A helper function that builds the circuits for the four qubit ansatz.
+
+    We map the fermionic orbitals to grid qubits like so:
+    7 9 5 11 3 13 1 15
+    6 8 4 10 2 12 0 14
+    """
+    fermion_index_to_qubit_map = qubit_maps.get_16_qubit_fermion_qubit_map()
+
+    geminal_gate_1 = GeminalStatePreparationGate(
+        two_body_params[0], inline_control=True
+    )
+    geminal_gate_2 = GeminalStatePreparationGate(
+        two_body_params[1], inline_control=True
+    )
+    geminal_gate_3 = GeminalStatePreparationGate(
+        two_body_params[2], inline_control=True
+    )
+    geminal_gate_4 = GeminalStatePreparationGate(
+        two_body_params[3], inline_control=True
+    )
+
+    # We'll add the initial bit flips later.
+    ansatz_circuit = cirq.Circuit(
+        cirq.decompose(
+            geminal_gate_1.on(
+                fermion_index_to_qubit_map[6],
+                fermion_index_to_qubit_map[7],
+                fermion_index_to_qubit_map[8],
+                fermion_index_to_qubit_map[9],
+            )
+        ),
+        cirq.decompose(
+            geminal_gate_2.on(
+                fermion_index_to_qubit_map[4],
+                fermion_index_to_qubit_map[5],
+                fermion_index_to_qubit_map[10],
+                fermion_index_to_qubit_map[11],
+            )
+        ),
+        cirq.decompose(
+            geminal_gate_3.on(
+                fermion_index_to_qubit_map[2],
+                fermion_index_to_qubit_map[3],
+                fermion_index_to_qubit_map[12],
+                fermion_index_to_qubit_map[13],
+            )
+        ),
+        cirq.decompose(
+            geminal_gate_4.on(
+                fermion_index_to_qubit_map[0],
+                fermion_index_to_qubit_map[1],
+                fermion_index_to_qubit_map[14],
+                fermion_index_to_qubit_map[15],
+            )
+        ),
+    )
+
+    heuristic_layer_circuit = get_heuristic_circuit(
+        heuristic_layers, n_elec, two_body_params[4:], fermion_index_to_qubit_map
+    )
+
+    ansatz_circuit += heuristic_layer_circuit
+
+    superposition_circuit = (
+        cirq.Circuit(
+            [
+                cirq.H(fermion_index_to_qubit_map[10]),
+                cirq.CNOT(
+                    fermion_index_to_qubit_map[10], fermion_index_to_qubit_map[2]
+                ),
+                cirq.SWAP(
+                    fermion_index_to_qubit_map[2], fermion_index_to_qubit_map[12]
+                ),
+                cirq.CNOT(
+                    fermion_index_to_qubit_map[10], fermion_index_to_qubit_map[4]
+                ),
+                cirq.CNOT(
+                    fermion_index_to_qubit_map[12], fermion_index_to_qubit_map[0]
+                ),
+                cirq.SWAP(fermion_index_to_qubit_map[4], fermion_index_to_qubit_map[8]),
+                cirq.SWAP(
+                    fermion_index_to_qubit_map[0], fermion_index_to_qubit_map[14]
+                ),
+            ]
+        )
+        + ansatz_circuit
+    )
+
+    ansatz_circuit = (
+        cirq.Circuit(
+            [
+                cirq.X(fermion_index_to_qubit_map[8]),
+                cirq.X(fermion_index_to_qubit_map[10]),
+                cirq.X(fermion_index_to_qubit_map[12]),
+                cirq.X(fermion_index_to_qubit_map[14]),
+            ]
+        )
+        + ansatz_circuit
+    )
+
+    return superposition_circuit, ansatz_circuit
+
+
+def get_circuits(
+    *,
+    two_body_params: np.ndarray,
+    n_orb: int,
+    n_elec: int,
+    heuristic_layers: Tuple[lspec.LayerSpec, ...],
+) -> Tuple[cirq.Circuit, cirq.Circuit]:
+    """A function that runs a specialized method to get the ansatz circuits."""
+
+    if n_orb != n_elec:
+        raise ValueError("n_orb must equal n_elec.")
+
+    circ_funcs = {
+        2: get_4_qubit_pp_circuits,
+        4: get_8_qubit_circuits,
+        6: get_12_qubit_circuits,
+        8: get_16_qubit_circuits,
+    }
+    try:
+        circ_func = circ_funcs[n_orb]
+    except KeyError:
+        raise NotImplementedError(f"No circuits for n_orb = {n_orb}")
+
+    return circ_func(
+        two_body_params=two_body_params,
+        n_elec=n_elec,
+        heuristic_layers=heuristic_layers,
+    )

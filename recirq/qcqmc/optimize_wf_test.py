@@ -18,16 +18,19 @@ import fqe.wavefunction as fqe_wfn
 import numpy as np
 import pytest
 
+from recirq.qcqmc.afqmc_generators import get_pp_plus_gate_generators
+from recirq.qcqmc.converters import (
+    get_ansatz_qubit_wf,
+    get_two_body_params_from_qchem_amplitudes,
+)
 from recirq.qcqmc.hamiltonian import HamiltonianData
+from recirq.qcqmc.layer_spec import LayerSpec
 from recirq.qcqmc.optimize_wf import (
-    _get_ansatz_qubit_wf,
-    _get_pp_plus_gate_generators,
     build_pp_plus_trial_wavefunction,
     evaluate_gradient_and_cost_function,
     get_evolved_wf,
-    get_two_body_params_from_qchem_amplitudes,
 )
-from recirq.qcqmc.trial_wf import LayerSpec, PerfectPairingPlusTrialWavefunctionParams
+from recirq.qcqmc.trial_wf import PerfectPairingPlusTrialWavefunctionParams
 
 
 def test_pp_wf_energy(fixture_4_qubit_ham: HamiltonianData):
@@ -209,7 +212,7 @@ def test_qchem_pp_runs(
         do_print=False,
     )
 
-    ansatz_qubit_wf = _get_ansatz_qubit_wf(
+    ansatz_qubit_wf = get_ansatz_qubit_wf(
         ansatz_circuit=trial_wf.ansatz_circuit,
         ordered_qubits=params.qubits_jordan_wigner_ordered,
     )
@@ -239,7 +242,7 @@ def test_qchem_conversion_negative(fixture_4_qubit_ham: HamiltonianData):
         do_print=False,
     )
 
-    ansatz_qubit_wf = _get_ansatz_qubit_wf(
+    ansatz_qubit_wf = get_ansatz_qubit_wf(
         ansatz_circuit=trial_wf.ansatz_circuit,
         ordered_qubits=params.qubits_jordan_wigner_ordered,
     )
@@ -281,7 +284,7 @@ def compute_finite_difference_grad(
         initial_wf: The initial wavefunction (typically Hartree--Fock)
         restricted: Whether we're using a restricted ansatz or not.
     """
-    generators = _get_pp_plus_gate_generators(
+    generators = get_pp_plus_gate_generators(
         n_elec=n_elec, heuristic_layers=tuple(), do_pp=True
     )
     one_body_gradient = np.zeros_like(one_body_params)
@@ -349,7 +352,7 @@ def test_gradient(n_elec, n_orb, restricted):
     else:
         n_one_body_params = n_orb * (n_orb - 1)
 
-    gate_generators = _get_pp_plus_gate_generators(
+    gate_generators = get_pp_plus_gate_generators(
         n_elec=n_elec, heuristic_layers=tuple(), do_pp=True
     )
     # reference implementation
