@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cirq
 import fqe
 import fqe.hamiltonians.restricted_hamiltonian as fqe_hams
 import fqe.wavefunction as fqe_wfn
@@ -20,16 +19,14 @@ import numpy as np
 import pytest
 
 from recirq.qcqmc.hamiltonian import HamiltonianData
-from recirq.qcqmc.trial_wf import (
-    LayerSpec,
-    PerfectPairingPlusTrialWavefunctionParams,
-    _get_ansatz_qubit_wf,
-    _get_pp_plus_gate_generators,
-    build_pp_plus_trial_wavefunction,
-    evaluate_gradient_and_cost_function,
-    get_evolved_wf,
-    get_two_body_params_from_qchem_amplitudes,
-)
+from recirq.qcqmc.trial_wf import (LayerSpec,
+                                   PerfectPairingPlusTrialWavefunctionParams,
+                                   _get_ansatz_qubit_wf,
+                                   _get_pp_plus_gate_generators,
+                                   build_pp_plus_trial_wavefunction,
+                                   evaluate_gradient_and_cost_function,
+                                   get_evolved_wf,
+                                   get_two_body_params_from_qchem_amplitudes)
 
 
 def test_pp_wf_energy(fixture_4_qubit_ham: HamiltonianData):
