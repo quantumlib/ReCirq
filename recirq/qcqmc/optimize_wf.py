@@ -26,8 +26,16 @@ import scipy.linalg
 import scipy.optimize
 import scipy.sparse
 
-from recirq.qcqmc import (afqmc_circuits, afqmc_generators, converters, data,
-                          fermion_mode, hamiltonian, layer_spec, trial_wf)
+from recirq.qcqmc import (
+    afqmc_circuits,
+    afqmc_generators,
+    converters,
+    data,
+    fermion_mode,
+    hamiltonian,
+    layer_spec,
+    trial_wf,
+)
 
 
 def get_and_check_energy(
@@ -391,7 +399,7 @@ def orbital_rotation_gradient_matrix(
     return pre_matrix_full
 
 
-def evaluate_gradient_and_cost_function(
+def evaluate_energy_and_gradient(
     initial_wf: fqe.Wavefunction,
     fqe_ham: fqe_hams.RestrictedHamiltonian,
     n_orb: int,
@@ -415,7 +423,7 @@ def evaluate_gradient_and_cost_function(
             for the alpha- and beta-spin rotations.
 
     Returns:
-        cost_val: The cost function (total energy) evaluated for the input wavefunction parameters.
+        energy: The cost function (total energy) evaluated for the input wavefunction parameters.
         grad: An array of gradients with respect to the one- and two-body
             parameters. The first n_orb * (n_orb + 1) // 2 parameters correspond to
             the one-body gradients.
@@ -474,6 +482,178 @@ def evaluate_gradient_and_cost_function(
         lam = lam.time_evolve(-two_body_params[pidx], gate_generators[pidx])
 
     return cost_val, np.concatenate((two_body_grad, one_body_grad))
+
+
+def objective(
+    params: np.ndarray,
+    n_one_body_params: int,
+    n_two_body_params: int,
+    initial_wf: fqe_wfn.Wavefunction,
+    fqe_ham: fqe_hams.RestrictedHamiltonian,
+    gate_generators: List[of.FermionOperator],
+    n_orb: int,
+    restricted: bool,
+    initial_orbital_rotation: np.ndarray,
+    e_core: float,
+    do_print: bool = False,
+) -> float:
+    """Evaluate the objective function (total energy) for a set of variational pareters."""
+    one_body_params = params[-n_one_body_params:]
+    two_body_params = params[:n_two_body_params]
+
+    wf, _ = get_evolved_wf(
+        one_body_params,
+        two_body_params,
+        initial_wf,
+        gate_generators,
+        n_orb,
+        restricted=restricted,
+        initial_orbital_rotation=initial_orbital_rotation,
+    )
+
+    energy = wf.expectationValue(fqe_ham) + e_core
+    if do_print:
+        print(f"energy {energy}")
+    if np.abs(energy.imag) < 1e-6:
+        return energy.real
+    else:
+        return 1e6
+
+
+def fast_objective_and_gradient(
+    params: np.ndarray,
+    n_one_body_params: int,
+    n_two_body_params: int,
+    initial_wf: fqe_wfn.Wavefunction,
+    fqe_ham: fqe_hams.RestrictedHamiltonian,
+    gate_generators: List[of.FermionOperator],
+    n_orb: int,
+    restricted: bool,
+    e_core: float,
+    do_print: bool = False,
+) -> Tuple[float, float]:
+    one_body_params = params[-n_one_body_params:]
+    two_body_params = params[:n_two_body_params]
+    energy, grad = evaluate_energy_and_cost_function(
+        initial_wf,
+        fqe_ham,
+        n_orb,
+        one_body_params,
+        two_body_params,
+        gate_generators,
+        restricted,
+        e_core,
+    )
+    if do_print:
+        print(f"energy {energy}, max|grad| {np.max(np.abs(grad))}")
+    if np.abs(energy.imag) < 1e-6:
+        return energy.real, grad
+    else:
+        return 1e6, 1e6
+
+
+def optimize_parameters(
+    initial_wf: fqe_wfn.Wavefunction,
+    gate_generators: List[of.FermionOperator],
+    n_orb: int,
+    n_one_body_params: int,
+    n_two_body_params: int,
+    initial_orbital_rotation: np.ndarray,
+    fqe_ham: fqe_hams.RestrictedHamiltonian,
+    e_core: float,
+    restricted: bool = False,
+    use_fast_gradients: bool = False,
+    n_optimization_restarts: int = 1,
+    random_parameter_scale: float = 1.0,
+    do_print: bool = True,
+) -> Optional[scipy.optimize.OptimizeResult]:
+    """Optimize the cost function (total energy) for the PP+ ansatz.
+
+    Loops over n_optimization_restarts to try to find a good minimum value of the total energy.
+
+    Args:
+        initial_wf: The initial wavefunction the circuit unitary is applied to.
+        gate_generators: The generators of the two-body interaction terms.
+        n_orb: The number of orbitals.
+        n_one_body_params: The number of variational parameters for the one-body terms.
+        n_two_body_params: The number of variational parameters for the two-body terms.
+        initial_orbital_rotation: An optional initial orbital rotation matrix,
+            which will be implmented as a givens circuit.
+        fqe_ham: The restricted FQE hamiltonian.
+        e_core: The Hamiltonian core (all the constants) energy.
+        use_fast_gradients: Compute the parameter gradients anlytically using Wilcox formula.
+            Default to false (use finite difference gradients).
+        n_optimization_restarts: The number of times to restart the optimization
+            from a random guess in an attempt at global optimization.
+        restricted: Whether to use a spin-restricted ansatz or not.
+        random_parameter_scale: A float to scale the random parameters by.
+        do_print: Whether to print optimization progress to stdout.
+
+    Returns:
+        The optimization result.
+    """
+    best = np.inf
+    best_res: Optional[scipy.optimize.OptimizeResult] = None
+    for i in range(n_optimization_restarts):
+        if do_print:
+            print(f"Optimization restart {i}", flush=True)
+
+            def progress_cb(_):
+                print(".", end="", flush=True)
+
+        else:
+
+            def progress_cb(_):
+                pass
+
+        params = random_parameter_scale * np.random.normal(
+            size=(n_two_body_params + n_one_body_params)
+        )
+
+        if use_fast_gradients:
+            res = scipy.optimize.minimize(
+                fast_objective_and_gradient,
+                params,
+                jac=True,
+                method="BFGS",
+                callback=progress_cb,
+                args=(
+                    n_one_body_params,
+                    n_two_body_params,
+                    initial_wf,
+                    fqe_ham,
+                    gate_generators,
+                    n_orb,
+                    restricted,
+                    e_core,
+                    do_print,
+                ),
+            )
+        else:
+            res = scipy.optimize.minimize(
+                objective,
+                params,
+                callback=progress_cb,
+                args=(
+                    n_one_body_params,
+                    n_two_body_params,
+                    initial_wf,
+                    fqe_ham,
+                    gate_generators,
+                    n_orb,
+                    restricted,
+                    initial_orbital_rotation,
+                    e_core,
+                    do_print,
+                ),
+            )
+        if res.fun < best:
+            best = res.fun
+            best_res = res
+
+        if do_print:
+            print(res, flush=True)
+    return best_res
 
 
 def get_pp_plus_params(
@@ -540,78 +720,7 @@ def get_pp_plus_params(
     else:
         n_one_body_params = n_orb * (n_orb - 1)
 
-    best = np.inf
-    best_res: Union[None, scipy.optimize.OptimizeResult] = None
-    for i in range(n_optimization_restarts):
-        if do_print:
-            print(f"Optimization restart {i}", flush=True)
-
-            def progress_cb(_):
-                print(".", end="", flush=True)
-
-        else:
-
-            def progress_cb(_):
-                pass
-
-        params = random_parameter_scale * np.random.normal(
-            size=(n_two_body_params + n_one_body_params)
-        )
-
-        def objective(params):
-            one_body_params = params[-n_one_body_params:]
-            two_body_params = params[:n_two_body_params]
-
-            wf, _ = get_evolved_wf(
-                one_body_params,
-                two_body_params,
-                initial_wf,
-                gate_generators,
-                n_orb,
-                restricted=restricted,
-                initial_orbital_rotation=initial_orbital_rotation,
-            )
-
-            energy = wf.expectationValue(fqe_ham) + e_core
-            if do_print:
-                print(f"energy {energy}")
-            if np.abs(energy.imag) < 1e-6:
-                return energy.real
-            else:
-                return 1e6
-
-        def fast_obj_grad(params):
-            one_body_params = params[-n_one_body_params:]
-            two_body_params = params[:n_two_body_params]
-            energy, grad = evaluate_gradient_and_cost_function(
-                initial_wf,
-                fqe_ham,
-                n_orb,
-                one_body_params,
-                two_body_params,
-                gate_generators,
-                restricted,
-                e_core,
-            )
-            if do_print:
-                print(f"energy {energy}, max|grad| {np.max(np.abs(grad))}")
-            if np.abs(energy.imag) < 1e-6:
-                return energy.real, grad
-            else:
-                return 1e6, 1e6
-
-        if use_fast_gradients:
-            res = scipy.optimize.minimize(
-                fast_obj_grad, params, jac=True, method="BFGS", callback=progress_cb
-            )
-        else:
-            res = scipy.optimize.minimize(objective, params, callback=progress_cb)
-        if res.fun < best:
-            best = res.fun
-            best_res = res
-
-        if do_print:
-            print(res, flush=True)
+    best_res = optimize_parameters()
 
     assert best_res is not None
     params = best_res.x
