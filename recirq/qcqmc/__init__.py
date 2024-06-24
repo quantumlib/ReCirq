@@ -16,17 +16,11 @@ from typing import Optional
 
 from cirq.protocols.json_serialization import DEFAULT_RESOLVERS, ObjectFactory
 
-from .hamiltonian import (
-    HamiltonianData,
-    HamiltonianFileParams,
-    PyscfHamiltonianParams,
-)
-from .trial_wf import (
-    FermionicMode,
-    LayerSpec,
-    PerfectPairingPlusTrialWavefunctionParams,
-    TrialWavefunctionData,
-)
+from .fermion_mode import FermionicMode
+from .hamiltonian import (HamiltonianData, HamiltonianFileParams,
+                          PyscfHamiltonianParams)
+from .trial_wf import (LayerSpec, PerfectPairingPlusTrialWavefunctionParams,
+                       TrialWavefunctionData)
 
 
 @lru_cache()

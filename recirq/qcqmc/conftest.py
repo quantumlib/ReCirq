@@ -21,10 +21,10 @@ from recirq.qcqmc.hamiltonian import (
     HamiltonianFileParams,
     build_hamiltonian_from_file,
 )
+from recirq.qcqmc.optimize_wf import build_pp_plus_trial_wavefunction
 from recirq.qcqmc.trial_wf import (
     PerfectPairingPlusTrialWavefunctionParams,
     TrialWavefunctionData,
-    build_pp_plus_trial_wavefunction,
 )
 
 

@@ -19,14 +19,15 @@ import numpy as np
 import pytest
 
 from recirq.qcqmc.hamiltonian import HamiltonianData
-from recirq.qcqmc.trial_wf import (LayerSpec,
-                                   PerfectPairingPlusTrialWavefunctionParams,
-                                   _get_ansatz_qubit_wf,
-                                   _get_pp_plus_gate_generators,
-                                   build_pp_plus_trial_wavefunction,
-                                   evaluate_gradient_and_cost_function,
-                                   get_evolved_wf,
-                                   get_two_body_params_from_qchem_amplitudes)
+from recirq.qcqmc.optimize_wf import (
+    _get_ansatz_qubit_wf,
+    _get_pp_plus_gate_generators,
+    build_pp_plus_trial_wavefunction,
+    evaluate_gradient_and_cost_function,
+    get_evolved_wf,
+    get_two_body_params_from_qchem_amplitudes,
+)
+from recirq.qcqmc.trial_wf import LayerSpec, PerfectPairingPlusTrialWavefunctionParams
 
 
 def test_pp_wf_energy(fixture_4_qubit_ham: HamiltonianData):

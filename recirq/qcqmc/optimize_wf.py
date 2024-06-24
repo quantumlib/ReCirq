@@ -234,7 +234,7 @@ def get_rotated_hamiltonians(
     one_body_basis_change_mat: np.ndarray,
     mode_qubit_map: Mapping[fermion_mode.FermionicMode, cirq.Qid],
     ordered_qubits: Sequence[cirq.Qid],
-) -> Tuple[fqe_hams.RestrictedHamiltonian, float, scipy.sparse.scipy.sparse.csc_matrix]:
+) -> Tuple[fqe_hams.RestrictedHamiltonian, float, scipy.sparse.csc_matrix]:
     """A helper method that gets the hamiltonians in the basis of the trial_wf.
 
     Returns:
