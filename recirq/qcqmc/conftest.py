@@ -18,20 +18,19 @@ import pytest
 
 from recirq.qcqmc.hamiltonian import (
     HamiltonianData,
-    LoadFromFileHamiltonianParams,
+    HamiltonianFileParams,
     build_hamiltonian_from_file,
 )
 from recirq.qcqmc.trial_wf import (
     PerfectPairingPlusTrialWavefunctionParams,
     TrialWavefunctionData,
-    _get_qubits_a_b_reversed,
     build_pp_plus_trial_wavefunction,
 )
 
 
 @pytest.fixture(scope="package")
 def fixture_4_qubit_ham() -> HamiltonianData:
-    params = LoadFromFileHamiltonianParams(
+    params = HamiltonianFileParams(
         name="test hamiltonian 4 qubits", integral_key="fh_sto3g", n_orb=2, n_elec=2
     )
 
@@ -42,7 +41,7 @@ def fixture_4_qubit_ham() -> HamiltonianData:
 
 @pytest.fixture(scope="package")
 def fixture_8_qubit_ham() -> HamiltonianData:
-    params = LoadFromFileHamiltonianParams(
+    params = HamiltonianFileParams(
         name="test hamiltonian 8 qubits", integral_key="h4_sto3g", n_orb=4, n_elec=4
     )
 
@@ -53,7 +52,7 @@ def fixture_8_qubit_ham() -> HamiltonianData:
 
 @pytest.fixture(scope="package")
 def fixture_12_qubit_ham() -> HamiltonianData:
-    params = LoadFromFileHamiltonianParams(
+    params = HamiltonianFileParams(
         name="test hamiltonian 12 qubits",
         integral_key="diamond_dzvp/cas66",
         n_orb=6,

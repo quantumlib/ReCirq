@@ -14,21 +14,23 @@
 
 import cirq
 import fqe
-import fqe.hamiltonians as fqe_hams
+import fqe.hamiltonians.restricted_hamiltonian as fqe_hams
 import fqe.wavefunction as fqe_wfn
 import numpy as np
 import pytest
-import scipy.special
 
 from recirq.qcqmc.hamiltonian import HamiltonianData
-from recirq.qcqmc.trial_wf import (FermionicMode, LayerSpec,
-                                   PerfectPairingPlusTrialWavefunctionParams,
-                                   _get_ansatz_qubit_wf, _get_bitstrings_a_b,
-                                   _get_pp_plus_gate_generators,
-                                   build_pp_plus_trial_wavefunction,
-                                   evaluate_gradient_and_cost_function,
-                                   get_evolved_wf,
-                                   get_two_body_params_from_qchem_amplitudes)
+from recirq.qcqmc.trial_wf import (
+    FermionicMode,
+    LayerSpec,
+    PerfectPairingPlusTrialWavefunctionParams,
+    _get_ansatz_qubit_wf,
+    _get_pp_plus_gate_generators,
+    build_pp_plus_trial_wavefunction,
+    evaluate_gradient_and_cost_function,
+    get_evolved_wf,
+    get_two_body_params_from_qchem_amplitudes,
+)
 
 
 def test_fermionic_mode():
@@ -38,21 +40,6 @@ def test_fermionic_mode():
 
     with pytest.raises(ValueError, match="spin.*"):
         _ = FermionicMode(10, "c")
-
-
-def test_get_bitstrings_a_b():
-    with pytest.raises(NotImplementedError):
-        list(_get_bitstrings_a_b(n_orb=4, n_elec=3))
-
-    bitstrings = np.array(list(_get_bitstrings_a_b(n_orb=4, n_elec=4)))
-
-    assert bitstrings.shape[0] == scipy.special.binom(4, 2) ** 2
-    assert bitstrings.shape[1] == 2 * 4  # n_qubits columns = 2 * n_orb.
-    hamming_weight_left = np.sum(bitstrings[:, 0:4], axis=1)
-    hamming_weight_right = np.sum(bitstrings[:, 4:8], axis=1)
-
-    assert np.all(hamming_weight_left == 2)
-    assert np.all(hamming_weight_right == 2)
 
 
 def test_pp_wf_energy(fixture_4_qubit_ham: HamiltonianData):

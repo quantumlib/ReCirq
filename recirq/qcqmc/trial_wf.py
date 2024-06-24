@@ -33,7 +33,7 @@ import attrs
 import cirq
 import fqe
 import fqe.algorithm.low_rank
-import fqe.hamiltonians.hamiltonian as fqe_ham
+import fqe.hamiltonians.restricted_hamiltonian as fqe_hams
 import fqe.openfermion_utils
 import fqe.wavefunction as fqe_wfn
 import numpy as np
@@ -47,13 +47,6 @@ from scipy.sparse import csc_matrix
 from recirq.qcqmc import afqmc_circuits, bitstrings, config, data, hamiltonian
 
 
-class Spin(enum.Enum):
-    """A simple enum for distinguishing spin up (alpha) and spin down (beta) electrons."""
-
-    ALPHA = 0
-    BETA = 1
-
-
 @attrs.frozen
 class FermionicMode:
     """A specification of a fermionic mode.
@@ -64,7 +57,13 @@ class FermionicMode:
     """
 
     orb_ind: int
-    spin: Spin
+    spin: str
+
+    def __attrs_post_init__(self):
+        if self.spin not in ["a", "b"]:
+            raise ValueError(
+                "Spin must be either a or b for spin alpha(up) or beta(down) respectively."
+            )
 
     @classmethod
     def _json_namespace_(cls):
@@ -75,7 +74,7 @@ class FermionicMode:
 
     @property
     def openfermion_standard_index(self) -> int:
-        return 2 * self.orb_ind + self.spin.value
+        return 2 * self.orb_ind + (0 if self.spin.value == "a" else 1)
 
 
 @attrs.frozen
@@ -300,8 +299,8 @@ def _get_mode_qubit_map_pp_plus(
     mode_qubit_map = {}
 
     for i in range(n_orb):
-        mode_qubit_map[FermionicMode(i, Spin.ALPHA)] = old_fermion_qubit_map[2 * i]
-        mode_qubit_map[FermionicMode(i, Spin.BETA)] = old_fermion_qubit_map[2 * i + 1]
+        mode_qubit_map[FermionicMode(i, "a")] = old_fermion_qubit_map[2 * i]
+        mode_qubit_map[FermionicMode(i, "b")] = old_fermion_qubit_map[2 * i + 1]
 
     return mode_qubit_map
 
@@ -405,7 +404,7 @@ def _get_fqe_wavefunctions(
 
 
 @attrs.frozen
-class TrialWavefunctionData(Data):
+class TrialWavefunctionData(data.Data):
     """Class for storing a trial wavefunction's data."""
 
     params: PerfectPairingPlusTrialWavefunctionParams
@@ -425,7 +424,7 @@ class TrialWavefunctionData(Data):
 
 def get_and_check_energy(
     *,
-    hamiltonian_data: HamiltonianData,
+    hamiltonian_data: hamiltonian.HamiltonianData,
     ansatz_circuit: cirq.Circuit,
     one_body_params: np.ndarray,
     two_body_params: np.ndarray,
@@ -651,8 +650,8 @@ def get_4_qubit_pp_circuits(
     assert n_elec == 2
 
     fermion_index_to_qubit_map = get_4_qubit_fermion_qubit_map()
-    geminal_gate = afqmc_circuits.afqmc_circuits.GeminalStatePreparation(
-        two_body_params[0], indicator=True
+    geminal_gate = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[0], inline_control=True
     )
 
     ansatz_circuit = cirq.Circuit(
@@ -719,11 +718,11 @@ def get_8_qubit_circuits(
     """
     fermion_index_to_qubit_map = get_8_qubit_fermion_qubit_map()
 
-    geminal_gate_1 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[0], indicator=True
+    geminal_gate_1 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[0], inline_control=True
     )
-    geminal_gate_2 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[1], indicator=True
+    geminal_gate_2 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[1], inline_control=True
     )
 
     # We'll add the initial bit flips later.
@@ -821,14 +820,14 @@ def get_12_qubit_circuits(
 
     fermion_index_to_qubit_map = get_12_qubit_fermion_qubit_map()
 
-    geminal_gate_1 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[0], indicator=True
+    geminal_gate_1 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[0], inline_control=True
     )
-    geminal_gate_2 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[1], indicator=True
+    geminal_gate_2 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[1], inline_control=True
     )
-    geminal_gate_3 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[2], indicator=True
+    geminal_gate_3 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[2], inline_control=True
     )
 
     # We'll add the initial bit flips later.
@@ -942,17 +941,17 @@ def get_16_qubit_circuits(
     """
     fermion_index_to_qubit_map = get_16_qubit_fermion_qubit_map()
 
-    geminal_gate_1 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[0], indicator=True
+    geminal_gate_1 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[0], inline_control=True
     )
-    geminal_gate_2 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[1], indicator=True
+    geminal_gate_2 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[1], inline_control=True
     )
-    geminal_gate_3 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[2], indicator=True
+    geminal_gate_3 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[2], inline_control=True
     )
-    geminal_gate_4 = afqmc_circuits.GeminalStatePreparation(
-        two_body_params[3], indicator=True
+    geminal_gate_4 = afqmc_circuits.GeminalStatePreparationGate(
+        two_body_params[3], inline_control=True
     )
 
     # We'll add the initial bit flips later.
@@ -1506,7 +1505,7 @@ def orbital_rotation_gradient_matrix(
 
 def evaluate_gradient_and_cost_function(
     initial_wf: fqe.Wavefunction,
-    fqe_ham: fqe_ham.RestrictedHamiltonian,
+    fqe_ham: fqe_hams.RestrictedHamiltonian,
     n_orb: int,
     one_body_params: npt.NDArray[np.float64],
     two_body_params: npt.NDArray[np.float64],

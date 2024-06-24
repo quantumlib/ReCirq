@@ -18,7 +18,7 @@ from cirq.protocols.json_serialization import DEFAULT_RESOLVERS, ObjectFactory
 
 from .hamiltonian import (
     HamiltonianData,
-    LoadFromFileHamiltonianParams,
+    HamiltonianFileParams,
     PyscfHamiltonianParams,
 )
 from .trial_wf import (
@@ -43,7 +43,7 @@ def _resolve_json(cirq_type: str) -> Optional[ObjectFactory]:
     return {
         k.__name__: k
         for k in [
-            LoadFromFileHamiltonianParams,
+            HamiltonianFileParams,
             HamiltonianData,
             PyscfHamiltonianParams,
             FermionicMode,
