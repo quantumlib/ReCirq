@@ -26,8 +26,16 @@ import scipy.linalg
 import scipy.optimize
 import scipy.sparse
 
-from recirq.qcqmc import (afqmc_circuits, afqmc_generators, converters, data,
-                          fermion_mode, hamiltonian, layer_spec, trial_wf)
+from recirq.qcqmc import (
+    afqmc_circuits,
+    afqmc_generators,
+    converters,
+    data,
+    fermion_mode,
+    hamiltonian,
+    layer_spec,
+    trial_wf,
+)
 
 
 def get_and_check_energy(
@@ -403,8 +411,8 @@ def evaluate_energy_and_gradient(
 ) -> Tuple[float, np.ndarray]:
     """Evaluate gradient and cost function for optimization.
 
-    Uses the linear scaling algorithm (see algo 2 from example:
-    https://arxiv.org/pdf/2009.02823) at the expense of three copies of the
+    Uses the linear scaling algorithm (see algo 1 from
+    https://arxiv.org/pdf/2009.02823 for example) at the expense of three copies of the
     wavefunction.
 
     Args:
