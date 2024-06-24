@@ -27,7 +27,7 @@ from recirq.qcqmc.hamiltonian import HamiltonianData
 from recirq.qcqmc.layer_spec import LayerSpec
 from recirq.qcqmc.optimize_wf import (
     build_pp_plus_trial_wavefunction,
-    evaluate_gradient_and_cost_function,
+    evaluate_energy_and_gradient,
     get_evolved_wf,
 )
 from recirq.qcqmc.trial_wf import PerfectPairingPlusTrialWavefunctionParams
@@ -366,7 +366,7 @@ def test_gradient(n_elec, n_orb, restricted):
         n_orb,
         restricted=restricted,
     )[0]
-    obj_val, grad = evaluate_gradient_and_cost_function(
+    obj_val, grad = evaluate_energy_and_gradient(
         initial_wf,
         fqe_ham,
         n_orb,

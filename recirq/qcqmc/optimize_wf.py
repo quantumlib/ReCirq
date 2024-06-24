@@ -26,16 +26,8 @@ import scipy.linalg
 import scipy.optimize
 import scipy.sparse
 
-from recirq.qcqmc import (
-    afqmc_circuits,
-    afqmc_generators,
-    converters,
-    data,
-    fermion_mode,
-    hamiltonian,
-    layer_spec,
-    trial_wf,
-)
+from recirq.qcqmc import (afqmc_circuits, afqmc_generators, converters, data,
+                          fermion_mode, hamiltonian, layer_spec, trial_wf)
 
 
 def get_and_check_energy(
@@ -411,6 +403,8 @@ def evaluate_energy_and_gradient(
 ) -> Tuple[float, np.ndarray]:
     """Evaluate gradient and cost function for optimization.
 
+    Uses the linear scaling algorithm at the expense of three copies of the wavefunction.
+
     Args:
         initial_wf: Initial state (typically Hartree--Fock).
         fqe_ham: The restricted Hamiltonian in FQE format.
@@ -440,11 +434,11 @@ def evaluate_energy_and_gradient(
     lam = lam.apply(fqe_ham)
     cost_val = fqe.vdot(lam, phi) + e_core
 
-    # 1body
+    # First build the 1body cluster op as a matrix
     one_body_cluster_op = get_one_body_cluster_coef(
         one_body_params, n_orb, restricted=restricted
     )
-    tril = np.tril_indices(n_orb, k=-1)
+    # Build the one-body FQE hamiltonian
     if restricted:
         one_body_ham = fqe.get_restricted_hamiltonian((-1j * one_body_cluster_op,))
     else:
@@ -455,14 +449,25 @@ def evaluate_energy_and_gradient(
     one_body_grad = np.zeros_like(one_body_params)
     n_one_body_params = len(one_body_params)
     grad_position = n_one_body_params - 1
+    # The parameters correspond to the lower triangular part of the matrix.
+    # we need the row and column indices corresponding to each flattened lower triangular index.
+    tril = np.tril_indices(n_orb, k=-1)
+    # Now compute the gradient of the one-body orbital rotation operator for each parameter.
+    # The basic idea is to use the fact that |psi(theta)> = U_p .... U_1 # |psi_0>,
+    # and progressively move the gradient operator through the expression saving
+    # intermediate wavefunctions along the way.
+    # The gradient is then related to the overlap of a left and right wavefunction.
     for iparam in range(len(one_body_params)):
         mu_state = copy.deepcopy(phi)
+        # get the parameter index starting from the end and working backwards.
         pidx = n_one_body_params - iparam - 1
         pidx_spin = 0 if restricted else pidx // (n_one_body_params // 2)
         pidx_spat = pidx if restricted else pidx - (n_one_body_params // 2) * pidx_spin
+        # Get the actual row and column indicies corresponding to this parameter index.
         p, q = (tril[0][pidx_spat], tril[1][pidx_spat])
         p += n_orb * pidx_spin
         q += n_orb * pidx_spin
+        # Get the orbital rotation gradient "pre" matrix and apply it the |mu>.
         pre_matrix = orbital_rotation_gradient_matrix(-one_body_cluster_op, p, q)
         assert of.is_hermitian(1j * pre_matrix)
         if restricted:
@@ -473,6 +478,9 @@ def evaluate_energy_and_gradient(
         one_body_grad[grad_position] = 2 * fqe.vdot(lam, mu_state).real
         grad_position -= 1
     # Get two-body contributions
+    # Here we already have the generators so the gradient is simple to evaluate
+    # as the derivative just brings down a generator which we need to apply to
+    # the state before computing the overlap.
     two_body_grad = np.zeros(len(two_body_params))
     for pidx in reversed(range(len(gate_generators))):
         mu = copy.deepcopy(phi)
@@ -497,7 +505,23 @@ def objective(
     e_core: float,
     do_print: bool = False,
 ) -> float:
-    """Evaluate the objective function (total energy) for a set of variational pareters."""
+    """Helper function to compute energy from the variational parameters.
+
+    Args:
+        params: A packed array containing the one and two-body parameters.
+        n_one_body_params: The number of variational parameters for the one-body terms.
+        n_two_body_params: The number of variational parameters for the two-body terms.
+        initial_wf: The initial wavefunction the circuit unitary is applied to.
+        fqe_ham: The restricted FQE hamiltonian.
+        gate_generators: The list of gate generators.
+        n_orb: The number of spatial orbitals.
+        restricted: Whether to use a spin-restricted ansatz or not.
+        e_core: The Hamiltonian core (all the constants) energy.
+        do_print: Whether to print optimization progress to stdout.
+
+    Returns:
+        The energy capped at 1e6 if the energy is imaginary.
+    """
     one_body_params = params[-n_one_body_params:]
     two_body_params = params[:n_two_body_params]
 
@@ -520,7 +544,7 @@ def objective(
         return 1e6
 
 
-def fast_objective_and_gradient(
+def objective_and_gradient(
     params: np.ndarray,
     n_one_body_params: int,
     n_two_body_params: int,
@@ -531,10 +555,28 @@ def fast_objective_and_gradient(
     restricted: bool,
     e_core: float,
     do_print: bool = False,
-) -> Tuple[float, float]:
+) -> Tuple[float, np.array]:
+    """Helper function to compute energy and gradient from the variational parameters
+
+    Args:
+        params: A packed array containing the one and two-body parameters.
+        n_one_body_params: The number of variational parameters for the one-body terms.
+        n_two_body_params: The number of variational parameters for the two-body terms.
+        initial_wf: The initial wavefunction the circuit unitary is applied to.
+        fqe_ham: The restricted FQE hamiltonian.
+        gate_generators: The list of gate generators.
+        n_orb: The number of spatial orbitals.
+        restricted: Whether to use a spin-restricted ansatz or not.
+        e_core: The Hamiltonian core (all the constants) energy.
+        do_print: Whether to print optimization progress to stdout.
+
+    Returns:
+        A tuple containing the energy and gradient.  These are capped at 1e6 if
+        the energy is imaginary.
+    """
     one_body_params = params[-n_one_body_params:]
     two_body_params = params[:n_two_body_params]
-    energy, grad = evaluate_energy_and_cost_function(
+    energy, grad = evaluate_energy_and_gradient(
         initial_wf,
         fqe_ham,
         n_orb,
@@ -547,9 +589,9 @@ def fast_objective_and_gradient(
     if do_print:
         print(f"energy {energy}, max|grad| {np.max(np.abs(grad))}")
     if np.abs(energy.imag) < 1e-6:
-        return energy.real, grad
+        return energy.real, grad.real
     else:
-        return 1e6, 1e6
+        return 1e6, np.array([1e6]) * len(grad)
 
 
 def optimize_parameters(
@@ -558,9 +600,9 @@ def optimize_parameters(
     n_orb: int,
     n_one_body_params: int,
     n_two_body_params: int,
-    initial_orbital_rotation: np.ndarray,
     fqe_ham: fqe_hams.RestrictedHamiltonian,
     e_core: float,
+    initial_orbital_rotation: Optional[np.ndarray] = None,
     restricted: bool = False,
     use_fast_gradients: bool = False,
     n_optimization_restarts: int = 1,
@@ -611,8 +653,9 @@ def optimize_parameters(
         )
 
         if use_fast_gradients:
+            # Use analytic gradient rather than finite differences.
             res = scipy.optimize.minimize(
-                fast_objective_and_gradient,
+                objective_and_gradient,
                 params,
                 jac=True,
                 method="BFGS",
@@ -720,7 +763,21 @@ def get_pp_plus_params(
     else:
         n_one_body_params = n_orb * (n_orb - 1)
 
-    best_res = optimize_parameters()
+    best_res = optimize_parameters(
+        initial_wf,
+        gate_generators,
+        n_orb,
+        n_one_body_params,
+        n_two_body_params,
+        fqe_ham,
+        e_core,
+        restricted=restricted,
+        initial_orbital_rotation=initial_orbital_rotation,
+        use_fast_gradients=use_fast_gradients,
+        n_optimization_restarts=n_optimization_restarts,
+        random_parameter_scale=random_parameter_scale,
+        do_print=do_print,
+    )
 
     assert best_res is not None
     params = best_res.x
