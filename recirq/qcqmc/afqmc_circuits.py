@@ -21,8 +21,9 @@ import attrs
 import cirq
 import numpy as np
 import openfermion
-from openfermion.circuits.primitives.state_preparation import \
-    _ops_from_givens_rotations_circuit_description
+from openfermion.circuits.primitives.state_preparation import (
+    _ops_from_givens_rotations_circuit_description,
+)
 from openfermion.linalg.givens_rotations import givens_decomposition
 from openfermion.linalg.sparse_tools import jw_sparse_givens_rotation
 
@@ -875,7 +876,7 @@ def get_circuits(
     heuristic_layers: Tuple[lspec.LayerSpec, ...],
 ) -> Tuple[cirq.Circuit, cirq.Circuit]:
     """A function that runs a specialized method to get the ansatz circuits.
-    
+
     Args:
         two_body_params: The parameters of the two-body terms in the perfect pairing ansatz.
         n_orb: The number of spatial orbitals.
