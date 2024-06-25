@@ -21,9 +21,8 @@ import attrs
 import cirq
 import numpy as np
 import openfermion
-from openfermion.circuits.primitives.state_preparation import (
-    _ops_from_givens_rotations_circuit_description,
-)
+from openfermion.circuits.primitives.state_preparation import \
+    _ops_from_givens_rotations_circuit_description
 from openfermion.linalg.givens_rotations import givens_decomposition
 from openfermion.linalg.sparse_tools import jw_sparse_givens_rotation
 
@@ -538,6 +537,14 @@ def get_4_qubit_pp_circuits(
     We map the fermionic orbitals to grid qubits like so:
     3 1
     2 0
+
+    Args:
+        two_body_params: The parameters of the two-body terms in the perfect pairing ansatz.
+        n_elec: The number of electrons.
+        heuristic_layers: A tuple of hardware efficient layers.
+
+    Returns:
+        The superposition and ansatz circuits.
     """
     assert n_elec == 2
 
@@ -574,11 +581,19 @@ def get_8_qubit_circuits(
     n_elec: int,
     heuristic_layers: Tuple[lspec.LayerSpec, ...],
 ) -> Tuple[cirq.Circuit, cirq.Circuit]:
-    """A helper function that builds the circuits for the four qubit ansatz.
+    """A helper function that builds the circuits for the 8 qubit ansatz.
 
     We map the fermionic orbitals to grid qubits like so:
     3 5 1 7
     2 4 0 6
+
+    Args:
+        two_body_params: The parameters of the two-body terms in the perfect pairing ansatz.
+        n_elec: The number of electrons.
+        heuristic_layers: A tuple of hardware efficient layers.
+
+    Returns:
+        The superposition and ansatz circuits.
     """
     fermion_index_to_qubit_map = qubit_maps.get_8_qubit_fermion_qubit_map()
 
@@ -645,11 +660,19 @@ def get_12_qubit_circuits(
     n_elec: int,
     heuristic_layers: Tuple[lspec.LayerSpec, ...],
 ) -> Tuple[cirq.Circuit, cirq.Circuit]:
-    """A helper function that builds the circuits for the four qubit ansatz.
+    """A helper function that builds the circuits for the twelve qubit ansatz.
 
     We map the fermionic orbitals to grid qubits like so:
     5 7 3 9 1 11
     4 6 2 8 0 10
+
+    Args:
+        two_body_params: The parameters of the two-body terms in the perfect pairing ansatz.
+        n_elec: The number of electrons.
+        heuristic_layers: A tuple of hardware efficient layers.
+
+    Returns:
+        The superposition and ansatz circuits.
     """
 
     fermion_index_to_qubit_map = qubit_maps.get_12_qubit_fermion_qubit_map()
@@ -733,11 +756,19 @@ def get_16_qubit_circuits(
     n_elec: int,
     heuristic_layers: Tuple[lspec.LayerSpec, ...],
 ) -> Tuple[cirq.Circuit, cirq.Circuit]:
-    """A helper function that builds the circuits for the four qubit ansatz.
+    """A helper function that builds the circuits for the 16 qubit ansatz.
 
     We map the fermionic orbitals to grid qubits like so:
     7 9 5 11 3 13 1 15
     6 8 4 10 2 12 0 14
+
+    Args:
+        two_body_params: The parameters of the two-body terms in the perfect pairing ansatz.
+        n_elec: The number of electrons.
+        heuristic_layers: A tuple of hardware efficient layers.
+
+    Returns:
+        The superposition and ansatz circuits.
     """
     fermion_index_to_qubit_map = qubit_maps.get_16_qubit_fermion_qubit_map()
 
@@ -843,7 +874,17 @@ def get_circuits(
     n_elec: int,
     heuristic_layers: Tuple[lspec.LayerSpec, ...],
 ) -> Tuple[cirq.Circuit, cirq.Circuit]:
-    """A function that runs a specialized method to get the ansatz circuits."""
+    """A function that runs a specialized method to get the ansatz circuits.
+    
+    Args:
+        two_body_params: The parameters of the two-body terms in the perfect pairing ansatz.
+        n_orb: The number of spatial orbitals.
+        n_elec: The number of electrons.
+        heuristic_layers: A tuple of hardware efficient layers.
+
+    Returns:
+        The superposition and ansatz circuits.
+    """
 
     if n_orb != n_elec:
         raise ValueError("n_orb must equal n_elec.")
@@ -856,8 +897,8 @@ def get_circuits(
     }
     try:
         circ_func = circ_funcs[n_orb]
-    except KeyError:
-        raise NotImplementedError(f"No circuits for n_orb = {n_orb}")
+    except KeyError as exc:
+        raise NotImplementedError(f"No circuits for n_orb = {n_orb}") from exc
 
     return circ_func(
         two_body_params=two_body_params,
