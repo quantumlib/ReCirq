@@ -11,6 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""Module for building generators for various fermionic wavefunction ansatzes for AFQMC.
+
+Given a unitary defined in terms of fermionic modes of the form
+$$
+U = e^{\alpha a_p^\dagger a_q}
+$$
+the generator of this unitary (gate) is $a_p^\dagger a_q$ where $a_p^{(\dagger)}
+$ is the fermionic annihilation (creation) operator for a fermion in spin
+orbital $p$.
+"""
 
 from typing import List, Sequence, Tuple
 

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Specification of a trial wavefunction."""
 
 import abc
 from typing import Dict, Iterable, Optional, Sequence, Tuple

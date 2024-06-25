@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Specification of a fermion mode."""
 import attrs
 
 
@@ -21,6 +22,7 @@ class FermionicMode:
     Args:
         orb_ind: The spatial orbital index.
         spin: The spin state of the fermion mode (up or down (alpha or beta)).
+            Must be either 'a' or 'b'.
     """
 
     orb_ind: int

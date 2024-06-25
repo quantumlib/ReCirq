@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Functions for the variational optimizion of a trial wavefunction."""
 
 import copy
 import itertools
@@ -26,16 +27,8 @@ import scipy.linalg
 import scipy.optimize
 import scipy.sparse
 
-from recirq.qcqmc import (
-    afqmc_circuits,
-    afqmc_generators,
-    converters,
-    data,
-    fermion_mode,
-    hamiltonian,
-    layer_spec,
-    trial_wf,
-)
+from recirq.qcqmc import (afqmc_circuits, afqmc_generators, converters, data,
+                          fermion_mode, hamiltonian, layer_spec, trial_wf)
 
 
 def get_and_check_energy(
