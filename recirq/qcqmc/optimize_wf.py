@@ -27,8 +27,16 @@ import scipy.linalg
 import scipy.optimize
 import scipy.sparse
 
-from recirq.qcqmc import (afqmc_circuits, afqmc_generators, converters, data,
-                          fermion_mode, hamiltonian, layer_spec, trial_wf)
+from recirq.qcqmc import (
+    afqmc_circuits,
+    afqmc_generators,
+    converters,
+    data,
+    fermion_mode,
+    hamiltonian,
+    layer_spec,
+    trial_wf,
+)
 
 
 def get_and_check_energy(
@@ -499,6 +507,7 @@ def evaluate_energy_and_gradient(
 
     return cost_val, np.concatenate((two_body_grad, one_body_grad))
 
+
 def compute_finite_difference_grad(
     n_orb: int,
     n_elec: int,
@@ -520,7 +529,7 @@ def compute_finite_difference_grad(
         initial_wf: The initial wavefunction (typically Hartree--Fock)
         restricted: Whether we're using a restricted ansatz or not.
     """
-    generators = get_pp_plus_gate_generators(
+    generators = afqmc_generators.get_pp_plus_gate_generators(
         n_elec=n_elec, heuristic_layers=tuple(), do_pp=True
     )
     one_body_gradient = np.zeros_like(one_body_params)
@@ -572,7 +581,6 @@ def compute_finite_difference_grad(
         e_minu = phi.expectationValue(ham)
         two_body_gradient[ig] = (e_plus - e_minu).real / (2 * dtheta)
     return one_body_gradient, two_body_gradient
-
 
 
 def objective(
