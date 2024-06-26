@@ -499,6 +499,81 @@ def evaluate_energy_and_gradient(
 
     return cost_val, np.concatenate((two_body_grad, one_body_grad))
 
+def compute_finite_difference_grad(
+    n_orb: int,
+    n_elec: int,
+    one_body_params: np.ndarray,
+    two_body_params: np.ndarray,
+    ham: fqe_hams.RestrictedHamiltonian,
+    initial_wf: fqe_wfn.Wavefunction,
+    dtheta: float = 1e-4,
+    restricted: bool = False,
+):
+    """Compute the parameter gradient using finite differences.
+
+    Args:
+        n_orb: the number of spatial orbitals.
+        n_elec: the number of electrons.
+        one_body_params: The variational parameters for the one-body terms in the ansatz.
+        two_body_params: The variational parameters for the two-body terms in the ansatz.
+        ham: The restricted FQE Hamiltonian.
+        initial_wf: The initial wavefunction (typically Hartree--Fock)
+        restricted: Whether we're using a restricted ansatz or not.
+    """
+    generators = get_pp_plus_gate_generators(
+        n_elec=n_elec, heuristic_layers=tuple(), do_pp=True
+    )
+    one_body_gradient = np.zeros_like(one_body_params)
+    for ig, _ in enumerate(one_body_gradient):
+        new_param = one_body_params.copy()
+        new_param[ig] = new_param[ig] + dtheta
+        phi = get_evolved_wf(
+            new_param,
+            two_body_params,
+            initial_wf,
+            generators,
+            n_orb,
+            restricted=restricted,
+        )[0]
+        e_plus = phi.expectationValue(ham)
+        new_param[ig] = new_param[ig] - 2 * dtheta
+        phi = get_evolved_wf(
+            new_param,
+            two_body_params,
+            initial_wf,
+            generators,
+            n_orb,
+            restricted=restricted,
+        )[0]
+        e_minu = phi.expectationValue(ham)
+        one_body_gradient[ig] = (e_plus - e_minu).real / (2 * dtheta)
+    two_body_gradient = np.zeros_like(two_body_params)
+    for ig, _ in enumerate(two_body_gradient):
+        new_param = two_body_params.copy()
+        new_param[ig] = new_param[ig] + dtheta
+        phi = get_evolved_wf(
+            one_body_params,
+            new_param,
+            initial_wf,
+            generators,
+            n_orb,
+            restricted=restricted,
+        )[0]
+        e_plus = phi.expectationValue(ham)
+        new_param[ig] = new_param[ig] - 2 * dtheta
+        phi = get_evolved_wf(
+            one_body_params,
+            new_param,
+            initial_wf,
+            generators,
+            n_orb,
+            restricted=restricted,
+        )[0]
+        e_minu = phi.expectationValue(ham)
+        two_body_gradient[ig] = (e_plus - e_minu).real / (2 * dtheta)
+    return one_body_gradient, two_body_gradient
+
+
 
 def objective(
     params: np.ndarray,
