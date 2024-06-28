@@ -11,20 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import cirq
 import numpy as np
 import pytest
-from openfermion import (
-    get_fermion_operator,
-    get_ground_state,
-    get_number_preserving_sparse_operator,
-)
+from openfermion import (get_fermion_operator, get_ground_state,
+                         get_number_preserving_sparse_operator)
 
-from recirq.qcqmc.hamiltonian import (
-    HamiltonianFileParams,
-    PyscfHamiltonianParams,
-    build_hamiltonian_from_file,
-    build_hamiltonian_from_pyscf,
-)
+from recirq.qcqmc.hamiltonian import (HamiltonianFileParams,
+                                      PyscfHamiltonianParams,
+                                      build_hamiltonian_from_file,
+                                      build_hamiltonian_from_pyscf)
 
 
 def test_load_from_file_hamiltonian_runs():
@@ -36,6 +32,14 @@ def test_load_from_file_hamiltonian_runs():
 
     assert hamiltonian_data.one_body_integrals.shape == (2, 2)
     assert hamiltonian_data.two_body_integrals_pqrs.shape == (2, 2, 2, 2)
+
+
+def test_hamiltonian_serialize():
+    params = HamiltonianFileParams(
+        name="test hamiltonian", integral_key="fh_sto3g", n_orb=2, n_elec=2
+    )
+    params2 = cirq.read_json(json_text=cirq.to_json(params))
+    assert params2 == params
 
 
 @pytest.mark.parametrize(

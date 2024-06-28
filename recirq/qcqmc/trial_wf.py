@@ -110,13 +110,18 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
     n_optimization_restarts: int = 1
     seed: int = 0
     initial_orbital_rotation: Optional[np.ndarray] = attrs.field(
-        default=None, converter=lambda v: _to_numpy(v) if v is not None else None
+        default=None,
+        converter=lambda v: _to_numpy(v) if v is not None else None,
+        eq=attrs.cmp_using(eq=np.array_equal),
     )
     initial_two_body_qchem_amplitudes: Optional[np.ndarray] = attrs.field(
-        default=None, converter=lambda v: _to_numpy(v) if v is not None else None
+        default=None,
+        converter=lambda v: _to_numpy(v) if v is not None else None,
+        eq=attrs.cmp_using(eq=np.array_equal),
     )
     do_optimization: bool = True
     use_fast_gradients: bool = False
+    path_prefix: str = ""
 
     @property
     def n_orb(self) -> int:
@@ -136,7 +141,14 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
 
     @property
     def path_string(self) -> str:
-        return config.OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY + self.name
+        if self.path_prefix:
+            return (
+                self.path_prefix
+                + config.OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY.strip(".")
+                + self.name
+            )
+        else:
+            return config.OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY + self.name
 
     @property
     def bitstrings(self) -> Iterable[Tuple[bool, ...]]:
@@ -144,7 +156,9 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
         return bitstrings.get_bitstrings_a_b(n_orb=self.n_orb, n_elec=self.n_elec)
 
     def _json_dict_(self):
-        return attrs.asdict(self)
+        simple_dict = attrs.asdict(self)
+        simple_dict["hamiltonian_params"] = self.hamiltonian_params
+        return simple_dict
 
     @property
     def qubits_jordan_wigner_ordered(self) -> Tuple[cirq.GridQubit, ...]:
@@ -184,9 +198,17 @@ class TrialWavefunctionData(data.Data):
     hf_energy: float
     ansatz_energy: float
     fci_energy: float
-    one_body_basis_change_mat: np.ndarray = attrs.field(converter=_to_numpy)
-    one_body_params: np.ndarray = attrs.field(converter=_to_numpy)
-    two_body_params: np.ndarray = attrs.field(converter=_to_numpy)
+    one_body_basis_change_mat: np.ndarray = attrs.field(
+        converter=_to_numpy, eq=attrs.cmp_using(eq=np.array_equal)
+    )
+    one_body_params: np.ndarray = attrs.field(
+        converter=_to_numpy, eq=attrs.cmp_using(eq=np.array_equal)
+    )
+    two_body_params: np.ndarray = attrs.field(
+        converter=_to_numpy, eq=attrs.cmp_using(eq=np.array_equal)
+    )
 
     def _json_dict_(self):
-        return attrs.asdict(self)
+        simple_dict = attrs.asdict(self)
+        simple_dict["params"] = self.params
+        return simple_dict
