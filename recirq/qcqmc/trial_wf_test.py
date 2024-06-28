@@ -96,7 +96,5 @@ def test_trial_wavefunction_data(
         two_body_params=np.zeros((2, 2, 2, 2)),
     )
     data2 = cirq.read_json(json_text=cirq.to_json(data))
-    import attrs
 
-    data2_d = attrs.asdict(data2)
     assert data2 == data
