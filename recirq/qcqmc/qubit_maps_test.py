@@ -20,7 +20,6 @@ from recirq.qcqmc import qubit_maps
 
 
 def test_get_qubits_a_b():
-    """Test get_qubits_a_b."""
     n_orb = 4
     qubits = qubit_maps.get_qubits_a_b(n_orb=n_orb)
     assert len(qubits) == 8
@@ -37,7 +36,6 @@ def test_get_qubits_a_b():
 
 
 def test_get_qubits_a_b_reversed():
-    """Test get_qubits_a_b_reversed."""
     n_orb = 4
     qubits = qubit_maps.get_qubits_a_b_reversed(n_orb=n_orb)
     assert len(qubits) == 8
@@ -54,7 +52,6 @@ def test_get_qubits_a_b_reversed():
 
 
 def test_get_4_qubit_fermion_qubit_map():
-    """Test get_4_qubit_fermion_qubit_map."""
     fermion_qubit_map = qubit_maps.get_4_qubit_fermion_qubit_map()
     assert fermion_qubit_map == {
         2: cirq.GridQubit(0, 0),
@@ -65,7 +62,6 @@ def test_get_4_qubit_fermion_qubit_map():
 
 
 def test_get_8_qubit_fermion_qubit_map():
-    """Test get_8_qubit_fermion_qubit_map."""
     fermion_qubit_map = qubit_maps.get_8_qubit_fermion_qubit_map()
     assert fermion_qubit_map == {
         2: cirq.GridQubit(0, 0),
@@ -80,7 +76,6 @@ def test_get_8_qubit_fermion_qubit_map():
 
 
 def test_get_12_qubit_fermion_qubit_map():
-    """Test get_12_qubit_fermion_qubit_map."""
     fermion_qubit_map = qubit_maps.get_12_qubit_fermion_qubit_map()
     assert fermion_qubit_map == {
         4: cirq.GridQubit(0, 0),
@@ -99,7 +94,6 @@ def test_get_12_qubit_fermion_qubit_map():
 
 
 def test_get_16_qubit_fermion_qubit_map():
-    """Test get_16_qubit_fermion_qubit_map."""
     fermion_qubit_map = qubit_maps.get_16_qubit_fermion_qubit_map()
     assert fermion_qubit_map == {
         6: cirq.GridQubit(0, 0),
@@ -123,13 +117,11 @@ def test_get_16_qubit_fermion_qubit_map():
 
 @pytest.mark.parametrize("n_qubits", (4, 8, 12, 16))
 def test_get_fermion_qubit_map_pp_plus(n_qubits):
-    """Test get_fermion_qubit_map_pp_plus."""
     fermion_qubit_map = qubit_maps.get_fermion_qubit_map_pp_plus(n_qubits=n_qubits)
     assert len(fermion_qubit_map) == n_qubits
 
 
 @pytest.mark.parametrize("n_qubits", (4, 8, 12, 16))
 def test_get_mode_qubit_map_pp_plus(n_qubits):
-    """Test get_mode_qubit_map_pp_plus."""
     mode_qubit_map = qubit_maps.get_mode_qubit_map_pp_plus(n_qubits=n_qubits)
     assert len(mode_qubit_map) == n_qubits

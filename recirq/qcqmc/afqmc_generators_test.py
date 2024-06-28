@@ -61,14 +61,12 @@ def test_get_pair_hopping_gate_generators():
 
 
 def test_get_charge_charge_generator():
-    """Test get_charge_charge_generator."""
     indices = (2, 3)
     gate_generator = afqmc_generators.get_charge_charge_generator(indices=indices)
     assert gate_generator == of.FermionOperator("2^ 2 3^ 3", 1.0)
 
 
 def test_get_givens_generator():
-    """Test get_givens_generator."""
     indices = (2, 3)
     gate_generator = afqmc_generators.get_givens_generator(indices=indices)
     assert gate_generator == of.FermionOperator("2^ 3", 1.0j) - of.FermionOperator(
@@ -77,7 +75,6 @@ def test_get_givens_generator():
 
 
 def test_get_layer_generators():
-    """Test get_layer_generators."""
     n_elec = 4
     layer_spec_in_pair = layer_spec.LayerSpec(
         base_gate="charge_charge", layout="in_pair"
@@ -107,7 +104,6 @@ def test_get_layer_generators():
 
 
 def test_get_heuristic_gate_generators():
-    """Test get_heuristic_gate_generators."""
     n_elec = 4
     heuristic_layers = (
         layer_spec.LayerSpec(base_gate="charge_charge", layout="in_pair"),
