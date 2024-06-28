@@ -46,13 +46,11 @@ def get_pp_plus_gate_generators(
         The list of generators necessary to construct the ansatz.
     """
     heuristic_gate_generators = get_heuristic_gate_generators(n_elec, heuristic_layers)
-    print(heuristic_gate_generators)
     if not do_pp:
         return heuristic_gate_generators
 
     n_pairs = n_elec // 2
     pair_gate_generators = get_pair_hopping_gate_generators(n_pairs, n_elec)
-    print(pair_gate_generators)
     return pair_gate_generators + heuristic_gate_generators
 
 
