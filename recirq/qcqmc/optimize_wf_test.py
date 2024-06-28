@@ -113,7 +113,7 @@ def test_pp_plus_wf_energy_sloppy_1(fixture_8_qubit_ham: HamiltonianData):
     trial_wf = build_pp_plus_trial_wavefunction(
         params,
         dependencies={fixture_8_qubit_ham.params: fixture_8_qubit_ham},
-        do_print=True,
+        do_print=False,
     )
 
     assert trial_wf.ansatz_energy < -1.947
@@ -133,7 +133,7 @@ def test_diamond_pp_wf_energy(fixture_12_qubit_ham: HamiltonianData):
     trial_wf = build_pp_plus_trial_wavefunction(
         params,
         dependencies={fixture_12_qubit_ham.params: fixture_12_qubit_ham},
-        do_print=True,
+        do_print=False,
     )
 
     assert trial_wf.ansatz_energy < -10.4

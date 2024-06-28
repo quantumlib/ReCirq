@@ -62,7 +62,7 @@ def get_ansatz_qubit_wf(
 def get_two_body_params_from_qchem_amplitudes(
     qchem_amplitudes: np.ndarray,
 ) -> np.ndarray:
-    """Translates perfect pairing amplitudes from qchem to rotation angles.
+    r"""Translates perfect pairing amplitudes from qchem to rotation angles.
 
     qchem style: 1 |1100> + t_i |0011>
     our style: cos(\theta_i) |1100> + sin(\theta_i) |0011>
