@@ -14,6 +14,8 @@
 
 from typing import Tuple
 
+import cirq
+
 from recirq.qcqmc.blueprint import BlueprintData
 from recirq.qcqmc.experiment import SimulatedExperimentParams, build_experiment
 from recirq.qcqmc.hamiltonian import HamiltonianData
@@ -44,3 +46,7 @@ def test_small_experiment_raw_samples_shape(
     raw_samples = experiment.raw_samples
 
     assert raw_samples.shape == (17, 31, 4)
+
+    exp2 = cirq.read_json(json_text=cirq.to_json(experiment))
+    print(exp2)
+    assert exp2 == experiment

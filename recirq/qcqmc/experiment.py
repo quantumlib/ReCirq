@@ -51,16 +51,11 @@ class SimulatedExperimentParams(data.Params):
     blueprint_params: blueprint.BlueprintParams
     n_samples_per_clifford: int
     noise_model_name: str
-    noise_model_params: Optional[Tuple[float, ...]] = attrs.field(converter=_to_tuple)
+    noise_model_params: Optional[Tuple[float, ...]] = attrs.field(
+        converter=_to_tuple, default=None
+    )
     seed: int = 0
     path_prefix: str = ""
-
-    def __post_init__(self):
-        """A little special sauce to make sure that these end up as a tuple."""
-        if self.noise_model_params is not None:
-            object.__setattr__(
-                self, "noise_model_params", tuple(self.noise_model_params)
-            )
 
     @property
     def path_string(self) -> str:
@@ -91,7 +86,9 @@ class ExperimentData(data.Data):
     metadata: Dict[str, Any] = attrs.field(factory=dict)
 
     def _json_dict_(self):
-        return attrs.asdict(self)
+        simple_dict = attrs.asdict(self)
+        simple_dict["params"] = self.params._json_dict_()  # type: ignore
+        return simple_dict
 
 
 def build_experiment(
