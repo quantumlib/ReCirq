@@ -102,3 +102,12 @@ def fixture_8_qubit_ham_and_trial_wf(
     )
 
     return fixture_8_qubit_ham, trial_wf
+
+
+def pytest_addoption(parser):
+    parser.addoption("--skipslow", action="store_true", help="skips slow tests")
+
+
+def pytest_runtest_setup(item):
+    if "slow" in item.keywords and item.config.getvalue("skipslow"):
+        pytest.skip("skipped because of --skipslow option")

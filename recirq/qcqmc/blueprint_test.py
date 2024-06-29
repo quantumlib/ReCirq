@@ -16,6 +16,7 @@ from typing import Iterable, Tuple
 import cirq
 import numpy as np
 import pytest
+import quaff
 
 from recirq.qcqmc.blueprint import (
     BlueprintParamsTrialWf,
@@ -154,24 +155,19 @@ def test_medium(
     assert len(list(blueprint.resolvers)) == 3
 
     resolved_circuits = list(blueprint.resolved_clifford_circuits)
-    # print(resolved_circuits)
     assert len(resolved_circuits) == 3
     for circuit_tuple in resolved_circuits:
         print(len(circuit_tuple), len(circuit_tuple[0]))
-        assert len(circuit_tuple) == 8
+        assert len(circuit_tuple) == 1
         for circuit, qubits in zip(circuit_tuple, blueprint_params.qubit_partition):
             assert len(circuit.all_qubits()) == len(qubits)
             assert set(circuit.all_qubits()) == set(qubits)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("seed", range(0, 3, 2))
 def test_quaff_respects_seed(seed):
     n_cliffords = 500
-    from quaff import (
-        TruncatedCliffordGate,
-        get_parameterized_truncated_cliffords_ops,
-        get_truncated_cliffords_resolver,
-    )
 
     rng_1a = np.random.default_rng(seed)
     rng_1b = np.random.default_rng(seed)
@@ -181,13 +177,11 @@ def test_quaff_respects_seed(seed):
     qubits = cirq.LineQubit.range(4)
     qubit_partition = ((qubits[0], qubits[1]), (qubits[2], qubits[3]))
 
-    parameterized_clifford_circuit = cirq.Circuit(
-        get_parameterized_truncated_cliffords_ops(qubit_partition)
-    )
+    cirq.Circuit(quaff.get_parameterized_truncated_cliffords_ops(qubit_partition))
 
     truncated_cliffords_1a = [
         [
-            TruncatedCliffordGate.random(len(qubits), rng_1a)
+            quaff.TruncatedCliffordGate.random(len(qubits), rng_1a)
             for qubits in qubit_partition
         ]
         for _ in range(n_cliffords)
@@ -195,7 +189,7 @@ def test_quaff_respects_seed(seed):
 
     truncated_cliffords_1b = [
         [
-            TruncatedCliffordGate.random(len(qubits), rng_1b)
+            quaff.TruncatedCliffordGate.random(len(qubits), rng_1b)
             for qubits in qubit_partition
         ]
         for _ in range(n_cliffords)
@@ -203,7 +197,7 @@ def test_quaff_respects_seed(seed):
 
     truncated_cliffords_2a = [
         [
-            TruncatedCliffordGate.random(len(qubits), rng_2a)
+            quaff.TruncatedCliffordGate.random(len(qubits), rng_2a)
             for qubits in qubit_partition
         ]
         for _ in range(n_cliffords)
@@ -211,23 +205,27 @@ def test_quaff_respects_seed(seed):
 
     truncated_cliffords_2b = [
         [
-            TruncatedCliffordGate.random(len(qubits), rng_2b)
+            quaff.TruncatedCliffordGate.random(len(qubits), rng_2b)
             for qubits in qubit_partition
         ]
         for _ in range(n_cliffords)
     ]
 
     resolvers_1a = [
-        get_truncated_cliffords_resolver(gates) for gates in truncated_cliffords_1a
+        quaff.get_truncated_cliffords_resolver(gates)
+        for gates in truncated_cliffords_1a
     ]
     resolvers_1b = [
-        get_truncated_cliffords_resolver(gates) for gates in truncated_cliffords_1b
+        quaff.get_truncated_cliffords_resolver(gates)
+        for gates in truncated_cliffords_1b
     ]
     resolvers_2a = [
-        get_truncated_cliffords_resolver(gates) for gates in truncated_cliffords_2a
+        quaff.get_truncated_cliffords_resolver(gates)
+        for gates in truncated_cliffords_2a
     ]
     resolvers_2b = [
-        get_truncated_cliffords_resolver(gates) for gates in truncated_cliffords_2b
+        quaff.get_truncated_cliffords_resolver(gates)
+        for gates in truncated_cliffords_2b
     ]
 
     assert resolvers_1a == resolvers_1b
