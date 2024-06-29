@@ -190,7 +190,7 @@ class BlueprintData(Data):
 
     def _json_dict_(self):
         simple_dict = attrs.asdict(self)
-        simple_dict["params"] = cirq.to_json(self.params)
+        simple_dict["params"] = self.params._json_dict_() # type: ignore
         return simple_dict
 
     @property
