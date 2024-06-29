@@ -14,15 +14,19 @@
 """Specification of a trial wavefunction."""
 
 import abc
-from typing import Dict, Iterable, Optional, Sequence, Tuple
+from typing import Dict, Iterable, Mapping, Optional, Sequence, Tuple
 
 import attrs
 import cirq
+import fqe
 import numpy as np
+import openfermion as of
+import scipy.sparse
 
 from recirq.qcqmc import (
     bitstrings,
     config,
+    converters,
     data,
     fermion_mode,
     hamiltonian,
@@ -210,3 +214,38 @@ class TrialWavefunctionData(data.Data):
         simple_dict = attrs.asdict(self)
         simple_dict["params"] = self.params
         return simple_dict
+
+
+def get_rotated_hamiltonians(
+    *,
+    hamiltonian_data: hamiltonian.HamiltonianData,
+    one_body_basis_change_mat: np.ndarray,
+    mode_qubit_map: Mapping[fermion_mode.FermionicMode, cirq.Qid],
+    ordered_qubits: Sequence[cirq.Qid],
+) -> Tuple[fqe.hamiltonians.hamiltonian.Hamiltonian, float, scipy.sparse.csc_matrix]:
+    """A helper method that gets the hamiltonians in the basis of the trial_wf.
+
+    Returns:
+        The hamiltonian in FQE form, minus a constant energy shift.
+        The constant part of the Hamiltonian missing from the FQE Hamiltonian.
+        The qubit Hamiltonian as a sparse matrix.
+    """
+    n_qubits = len(mode_qubit_map)
+
+    fqe_ham = hamiltonian_data.get_restricted_fqe_hamiltonian()
+    e_core = hamiltonian_data.e_core
+
+    mol_ham = hamiltonian_data.get_molecular_hamiltonian()
+    mol_ham.rotate_basis(one_body_basis_change_mat)
+    fermion_operator_ham = of.get_fermion_operator(mol_ham)
+
+    reorder_func = converters.get_reorder_func(
+        mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits
+    )
+    fermion_operator_ham_qubit_ordered = of.reorder(
+        fermion_operator_ham, reorder_func, num_modes=n_qubits
+    )
+
+    sparse_qubit_ham = of.get_sparse_operator(fermion_operator_ham_qubit_ordered)
+
+    return fqe_ham, e_core, sparse_qubit_ham
