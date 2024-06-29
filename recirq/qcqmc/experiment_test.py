@@ -48,5 +48,4 @@ def test_small_experiment_raw_samples_shape(
     assert raw_samples.shape == (17, 31, 4)
 
     exp2 = cirq.read_json(json_text=cirq.to_json(experiment))
-    print(exp2)
     assert exp2 == experiment
