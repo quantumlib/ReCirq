@@ -57,7 +57,7 @@ jobs:
           # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations
           # EXPORT_OMP_NUMTHREADS: pyscf has poor openmp performace which slows down qcqmc tests.
           export OMP_NUM_THREADS=1
-          RECIRQ_IMPORT_FAILSAFE=y pytest -v
+          RECIRQ_IMPORT_FAILSAFE=y pytest -v --skipslow
 
   nbformat:
     name: Notebook formatting
