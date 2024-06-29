@@ -65,7 +65,7 @@ class SimulatedExperimentParams(data.Params):
 
     def _json_dict_(self):
         simple_dict = attrs.asdict(self)
-        simple_dict["blueprint_params"] = cirq.to_json(self.blueprint_params)
+        simple_dict["blueprint_params"] = self.blueprint_params
         return simple_dict
 
 
@@ -87,7 +87,7 @@ class ExperimentData(data.Data):
 
     def _json_dict_(self):
         simple_dict = attrs.asdict(self)
-        simple_dict["params"] = self.params._json_dict_()  # type: ignore
+        simple_dict["params"] = self.params
         return simple_dict
 
 
