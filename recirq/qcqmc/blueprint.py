@@ -155,7 +155,7 @@ class BlueprintParamsTrialWf(Params):
 
     def _json_dict_(self):
         simple_dict = attrs.asdict(self)
-        simple_dict["trial_wf_params"] = cirq.to_json(self.trial_wf_params)
+        simple_dict["trial_wf_params"] = self.trial_wf_params
         return simple_dict
 
 
@@ -190,7 +190,7 @@ class BlueprintData(Data):
 
     def _json_dict_(self):
         simple_dict = attrs.asdict(self)
-        simple_dict["params"] = self.params._json_dict_() # type: ignore
+        simple_dict["params"] = self.params
         return simple_dict
 
     @property
