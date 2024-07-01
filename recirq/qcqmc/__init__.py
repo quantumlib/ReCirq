@@ -16,6 +16,12 @@ from typing import Optional
 
 from cirq.protocols.json_serialization import DEFAULT_RESOLVERS, ObjectFactory
 
+from .blueprint import (
+    BlueprintData,
+    BlueprintParamsRobustShadow,
+    BlueprintParamsTrialWf,
+)
+from .experiment import ExperimentData, SimulatedExperimentParams
 from .fermion_mode import FermionicMode
 from .hamiltonian import HamiltonianData, HamiltonianFileParams, PyscfHamiltonianParams
 from .layer_spec import LayerSpec
@@ -43,6 +49,11 @@ def _resolve_json(cirq_type: str) -> Optional[ObjectFactory]:
             LayerSpec,
             PerfectPairingPlusTrialWavefunctionParams,
             TrialWavefunctionData,
+            BlueprintParamsTrialWf,
+            BlueprintParamsRobustShadow,
+            BlueprintData,
+            ExperimentData,
+            SimulatedExperimentParams,
         ]
     }.get(cirq_type, None)
 
