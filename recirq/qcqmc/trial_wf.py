@@ -120,10 +120,12 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
     initial_orbital_rotation: Optional[np.ndarray] = attrs.field(
         default=None,
         converter=lambda v: _to_numpy(v) if v is not None else None,
+        eq=attrs.cmp_using(eq=np.array_equal),
     )
     initial_two_body_qchem_amplitudes: Optional[np.ndarray] = attrs.field(
         default=None,
         converter=lambda v: _to_numpy(v) if v is not None else None,
+        eq=attrs.cmp_using(eq=np.array_equal),
     )
     do_optimization: bool = True
     use_fast_gradients: bool = False

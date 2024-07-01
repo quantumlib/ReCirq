@@ -76,6 +76,8 @@ def test_perfect_pairing_plus_trial_wavefunction_params():
     assert trial_params.mode_qubit_map == qubit_maps.get_mode_qubit_map_pp_plus(
         n_qubits=trial_params.n_qubits
     )
+    params2 = cirq.read_json(json_text=cirq.to_json(trial_params))
+    assert params2 == trial_params
 
 
 def test_trial_wavefunction_data(
