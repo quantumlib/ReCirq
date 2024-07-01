@@ -30,7 +30,7 @@ def _to_tuple(x: Optional[Iterable[float]]) -> Optional[Sequence[float]]:
     return tuple(x)
 
 
-@attrs.frozen(repr=False)
+@attrs.frozen
 class SimulatedExperimentParams(data.Params):
     """Class for storing the parameters that specify an ExperimentData object.
 

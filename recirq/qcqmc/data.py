@@ -83,7 +83,7 @@ class Params(abc.ABC):
         # This custom repr lets us add fields with default values without changing
         # the repr. This, in turn, lets us use the hash_key reliably even when
         # we add new fields with a default value.
-        fields = attrs.fields(self)
+        fields = attrs.fields(self.__class__)
         # adjusted_fields = [f for f in fields if getattr(self, f.name) != f.default]
         adjusted_fields = [
             f

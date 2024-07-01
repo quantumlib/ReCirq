@@ -26,9 +26,9 @@ import scipy.sparse
 from recirq.qcqmc import (
     bitstrings,
     config,
-    converters,
     data,
     fermion_mode,
+    fqe_conversion,
     hamiltonian,
     layer_spec,
     qubit_maps,
@@ -239,7 +239,7 @@ def get_rotated_hamiltonians(
     mol_ham.rotate_basis(one_body_basis_change_mat)
     fermion_operator_ham = of.get_fermion_operator(mol_ham)
 
-    reorder_func = converters.get_reorder_func(
+    reorder_func = fqe_conversion.get_reorder_func(
         mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits
     )
     fermion_operator_ham_qubit_ordered = of.reorder(
