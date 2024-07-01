@@ -86,7 +86,7 @@ def get_charge_charge_generator(indices: Tuple[int, int]) -> of.FermionOperator:
     """Returns the generator for density evolution between the indices
 
     Args:
-        indices: The indices to for charge-charge terms.:w
+        indices: The indices to for charge-charge terms.
 
     Returns:
         The generator for density evolution for this pair of electrons.
