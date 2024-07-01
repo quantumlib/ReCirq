@@ -19,9 +19,7 @@ import cirq
 import numpy as np
 import quaff
 
-from recirq.qcqmc.config import OUTDIRS
-from recirq.qcqmc.data import Data, Params
-from recirq.qcqmc.trial_wf import TrialWavefunctionData, TrialWavefunctionParams
+from recirq.qcqmc import config, data, trial_wf, for_refactor
 
 BlueprintParams = Union["BlueprintParamsTrialWf", "BlueprintParamsRobustShadow"]
 
@@ -104,7 +102,7 @@ def _get_resolvers(
 
 
 @attrs.frozen
-class BlueprintParamsTrialWf(Params):
+class BlueprintParamsTrialWf(data.Params):
     """Class for storing the parameters that specify a BlueprintData.
 
     This stage of the experiment concerns itself with the Hardware-specific concerns
@@ -126,7 +124,7 @@ class BlueprintParamsTrialWf(Params):
     """
 
     name: str
-    trial_wf_params: TrialWavefunctionParams
+    trial_wf_params: trial_wf.TrialWavefunctionParams
     n_cliffords: int
     qubit_partition: Tuple[Tuple[cirq.Qid, ...], ...] = attrs.field(
         converter=_to_tuple_of_tuples
@@ -137,7 +135,7 @@ class BlueprintParamsTrialWf(Params):
 
     @property
     def path_string(self) -> str:
-        return self.path_prefix + OUTDIRS.DEFAULT_BLUEPRINT_DIRECTORY + self.name
+        return self.path_prefix + config.OUTDIRS.DEFAULT_BLUEPRINT_DIRECTORY + self.name
 
     @property
     def qubits_jordan_wigner_order(self) -> Tuple[cirq.GridQubit, ...]:
@@ -160,7 +158,7 @@ class BlueprintParamsTrialWf(Params):
 
 
 @attrs.frozen
-class BlueprintData(Data):
+class BlueprintData(data.Data):
     """Data resulting from the "Blueprint" phase of the experiment.
 
     This stage of the experiment concerns itself with the Hardware-specific concerns
@@ -224,7 +222,8 @@ def build_blueprint_from_base_circuit(
     )
 
     parameterized_clifford_circuits = tuple(
-        cirq.expand_composite(cirq.Circuit(ops)) for ops in parameterized_clifford_ops
+        cirq.expand_composite(cirq.Circuit(ops), no_decomp=for_refactor.is_expected_elementary_cirq_op)
+        for ops in parameterized_clifford_ops
     )
     parameterized_clifford_circuit = sum(
         parameterized_clifford_circuits, cirq.Circuit()
@@ -249,7 +248,7 @@ def build_blueprint_from_base_circuit(
 
 
 @attrs.frozen(repr=False)
-class BlueprintParamsRobustShadow(Params):
+class BlueprintParamsRobustShadow(data.Params):
     """Class for storing the parameters that specify a BlueprintData.
 
     Args:
@@ -278,7 +277,7 @@ class BlueprintParamsRobustShadow(Params):
 
     @property
     def path_string(self) -> str:
-        return OUTDIRS.DEFAULT_BLUEPRINT_DIRECTORY + self.name
+        return config.OUTDIRS.DEFAULT_BLUEPRINT_DIRECTORY + self.name
 
     @property
     def qubits(self) -> Tuple[cirq.Qid, ...]:
@@ -290,7 +289,7 @@ class BlueprintParamsRobustShadow(Params):
 
 
 def build_blueprint(
-    params: BlueprintParams, dependencies: Optional[Dict[Params, Data]] = None
+    params: BlueprintParams, dependencies: Optional[Dict[data.Params, data.Data]] = None
 ) -> BlueprintData:
     """Builds a BlueprintData from BlueprintParams using the dependency-injection workflow system.
 
@@ -310,9 +309,9 @@ def build_blueprint(
     elif isinstance(params, BlueprintParamsTrialWf):
         assert dependencies is not None, "Provide trial_wf"
         assert params.trial_wf_params in dependencies, "trial_wf dependency"
-        trial_wf = dependencies[params.trial_wf_params]
-        assert isinstance(trial_wf, TrialWavefunctionData)
-        base_circuit = trial_wf.superposition_circuit
+        trial_wf_inst = dependencies[params.trial_wf_params]
+        assert isinstance(trial_wf_inst, trial_wf.TrialWavefunctionData)
+        base_circuit = trial_wf_inst.superposition_circuit
     else:
         raise ValueError(f"Bad param type {type(params)}")
 
