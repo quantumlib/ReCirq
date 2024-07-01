@@ -55,7 +55,7 @@ jobs:
         run: |
           pip install pytest
           # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations
-          # EXPORT_OMP_NUMTHREADS: pyscf has poor openmp performace which slows down qcqmc tests.
+          # EXPORT_OMP_NUM_THREADS: pyscf has poor openmp performance which slows down qcqmc tests.
           export OMP_NUM_THREADS=1
           RECIRQ_IMPORT_FAILSAFE=y pytest -v
 
