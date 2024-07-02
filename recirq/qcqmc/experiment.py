@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import attrs
 import cirq
@@ -84,11 +84,13 @@ class ExperimentData(data.Data):
         simple_dict["params"] = self.params
         return simple_dict
 
-
     @classmethod
     def build_experiment_from_dependencies(
-        cls, params: SimulatedExperimentParams, *, dependencies: Dict[data.Params, data.Data]
-    ) -> 'ExperimentData':
+        cls,
+        params: SimulatedExperimentParams,
+        *,
+        dependencies: Dict[data.Params, data.Data]
+    ) -> "ExperimentData":
         """Builds an ExperimentData from ExperimentParams and any dependencies.
 
         Args:
