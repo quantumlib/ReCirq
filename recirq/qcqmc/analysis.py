@@ -68,7 +68,10 @@ class OverlapAnalysisParams(data.Params):
 
 @attrs.frozen(eq=False)
 class OverlapAnalysisData(data.Data):
-    """Container for analysis of overlap.
+    """Container for storing the (shadow tomography-)reconstructed wavefunctions.
+
+    See the factory method `build_analysis_from_dependencies` which will
+    properly construct this object from the (real or simulated) experimental bitstrings.
 
     Args:
         params: The parameters for overlap construction.
@@ -91,6 +94,9 @@ class OverlapAnalysisData(data.Data):
         dependencies: Dict[data.Params, data.Data],
     ) -> "OverlapAnalysisData":
         """Builds a OverlapAnalysisData from OverlapAnalysisParams.
+
+        Given the sampled bitstrings from either a real experiment or a
+        simulated experiment, this will construct the shadow wavefunction.
 
         Args:
             params: The parameters for overlap analysis.
@@ -134,7 +140,7 @@ class OverlapAnalysisData(data.Data):
         hamiltonian_data: hamiltonian.HamiltonianData,
         k: Union[str, int] = 1,
     ) -> float:
-        """Gets the variational energy of the reconstructed wavefunction.
+        """Computes the variational energy of the reconstructed wavefunction.
 
         Args:
             analysis_data: The overlap analysis data.

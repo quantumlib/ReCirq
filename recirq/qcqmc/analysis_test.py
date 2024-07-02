@@ -127,15 +127,6 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
         k=1,
     )
 
-    print(energy_1)
-    print(energy_2)
-    print(trial_wf.ansatz_energy)
-    print(trial_wf.ansatz_energy - energy_1)
-    print(trial_wf.ansatz_energy - energy_2)
-
-    print(analysis_1.reconstructed_wf_for_k["1"])
-    print(analysis_2.reconstructed_wf_for_k["1"])
-
     assert np.abs(energy_1 - energy_2) < target_error
 
 
