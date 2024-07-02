@@ -46,7 +46,7 @@ class SimulatedExperimentParams(data.Params):
     n_samples_per_clifford: int
     noise_model_name: str
     noise_model_params: Optional[Tuple[float, ...]] = attrs.field(
-        converter=_to_tuple, default=None
+        converter=lambda x: tuple(x) if x is not None else None, default=None
     )
     seed: int = 0
     path_prefix: str = ""
