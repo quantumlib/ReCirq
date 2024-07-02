@@ -22,17 +22,24 @@ import fqe.wavefunction as fqe_wfn
 import h5py
 import numpy as np
 
-from recirq.qcqmc import (afqmc_generators, analysis, config, fqe_conversion,
-                          hamiltonian, optimize_wf, trial_wf)
+from recirq.qcqmc import (
+    afqmc_generators,
+    analysis,
+    config,
+    fqe_conversion,
+    hamiltonian,
+    optimize_wf,
+    trial_wf,
+)
 
 
 @attrs.frozen
 class IPieExportData:
     """Helper dataclass used in `save_wavefunction_for_ipie`.
-    
+
     Args:
         rotated_fqe_wf: The FQE wavefunction rotated to some other single particle baiss.
-        unrotated_fqe_wf: The FQE wavefunction in the original basis before orbital rotation. 
+        unrotated_fqe_wf: The FQE wavefunction in the original basis before orbital rotation.
         variataional_energy: The variational energy of the wavefunction.
         norm: The normalization of the wavefunction.
         path: The path to save the wavefunction to.
@@ -72,14 +79,19 @@ def rotate_wavefunction_explicitly(
         beta_mat = beta_mat[beta_indices, :]
 
         evolved_wf = fqe_alg.evolve_fqe_givens_sector(fqe_wf, alpha_mat, sector="alpha")
-        evolved_wf = fqe_alg.evolve_fqe_givens_sector(evolved_wf, beta_mat, sector="beta")
+        evolved_wf = fqe_alg.evolve_fqe_givens_sector(
+            evolved_wf, beta_mat, sector="beta"
+        )
 
     else:
         evolved_wf = fqe_alg.evolve_fqe_givens(fqe_wf, one_body_basis_change_mat)
 
     return evolved_wf
 
-def _get_trial_wf_export_data(trial_wf_data: trial_wf.TrialWavefunctionData) -> IPieExportData:
+
+def _get_trial_wf_export_data(
+    trial_wf_data: trial_wf.TrialWavefunctionData,
+) -> IPieExportData:
     """Get the data to export to ipie."""
     params = trial_wf_data.params
     initial_wf = fqe_wfn.Wavefunction([[params.n_elec, 0, params.n_orb]])
@@ -89,13 +101,14 @@ def _get_trial_wf_export_data(trial_wf_data: trial_wf.TrialWavefunctionData) -> 
         two_body_params=trial_wf_data.two_body_params,
         wf=initial_wf,
         gate_generators=afqmc_generators.get_pp_plus_gate_generators(
-            n_elec=params.n_elec, heuristic_layers=params.heuristic_layers, do_pp=params.do_pp
+            n_elec=params.n_elec,
+            heuristic_layers=params.heuristic_layers,
+            do_pp=params.do_pp,
         ),
         n_orb=params.n_orb,
         restricted=params.restricted,
         initial_orbital_rotation=params.initial_orbital_rotation,
     )
-    print(trial_wf_data.params.base_path)
     return IPieExportData(
         rotated_fqe_wf=rotated_fqe_wf,
         unrotated_fqe_wf=unrotated_fqe_wf,
@@ -130,7 +143,9 @@ def _get_overlap_export_data(
     )
     assert isinstance(unrotated_fqe_wf, fqe_wfn.Wavefunction)
 
-    fqe_conversion.fill_in_wfn_from_cirq(unrotated_fqe_wf, reconstructed_wf, integer_fermion_qubit_map)
+    fqe_conversion.fill_in_wfn_from_cirq(
+        unrotated_fqe_wf, reconstructed_wf, integer_fermion_qubit_map
+    )
 
     rotated_fqe_wf = rotate_wavefunction_explicitly(
         unrotated_fqe_wf,
@@ -153,6 +168,7 @@ def _get_overlap_export_data(
         path=overlap_analysis_data.params.base_path.with_suffix(".h5"),
     )
 
+
 @attrs.frozen(eq=False)
 class OccCoef:
     occa: np.ndarray
@@ -168,18 +184,21 @@ class OccCoef:
             of integers representing which orbitals are occupied in that
             determinant.
         coeffs: The coefficient for each determinant. 
-    """ 
+    """
 
     def to_h5_dict(self, suffix: str = ""):
         return {
-            f'occa{suffix}': self.occa,
-            f'occb{suffix}': self.occb,
-            f'coeffs{suffix}': self.coeffs,
+            f"occa{suffix}": self.occa,
+            f"occb{suffix}": self.occb,
+            f"coeffs{suffix}": self.coeffs,
         }
 
-def get_occa_occb_coeff(fqe_wf: fqe_wfn.Wavefunction, threshold: float = 1e-5) -> OccCoef:
+
+def get_occa_occb_coeff(
+    fqe_wf: fqe_wfn.Wavefunction, threshold: float = 1e-5
+) -> OccCoef:
     """A helper function to organize data for an AFQMC code to ingest.
-    
+
     Args:
         fqe_wf: The FQE wavefunction.
         threshold: An optional threshold below which to set coefficients to zero.
@@ -215,6 +234,7 @@ def get_occa_occb_coeff(fqe_wf: fqe_wfn.Wavefunction, threshold: float = 1e-5) -
         coeffs=np.asarray(coeffs),
     )
 
+
 def get_fqe_wf_from_occ_coeff(
     occ_coeff: OccCoef, n_elec: int, ms: int, n_orb: int, threshold: float = 1e-5
 ) -> fqe_wfn.Wavefunction:
@@ -243,9 +263,12 @@ def get_fqe_wf_from_occ_coeff(
 
     for sector_key in fqe_wf.sectors():
         sector = fqe_wf.sector(sector_key)
-        _set_sector_data(sector, threshold, occ_coeff.occa, occ_coeff.occb, occ_coeff.coeffs)
+        _set_sector_data(
+            sector, threshold, occ_coeff.occa, occ_coeff.occb, occ_coeff.coeffs
+        )
 
     return fqe_wf
+
 
 def _print_wfn_export_data(
     xd: IPieExportData, *, fci_energy: float, ansatz_energy: float
@@ -270,6 +293,7 @@ def _print_wfn_export_data(
         f"Error (vs ansatz): {ansatz_diff} \n"
         f"Norm {xd.norm}"
     )
+
 
 def save_wavefunction_for_ipie(
     hamiltonian_data: hamiltonian.HamiltonianData,
@@ -313,7 +337,7 @@ def save_wavefunction_for_ipie(
     if do_print:
         _print_wfn_export_data(xd, fci_energy=fci_energy, ansatz_energy=ansatz_energy)
 
-    with h5py.File(xd.path, 'w') as f:
+    with h5py.File(xd.path, "w") as f:
         if fci_energy is not None:
             f["fci_energy"] = fci_energy
         if ansatz_energy is not None:
