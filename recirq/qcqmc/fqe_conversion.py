@@ -1,10 +1,11 @@
 """Contains edited versions of certain FQE conversion utilities."""
+
 from typing import Dict, Optional, Mapping, Sequence, Callable
 
 import numpy as np
 import cirq
 import fqe
-import fqe.openfermion_utils as fqe_of 
+import fqe.openfermion_utils as fqe_of
 import fqe.wavefunction as fqe_wfn
 import openfermion as of
 
@@ -32,7 +33,9 @@ def fill_in_wfn_from_cirq(
     nqubits = int(np.log2(state.size))
     for key in wfn.sectors():
         usevec = state.copy()
-        fqe_wfn = cirq_to_fqe_single(usevec, key[0], key[1], nqubits, fermion_ind_to_qubit_ind)
+        fqe_wfn = cirq_to_fqe_single(
+            usevec, key[0], key[1], nqubits, fermion_ind_to_qubit_ind
+        )
         wfndata = fqe_of.fermion_opstring_to_bitstring(fqe_wfn)
         for val in wfndata:
             wfn[(val[0], val[1])] = val[2]
@@ -70,7 +73,7 @@ def cirq_to_fqe_single(
         FermionOperator
     """
     if nele == 0:
-        return of.FermionOperator('', cirq_wfn[0] * 1.0)
+        return of.FermionOperator("", cirq_wfn[0] * 1.0)
 
     if qubin:
         nqubits = qubin
@@ -78,7 +81,7 @@ def cirq_to_fqe_single(
         nqubits = int(np.log2(cirq_wfn.size))
 
     if nele > nqubits:
-        raise ValueError('particle number > number of orbitals')
+        raise ValueError("particle number > number of orbitals")
 
     norb = nqubits // 2
 
@@ -94,8 +97,11 @@ def cirq_to_fqe_single(
 
 
 def fci_qubit_representation(
-    norb: int, nele: int, m_s: int, fermion_ind_to_qubit_ind: Optional[Dict[int, int]] = None
-) -> 'of.QubitOperator':
+    norb: int,
+    nele: int,
+    m_s: int,
+    fermion_ind_to_qubit_ind: Optional[Dict[int, int]] = None,
+) -> "of.QubitOperator":
     """Create the qubit representation of Full CI according to the parameters passed.
 
     Args:
@@ -106,7 +112,7 @@ def fci_qubit_representation(
             the fermionic modes to the qubit modes.
 
     Returns:
-        ops  
+        ops
     """
     fermion_op = fqe_of.fci_fermion_operator_representation(norb, nele, m_s)
 
@@ -120,6 +126,7 @@ def fci_qubit_representation(
         fermion_op = of.reorder(fermion_op, mapper, num_modes=num_modes)
 
     return of.jordan_wigner(fermion_op)
+
 
 def get_reorder_func(
     *,
@@ -162,7 +169,6 @@ def get_reorder_func(
     return remapper
 
 
-
 def convert_qubit_wfn_to_fqe_syntax(
     ops: of.QubitOperator, fermion_ind_to_qubit_ind: Optional[Dict[int, int]] = None
 ) -> of.FermionOperator:
@@ -198,7 +204,6 @@ def convert_qubit_wfn_to_fqe_syntax(
         out += fqe_of.ascending_index_order(term, ferm_str.terms[term])
 
     return out
-
 
 
 def convert_fqe_wf_to_cirq(
