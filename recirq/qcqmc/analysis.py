@@ -120,6 +120,14 @@ class OverlapAnalysisData(data.Data):
         assert isinstance(trial, trial_wf.TrialWavefunctionData)
 
         wavefunctions_for_various_k = shadow_tomography.reconstruct_wavefunctions_from_samples(
+            raw_samples=exp.raw_samples,
+            factorized_cliffords=list(bp.resolved_clifford_circuits),
+            qubit_partition=blueprint_params.qubit_partition,
+            valid_configurations=list(trial_wf_params.bitstrings),
+            k_to_calculate=params.k_to_calculate,
+            qubits_jordan_wigner_ordered=trial_wf_params.qubits_jordan_wigner_ordered,
+            qubits_linearly_connected=trial_wf_params.qubits_linearly_connected,
+        )
 
         return OverlapAnalysisData(
             params=params, reconstructed_wf_for_k=wavefunctions_for_various_k

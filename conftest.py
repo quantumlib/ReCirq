@@ -142,7 +142,7 @@ def fixture_4_qubit_ham_trial_wf_and_overlap_analysis(
         n_samples_per_clifford=10,
         seed=1,
     )
-    exp = experiment.build_experiment(
+    exp = experiment.ExperimentData.build_experiment_from_dependencies(
         params=simulated_experiment_params, dependencies={bp_data.params: bp_data}
     )
 
