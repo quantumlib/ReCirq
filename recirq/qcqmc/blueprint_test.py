@@ -21,8 +21,7 @@ import quaff
 from recirq.qcqmc.blueprint import (
     BlueprintParamsTrialWf,
     _get_truncated_cliffords,
-    build_blueprint,
-    build_blueprint_from_base_circuit,
+    BlueprintData
 )
 from recirq.qcqmc.hamiltonian import HamiltonianData, HamiltonianFileParams
 from recirq.qcqmc.qubit_maps import get_qubits_a_b_reversed
@@ -61,7 +60,7 @@ def test_build_blueprint_from_base_circuit():
         ),
         seed=1,
     )
-    bp_data = build_blueprint_from_base_circuit(
+    bp_data = BlueprintData.build_blueprint_from_base_circuit(
         blueprint_params, base_circuit=cirq.Circuit()
     )
     assert isinstance(bp_data.compiled_circuit, cirq.AbstractCircuit)
@@ -85,7 +84,7 @@ def test_small_blueprint(
         qubit_partition=(tuple(get_qubits_a_b_reversed(n_orb=trial_wf_params.n_orb)),),
         seed=1,
     )
-    blueprint = build_blueprint(
+    blueprint = BlueprintData.build_blueprint_from_dependencies(
         blueprint_params, dependencies={trial_wf_params: trial_wf_data}
     )
 
@@ -116,7 +115,7 @@ def test_small_blueprint_2(
         seed=1,
     )
 
-    blueprint = build_blueprint(
+    blueprint = BlueprintData.build_blueprint_from_dependencies(
         blueprint_params, dependencies={trial_wf_params: trial_wf_data}
     )
 
@@ -148,7 +147,7 @@ def test_medium(
         seed=1,
     )
 
-    blueprint = build_blueprint(
+    blueprint = BlueprintData.build_blueprint_from_dependencies(
         blueprint_params, dependencies={trial_wf_params: trial_wf_data}
     )
 
