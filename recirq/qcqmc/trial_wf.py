@@ -225,6 +225,12 @@ def get_rotated_hamiltonians(
 ) -> Tuple[fqe.hamiltonians.hamiltonian.Hamiltonian, float, scipy.sparse.csc_matrix]:
     """A helper method that gets the hamiltonians in the basis of the trial_wf.
 
+    Args:
+        hamiltonian_data: A specification of the hamiltonian.
+        one_body_basis_change_mat: A change of basis matrix. 
+        mode_qubit_map: A mapping from fermion modes to cirq Qids.
+        ordered_qubits: A sequence of cirq Qids which specifies the correct ordering of the qubits.
+
     Returns:
         The hamiltonian in FQE form, minus a constant energy shift.
         The constant part of the Hamiltonian missing from the FQE Hamiltonian.
