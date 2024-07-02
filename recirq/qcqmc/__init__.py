@@ -42,18 +42,18 @@ def _resolve_json(cirq_type: str) -> Optional[ObjectFactory]:
     return {
         k.__name__: k
         for k in [
-            HamiltonianFileParams,
-            HamiltonianData,
-            PyscfHamiltonianParams,
-            FermionicMode,
-            LayerSpec,
-            PerfectPairingPlusTrialWavefunctionParams,
-            TrialWavefunctionData,
             BlueprintParamsTrialWf,
             BlueprintParamsRobustShadow,
             BlueprintData,
             ExperimentData,
+            FermionicMode,
+            HamiltonianFileParams,
+            HamiltonianData,
+            LayerSpec,
+            PerfectPairingPlusTrialWavefunctionParams,
+            PyscfHamiltonianParams,
             SimulatedExperimentParams,
+            TrialWavefunctionData,
         ]
     }.get(cirq_type, None)
 
