@@ -56,7 +56,7 @@ def test_get_overlap_export_data(fixture_4_qubit_ham_trial_wf_and_overlap_analys
         overlap_analysis_data, trial_wf_data, hamiltonian_data, k="1"
     )
     assert export_data.path == pathlib.Path(overlap_analysis_data.params.base_path).with_suffix(".h5")
-    assert export_data.variational_energy == analysis.get_variational_energy(analysis_data=overlap_analysis_data, trial_wf_data=trial_wf_data, hamiltonian_data=hamiltonian_data, k="1")
+    assert export_data.variational_energy == overlap_analysis_data.get_variational_energy(trial_wf_data=trial_wf_data, hamiltonian_data=hamiltonian_data, k="1")
 
 def test_get_occa_occb_coeff():
     """Test that the occa and occb coefficients are extracted correctly."""

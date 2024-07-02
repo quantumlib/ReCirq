@@ -12,20 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import attrs
 import pathlib
-import numpy as np
-import h5py
-from typing import Optional, List
+from typing import List, Optional
 
-
-import fqe.wavefunction as fqe_wfn
+import attrs
 import fqe.algorithm.low_rank as fqe_alg
 import fqe.bitstring as fqe_bs
+import fqe.wavefunction as fqe_wfn
+import h5py
+import numpy as np
 
-from recirq.qcqmc import (
-    trial_wf, optimize_wf, afqmc_generators, analysis, hamiltonian, fqe_conversion, config
-)
+from recirq.qcqmc import (afqmc_generators, analysis, config, fqe_conversion,
+                          hamiltonian, optimize_wf, trial_wf)
+
 
 @attrs.frozen
 class IPieExportData:
@@ -145,8 +144,7 @@ def _get_overlap_export_data(
     return IPieExportData(
         rotated_fqe_wf=rotated_fqe_wf,
         unrotated_fqe_wf=unrotated_fqe_wf,
-        variational_energy=analysis.get_variational_energy(
-            analysis_data=overlap_analysis_data,
+        variational_energy=overlap_analysis_data.get_variational_energy(
             trial_wf_data=trial_wf_data,
             hamiltonian_data=hamiltonian_data,
             k=k,
