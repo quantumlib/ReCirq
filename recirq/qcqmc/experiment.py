@@ -24,12 +24,6 @@ from pytz import timezone
 from recirq.qcqmc import blueprint, config, data, for_refactor
 
 
-def _to_tuple(x: Optional[Iterable[float]]) -> Optional[Sequence[float]]:
-    if x is None:
-        return x
-    return tuple(x)
-
-
 @attrs.frozen(repr=False)
 class SimulatedExperimentParams(data.Params):
     """Class for storing the parameters that specify an ExperimentData object.
@@ -52,7 +46,7 @@ class SimulatedExperimentParams(data.Params):
     n_samples_per_clifford: int
     noise_model_name: str
     noise_model_params: Optional[Tuple[float, ...]] = attrs.field(
-        converter=_to_tuple, default=None
+        converter=lambda x: tuple(x) if x is not None else None, default=None
     )
     seed: int = 0
     path_prefix: str = ""
@@ -91,34 +85,35 @@ class ExperimentData(data.Data):
         return simple_dict
 
 
-def build_experiment(
-    params: SimulatedExperimentParams, *, dependencies: Dict[data.Params, data.Data]
-) -> ExperimentData:
-    """Builds an ExperimentData from ExperimentParams
+    @classmethod
+    def build_experiment_from_dependencies(
+        cls, params: SimulatedExperimentParams, *, dependencies: Dict[data.Params, data.Data]
+    ) -> 'ExperimentData':
+        """Builds an ExperimentData from ExperimentParams and any dependencies.
 
-    Args:
-        params: The experimental parameters.
-        dependencies: The dependencies leading up to this point (in particular the blueprint.)
-    """
-    bp = dependencies[params.blueprint_params]
-    assert isinstance(bp, blueprint.BlueprintData)
-    assert params.blueprint_params == bp.params
+        Args:
+            params: The experimental parameters.
+            dependencies: The dependencies leading up to this point (in particular the blueprint.)
+        """
+        bp = dependencies[params.blueprint_params]
+        assert isinstance(bp, blueprint.BlueprintData)
+        assert params.blueprint_params == bp.params
 
-    noise_model = for_refactor.get_noise_model(
-        params.noise_model_name, params.noise_model_params
-    )
+        noise_model = for_refactor.get_noise_model(
+            params.noise_model_name, params.noise_model_params
+        )
 
-    raw_samples = get_samples_from_simulation(
-        bp.compiled_circuit,
-        bp.resolvers,
-        noise_model,
-        params.n_samples_per_clifford,
-        params.seed,
-    )
+        raw_samples = get_samples_from_simulation(
+            bp.compiled_circuit,
+            bp.resolvers,
+            noise_model,
+            params.n_samples_per_clifford,
+            params.seed,
+        )
 
-    metadata = get_experimental_metadata()
+        metadata = get_experimental_metadata()
 
-    return ExperimentData(params=params, raw_samples=raw_samples, metadata=metadata)
+        return ExperimentData(params=params, raw_samples=raw_samples, metadata=metadata)
 
 
 def get_samples_from_simulation(

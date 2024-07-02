@@ -17,7 +17,7 @@ from typing import Tuple
 import cirq
 
 from recirq.qcqmc.blueprint import BlueprintData
-from recirq.qcqmc.experiment import SimulatedExperimentParams, build_experiment
+from recirq.qcqmc.experiment import SimulatedExperimentParams, get_experimental_metadata, ExperimentData
 from recirq.qcqmc.hamiltonian import HamiltonianData
 from recirq.qcqmc.trial_wf import TrialWavefunctionData
 
@@ -38,7 +38,7 @@ def test_small_experiment_raw_samples_shape(
         seed=1,
     )
 
-    experiment = build_experiment(
+    experiment = ExperimentData.build_experiment_from_dependencies(
         params=simulated_experiment_params,
         dependencies={blueprint_data.params: blueprint_data},
     )
@@ -49,3 +49,8 @@ def test_small_experiment_raw_samples_shape(
 
     exp2 = cirq.read_json(json_text=cirq.to_json(experiment))
     assert exp2 == experiment
+
+def test_get_experimental_metadata():
+    md = get_experimental_metadata()
+    assert md.get('PST_formatted_date_time') is not None
+    assert md.get('iso_formatted_date_time') is not None

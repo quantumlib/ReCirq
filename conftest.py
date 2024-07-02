@@ -122,7 +122,7 @@ def fixture_4_qubit_ham_trial_wf_and_blueprint(
         seed=1,
     )
 
-    bp = blueprint.build_blueprint(
+    bp = blueprint.BlueprintData.build_blueprint_from_dependencies(
         blueprint_params, dependencies={trial_wf_params: trial_wf_data}
     )
 
