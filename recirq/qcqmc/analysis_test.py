@@ -1,14 +1,24 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Dict, Tuple
 
 import cirq
 import numpy as np
 import pytest
 
-from recirq.qcqmc.analysis import (
-    OverlapAnalysisParams,
-    build_analysis,
-    get_variational_energy,
-)
+from recirq.qcqmc.analysis import OverlapAnalysisData, OverlapAnalysisParams
 from recirq.qcqmc.blueprint import BlueprintData, BlueprintParamsTrialWf
 from recirq.qcqmc.data import Data, Params
 from recirq.qcqmc.experiment import ExperimentData, SimulatedExperimentParams
@@ -99,17 +109,19 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
         "test_analysis", experiment_params=experiment_params_2, k_to_calculate=(1,)
     )
 
-    analysis_1 = build_analysis(analysis_params_1, dependencies=dependencies)
-    analysis_2 = build_analysis(analysis_params_2, dependencies=dependencies)
+    analysis_1 = OverlapAnalysisData.build_analysis_from_dependencies(
+        analysis_params_1, dependencies=dependencies
+    )
+    analysis_2 = OverlapAnalysisData.build_analysis_from_dependencies(
+        analysis_params_2, dependencies=dependencies
+    )
 
-    energy_1 = get_variational_energy(
-        analysis_data=analysis_1,
+    energy_1 = analysis_1.get_variational_energy(
         trial_wf_data=trial_wf,
         hamiltonian_data=hamiltonian_data,
         k=1,
     )
-    energy_2 = get_variational_energy(
-        analysis_data=analysis_2,
+    energy_2 = analysis_2.get_variational_energy(
         trial_wf_data=trial_wf,
         hamiltonian_data=hamiltonian_data,
         k=1,
@@ -261,14 +273,13 @@ def test_small_experiment_partitioned(
         "test_analysis", experiment_params=experiment_params, k_to_calculate=(1,)
     )
 
-    analysis = build_analysis(analysis_params, dependencies=dependencies)
+    analysis = OverlapAnalysisData.build_analysis_from_dependencies(
+        analysis_params, dependencies=dependencies
+    )
 
-    energy = get_variational_energy(
-        analysis_data=analysis,
+    energy = analysis.get_variational_energy(
         trial_wf_data=trial_wf,
         hamiltonian_data=hamiltonian_data,
         k=1,
     )
-    print(analysis.reconstructed_wf_for_k["1"])
-
     assert np.abs(trial_wf.ansatz_energy - energy) < 2.5e-2 * len(qubit_partition)
