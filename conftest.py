@@ -16,6 +16,7 @@ from typing import Tuple
 import numpy as np
 import pytest
 
+from recirq.qcqmc import blueprint, qubit_maps
 from recirq.qcqmc.hamiltonian import (
     HamiltonianData,
     HamiltonianFileParams,
@@ -102,6 +103,30 @@ def fixture_8_qubit_ham_and_trial_wf(
     )
 
     return fixture_8_qubit_ham, trial_wf
+
+
+@pytest.fixture(scope="package")
+def fixture_4_qubit_ham_trial_wf_and_blueprint(
+    fixture_4_qubit_ham_and_trial_wf,
+) -> Tuple[HamiltonianData, TrialWavefunctionData, blueprint.BlueprintData]:
+    ham_data, trial_wf_data = fixture_4_qubit_ham_and_trial_wf
+    trial_wf_params = trial_wf_data.params
+
+    blueprint_params = blueprint.BlueprintParamsTrialWf(
+        name="blueprint_test",
+        trial_wf_params=trial_wf_params,
+        n_cliffords=17,
+        qubit_partition=(
+            tuple(qubit_maps.get_qubits_a_b_reversed(n_orb=trial_wf_params.n_orb)),
+        ),
+        seed=1,
+    )
+
+    bp = blueprint.BlueprintData.build_blueprint_from_dependencies(
+        blueprint_params, dependencies={trial_wf_params: trial_wf_data}
+    )
+
+    return ham_data, trial_wf_data, bp
 
 
 def pytest_addoption(parser):
