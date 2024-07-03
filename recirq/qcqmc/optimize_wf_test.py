@@ -22,14 +22,16 @@ from recirq.qcqmc.afqmc_generators import get_pp_plus_gate_generators
 from recirq.qcqmc.hamiltonian import HamiltonianData
 from recirq.qcqmc.layer_spec import LayerSpec
 from recirq.qcqmc.optimize_wf import (
-    build_pp_plus_trial_wavefunction,
     compute_finite_difference_grad,
     evaluate_energy_and_gradient,
     get_ansatz_qubit_wf,
     get_evolved_wf,
     get_two_body_params_from_qchem_amplitudes,
 )
-from recirq.qcqmc.trial_wf import PerfectPairingPlusTrialWavefunctionParams
+from recirq.qcqmc.trial_wf import (
+    PerfectPairingPlusTrialWavefunctionParams,
+    TrialWavefunctionData,
+)
 
 
 def test_pp_wf_energy(fixture_4_qubit_ham: HamiltonianData):
@@ -41,7 +43,7 @@ def test_pp_wf_energy(fixture_4_qubit_ham: HamiltonianData):
         restricted=True,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params, dependencies={fixture_4_qubit_ham.params: fixture_4_qubit_ham}
     )
 
@@ -57,7 +59,7 @@ def test_pp_wf_energy_with_layer(fixture_4_qubit_ham: HamiltonianData):
         restricted=True,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params, dependencies={fixture_4_qubit_ham.params: fixture_4_qubit_ham}
     )
 
@@ -82,7 +84,7 @@ def test_qchem_pp_eight_qubit_wavefunctions_consistent(
         do_optimization=False,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params,
         dependencies={fixture_8_qubit_ham.params: fixture_8_qubit_ham},
         do_print=False,
@@ -108,7 +110,7 @@ def test_pp_plus_wf_energy_sloppy_1(fixture_8_qubit_ham: HamiltonianData):
         random_parameter_scale=1,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params,
         dependencies={fixture_8_qubit_ham.params: fixture_8_qubit_ham},
         do_print=False,
@@ -129,7 +131,7 @@ def test_diamond_pp_wf_energy(fixture_12_qubit_ham: HamiltonianData):
         n_optimization_restarts=1,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params,
         dependencies={fixture_12_qubit_ham.params: fixture_12_qubit_ham},
         do_print=False,
@@ -203,7 +205,7 @@ def test_qchem_pp_runs(
         do_optimization=False,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params,
         dependencies={fixture_4_qubit_ham.params: fixture_4_qubit_ham},
         do_print=False,
@@ -233,7 +235,7 @@ def test_qchem_conversion_negative(fixture_4_qubit_ham: HamiltonianData):
         do_optimization=False,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params,
         dependencies={fixture_4_qubit_ham.params: fixture_4_qubit_ham},
         do_print=False,

@@ -18,12 +18,7 @@ import numpy as np
 import pytest
 
 from recirq.qcqmc import analysis, blueprint, data, experiment, qubit_maps
-from recirq.qcqmc.hamiltonian import (
-    HamiltonianData,
-    HamiltonianFileParams,
-    build_hamiltonian_from_file,
-)
-from recirq.qcqmc.optimize_wf import build_pp_plus_trial_wavefunction
+from recirq.qcqmc.hamiltonian import HamiltonianData, HamiltonianFileParams
 from recirq.qcqmc.trial_wf import (
     PerfectPairingPlusTrialWavefunctionParams,
     TrialWavefunctionData,
@@ -45,7 +40,7 @@ def fixture_4_qubit_ham(package_tmp_path) -> HamiltonianData:
         path_prefix=str(package_tmp_path),
     )
 
-    hamiltonian_data = build_hamiltonian_from_file(params)
+    hamiltonian_data = HamiltonianData.build_hamiltonian_from_file(params)
 
     return hamiltonian_data
 
@@ -60,7 +55,7 @@ def fixture_8_qubit_ham(package_tmp_path) -> HamiltonianData:
         path_prefix=str(package_tmp_path),
     )
 
-    hamiltonian_data = build_hamiltonian_from_file(params)
+    hamiltonian_data = HamiltonianData.build_hamiltonian_from_file(params)
 
     return hamiltonian_data
 
@@ -76,7 +71,7 @@ def fixture_12_qubit_ham(package_tmp_path) -> HamiltonianData:
         path_prefix=str(package_tmp_path),
     )
 
-    hamiltonian_data = build_hamiltonian_from_file(params)
+    hamiltonian_data = HamiltonianData.build_hamiltonian_from_file(params)
 
     return hamiltonian_data
 
@@ -94,7 +89,7 @@ def fixture_4_qubit_ham_and_trial_wf(
         path_prefix=fixture_4_qubit_ham.params.path_prefix,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params, dependencies={fixture_4_qubit_ham.params: fixture_4_qubit_ham}
     )
 
@@ -115,7 +110,7 @@ def fixture_8_qubit_ham_and_trial_wf(
         path_prefix=fixture_8_qubit_ham.params.path_prefix,
     )
 
-    trial_wf = build_pp_plus_trial_wavefunction(
+    trial_wf = TrialWavefunctionData.build_pp_plus_trial_from_dependencies(
         params, dependencies={fixture_8_qubit_ham.params: fixture_8_qubit_ham}
     )
 
