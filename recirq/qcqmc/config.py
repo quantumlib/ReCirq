@@ -22,12 +22,12 @@ import attrs
 class OutputDirectories:
     """Default output directories for qcqmc data."""
 
-    DEFAULT_HAMILTONIAN_DIRECTORY: str = "./data/hamiltonians/"
-    DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY: str = "./data/trial_wfs/"
-    DEFAULT_QMC_DIRECTORY: str = "./data/afqmc/"
-    DEFAULT_BLUEPRINT_DIRECTORY: str = "./data/blueprints/"
-    DEFAULT_EXPERIMENT_DIRECTORY: str = "./data/experiments/"
-    DEFAULT_ANALYSIS_DIRECTORY: str = "./data/analyses/"
+    DEFAULT_HAMILTONIAN_DIRECTORY: str = "/data/hamiltonians/"
+    DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY: str = "/data/trial_wfs/"
+    DEFAULT_QMC_DIRECTORY: str = "/data/afqmc/"
+    DEFAULT_BLUEPRINT_DIRECTORY: str = "/data/blueprints/"
+    DEFAULT_EXPERIMENT_DIRECTORY: str = "/data/experiments/"
+    DEFAULT_ANALYSIS_DIRECTORY: str = "/data/analyses/"
 
     def make_output_directories(self) -> None:
         """Make the output directories given in OUTDIRS"""

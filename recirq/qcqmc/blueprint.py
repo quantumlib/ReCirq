@@ -132,7 +132,7 @@ class BlueprintParamsTrialWf(data.Params):
     )
     seed: int = 0
     optimizer_suite: int = 0
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     @property
     def path_string(self) -> str:
