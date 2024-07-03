@@ -1,12 +1,25 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Contains edited versions of certain FQE conversion utilities."""
 
-from typing import Dict, Optional, Mapping, Sequence, Callable
+from typing import Callable, Dict, Mapping, Optional, Sequence
 
-import numpy as np
 import cirq
 import fqe
 import fqe.openfermion_utils as fqe_of
 import fqe.wavefunction as fqe_wfn
+import numpy as np
 import openfermion as of
 
 import recirq.qcqmc.fermion_mode as fm
