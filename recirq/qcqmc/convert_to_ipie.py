@@ -337,6 +337,9 @@ def save_wavefunction_for_ipie(
     if do_print:
         _print_wfn_export_data(xd, fci_energy=fci_energy, ansatz_energy=ansatz_energy)
 
+    if not xd.path.parent.is_dir():
+        xd.path.parent.mkdir(parents=True)
+
     with h5py.File(xd.path, "w") as f:
         if fci_energy is not None:
             f["fci_energy"] = fci_energy
