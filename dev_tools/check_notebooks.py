@@ -91,6 +91,9 @@ NOTEBOOKS = [
     'docs/hfvqe/quickstart.ipynb',
     'docs/fermi_hubbard/publication_results.ipynb',
     'docs/fermi_hubbard/experiment_example.ipynb',
+    'docs/qcqmc/high_level.ipynb',
+    'docs/qcqmc/full_workflow.ipynb',
+    'docs/qcqmc/experimental_wavefunctions.ipynb',
 ]
 
 
