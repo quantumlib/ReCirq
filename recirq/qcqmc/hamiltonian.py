@@ -94,7 +94,7 @@ class HamiltonianFileParams(data.Params):
     n_orb: int
     n_elec: int
     do_eri_restore: bool = False
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     def _json_dict_(self):
         return attrs.asdict(self)
@@ -145,7 +145,7 @@ class PyscfHamiltonianParams(data.Params):
     verbose_scf: int = 0
     save_chkfile: bool = False
     overwrite_chk_file: bool = False
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     def _json_dict_(self):
         return attrs.asdict(self)

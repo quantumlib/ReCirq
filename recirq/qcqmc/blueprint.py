@@ -19,7 +19,7 @@ import cirq
 import numpy as np
 import quaff
 
-from recirq.qcqmc import config, data, trial_wf, for_refactor
+from recirq.qcqmc import config, data, for_refactor, trial_wf
 
 BlueprintParams = Union["BlueprintParamsTrialWf", "BlueprintParamsRobustShadow"]
 
@@ -36,7 +36,6 @@ def apply_optimizer_suite_0(circuit: cirq.Circuit) -> cirq.Circuit:
 
     circuit = cirq.expand_composite(circuit)
     circuit = cirq.align_left(circuit)
-
     circuit = cirq.drop_empty_moments(circuit)
 
     return circuit
@@ -45,10 +44,12 @@ def apply_optimizer_suite_0(circuit: cirq.Circuit) -> cirq.Circuit:
 def _to_tuple_of_tuples(
     x: Iterable[Iterable[cirq.Qid]],
 ) -> Tuple[Tuple[cirq.Qid, ...], ...]:
+    # required for dataclass type conversion
     return tuple(tuple(_) for _ in x)
 
 
 def _to_tuple(x: Iterable[cirq.Circuit]) -> Tuple[cirq.Circuit, ...]:
+    # required for dataclass type conversion
     return tuple(x)
 
 
@@ -131,7 +132,7 @@ class BlueprintParamsTrialWf(data.Params):
     )
     seed: int = 0
     optimizer_suite: int = 0
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     @property
     def path_string(self) -> str:
@@ -200,51 +201,87 @@ class BlueprintData(data.Data):
                 for clifford in self.parameterized_clifford_circuits
             )
 
+    @classmethod
+    def build_blueprint_from_base_circuit(
+        cls, params: BlueprintParams, *, base_circuit: cirq.AbstractCircuit
+    ) -> "BlueprintData":
+        """Builds a BlueprintData from BlueprintParams.
 
-def build_blueprint_from_base_circuit(
-    params: BlueprintParams, *, base_circuit: cirq.AbstractCircuit
-) -> BlueprintData:
-    """Builds a BlueprintData from BlueprintParams.
+        Args:
+            params: The experiment blueprint parameters.
+            base_circuit: The circuit to shadow tomographize.
 
-    Args:
-        params: The experiment blueprint parameters.
-        base_circuit: The circuit to shadow tomographize.
+        Returns:
+            A constructed BlueprintData object.
+        """
+        resolvers = list(
+            _get_resolvers(params.n_cliffords, params.qubit_partition, params.seed)
+        )
 
-    Returns:
-        A constructed BlueprintData object.
-    """
-    resolvers = list(
-        _get_resolvers(params.n_cliffords, params.qubit_partition, params.seed)
-    )
+        parameterized_clifford_ops: Iterable[cirq.OP_TREE] = (
+            quaff.get_parameterized_truncated_cliffords_ops(params.qubit_partition)
+        )
 
-    parameterized_clifford_ops: Iterable[cirq.OP_TREE] = (
-        quaff.get_parameterized_truncated_cliffords_ops(params.qubit_partition)
-    )
+        parameterized_clifford_circuits = tuple(
+            cirq.expand_composite(
+                cirq.Circuit(ops), no_decomp=for_refactor.is_expected_elementary_cirq_op
+            )
+            for ops in parameterized_clifford_ops
+        )
+        parameterized_clifford_circuit = sum(
+            parameterized_clifford_circuits, cirq.Circuit()
+        )
 
-    parameterized_clifford_circuits = tuple(
-        cirq.expand_composite(cirq.Circuit(ops), no_decomp=for_refactor.is_expected_elementary_cirq_op)
-        for ops in parameterized_clifford_ops
-    )
-    parameterized_clifford_circuit = sum(
-        parameterized_clifford_circuits, cirq.Circuit()
-    )
+        compiled_circuit = cirq.Circuit([base_circuit, parameterized_clifford_circuit])
 
-    compiled_circuit = cirq.Circuit([base_circuit, parameterized_clifford_circuit])
+        circuit_with_measurement = compiled_circuit + cirq.Circuit(
+            cirq.measure(*params.qubits, key="all")
+        )
 
-    circuit_with_measurement = compiled_circuit + cirq.Circuit(
-        cirq.measure(*params.qubits, key="all")
-    )
+        apply_optimizer_suite = {0: apply_optimizer_suite_0}[params.optimizer_suite]
 
-    apply_optimizer_suite = {0: apply_optimizer_suite_0}[params.optimizer_suite]
+        optimized_circuit = apply_optimizer_suite(circuit_with_measurement)
 
-    optimized_circuit = apply_optimizer_suite(circuit_with_measurement)
+        return BlueprintData(
+            params=params,
+            compiled_circuit=optimized_circuit,
+            parameterized_clifford_circuits=parameterized_clifford_circuits,
+            resolvers=resolvers,  # type: ignore
+        )
 
-    return BlueprintData(
-        params=params,
-        compiled_circuit=optimized_circuit,
-        parameterized_clifford_circuits=parameterized_clifford_circuits,
-        resolvers=resolvers,  # type: ignore
-    )
+    @classmethod
+    def build_blueprint_from_dependencies(
+        cls,
+        params: BlueprintParams,
+        dependencies: Optional[Dict[data.Params, data.Data]] = None,
+    ) -> "BlueprintData":
+        """Builds a BlueprintData from BlueprintParams using the dependency-injection workflow system.
+
+        Args:
+            params: The blueprint parameters
+            dependencies: The dependencies used to construct the base circuit. If
+                BlueprintParamsRobustShadow are passed for params then the
+                base_circuit used for shadow tomography will be an empty circuit.
+                Otherwise it will be built from the trial wavefunction's
+                superposition circuit.
+
+        Returns:
+            A constructed BlueprintData object.
+        """
+        if isinstance(params, BlueprintParamsRobustShadow):
+            base_circuit = cirq.Circuit()
+        elif isinstance(params, BlueprintParamsTrialWf):
+            assert dependencies is not None, "Provide trial_wf"
+            assert params.trial_wf_params in dependencies, "trial_wf dependency"
+            trial_wf_inst = dependencies[params.trial_wf_params]
+            assert isinstance(trial_wf_inst, trial_wf.TrialWavefunctionData)
+            base_circuit = trial_wf_inst.superposition_circuit
+        else:
+            raise ValueError(f"Bad param type {type(params)}")
+
+        return BlueprintData.build_blueprint_from_base_circuit(
+            params=params, base_circuit=base_circuit
+        )
 
 
 @attrs.frozen(repr=False)
@@ -286,33 +323,3 @@ class BlueprintParamsRobustShadow(data.Params):
 
     def _json_dict_(self):
         return attrs.asdict(self)
-
-
-def build_blueprint(
-    params: BlueprintParams, dependencies: Optional[Dict[data.Params, data.Data]] = None
-) -> BlueprintData:
-    """Builds a BlueprintData from BlueprintParams using the dependency-injection workflow system.
-
-    Args:
-        params: The blueprint parameters
-        dependencies: The dependencies used to construct the base circuit. If
-            BlueprintParamsRobustShadow are passed for params then the
-            base_circuit used for shadow tomography will be an empty circuit.
-            Otherwise it will be built from the trial wavefunction's
-            superposition circuit.
-
-    Returns:
-        A constructed BlueprintData object.
-    """
-    if isinstance(params, BlueprintParamsRobustShadow):
-        base_circuit = cirq.Circuit()
-    elif isinstance(params, BlueprintParamsTrialWf):
-        assert dependencies is not None, "Provide trial_wf"
-        assert params.trial_wf_params in dependencies, "trial_wf dependency"
-        trial_wf_inst = dependencies[params.trial_wf_params]
-        assert isinstance(trial_wf_inst, trial_wf.TrialWavefunctionData)
-        base_circuit = trial_wf_inst.superposition_circuit
-    else:
-        raise ValueError(f"Bad param type {type(params)}")
-
-    return build_blueprint_from_base_circuit(params=params, base_circuit=base_circuit)

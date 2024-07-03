@@ -1,14 +1,27 @@
+# Copyright 2024 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Dict, Tuple
 
 import cirq
 import numpy as np
 import pytest
 
-from recirq.qcqmc.analysis import (OverlapAnalysisParams, build_analysis,
-                                   get_variational_energy)
-from recirq.qcqmc.blueprint import BlueprintParamsTrialWf, build_blueprint
+from recirq.qcqmc.analysis import OverlapAnalysisData, OverlapAnalysisParams
+from recirq.qcqmc.blueprint import BlueprintData, BlueprintParamsTrialWf
 from recirq.qcqmc.data import Data, Params
-from recirq.qcqmc.experiment import SimulatedExperimentParams, build_experiment
+from recirq.qcqmc.experiment import ExperimentData, SimulatedExperimentParams
 from recirq.qcqmc.hamiltonian import HamiltonianData
 from recirq.qcqmc.trial_wf import TrialWavefunctionData
 
@@ -54,8 +67,12 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
         seed=blueprint_seed,
     )
 
-    blueprint_1 = build_blueprint(blueprint_params_1, dependencies=dependencies)
-    blueprint_2 = build_blueprint(blueprint_params_2, dependencies=dependencies)
+    blueprint_1 = BlueprintData.build_blueprint_from_dependencies(
+        blueprint_params_1, dependencies=dependencies
+    )
+    blueprint_2 = BlueprintData.build_blueprint_from_dependencies(
+        blueprint_params_2, dependencies=dependencies
+    )
     dependencies[blueprint_params_1] = blueprint_1
     dependencies[blueprint_params_2] = blueprint_2
 
@@ -76,8 +93,12 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
         seed=2,
     )
 
-    experiment_1 = build_experiment(experiment_params_1, dependencies=dependencies)
-    experiment_2 = build_experiment(experiment_params_2, dependencies=dependencies)
+    experiment_1 = ExperimentData.build_experiment_from_dependencies(
+        experiment_params_1, dependencies=dependencies
+    )
+    experiment_2 = ExperimentData.build_experiment_from_dependencies(
+        experiment_params_2, dependencies=dependencies
+    )
     dependencies[experiment_params_1] = experiment_1
     dependencies[experiment_params_2] = experiment_2
 
@@ -88,30 +109,23 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
         "test_analysis", experiment_params=experiment_params_2, k_to_calculate=(1,)
     )
 
-    analysis_1 = build_analysis(analysis_params_1, dependencies=dependencies)
-    analysis_2 = build_analysis(analysis_params_2, dependencies=dependencies)
+    analysis_1 = OverlapAnalysisData.build_analysis_from_dependencies(
+        analysis_params_1, dependencies=dependencies
+    )
+    analysis_2 = OverlapAnalysisData.build_analysis_from_dependencies(
+        analysis_params_2, dependencies=dependencies
+    )
 
-    energy_1 = get_variational_energy(
-        analysis_data=analysis_1,
+    energy_1 = analysis_1.get_variational_energy(
         trial_wf_data=trial_wf,
         hamiltonian_data=hamiltonian_data,
         k=1,
     )
-    energy_2 = get_variational_energy(
-        analysis_data=analysis_2,
+    energy_2 = analysis_2.get_variational_energy(
         trial_wf_data=trial_wf,
         hamiltonian_data=hamiltonian_data,
         k=1,
     )
-
-    print(energy_1)
-    print(energy_2)
-    print(trial_wf.ansatz_energy)
-    print(trial_wf.ansatz_energy - energy_1)
-    print(trial_wf.ansatz_energy - energy_2)
-
-    print(analysis_1.reconstructed_wf_for_k["1"])
-    print(analysis_2.reconstructed_wf_for_k["1"])
 
     assert np.abs(energy_1 - energy_2) < target_error
 
@@ -227,7 +241,9 @@ def test_small_experiment_partitioned(
         seed=18,
     )
 
-    blueprint = build_blueprint(blueprint_params, dependencies=dependencies)
+    blueprint = BlueprintData.build_blueprint_from_dependencies(
+        blueprint_params, dependencies=dependencies
+    )
     dependencies[blueprint_params] = blueprint
 
     experiment_params = SimulatedExperimentParams(
@@ -239,21 +255,22 @@ def test_small_experiment_partitioned(
         seed=1,
     )
 
-    experiment = build_experiment(experiment_params, dependencies=dependencies)
+    experiment = ExperimentData.build_experiment_from_dependencies(
+        experiment_params, dependencies=dependencies
+    )
     dependencies[experiment_params] = experiment
 
     analysis_params = OverlapAnalysisParams(
         "test_analysis", experiment_params=experiment_params, k_to_calculate=(1,)
     )
 
-    analysis = build_analysis(analysis_params, dependencies=dependencies)
+    analysis = OverlapAnalysisData.build_analysis_from_dependencies(
+        analysis_params, dependencies=dependencies
+    )
 
-    energy = get_variational_energy(
-        analysis_data=analysis,
+    energy = analysis.get_variational_energy(
         trial_wf_data=trial_wf,
         hamiltonian_data=hamiltonian_data,
         k=1,
     )
-    print(analysis.reconstructed_wf_for_k["1"])
-
     assert np.abs(trial_wf.ansatz_energy - energy) < 2.5e-2 * len(qubit_partition)
