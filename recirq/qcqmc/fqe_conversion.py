@@ -74,12 +74,11 @@ def cirq_to_fqe_single(
     where the c_{i} are the projection of the wavefunction onto a FCI space.
 
     Args:
-        cirq_wfn: - coeffcients in the qubit basis.
-        nele: - the number of electrons
-        m_s: - the s_z spin angular momentum
+        cirq_wfn: coeffcients in the qubit basis.
+        nele: the number of electrons
+        m_s: the s_z spin angular momentum
         qubin: The number of qubits in the wavefunction.
-
-        fermion_ind_to_qubit_ind - A dictionary that describes the assignment of
+        fermion_ind_to_qubit_ind: A dictionary that describes the assignment of
             the fermionic modes to the qubit modes.
 
     Returns:
@@ -192,13 +191,12 @@ def convert_qubit_wfn_to_fqe_syntax(
     digestion by FQE.
 
     Args:
-        ops (QubitOperator) - a string of qubit operators
-
-        fermion_ind_to_qubit_ind - A dictionary that describes the assignment of
+        ops: a string of qubit operators
+        fermion_ind_to_qubit_ind: A dictionary that describes the assignment of
             the fermionic modes to the qubit modes.
 
     Returns:
-        out (FermionOperator) - a string of fermion operators
+        out: a string of fermion operators
     """
 
     # We might need to reorder the terms.
@@ -229,7 +227,7 @@ def convert_fqe_wf_to_cirq(
     Args:
         fqe_wf: The FQE wavefunction.
         mode_qubit_map: A mapping from fermion modes to cirq qubits.
-        ordered_qubits:
+        ordered_qubits: An ordered sequence of qubits.
     """
     n_qubits = len(mode_qubit_map)
     fermion_op = fqe.openfermion_utils.fqe_to_fermion_operator(fqe_wf)

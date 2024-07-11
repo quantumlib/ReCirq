@@ -151,6 +151,14 @@ def fixture_4_qubit_ham_trial_wf_and_blueprint(
 def fixture_4_qubit_ham_trial_wf_and_overlap_analysis(
     fixture_4_qubit_ham_trial_wf_and_blueprint,
 ) -> Tuple[HamiltonianData, TrialWavefunctionData, analysis.OverlapAnalysisData]:
+    """Construct fixtures for the hamiltonian, trial wavefunction and overlap analysis.
+
+    Returns:
+        ham_data: The hamiltonian for the 4 qubit test system.
+        trial_wf_data: The trial wavefunction data for the 4 qubit system.
+        ovlp_analysis: The overlap analysis data used to reconstruct the
+            wavefunction via shadow tomography.
+    """
     ham_data, trial_wf_data, bp_data = fixture_4_qubit_ham_trial_wf_and_blueprint
     simulated_experiment_params = experiment.SimulatedExperimentParams(
         name="test_1",
