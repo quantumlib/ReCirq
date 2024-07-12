@@ -18,14 +18,12 @@ import numpy as np
 import pytest
 import quaff
 
-from recirq.qcqmc.blueprint import (
-    BlueprintParamsTrialWf,
-    _get_truncated_cliffords,
-    BlueprintData
-)
+from recirq.qcqmc.blueprint import (BlueprintData, BlueprintParamsTrialWf,
+                                    _get_truncated_cliffords)
 from recirq.qcqmc.hamiltonian import HamiltonianData, HamiltonianFileParams
 from recirq.qcqmc.qubit_maps import get_qubits_a_b_reversed
-from recirq.qcqmc.trial_wf import TrialWavefunctionData, TrialWavefunctionParams
+from recirq.qcqmc.trial_wf import (TrialWavefunctionData,
+                                   TrialWavefunctionParams)
 
 
 class FakeTrialWfParams(TrialWavefunctionParams):

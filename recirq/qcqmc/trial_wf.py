@@ -23,8 +23,16 @@ import numpy as np
 import openfermion as of
 import scipy.sparse
 
-from recirq.qcqmc import (bitstrings, config, converters, data, fermion_mode,
-                          hamiltonian, layer_spec, qubit_maps)
+from recirq.qcqmc import (
+    bitstrings,
+    config,
+    data,
+    fermion_mode,
+    fqe_conversion,
+    hamiltonian,
+    layer_spec,
+    qubit_maps,
+)
 
 
 @attrs.frozen
@@ -115,7 +123,7 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
     )
     do_optimization: bool = True
     use_fast_gradients: bool = False
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     @property
     def n_orb(self) -> int:
@@ -135,14 +143,11 @@ class PerfectPairingPlusTrialWavefunctionParams(TrialWavefunctionParams):
 
     @property
     def path_string(self) -> str:
-        if self.path_prefix:
-            return (
-                self.path_prefix
-                + config.OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY.strip(".")
-                + self.name
-            )
-        else:
-            return config.OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY + self.name
+        return (
+            self.path_prefix
+            + config.OUTDIRS.DEFAULT_TRIAL_WAVEFUNCTION_DIRECTORY.strip(".")
+            + self.name
+        )
 
     @property
     def bitstrings(self) -> Iterable[Tuple[bool, ...]]:
@@ -219,7 +224,7 @@ def get_rotated_hamiltonians(
 
     Args:
         hamiltonian_data: A specification of the hamiltonian.
-        one_body_basis_change_mat: A change of basis matrix. 
+        one_body_basis_change_mat: A change of basis matrix.
         mode_qubit_map: A mapping from fermion modes to cirq Qids.
         ordered_qubits: A sequence of cirq Qids which specifies the correct ordering of the qubits.
 
@@ -237,7 +242,7 @@ def get_rotated_hamiltonians(
     mol_ham.rotate_basis(one_body_basis_change_mat)
     fermion_operator_ham = of.get_fermion_operator(mol_ham)
 
-    reorder_func = converters.get_reorder_func(
+    reorder_func = fqe_conversion.get_reorder_func(
         mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits
     )
     fermion_operator_ham_qubit_ordered = of.reorder(

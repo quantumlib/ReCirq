@@ -48,7 +48,7 @@ class OverlapAnalysisParams(data.Params):
     name: str
     experiment_params: experiment.SimulatedExperimentParams
     k_to_calculate: Tuple[int, ...] = attrs.field(converter=tuple)
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     def __attrs_post_init__(self):
         if not isinstance(

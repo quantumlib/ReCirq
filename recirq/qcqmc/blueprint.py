@@ -19,7 +19,7 @@ import cirq
 import numpy as np
 import quaff
 
-from recirq.qcqmc import config, data, trial_wf, for_refactor
+from recirq.qcqmc import config, data, for_refactor, trial_wf
 
 BlueprintParams = Union["BlueprintParamsTrialWf", "BlueprintParamsRobustShadow"]
 
@@ -132,7 +132,7 @@ class BlueprintParamsTrialWf(data.Params):
     )
     seed: int = 0
     optimizer_suite: int = 0
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     @property
     def path_string(self) -> str:
@@ -190,6 +190,7 @@ class BlueprintData(data.Data):
     def _json_dict_(self):
         simple_dict = attrs.asdict(self)
         simple_dict["params"] = self.params
+        return simple_dict
 
     @property
     def resolved_clifford_circuits(self) -> Iterator[Tuple[cirq.Circuit, ...]]:

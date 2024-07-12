@@ -54,6 +54,11 @@ def _resolve_json(cirq_type: str) -> Optional[ObjectFactory]:
             PyscfHamiltonianParams,
             SimulatedExperimentParams,
             TrialWavefunctionData,
+            BlueprintParamsTrialWf,
+            BlueprintParamsRobustShadow,
+            BlueprintData,
+            ExperimentData,
+            SimulatedExperimentParams,
         ]
     }.get(cirq_type, None)
 

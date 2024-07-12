@@ -49,7 +49,7 @@ class SimulatedExperimentParams(data.Params):
         converter=lambda x: tuple(x) if x is not None else None, default=None
     )
     seed: int = 0
-    path_prefix: str = ""
+    path_prefix: str = "."
 
     @property
     def path_string(self) -> str:

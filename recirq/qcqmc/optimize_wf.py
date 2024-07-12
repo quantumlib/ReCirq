@@ -30,7 +30,7 @@ import scipy.sparse
 from recirq.qcqmc import (
     afqmc_circuits,
     afqmc_generators,
-    converters,
+    fqe_conversion,
     data,
     fermion_mode,
     hamiltonian,
@@ -38,6 +38,15 @@ from recirq.qcqmc import (
     trial_wf,
 )
 
+
+
+def get_ansatz_qubit_wf(
+    *, ansatz_circuit: cirq.Circuit, ordered_qubits: Sequence[cirq.Qid]
+):
+    """Get the cirq statevector from the ansatz circuit."""
+    return cirq.final_state_vector(
+        ansatz_circuit, qubit_order=list(ordered_qubits), dtype=np.complex128
+    )
 
 def get_and_check_energy(
     *,
@@ -62,7 +71,7 @@ def get_and_check_energy(
         ansatz_energy: The total energy of the ansatz circuit.
         hf_energy: The hartree-fock energy (initial energy of the ansatz circuit).
     """
-    ansatz_qubit_wf = converters.get_ansatz_qubit_wf(
+    ansatz_qubit_wf = get_ansatz_qubit_wf(
         ansatz_circuit=ansatz_circuit,
         ordered_qubits=params.qubits_jordan_wigner_ordered,
     )
@@ -106,6 +115,24 @@ def get_and_check_energy(
 
     return ansatz_energy, hf_energy
 
+
+def get_two_body_params_from_qchem_amplitudes(
+    qchem_amplitudes: np.ndarray,
+) -> np.ndarray:
+    r"""Translates perfect pairing amplitudes from qchem to rotation angles.
+
+    qchem style: 1 |1100> + t_i |0011>
+    our style: cos(\theta_i) |1100> + sin(\theta_i) |0011>
+    """
+
+    two_body_params = np.arccos(1 / np.sqrt(1 + qchem_amplitudes**2)) * np.sign(
+        qchem_amplitudes
+    )
+
+    # Numpy casts the array improperly to a float when we only have one parameter.
+    two_body_params = np.atleast_1d(two_body_params)
+
+    return two_body_params
 
 def build_pp_plus_trial_wavefunction(
     params: trial_wf.PerfectPairingPlusTrialWavefunctionParams,
@@ -159,7 +186,7 @@ def build_pp_plus_trial_wavefunction(
         n_one_body_params = params.n_orb * (params.n_orb - 1)
         one_body_params = np.zeros(n_one_body_params)
         one_body_basis_change_mat = np.diag(np.ones(params.n_orb * 2))
-        two_body_params = converters.get_two_body_params_from_qchem_amplitudes(
+        two_body_params = get_two_body_params_from_qchem_amplitudes(
             params.initial_two_body_qchem_amplitudes
         )
 
@@ -221,7 +248,7 @@ def get_rotated_hamiltonians(
     mol_ham.rotate_basis(one_body_basis_change_mat)
     fermion_operator_ham = of.get_fermion_operator(mol_ham)
 
-    reorder_func = converters.get_reorder_func(
+    reorder_func = fqe_conversion.get_reorder_func(
         mode_qubit_map=mode_qubit_map, ordered_qubits=ordered_qubits
     )
     fermion_operator_ham_qubit_ordered = of.reorder(
@@ -260,7 +287,7 @@ def get_energy_and_check_sanity(
         The ansatz energy.
     """
 
-    unrotated_fqe_wf_as_cirq = converters.convert_fqe_wf_to_cirq(
+    unrotated_fqe_wf_as_cirq = fqe_conversion.convert_fqe_wf_to_cirq(
         fqe_wf=unrotated_fqe_wf,
         mode_qubit_map=mode_qubit_map,
         ordered_qubits=ordered_qubits,

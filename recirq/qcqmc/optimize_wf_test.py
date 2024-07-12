@@ -19,14 +19,16 @@ import numpy as np
 import pytest
 
 from recirq.qcqmc.afqmc_generators import get_pp_plus_gate_generators
-from recirq.qcqmc.converters import (get_ansatz_qubit_wf,
-                                     get_two_body_params_from_qchem_amplitudes)
 from recirq.qcqmc.hamiltonian import HamiltonianData
 from recirq.qcqmc.layer_spec import LayerSpec
-from recirq.qcqmc.optimize_wf import (build_pp_plus_trial_wavefunction,
-                                      compute_finite_difference_grad,
-                                      evaluate_energy_and_gradient,
-                                      get_evolved_wf)
+from recirq.qcqmc.optimize_wf import (
+    build_pp_plus_trial_wavefunction,
+    compute_finite_difference_grad,
+    evaluate_energy_and_gradient,
+    get_ansatz_qubit_wf,
+    get_evolved_wf,
+    get_two_body_params_from_qchem_amplitudes,
+)
 from recirq.qcqmc.trial_wf import PerfectPairingPlusTrialWavefunctionParams
 
 
