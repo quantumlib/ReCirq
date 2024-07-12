@@ -171,20 +171,21 @@ def _get_overlap_export_data(
 
 @attrs.frozen(eq=False)
 class OccCoef:
-    occa: np.ndarray
-    occb: np.ndarray
-    coeffs: np.ndarray
     """A container for the wavefunction bitstrings and coefficients.
 
     Args:
         occa: The spin-alpha (up) determinants. Each entry of occa is an array
             of integers representing which orbitals are occupied in that
             determinant.
-        occb: The spin-beta (down) determinants. Each entry of occa is an array
+        occb: The spin-beta (down) determinants. Each entry of occb is an array
             of integers representing which orbitals are occupied in that
             determinant.
-        coeffs: The coefficient for each determinant. 
+        coeffs: The coefficient for each determinant.
     """
+
+    occa: np.ndarray
+    occb: np.ndarray
+    coeffs: np.ndarray
 
     def to_h5_dict(self, suffix: str = ""):
         return {

@@ -15,7 +15,7 @@
 
 import copy
 import itertools
-from typing import List, Mapping, Optional, Sequence, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import cirq
 import fqe
@@ -28,14 +28,16 @@ import scipy.optimize
 import scipy.sparse
 
 from recirq.qcqmc import (
+    afqmc_circuits,
     afqmc_generators,
+    fqe_conversion,
     data,
     fermion_mode,
-    fqe_conversion,
     hamiltonian,
     layer_spec,
     trial_wf,
 )
+
 
 
 def get_ansatz_qubit_wf(
@@ -45,7 +47,6 @@ def get_ansatz_qubit_wf(
     return cirq.final_state_vector(
         ansatz_circuit, qubit_order=list(ordered_qubits), dtype=np.complex128
     )
-
 
 def get_and_check_energy(
     *,
@@ -132,6 +133,90 @@ def get_two_body_params_from_qchem_amplitudes(
     two_body_params = np.atleast_1d(two_body_params)
 
     return two_body_params
+
+def build_pp_plus_trial_wavefunction(
+    params: trial_wf.PerfectPairingPlusTrialWavefunctionParams,
+    *,
+    dependencies: Dict[data.Params, data.Data],
+    do_print: bool = False,
+) -> trial_wf.TrialWavefunctionData:
+    """Builds a TrialWavefunctionData from a TrialWavefunctionParams
+
+    Args:
+        params: The parameters specifying the PP+ trial wavefunction.
+        dependencies: Data dependencies
+        do_print: Print debugging information to stdout
+
+    Returns:
+        The constructed TrialWavefunctionData object.
+    """
+
+    if do_print:
+        print("Building Trial Wavefunction")
+    np.random.seed(params.seed)
+    hamiltonian_data = dependencies[params.hamiltonian_params]
+    assert isinstance(hamiltonian_data, hamiltonian.HamiltonianData)
+
+    if params.n_orb != params.n_elec:
+        raise ValueError("PP wavefunction must have n_orb = n_elec")
+
+    if params.do_optimization:
+        (
+            one_body_params,
+            two_body_params,
+            one_body_basis_change_mat,
+        ) = get_pp_plus_params(
+            hamiltonian_data=hamiltonian_data,
+            restricted=params.restricted,
+            random_parameter_scale=params.random_parameter_scale,
+            initial_orbital_rotation=params.initial_orbital_rotation,
+            heuristic_layers=params.heuristic_layers,
+            do_pp=params.do_pp,
+            n_optimization_restarts=params.n_optimization_restarts,
+            do_print=do_print,
+            use_fast_gradients=params.use_fast_gradients,
+        )
+    else:
+        if (
+            params.initial_two_body_qchem_amplitudes is None
+            or params.initial_orbital_rotation is not None
+        ):
+            raise NotImplementedError("TODO: Implement whatever isn't finished here.")
+
+        n_one_body_params = params.n_orb * (params.n_orb - 1)
+        one_body_params = np.zeros(n_one_body_params)
+        one_body_basis_change_mat = np.diag(np.ones(params.n_orb * 2))
+        two_body_params = get_two_body_params_from_qchem_amplitudes(
+            params.initial_two_body_qchem_amplitudes
+        )
+
+    (superposition_circuit, ansatz_circuit) = afqmc_circuits.get_circuits(
+        two_body_params=two_body_params,
+        n_orb=params.n_orb,
+        n_elec=params.n_elec,
+        heuristic_layers=params.heuristic_layers,
+    )
+
+    ansatz_energy, hf_energy = get_and_check_energy(
+        hamiltonian_data=hamiltonian_data,
+        ansatz_circuit=ansatz_circuit,
+        params=params,
+        one_body_params=one_body_params,
+        two_body_params=two_body_params,
+        one_body_basis_change_mat=one_body_basis_change_mat,
+    )
+
+    return trial_wf.TrialWavefunctionData(
+        params=params,
+        ansatz_circuit=ansatz_circuit,
+        superposition_circuit=superposition_circuit,
+        hf_energy=hf_energy,
+        ansatz_energy=ansatz_energy,
+        fci_energy=hamiltonian_data.e_fci,
+        one_body_basis_change_mat=one_body_basis_change_mat,
+        one_body_params=one_body_params,
+        two_body_params=two_body_params,
+    )
 
 
 def get_rotated_hamiltonians(
