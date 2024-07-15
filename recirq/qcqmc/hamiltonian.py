@@ -84,6 +84,7 @@ class HamiltonianFileParams(data.Params):
         n_orb: The number of spatial orbitals.
         n_elec: The total number of electrons.
         do_eri_restore: Whether to restore 8-fold symmetry to the integrals.
+        path_prefix: An optional path string to prepend to the default hamiltonian path.
     """
 
     name: str
@@ -260,7 +261,7 @@ class HamiltonianData(data.Data):
         initial_wf.set_wfn(strategy="hartree-fock")
         e_hf = _cast_to_float(initial_wf.expectationValue(fqe_ham) + e_core)
 
-        return HamiltonianData(
+        return cls(
             params=params,
             e_core=e_core,
             one_body_integrals=one_body_integrals,
@@ -313,7 +314,7 @@ class HamiltonianData(data.Data):
         pyscf_fci.verbose = 0
         e_fci = pyscf_fci.kernel()[0]
 
-        return HamiltonianData(
+        return cls(
             params=params,
             e_core=e_core,
             one_body_integrals=one_body_integrals,

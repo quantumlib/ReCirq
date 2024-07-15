@@ -225,8 +225,10 @@ class TrialWavefunctionData(data.Data):
 
         Args:
             params: The parameters specifying the PP+ trial wavefunction.
-            dependencies: Data dependencies
-            do_print: Print debugging information to stdout
+            dependencies: Dependencies required to construct the trial
+                wavefunction. In particular, a HamiltonianParams/Data key pair must
+                be provided. 
+            do_print: If set to true then print debugging information to stdout
 
         Returns:
             The constructed TrialWavefunctionData object.
@@ -261,12 +263,13 @@ class TrialWavefunctionData(data.Data):
                 use_fast_gradients=params.use_fast_gradients,
             )
         else:
-            if (
-                params.initial_two_body_qchem_amplitudes is None
-                or params.initial_orbital_rotation is not None
-            ):
+            if params.initial_two_body_qchem_amplitudes is None:
                 raise NotImplementedError(
-                    "TODO: Implement whatever isn't finished here."
+                    "if initial_two_body_qchem_amplitudes must be set if do_optimization is False."
+                )
+            if params.initial_orbital_rotation: 
+                raise NotImplementedError(
+                    "Initial oribtal rotation must be None if do_optimization is False."
                 )
 
             n_one_body_params = params.n_orb * (params.n_orb - 1)
@@ -292,7 +295,7 @@ class TrialWavefunctionData(data.Data):
             one_body_basis_change_mat=one_body_basis_change_mat,
         )
 
-        return TrialWavefunctionData(
+        return cls(
             params=params,
             ansatz_circuit=ansatz_circuit,
             superposition_circuit=superposition_circuit,
