@@ -14,13 +14,17 @@
 import cirq
 import numpy as np
 import pytest
-from openfermion import (get_fermion_operator, get_ground_state,
-                         get_number_preserving_sparse_operator)
+from openfermion import (
+    get_fermion_operator,
+    get_ground_state,
+    get_number_preserving_sparse_operator,
+)
 
-from recirq.qcqmc.hamiltonian import (HamiltonianFileParams,
-                                      PyscfHamiltonianParams,
-                                      build_hamiltonian_from_file,
-                                      build_hamiltonian_from_pyscf)
+from recirq.qcqmc.hamiltonian import (
+    HamiltonianData,
+    HamiltonianFileParams,
+    PyscfHamiltonianParams,
+)
 
 
 def test_load_from_file_hamiltonian_runs():
@@ -28,7 +32,7 @@ def test_load_from_file_hamiltonian_runs():
         name="test hamiltonian", integral_key="fh_sto3g", n_orb=2, n_elec=2
     )
 
-    hamiltonian_data = build_hamiltonian_from_file(params)
+    hamiltonian_data = HamiltonianData.build_hamiltonian_from_file(params)
 
     assert hamiltonian_data.one_body_integrals.shape == (2, 2)
     assert hamiltonian_data.two_body_integrals_pqrs.shape == (2, 2, 2, 2)
@@ -62,7 +66,7 @@ def test_hamiltonian_energy_consistent(
         do_eri_restore=do_eri_restore,
     )
 
-    hamiltonian_data = build_hamiltonian_from_file(params)
+    hamiltonian_data = HamiltonianData.build_hamiltonian_from_file(params)
 
     molecular_hamiltonian = hamiltonian_data.get_molecular_hamiltonian()
 
@@ -90,7 +94,7 @@ def test_pyscf_h4_consistent_with_file():
         charge=0,
     )
 
-    pyscf_hamiltonian = build_hamiltonian_from_pyscf(pyscf_params)
+    pyscf_hamiltonian = HamiltonianData.build_hamiltonian_from_pyscf(pyscf_params)
 
     from_file_params = HamiltonianFileParams(
         name="test hamiltonian",
@@ -100,7 +104,9 @@ def test_pyscf_h4_consistent_with_file():
         do_eri_restore=False,
     )
 
-    from_file_hamiltonian = build_hamiltonian_from_file(from_file_params)
+    from_file_hamiltonian = HamiltonianData.build_hamiltonian_from_file(
+        from_file_params
+    )
 
     np.testing.assert_almost_equal(
         pyscf_hamiltonian.e_core, from_file_hamiltonian.e_core, decimal=10
@@ -134,11 +140,11 @@ def test_pyscf_saves_chk_without_overwrite(tmp_path):
     chk_path = pyscf_params.base_path.with_suffix(".chk")
     chk_path.unlink(missing_ok=True)
 
-    build_hamiltonian_from_pyscf(pyscf_params)
+    HamiltonianData.build_hamiltonian_from_pyscf(pyscf_params)
     assert chk_path.exists()
 
     with pytest.raises(FileExistsError):
-        pyscf_hamiltonian = build_hamiltonian_from_pyscf(pyscf_params)
+        pyscf_hamiltonian = HamiltonianData.build_hamiltonian_from_pyscf(pyscf_params)
 
     chk_path.unlink()
 
@@ -165,7 +171,7 @@ def test_pyscf_saves_chk_with_overwrite(tmp_path):
     chk_path = pyscf_params.base_path.with_suffix(".chk")
     chk_path.unlink(missing_ok=True)
 
-    build_hamiltonian_from_pyscf(pyscf_params)
+    HamiltonianData.build_hamiltonian_from_pyscf(pyscf_params)
 
     assert chk_path.exists()
 

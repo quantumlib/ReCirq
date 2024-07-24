@@ -84,9 +84,7 @@ class HamiltonianFileParams(data.Params):
         n_orb: The number of spatial orbitals.
         n_elec: The total number of electrons.
         do_eri_restore: Whether to restore 8-fold symmetry to the integrals.
-        path_prefix: An optional path string to prepend to the default
-            hamiltonian data directory (by default the integrals will be written /
-            read to ./data/hamiltonians.)
+        path_prefix: An optional path string to prepend to the default hamiltonian path.
     """
 
     name: str
@@ -101,9 +99,7 @@ class HamiltonianFileParams(data.Params):
 
     @property
     def path_string(self) -> str:
-        return (
-            self.path_prefix + config.OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
-        )
+        return self.path_prefix + config.OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
 
 
 @attrs.frozen
@@ -129,7 +125,6 @@ class PyscfHamiltonianParams(data.Params):
             will be allowed to overwrite the previously saved chk file. Otherwise, if save_chkfile
             is True and overwrite_chk_file is False, then we raise a FileExistsError if the
             chk file already exists.
-        path_prefix: A prefix to prepend to the path where the data will be saved (if any)
     """
 
     name: str
@@ -153,9 +148,7 @@ class PyscfHamiltonianParams(data.Params):
     @property
     def path_string(self) -> str:
         """Output path string"""
-        return (
-            self.path_prefix + config.OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
-        )
+        return self.path_prefix + config.OUTDIRS.DEFAULT_HAMILTONIAN_DIRECTORY + self.name
 
     @property
     def chk_path(self) -> Path:
@@ -227,6 +220,107 @@ class HamiltonianData(data.Data):
 
         return integrals_to_fqe_restricted(
             h1e=self.one_body_integrals, h2e=self.two_body_integrals_pqrs
+        )
+
+    @classmethod
+    def build_hamiltonian_from_file(
+        cls,
+        params: HamiltonianFileParams,
+    ) -> 'HamiltonianData':
+        """Function for loading a Hamiltonian from a file.
+
+        Args:
+            params: parameters defining the hamiltonian.
+
+        Returns:
+            properly constructed HamiltonianFileParams object.
+        """
+        filepath = data.get_integrals_path(name=params.integral_key)
+        e_core, one_body_integrals, two_body_integrals_psqr, e_fci = load_integrals(
+            filepath=filepath
+        )
+
+        n_orb = params.n_orb
+
+        if params.do_eri_restore:
+            two_body_integrals_psqr = ao2mo.restore(1, two_body_integrals_psqr, n_orb)
+            # This step may be necessary depending on the format in which the integrals were stored.
+
+        # We have to reshape to a four index tensor and reorder the indices from
+        # chemist's ordering to physicist's.
+        two_body_integrals_psqr = two_body_integrals_psqr.reshape(
+            (n_orb, n_orb, n_orb, n_orb)
+        )
+        two_body_integrals_pqrs = np.einsum("psqr->pqrs", two_body_integrals_psqr)
+
+        fqe_ham = integrals_to_fqe_restricted(
+            h1e=one_body_integrals, h2e=two_body_integrals_pqrs
+        )
+
+        initial_wf = fqe.Wavefunction([[params.n_elec, 0, params.n_orb]])
+        initial_wf.set_wfn(strategy="hartree-fock")
+        e_hf = _cast_to_float(initial_wf.expectationValue(fqe_ham) + e_core)
+
+        return cls(
+            params=params,
+            e_core=e_core,
+            one_body_integrals=one_body_integrals,
+            two_body_integrals_pqrs=two_body_integrals_pqrs,
+            e_hf=e_hf,
+            e_fci=e_fci,
+        )
+
+    @classmethod
+    def build_hamiltonian_from_pyscf(
+        cls, params: PyscfHamiltonianParams
+    ) -> 'HamiltonianData':
+        """Construct a HamiltonianData object from pyscf molecule.
+
+        Runs a RHF or ROHF simulation, performs an integral transformation and computes the FCI energy.
+
+        Args:
+            params: A PyscfHamiltonianParams object specifying the molecule. pyscf_molecule is required.
+
+        Returns:
+            A HamiltonianData object.
+        """
+        molecule = params.pyscf_molecule
+
+        if params.rhf:
+            pyscf_scf = scf.RHF(molecule)
+        else:
+            pyscf_scf = scf.ROHF(molecule)
+
+        pyscf_scf.verbose = params.verbose_scf
+        if params.save_chkfile:
+            if not params.overwrite_chk_file:
+                if params.chk_path.exists():
+                    raise FileExistsError(
+                        f"A chk file already exists at {params.chk_path}"
+                    )
+            pyscf_scf.chkfile = str(params.chk_path.resolve())
+        pyscf_scf = pyscf_scf.newton()
+        pyscf_scf.run()
+
+        e_hf = float(pyscf_scf.e_tot)
+
+        one_body_integrals, two_body_integrals = compute_integrals(
+            pyscf_molecule=molecule, pyscf_scf=pyscf_scf
+        )
+
+        e_core = float(molecule.energy_nuc())
+
+        pyscf_fci = fci.FCI(molecule, pyscf_scf.mo_coeff)
+        pyscf_fci.verbose = 0
+        e_fci = pyscf_fci.kernel()[0]
+
+        return cls(
+            params=params,
+            e_core=e_core,
+            one_body_integrals=one_body_integrals,
+            two_body_integrals_pqrs=two_body_integrals,
+            e_hf=e_hf,
+            e_fci=e_fci,
         )
 
 
@@ -303,99 +397,3 @@ def spinorb_from_spatial(
 def _cast_to_float(x: np.complex_, tol=1e-8) -> float:
     assert np.abs(x.imag) < tol, "Large imaginary component found."
     return float(x.real)
-
-
-def build_hamiltonian_from_file(
-    params: HamiltonianFileParams,
-) -> HamiltonianData:
-    """Function for loading a Hamiltonian from a file.
-
-    Args:
-        params: parameters defining the hamiltonian.
-
-    Returns:
-        properly constructed HamiltonianFileParams object.
-    """
-    filepath = data.get_integrals_path(name=params.integral_key)
-    e_core, one_body_integrals, two_body_integrals_psqr, e_fci = load_integrals(
-        filepath=filepath
-    )
-
-    n_orb = params.n_orb
-
-    if params.do_eri_restore:
-        two_body_integrals_psqr = ao2mo.restore(1, two_body_integrals_psqr, n_orb)
-        # This step may be necessary depending on the format in which the integrals were stored.
-
-    # We have to reshape to a four index tensor and reorder the indices from
-    # chemist's ordering to physicist's.
-    two_body_integrals_psqr = two_body_integrals_psqr.reshape(
-        (n_orb, n_orb, n_orb, n_orb)
-    )
-    two_body_integrals_pqrs = np.einsum("psqr->pqrs", two_body_integrals_psqr)
-
-    fqe_ham = integrals_to_fqe_restricted(
-        h1e=one_body_integrals, h2e=two_body_integrals_pqrs
-    )
-
-    initial_wf = fqe.Wavefunction([[params.n_elec, 0, params.n_orb]])
-    initial_wf.set_wfn(strategy="hartree-fock")
-    e_hf = _cast_to_float(initial_wf.expectationValue(fqe_ham) + e_core)
-
-    return HamiltonianData(
-        params=params,
-        e_core=e_core,
-        one_body_integrals=one_body_integrals,
-        two_body_integrals_pqrs=two_body_integrals_pqrs,
-        e_hf=e_hf,
-        e_fci=e_fci,
-    )
-
-
-def build_hamiltonian_from_pyscf(params: PyscfHamiltonianParams) -> HamiltonianData:
-    """Construct a HamiltonianData object from pyscf molecule.
-
-    Runs a RHF or ROHF simulation, performs an integral transformation and computes the FCI energy.
-
-    Args:
-        params: A PyscfHamiltonianParams object specifying the molecule. pyscf_molecule is required.
-
-    Returns:
-        A HamiltonianData object.
-    """
-    molecule = params.pyscf_molecule
-
-    if params.rhf:
-        pyscf_scf = scf.RHF(molecule)
-    else:
-        pyscf_scf = scf.ROHF(molecule)
-
-    pyscf_scf.verbose = params.verbose_scf
-    if params.save_chkfile:
-        if not params.overwrite_chk_file:
-            if params.chk_path.exists():
-                raise FileExistsError(f"A chk file already exists at {params.chk_path}")
-        pyscf_scf.chkfile = str(params.chk_path.resolve())
-    pyscf_scf = pyscf_scf.newton()
-    pyscf_scf.run()
-
-    e_hf = float(pyscf_scf.e_tot)
-
-    one_body_integrals, two_body_integrals = compute_integrals(
-        pyscf_molecule=molecule, pyscf_scf=pyscf_scf
-    )
-
-    e_core = float(molecule.energy_nuc())
-
-    pyscf_fci = fci.FCI(molecule, pyscf_scf.mo_coeff)
-    pyscf_fci.verbose = 0
-    e_fci = pyscf_fci.kernel()[0]
-
-    return HamiltonianData(
-        params=params,
-        e_core=e_core,
-        one_body_integrals=one_body_integrals,
-        two_body_integrals_pqrs=two_body_integrals,
-        e_hf=e_hf,
-        e_fci=e_fci,
-    )

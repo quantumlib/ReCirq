@@ -24,6 +24,7 @@ import openfermion as of
 import scipy.sparse
 
 from recirq.qcqmc import (
+    afqmc_circuits,
     bitstrings,
     config,
     data,
@@ -211,6 +212,100 @@ class TrialWavefunctionData(data.Data):
         simple_dict = attrs.asdict(self)
         simple_dict["params"] = self.params
         return simple_dict
+
+    @classmethod
+    def build_pp_plus_trial_from_dependencies(
+        cls,
+        params: PerfectPairingPlusTrialWavefunctionParams,
+        *,
+        dependencies: Dict[data.Params, data.Data],
+        do_print: bool = False,
+    ) -> "TrialWavefunctionData":
+        """Builds a TrialWavefunctionData from a TrialWavefunctionParams
+
+        Args:
+            params: The parameters specifying the PP+ trial wavefunction.
+            dependencies: Dependencies required to construct the trial
+                wavefunction. In particular, a HamiltonianParams/Data key pair must
+                be provided. 
+            do_print: If set to true then print debugging information to stdout
+
+        Returns:
+            The constructed TrialWavefunctionData object.
+        """
+
+        # Avoid circular imports
+        from recirq.qcqmc import optimize_wf
+
+        if do_print:
+            print("Building Trial Wavefunction")
+        np.random.seed(params.seed)
+        hamiltonian_data = dependencies[params.hamiltonian_params]
+        assert isinstance(hamiltonian_data, hamiltonian.HamiltonianData)
+
+        if params.n_orb != params.n_elec:
+            raise ValueError("PP wavefunction must have n_orb = n_elec")
+
+        if params.do_optimization:
+            (
+                one_body_params,
+                two_body_params,
+                one_body_basis_change_mat,
+            ) = optimize_wf.get_pp_plus_params(
+                hamiltonian_data=hamiltonian_data,
+                restricted=params.restricted,
+                random_parameter_scale=params.random_parameter_scale,
+                initial_orbital_rotation=params.initial_orbital_rotation,
+                heuristic_layers=params.heuristic_layers,
+                do_pp=params.do_pp,
+                n_optimization_restarts=params.n_optimization_restarts,
+                do_print=do_print,
+                use_fast_gradients=params.use_fast_gradients,
+            )
+        else:
+            if params.initial_two_body_qchem_amplitudes is None:
+                raise NotImplementedError(
+                    "if initial_two_body_qchem_amplitudes must be set if do_optimization is False."
+                )
+            if params.initial_orbital_rotation: 
+                raise NotImplementedError(
+                    "Initial oribtal rotation must be None if do_optimization is False."
+                )
+
+            n_one_body_params = params.n_orb * (params.n_orb - 1)
+            one_body_params = np.zeros(n_one_body_params)
+            one_body_basis_change_mat = np.diag(np.ones(params.n_orb * 2))
+            two_body_params = optimize_wf.get_two_body_params_from_qchem_amplitudes(
+                params.initial_two_body_qchem_amplitudes
+            )
+
+        (superposition_circuit, ansatz_circuit) = afqmc_circuits.get_circuits(
+            two_body_params=two_body_params,
+            n_orb=params.n_orb,
+            n_elec=params.n_elec,
+            heuristic_layers=params.heuristic_layers,
+        )
+
+        ansatz_energy, hf_energy = optimize_wf.get_and_check_energy(
+            hamiltonian_data=hamiltonian_data,
+            ansatz_circuit=ansatz_circuit,
+            params=params,
+            one_body_params=one_body_params,
+            two_body_params=two_body_params,
+            one_body_basis_change_mat=one_body_basis_change_mat,
+        )
+
+        return cls(
+            params=params,
+            ansatz_circuit=ansatz_circuit,
+            superposition_circuit=superposition_circuit,
+            hf_energy=hf_energy,
+            ansatz_energy=ansatz_energy,
+            fci_energy=hamiltonian_data.e_fci,
+            one_body_basis_change_mat=one_body_basis_change_mat,
+            one_body_params=one_body_params,
+            two_body_params=two_body_params,
+        )
 
 
 def get_rotated_hamiltonians(
