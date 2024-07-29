@@ -58,6 +58,7 @@ setup(name='recirq',
           'hfvqe/molecular_data/hydrogen_chains/*/*/*',
           # Needed for ftbbl docs
           'otoc/loschmidt/tilted_square_lattice/*',
+          # Needed for qcqmc notebooks
           'qcqmc/data/integrals/*',
       ]},
       )
