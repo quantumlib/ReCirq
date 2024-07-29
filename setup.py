@@ -59,6 +59,6 @@ setup(name='recirq',
           # Needed for ftbbl docs
           'otoc/loschmidt/tilted_square_lattice/*',
           # Needed for qcqmc notebooks
-          'qcqmc/data/integrals/*/*.chk',
+          'qcqmc/data/integrals/*/*',
       ]},
       )
