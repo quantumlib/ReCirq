@@ -3,7 +3,7 @@ import itertools
 import cirq
 import numpy as np
 import pytest
-import quaff
+from recirq.third_party import quaff
 
 
 def assert_hadamard_free_gate_unitary_is_good(n, gate):

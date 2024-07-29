@@ -1,7 +1,7 @@
 import cirq
 import numpy as np
 import pytest
-from quaff import (
+from recirq.third_party.quaff import (
     DEFAULT_RESOLVERS,
     HadamardFreeGate,
     TruncatedCliffordGate,

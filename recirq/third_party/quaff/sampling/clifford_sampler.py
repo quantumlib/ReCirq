@@ -5,8 +5,8 @@ from typing import Iterable, NamedTuple, Optional, Tuple
 
 import cirq
 import numpy as np
-from quaff import comb, indexing, linalg, testing
-from quaff.sampling.sampler import SingleParameterSampler
+from recirq.third_party.quaff import comb, indexing, linalg, testing
+from recirq.third_party.quaff.sampling.sampler import SingleParameterSampler
 
 QuantumMallowsSample = Tuple[Tuple[bool, ...], Tuple[int, ...]]
 QuantumMallowsRandomness = Tuple[int, ...]

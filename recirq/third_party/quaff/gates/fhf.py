@@ -5,9 +5,9 @@ from typing import Optional, Tuple, cast
 
 import cirq
 import numpy as np
-from quaff import linalg, sampling, testing
-from quaff.gates.hadamard_free import HadamardFreeGate
-from quaff.gates.single_qubit_layer import SingleQubitLayerGate
+from recirq.third_party.quaff import linalg, sampling, testing
+from recirq.third_party.quaff.gates.hadamard_free import HadamardFreeGate
+from recirq.third_party.quaff.gates.single_qubit_layer import SingleQubitLayerGate
 
 
 def _recover_permutation(matrix: np.ndarray) -> Optional[np.ndarray]:

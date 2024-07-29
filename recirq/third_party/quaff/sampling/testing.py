@@ -2,8 +2,8 @@ import collections
 
 import numpy as np
 import scipy.stats
-from quaff import json_serialization, random
-from quaff.testing import assert_equivalent_repr
+from recirq.third_party.quaff import json_serialization, random
+from recirq.third_party.quaff.testing import assert_equivalent_repr
 
 
 def assert_sampler_consistent(sampler_cls, *args, test_json=False, **kwargs):

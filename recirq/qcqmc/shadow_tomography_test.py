@@ -14,7 +14,7 @@
 
 import cirq
 import numpy as np
-import quaff
+from recirq.third_party import quaff
 
 from recirq.qcqmc.bitstrings import get_bitstrings_a_b
 from recirq.qcqmc.shadow_tomography import (

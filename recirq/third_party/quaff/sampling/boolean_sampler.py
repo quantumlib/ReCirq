@@ -2,8 +2,8 @@ import math
 from typing import Any, Iterable, Optional, Tuple
 
 import numpy as np
-from quaff import linalg, testing
-from quaff.sampling.sampler import Randomness, Sample, Sampler
+from recirq.third_party.quaff import linalg, testing
+from recirq.third_party.quaff.sampling.sampler import Randomness, Sample, Sampler
 
 
 class BooleanSampler(Sampler):

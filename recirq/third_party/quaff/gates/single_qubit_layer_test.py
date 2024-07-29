@@ -1,7 +1,7 @@
 import cirq
 import numpy as np
 import pytest
-import quaff
+from recirq.third_party import quaff
 
 
 def test_single_qubit_layer_gate_bad():

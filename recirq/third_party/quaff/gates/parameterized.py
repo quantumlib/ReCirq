@@ -2,8 +2,8 @@ from typing import Any, Iterable, Optional, Sequence
 
 import cirq
 import sympy
-from quaff import cz_layer
-from quaff.gates.truncated_clifford import TruncatedCliffordGate
+from recirq.third_party.quaff import cz_layer
+from recirq.third_party.quaff.gates.truncated_clifford import TruncatedCliffordGate
 
 
 def get_truncated_clifford_resolver(

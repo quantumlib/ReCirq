@@ -4,11 +4,11 @@ from typing import cast
 
 import cirq
 import numpy as np
-from quaff import comb, cz_layer, indexing, linalg, sampling, testing
-from quaff.gates.fhf import FHFGate
-from quaff.gates.hadamard_free import HadamardFreeGate
-from quaff.gates.single_qubit_layer import SingleQubitLayerGate
-from quaff.linalg import BooleanMatrix, BooleanVector
+from recirq.third_party.quaff import comb, cz_layer, indexing, linalg, sampling, testing
+from recirq.third_party.quaff.gates.fhf import FHFGate
+from recirq.third_party.quaff.gates.hadamard_free import HadamardFreeGate
+from recirq.third_party.quaff.gates.single_qubit_layer import SingleQubitLayerGate
+from recirq.third_party.quaff.linalg import BooleanMatrix, BooleanVector
 
 
 @dataclass(eq=True, order=True)

@@ -2,7 +2,7 @@ from typing import Iterable, List, Sequence, Tuple
 
 import cirq
 import numpy as np
-from quaff import indexing, linalg, random
+from recirq.third_party.quaff import indexing, linalg, random
 
 
 class BasisChangeGate(cirq.Gate):

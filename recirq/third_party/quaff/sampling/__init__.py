@@ -1,4 +1,4 @@
-from quaff import testing
+from recirq.third_party.quaff import testing
 
 from .boolean_sampler import BooleanSampler
 from .clifford_sampler import (

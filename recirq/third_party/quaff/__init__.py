@@ -1,4 +1,4 @@
-from quaff import indexing, json_serialization, linalg, random, testing
+from recirq.third_party.quaff import indexing, json_serialization, linalg, random, testing
 
 from .basis_change import BasisChangeGate, get_clearing_network, get_reversal_network
 from .comb import binom, get_inversion_number, get_num_perms_with_inversion_number
@@ -66,8 +66,8 @@ from .sampling import (
 
 
 def _register_resolver() -> None:
-    from quaff.json_resolver import json_resolver
-    from quaff.json_serialization import _internal_register_resolver
+    from recirq.third_party.quaff.json_resolver import json_resolver
+    from recirq.third_party.quaff.json_serialization import _internal_register_resolver
 
     _internal_register_resolver(json_resolver)
 

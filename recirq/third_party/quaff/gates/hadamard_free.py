@@ -4,7 +4,7 @@ from typing import Any, Tuple
 
 import cirq
 import numpy as np
-from quaff import indexing, linalg, random, testing
+from recirq.third_party.quaff import indexing, linalg, random, testing
 
 
 @dataclass

@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 import pytest
-import quaff
+from recirq.third_party import quaff as quaff
 
 
 def test_get_num_perms_with_inversion_number():
