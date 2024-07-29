@@ -4,16 +4,9 @@ from cirq.protocols.json_serialization import ObjectFactory
 
 
 def json_resolver(quaff_type: str) -> Optional[ObjectFactory]:
-    if quaff_type.startswith("recirq.third_party.quaff."):
-        to_import = '.'.join(quaff_type.split('.')[1:])
+    if quaff_type.startswith("quaff"):
         return cast(
             ObjectFactory,
-            eval(f"__import__('recirq').{to_import}", {}, {}),
-        )
-    elif quaff_type.startswith("quaff"):
-        to_import = f'third_party.{quaff_type}' 
-        return cast(
-            ObjectFactory,
-            eval(f"__import__('recirq').{to_import}", {}, {}),
+            eval(f"__import__('recirq').third_party.{quaff_type}", {}, {}),
         )
     return None
