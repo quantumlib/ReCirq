@@ -9,7 +9,7 @@ this paper, it was shown that a quantum computer could be used to prepare
 complicated trial wavefunctions in order to unbias the classical results. 
 
 ## Code Overview
-The [Code Overview](./high-level.ipynb) notebook introduces the basic structure
+The [Code Overview](./high_level.ipynb) notebook introduces the basic structure
 of the code provided in recirq to generate the trial wavefunction's prepare in the [QCQMC paper](https://www.nature.com/articles/s41586-021-04351-z).
 
 ## End-to-End
