@@ -17,7 +17,7 @@ from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Un
 import attrs
 import cirq
 import numpy as np
-import quaff
+from recirq.third_party import quaff
 
 from recirq.qcqmc import config, data, for_refactor, trial_wf
 

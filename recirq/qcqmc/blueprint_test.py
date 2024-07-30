@@ -16,7 +16,7 @@ from typing import Iterable, Tuple
 import cirq
 import numpy as np
 import pytest
-import quaff
+from recirq.third_party import quaff
 
 from recirq.qcqmc.blueprint import (BlueprintData, BlueprintParamsTrialWf,
                                     _get_truncated_cliffords)
