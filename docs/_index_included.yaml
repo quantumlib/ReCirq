@@ -106,3 +106,20 @@ included:
   items:
   - heading: Experiment example
     path: /cirq/experiments/kpz/kpz
+
+- heading: Quantum-Classical Quantum Monte Carlo
+  description: How to run QCQMC for quantum chemistry applications.
+  options:
+    - cards
+  items:
+  - heading: Overview
+    path: /cirq/experiments/qcqmc
+  - heading: Code Layout
+    description: A short tutorial on the code structure.
+    path: /cirq/experiments/qcqmc/high_level
+  - heading: End-to-End Example
+    description: How to generate a shadow trial wavefunction for a molecular system
+    path: /cirq/experiments/qcqmc/full_workflow
+  - heading: Experimental Wavefunctions
+    description: Analyze published experimental wavefunctions.
+    path: /cirq/experiments/qcqmc/experimental_wavefunctions
