@@ -20,5 +20,3 @@ and analyze the results. Please read on to learn about:
 
 See the left navigation for more information about the QAOA experiment
 and how to run it end-to-end.
-
-
