@@ -73,3 +73,13 @@ toc:
 - heading: "Kardar-Parisi-Zhang"
 - title: "KPZ and the Heisenberg Spin Chain"
   path: /cirq/experiments/kpz/kpz
+
+- heading: "Quantum-Classical Quantum Monte Carlo"
+- title: "Overview"
+  path: /cirq/experiments/qcqmc
+- title: "Code Layout"
+  path: /cirq/experiments/qcqmc/high_level
+- title: "End-to-End Example"
+  path: /cirq/experiments/qcqmc/full_workflow
+- title: "Experimental Wavefunctions"
+  path: /cirq/experiments/qcqmc/experimental_wavefunctions
