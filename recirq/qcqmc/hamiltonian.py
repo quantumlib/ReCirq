@@ -394,6 +394,6 @@ def spinorb_from_spatial(
     return one_body_coefficients, two_body_coefficients
 
 
-def _cast_to_float(x: np.complex_, tol=1e-8) -> float:
+def _cast_to_float(x: np.complex128, tol=1e-8) -> float:
     assert np.abs(x.imag) < tol, "Large imaginary component found."
     return float(x.real)

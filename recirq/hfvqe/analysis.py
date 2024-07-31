@@ -284,7 +284,7 @@ def mcweeny_purification(rho: np.ndarray,
     Returns:
         Purified density matrix.
     """
-    error = np.infty
+    error = np.inf
     new_rho = rho.copy()
     while error > threshold:
         new_rho = 3 * (new_rho @ new_rho) - 2 * (new_rho @ new_rho @ new_rho)
