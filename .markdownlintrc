@@ -1,7 +1,7 @@
 { // Summary: markdownlint config file.                            -*- jsonc -*-
   //
   // Note: there are multiple programs programs named "markdownlint". For
-  // qsim, we use https://github.com/igorshubovych/markdownlint-cli/, which
+  // ReCirq, we use https://github.com/igorshubovych/markdownlint-cli/, which
   // is the one you get with "brew install markdownlint" on MacOS.
   //
   // These settings try to stay close to the Google Markdown Style as
