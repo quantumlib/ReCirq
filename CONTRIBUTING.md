@@ -71,15 +71,6 @@ Guides](https://google.github.io/styleguide/) in your code, particularly the
 
 Do your work and `git commit` your changes to your branch as needed.
 
-We use several tools to test code and perform other activities such as checking
-formatting against the style guidelines. You can run those tools locally during
-development. Wrapper scripts are located in the [`check/`](./check/)
-subdirectory to simplify running the tools.
-
-*   Run `check/pytest` to run the Pytest suite
-*   Run `check/mypy` to run the Mypy type checker
-*   Run `check/pylint` to run the Pylint code linter
-
 ### Pull requests and code reviews
 
 1.  If your local copy has drifted out of sync with the `main` branch of the
