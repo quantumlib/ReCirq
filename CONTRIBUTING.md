@@ -59,10 +59,10 @@ Guides](https://google.github.io/styleguide/) in your code, particularly the
     your local computer, so that you have a local copy where you can do your
     development work using your preferred editor and development tools.
 
-1.  Check out the `main` branch and create a new git branch from `main`:
+1.  Check out the `master` branch and create a new git branch from `master`:
 
     ```shell
-    git checkout main -b YOUR_BRANCH_NAME
+    git checkout master -b YOUR_BRANCH_NAME
     ```
 
     where `YOUR_BRANCH_NAME` is the name of your new branch.
@@ -73,22 +73,22 @@ Do your work and `git commit` your changes to your branch as needed.
 
 ### Pull requests and code reviews
 
-1.  If your local copy has drifted out of sync with the `main` branch of the
+1.  If your local copy has drifted out of sync with the `master` branch of the
     main ReCirq repo, you may need to merge the latest changes into your branch.
-    To do this, first update your local `main` and then merge your local `main`
+    To do this, first update your local `master` and then merge your local `master`
     into your branch:
 
     ```shell
     # Track the upstream repo (if your local repo hasn't):
     git remote add upstream https://github.com/quantumlib/ReCirq.git
 
-    # Update your local main.
+    # Update your local copy.
     git fetch upstream
-    git checkout main
-    git merge upstream/main
-    # Merge local main into your branch.
+    git checkout master
+    git merge upstream/master
+    # Merge local master into your branch.
     git checkout YOUR_BRANCH_NAME
-    git merge main
+    git merge master
     ```
 
     If git reports conflicts during one or both of these merge processes, you
