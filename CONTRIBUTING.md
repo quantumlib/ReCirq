@@ -40,7 +40,7 @@ purpose. The preferred manner for submitting pull requests is to fork the ReCirq
 [repository](https://github.com/quantumlib/ReCirq), create a [git
 branch](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell) in
 this fork to do your work, and when ready, create a pull request from this
-branch to the main ReCirq repository. The subsections below describe the process
+branch to the ReCirq repository. The subsections below describe the process
 in more detail.
 
 Please make sure to follow the [Google Style
@@ -74,7 +74,7 @@ Do your work and `git commit` your changes to your branch as needed.
 ### Pull requests and code reviews
 
 1.  If your local copy has drifted out of sync with the `master` branch of the
-    main ReCirq repo, you may need to merge the latest changes into your branch.
+    ReCirq repo, you may need to merge the latest changes into your branch.
     To do this, first update your local `master` and then merge your local `master`
     into your branch:
 
