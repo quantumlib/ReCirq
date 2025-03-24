@@ -1,6 +1,6 @@
 # Reporting security issues
 
-The recirq developers and community take security bugs in recirq seriously.
+The ReCirq developers and community take security bugs in ReCirq seriously.
 We appreciate your efforts to responsibly disclose your findings, and will make
 every effort to acknowledge your contributions.
 
@@ -8,11 +8,11 @@ Please **do not** use GitHub issues to report security vulnerabilities; GitHub
 issues are public, and doing so could allow someone to exploit the information
 before the problem can be addressed. Instead, please use the GitHub ["Report
 a Vulnerability"](https://github.com/quantumlib/recirq/security/advisories/new)
-interface from the _Security_ tab of the recirq repository.
+interface from the _Security_ tab of the ReCirq repository.
 
 Please report security issues in third-party modules to the person or team
-maintaining the module rather than the recirq project stewards, unless you
-believe that some action needs to be taken with recirq in order to guard
+maintaining the module rather than the  project stewards, unless you
+believe that some action needs to be taken with ReCirq in order to guard
 against the effects of a security vulnerability in a third-party module.
 
 ## Responses to security reports

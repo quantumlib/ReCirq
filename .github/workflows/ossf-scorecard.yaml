@@ -1,12 +1,24 @@
-# Summary: workflow for OSSF Scorecard (https://github.com/ossf/scorecard).
+# Copyright 2025 Google LLC
 #
-# Scorecard is an automated tool that assesses a number of important heuristics
-# associated with software security and assigns each check a score of 0-10. The
-# use of Scorecard is suggested in Google's internal GitHub guidance
-# (go/github-docs).
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# Scorecard creates a report page at the following URL (for a repo ORG/REPO):
-# https://scorecard.dev/viewer/?uri=github.com/ORG/REPO
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Zero-configuration modular workflow to run the OSSF Scorecard scanner.
+#
+# Scorecard (https://github.com/ossf/scorecard) is a repository-scanning tool
+# that evaluates a project's security practices. Its use is suggested by
+# Google's GitHub team. Scorecard's findings are reported in a repo's scanning
+# results page, https://github.com/quantumlib/REPO/security/code-scanning/.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 name: Scorecard code scan
