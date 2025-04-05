@@ -1,4 +1,4 @@
-# Copyright 2025 The Cirq Developers
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@
 
 rules:
   line-length:
-    # YAML files (especially GitHub Actions workflows) tend to end up with
-    # long lines. The default of 80 is pretty limiting, and besides, in Python
-    # code linting, we set line lengths to 100. May as well follow suit here.
     max: 100
     # Another common occurrence in YAML files is long URLs. The next two
     # settings are not specific to URLs, but help. It saves developer time by
