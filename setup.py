@@ -23,7 +23,7 @@ exec(open('recirq/_version.py').read())
 assert __version__, 'Version string cannot be empty'
 
 description = (
-    'A collection of Python modules that implement algorithms and experiments'
+    'A collection of Python modules that implement algorithms and experiments '
     'in quantum computing, written in and using Cirq. Research using Cirq!'
 )
 
