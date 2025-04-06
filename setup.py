@@ -22,6 +22,11 @@ __version__ = ''
 exec(open('recirq/_version.py').read())
 assert __version__, 'Version string cannot be empty'
 
+description = (
+    'A collection of Python modules that implement algorithms and experiments'
+    'in quantum computing, written in and using Cirq. Research using Cirq!'
+)
+
 
 def _parse_requirements(path: pathlib.Path):
     lines = [line.strip() for line in path.read_text().splitlines() if line]
@@ -45,13 +50,14 @@ setup(name='recirq',
       version=__version__,
       url='http://github.com/quantumlib/recirq',
       author='Quantum AI team and collaborators',
-      author_email='cirq@googlegroups.com',
-      python_requires='>=3.6.0',
+      maintainer_email="quantum-oss-maintainers@google.com",
+      python_requires='>=3.10.0',
       install_requires=install_requires,
       extras_require=extras_require,
       license='Apache 2',
-      description="",
+      description=description,
       long_description=open('README.md', encoding='utf-8').read(),
+      long_description_content_type='text/markdown',
       packages=find_packages(),
       package_data={'recirq': [
           # https://github.com/quantumlib/ReCirq/issues/101
