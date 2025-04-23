@@ -88,12 +88,12 @@ def test_z_plaquette_to_physical_qubits():
 
 def test_variational_ground_state_minimal_qubits():
     # Define grid parameters
-    Lx, Ly = 4, 3  # Grid dimensions
+    lx, ly = 4, 3  # Grid dimensions
     grid = LGTGrid(
         origin_qubit=cirq.GridQubit(0, 0),
         orientation_vector=(1, 1),
-        rows=Lx - 1,
-        cols=Ly - 1,
+        rows=lx - 1,
+        cols=ly - 1,
         flip_rowcol=False
     )
 
@@ -115,11 +115,11 @@ def test_variational_ground_state_minimal_qubits():
         )
         
         observable = cirq.PauliSum()
-        for row in range(Lx):
-            for col in range(Ly):
+        for row in range(lx):
+            for col in range(ly):
                 observable += cirq.PauliString(hamiltonian_coefs['Je'],cirq.Z.on_each(grid.z_plaquette_to_physical_qubits(row, col).values()))
-        for row in range(Lx-1):
-            for col in range(Ly-1):
+        for row in range(lx-1):
+            for col in range(ly-1):
                 observable += cirq.PauliString(hamiltonian_coefs['Jm'],cirq.X.on_each(grid.x_plaquette_to_physical_qubits(row, col).values()))
         for qubit in grid.physical_qubits:
             observable += cirq.PauliString(hamiltonian_coefs['he'],cirq.Z(qubit))
@@ -129,22 +129,22 @@ def test_variational_ground_state_minimal_qubits():
         results = simulator.simulate_expectation_values(circuit,[observable])
 
         if theta == np.pi:
-            assert np.isclose(results[0], Lx*Ly*hamiltonian_coefs['Je']+(Lx-1)*(Ly-1)*hamiltonian_coefs['Jm'], atol=1e-2), (
+            assert np.isclose(results[0], lx*ly*hamiltonian_coefs['Je']+(lx-1)*(ly-1)*hamiltonian_coefs['Jm'], atol=1e-2), (
             f"Error of energy of WALA initial state when theta = {theta}"
             )
         elif theta == 0:
-            assert np.isclose(results[0], Lx*Ly*hamiltonian_coefs['Je']+len(grid.physical_qubits)*hamiltonian_coefs['he'], atol=1e-2), (
+            assert np.isclose(results[0], lx*ly*hamiltonian_coefs['Je']+len(grid.physical_qubits)*hamiltonian_coefs['he'], atol=1e-2), (
             f"Error of energy of WALA initial state when theta = {theta}"
             )
 
 def test_trotter_step_minimal_qubits():
     # Define grid parameters
-    Lx, Ly = 3, 2  # Grid dimensions
+    lx, ly = 3, 2  # Grid dimensions
     grid = LGTGrid(
         origin_qubit=cirq.GridQubit(0, 0),
         orientation_vector=(1, 1),
-        rows=Lx - 1,
-        cols=Ly - 1,
+        rows=lx - 1,
+        cols=ly - 1,
         flip_rowcol=False
     )
 
@@ -156,8 +156,8 @@ def test_trotter_step_minimal_qubits():
 
     #Going to test that, under these parameters, the average probability of particle creation from the
     #WALA state after 20 Trotter steps is consistent with the expected value of 0.9019627769788106.
-    for row in range(Lx):
-        for col in range(Ly):
+    for row in range(lx):
+        for col in range(ly):
             observable += cirq.PauliString(1/6,cirq.Z.on_each(grid.z_plaquette_to_physical_qubits(row, col).values()))
 
     circuit = cirq.Circuit.from_moments(

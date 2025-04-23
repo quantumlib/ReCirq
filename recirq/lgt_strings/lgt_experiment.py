@@ -782,23 +782,23 @@ def trotter_step_minimal_qubits(
     dt: sympy.Symbol,
     coupling: sympy.Symbol,
     he: sympy.Symbol,
-    Je: sympy.Symbol = 1,
-    Jm: sympy.Symbol = 1,
+    je: sympy.Symbol = 1,
+    jm: sympy.Symbol = 1,
     extra_z_plaquette_indices: list[tuple[int, int]] = [],
     extra_x_plaquette_indices: list[tuple[int, int]] = [],
 ):
     """Generate moments to simulate a full Trotter step of the lattice gauge theory Hamiltonian.
 
     Hamiltonian can be seen at, for example, https://arxiv.org/abs/0912.3272 equation (1.2)
-    We set Je = Jm = 1 and hx = -coupling and hz = -he.
+    We set je = jm = 1 and hx = -coupling and hz = -he.
 
     Args:
         grid: Representation of set of qubits.
         dt: trotter time step.
         coupling: sigma x field strength.
         he: sigma z field strength.
-        Je: vertex strength
-        Jm: plaquette strength
+        je: vertex strength
+        jm: plaquette strength
     """
     extra_z_plaquette_ancillary_qubits = {
         grid.z_plaquette_to_z_ancilla(plaquette_indices[0], plaquette_indices[1])
@@ -831,7 +831,7 @@ def trotter_step_minimal_qubits(
     return [
         *trotter_even_zcol_entangle_minimal_qubits(grid, extra_z_plaquette_indices),
         cirq.Moment(
-            cirq.rz(-2 * Je * dt).on_each(
+            cirq.rz(-2 * je * dt).on_each(
                 grid.u_set(
                     (grid.z_even_col_ancillary_qubits - grid.z_ancillary_u_side_qubits).union(
                         extra_z_plaquette_ancillary_qubits.intersection(
@@ -840,14 +840,14 @@ def trotter_step_minimal_qubits(
                     )
                 )
             ),
-            cirq.rz(-2 * Je * dt).on_each(
+            cirq.rz(-2 * je * dt).on_each(
                 grid.r_set(
                     grid.z_ancillary_u_side_qubits.intersection(grid.z_even_col_ancillary_qubits)
                     - grid.z_ancillary_ur_corner_qubits
                     - extra_z_plaquette_ancillary_qubits
                 )
             ),
-            cirq.rz(-2 * Je * dt).on_each(
+            cirq.rz(-2 * je * dt).on_each(
                 grid.l_set(
                     grid.z_ancillary_ur_corner_qubits.intersection(grid.z_even_col_ancillary_qubits)
                     - extra_z_plaquette_ancillary_qubits
@@ -857,7 +857,7 @@ def trotter_step_minimal_qubits(
         *trotter_even_zcol_entangle_minimal_qubits(grid, extra_z_plaquette_indices)[::-1],
         *trotter_odd_zcol_entangle_minimal_qubits(grid, extra_z_plaquette_indices),
         cirq.Moment(
-            cirq.rz(-2 * Je * dt).on_each(
+            cirq.rz(-2 * je * dt).on_each(
                 grid.u_set(
                     (
                         grid.z_odd_col_ancillary_qubits
@@ -870,14 +870,14 @@ def trotter_step_minimal_qubits(
                     )
                 )
             ),
-            cirq.rz(-2 * Je * dt).on_each(
+            cirq.rz(-2 * je * dt).on_each(
                 grid.r_set(
                     grid.z_ancillary_u_side_qubits.intersection(grid.z_odd_col_ancillary_qubits)
                     - grid.z_ancillary_r_side_qubits
                     - extra_z_plaquette_ancillary_qubits
                 )
             ),
-            cirq.rz(-2 * Je * dt).on_each(
+            cirq.rz(-2 * je * dt).on_each(
                 grid.l_set(
                     grid.z_ancillary_ur_corner_qubits.union(
                         grid.z_ancillary_dr_corner_qubits
@@ -892,7 +892,7 @@ def trotter_step_minimal_qubits(
             grid, extra_plaquette_indices=extra_x_plaquette_indices
         ),
         cirq.Moment(
-            cirq.rz(-2 * Jm * dt).on_each(
+            cirq.rz(-2 * jm * dt).on_each(
                 grid.u_set(
                     grid.x_even_col_ancillary_qubits.union(
                         extra_x_plaquette_even_col_ancillary_qubits
@@ -907,7 +907,7 @@ def trotter_step_minimal_qubits(
             grid, extra_plaquette_indices=extra_x_plaquette_indices
         ),
         cirq.Moment(
-            cirq.rz(-2 * Jm * dt).on_each(
+            cirq.rz(-2 * jm * dt).on_each(
                 grid.u_set(
                     grid.x_odd_col_ancillary_qubits.union(
                         extra_x_plaquette_odd_col_ancillary_qubits
