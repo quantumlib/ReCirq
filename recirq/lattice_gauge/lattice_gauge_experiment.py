@@ -847,3 +847,27 @@ def get_ancilla_patch(
     color = ancilla_cmap(data[qubit_index])
 
     return mpatches.Circle(coordinates, radius=0.146, facecolor=color, **kwargs)
+
+def mean_field_energy(theta, Lx=5, Ly=5, Je=1., Jm=1., he=0.0):
+    energy = - Je * Lx * Ly\
+             - Jm * (Lx-1) * (Ly-1) * np.sin(theta)\
+             - he * (2 * (Lx-1) + 2 * (Ly-1)) * np.cos(theta)\
+             - he * (2 * Lx * Ly - 3 * Lx - 3 * Ly + 4) * np.cos(theta)**2
+    return energy
+
+def bitstring_to_expectation_value(
+        bitstrings:np.ndarray
+)->np.ndarray:
+    return -2 * bitstrings + 1
+
+def energy_from_measurements(
+        grid:LGTGrid,
+        hamiltonian_coefs:dict,
+        z_basis_results:np.ndarray,
+        x_basis_results:np.ndarray
+) -> float:
+    return (-hamiltonian_coefs['Je'] * np.sum(np.mean(bitstring_to_expectation_value(plaquette_bitstrings(z_basis_results,grid)),axis=0))
+            -hamiltonian_coefs['Jm'] * np.sum(np.mean(bitstring_to_expectation_value(x_plaquette_bitstrings(x_basis_results,grid)),axis=0))
+            -hamiltonian_coefs['he'] * np.sum(np.mean(bitstring_to_expectation_value(z_basis_results),axis=0))
+            -hamiltonian_coefs['lambda'] * np.sum(np.mean(bitstring_to_expectation_value(x_basis_results),axis=0))
+    )
