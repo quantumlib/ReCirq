@@ -68,5 +68,5 @@ jobs:
           python-version: '3.10'
       - name: Doc check
         run: |
-          pip install -r dev_tools/requirements/notebooks.env.txt
+          pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
           dev_tools/nbformat
