@@ -41,8 +41,7 @@ cd "${topdir}" || exit $?
 
 # check if the nbfmt tool in tensorflow-docs is installed and working
 if ! python3 -c "import tensorflow_docs.tools.nbfmt"; then
-    echo -e "\033[31mMissing installation of tensorflow-docs Python package.\033[0m"
-    echo -e "\033[31mPlease do 'pip install -r dev_tools/requirements/notebook.env.txt'.\033[0m"
+    echo -e "\033[31mInstallation of tensorflow-docs is broken, please correct.\033[0m"
     exit 2
 fi
 
