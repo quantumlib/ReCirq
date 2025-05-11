@@ -16,7 +16,7 @@
 # Formats ipython notebooks with tensorflow-docs nbformat tool.
 #
 # Usage:
-#     check/nbformat [--apply]
+#     dev_tools/nbformat [--apply]
 #
 # Without '--apply', the diff that would be applied is printed and the exit
 # status is 1 if there are any changes or else 0 if no changes are needed.
@@ -57,7 +57,7 @@ if output=$(my_nbfmt --test docs 2>&1); then
 elif (( only_print )); then
     echo -e "\033[31mThe following notebooks require formatting\033[0m."
     grep "^- docs" <<<"${output}"
-    echo -e "\033[33mNotebooks are not formatted. Please run 'check/nbformat --apply'\033[0m"
+    echo -e "\033[33mNotebooks are not formatted. Please run 'dev_tools/nbformat --apply'\033[0m"
     exit_code=1
 else
     my_nbfmt docs &&
