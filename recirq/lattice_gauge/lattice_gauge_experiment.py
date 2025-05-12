@@ -761,7 +761,7 @@ def plot_qubit_polarization_values(
         # Plot Z plaquette bottom qubits
         for row, col in plot_physical_qubits[1]:
             qubit_index = (
-                (data.code.rows + 1) * (data.code.cols + 1) + (row) * (data.code.cols + 1) + col
+                (grid.rows + 1) * (grid.cols + 1) + (row) * (grid.cols + 1) + col
             )
 
             ax.add_patch(
@@ -771,7 +771,6 @@ def plot_qubit_polarization_values(
                     row,
                     col,
                     x_basis=False,
-                    round_edges=round_edges,
                     qubit_colormap=qubit_colormap,
                     **qubit_kwargs,
                 )
