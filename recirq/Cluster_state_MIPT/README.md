@@ -12,10 +12,12 @@ The experiment uses a 6x6 grid of qubits with ancilla qubits for error mitigatio
    - Positions probe qubits at specific distances (3-6 units apart)
 
 2. **Circuit Generation**:
-   - Applies CZ gates to create cluster state entanglement
+   - Applies Hadamard gates to all qubits
+   - Applies CZ gates to create cluster state
    - Implements single-qubit rotations (Rz and Ry gates)
    - Adds basis rotations for measurement in X, Y, or Z basis
    - Includes ancilla qubit operations for error mitigation
+   - Measures all preparation qubits to create entanglement pairs for probe qubits
 
 ### Implementation Details
 
@@ -30,7 +32,7 @@ After these steps, projective measurement in the $Z$ basis is performed on the p
 
 The nearest-neighbor gate $e^{i(\pi/4)\sum_{\langle j,k \rangle} Z_j Z_k}$ is experimentally implemented by first applying a controlled-$Z$ ($\mathrm{CZ}$) gate between each pair of qubits, followed by local $Z^{-1/2}$ on both qubits, i.e., $\mathrm{CZ}_{jk}Z_j^{-1/2}Z_k^{-1/2}$. All nearest-neighbor two-qubit gates are applied in the following sequence to maintain constant circuit depth as the system size scales up: first, odd horizontal links; then, even horizontal links; followed by odd vertical links and finally even vertical links.
 
-![Experimental realization of the circuit on quantum chip with 6x6 lattice at d=5.](figs/app/shallow_lattice.pdf)
+![Experimental realization of the circuit on quantum chip with 6x6 lattice at d=5.](grid_d=5.png)
 
 *Figure: Experimental realization of the circuit on a quantum chip with $6\times6$ lattice at $d=5$. Solid red: preparation qubits; solid green: probe qubits A and B. Faded qubits are ancillaries for readout error mitigation.*
 
