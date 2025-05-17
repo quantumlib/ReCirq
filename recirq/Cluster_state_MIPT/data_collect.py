@@ -76,8 +76,8 @@ def collect_data(
 
 def main() -> None:
     """Main function to run the data collection."""
-    # Replace these with your specific engine and processor details
-    eng = cg.get_engine('your-engine-id')
+    # Replace with your GCP project ID where the quantum processors are registered
+    eng = cg.get_engine('your-gcp-project-id')
     collect_data(eng=eng, processor_id='your-processor-id')
 
 
