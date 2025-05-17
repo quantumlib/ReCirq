@@ -5,7 +5,7 @@ that can be used to study measurement-induced phase transitions.
 """
 
 from recirq.Cluster_state_MIPT.cluster_state import (
-    create_cluster_state_circuit,
+    get_circuit,
     apply_measurement,
     get_measurement_circuit
 )
@@ -17,7 +17,7 @@ from recirq.Cluster_state_MIPT.utils import (
 )
 
 __all__ = [
-    'create_cluster_state_circuit',
+    'get_circuit',
     'apply_measurement',
     'get_measurement_circuit',
     'create_grid_qubits',
