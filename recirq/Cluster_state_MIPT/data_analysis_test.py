@@ -2,7 +2,7 @@
 
 import unittest
 import torch
-from recirq.measurement_entanglement.data_analysis import (
+from recirq.Cluster_state_MIPT.data_analysis import (
     eps,
     cross,
     side,

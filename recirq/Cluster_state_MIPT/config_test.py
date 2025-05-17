@@ -2,7 +2,7 @@
 
 import unittest
 import torch
-from recirq.measurement_entanglement import config
+from recirq.Cluster_state_MIPT import config
 
 
 class ConfigTest(unittest.TestCase):

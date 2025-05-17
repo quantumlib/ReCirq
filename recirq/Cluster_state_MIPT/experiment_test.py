@@ -9,7 +9,7 @@ import cirq
 import cirq_google as cg
 import numpy as np
 import torch
-from recirq.measurement_entanglement.experiment import QuantumExperiment
+from recirq.Cluster_state_MIPT.experiment import QuantumExperiment
 
 
 class QuantumExperimentTest(unittest.TestCase):

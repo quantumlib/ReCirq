@@ -1,9 +1,9 @@
-"""Setup file for the measurement_entanglement module."""
+"""Setup file for the Cluster_state_MIPT module."""
 
 from setuptools import setup, find_packages
 
 setup(
-    name="recirq-measurement-entanglement",
+    name="recirq-cluster-state-mipt",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[

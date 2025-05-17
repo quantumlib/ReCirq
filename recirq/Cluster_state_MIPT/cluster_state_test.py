@@ -6,7 +6,7 @@ This module contains tests for the cluster state circuit generation functions.
 import unittest
 import cirq
 import numpy as np
-from recirq.measurement_entanglement.cluster_state import get_two_qubits_6x6, get_circuit
+from recirq.Cluster_state_MIPT.cluster_state import get_two_qubits_6x6, get_circuit
 
 
 class ClusterStateTest(unittest.TestCase):

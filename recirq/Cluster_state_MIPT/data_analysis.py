@@ -6,7 +6,7 @@ experiments, including entanglement measures and state reconstruction.
 
 from typing import List, Tuple, Optional
 import torch
-from recirq.measurement_entanglement.utils import blogm, bSqc, Neg, Sa
+from recirq.Cluster_state_MIPT.utils import blogm, bSqc, Neg, Sa
 
 
 # Global constants

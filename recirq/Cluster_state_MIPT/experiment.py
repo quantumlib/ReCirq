@@ -9,7 +9,7 @@ import cirq
 import cirq_google as cg
 import numpy as np
 import torch
-from recirq.measurement_entanglement.cluster_state import get_circuit, get_two_qubits_6x6
+from recirq.Cluster_state_MIPT.cluster_state import get_circuit, get_two_qubits_6x6
 
 
 class QuantumExperiment:

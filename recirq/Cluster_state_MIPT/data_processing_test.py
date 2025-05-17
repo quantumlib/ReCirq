@@ -4,8 +4,8 @@ import unittest
 import torch
 import os
 import tempfile
-from recirq.measurement_entanglement import data_processing
-from recirq.measurement_entanglement import config
+from recirq.Cluster_state_MIPT import data_processing
+from recirq.Cluster_state_MIPT import config
 
 
 class DataProcessingTest(unittest.TestCase):

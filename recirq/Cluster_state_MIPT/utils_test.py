@@ -3,7 +3,7 @@
 import unittest
 import torch
 import numpy as np
-from recirq.measurement_entanglement import utils
+from recirq.Cluster_state_MIPT import utils
 
 
 # Test constants
