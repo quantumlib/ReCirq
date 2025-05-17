@@ -1,10 +1,10 @@
 """Measurement-induced entanglement experiment module."""
 
-from recirq.measurement_entanglement.experiment import QuantumExperiment
-from recirq.measurement_entanglement.cluster_state import get_two_qubits_6x6, get_circuit
-from recirq.measurement_entanglement.data_processing import process_measurements
-from recirq.measurement_entanglement.data_analysis import analyze_data
-from recirq.measurement_entanglement.utils import setup_pauli_matrices, eps, bSqc, Neg, Sa
+from recirq.Cluster_state_MIPT.experiment import QuantumExperiment
+from recirq.Cluster_state_MIPT.cluster_state import get_two_qubits_6x6, get_circuit
+from recirq.Cluster_state_MIPT.data_processing import process_measurements
+from recirq.Cluster_state_MIPT.data_analysis import analyze_data
+from recirq.Cluster_state_MIPT.utils import setup_pauli_matrices, eps, bSqc, Neg, Sa
 
 __all__ = [
     'QuantumExperiment',
