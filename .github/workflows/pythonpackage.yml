@@ -40,7 +40,6 @@ jobs:
           python -m pip install --upgrade pip
           python dev_tools/write-ci-requirements.py --relative-cirq-version=${{ matrix.cirq-version }} --all-extras
           pip install -r ci-requirements.txt
-          pip install torch
           pip install --no-deps -e .
 
       - name: Lint with flake8
