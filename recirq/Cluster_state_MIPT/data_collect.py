@@ -13,7 +13,7 @@ from recirq.Cluster_state_MIPT import get_circuit, get_two_qubits_6x6
 def collect_data(
     eng: cg.Engine,
     processor_id: str,
-    device_config_name: str = 'd7',
+    device_config_name: str = 'processor_config',
     repetitions: int = 10**6,
     num_rc_circuits: int = 20,
     folder_name: str = 'experiment_data',
