@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import cirq
+import qsimcirq
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -68,7 +69,7 @@ def test_variational_ground_state_minimal_qubits():
     thetas = [0, np.pi / 2]
 
     # Initialize simulator
-    simulator = cirq.Simulator()
+    simulator = qsimcirq.QSimSimulator()
 
     # Loop over thetas and compute energy
     # Note the correspondence between he and theta in this test is not physical
@@ -129,7 +130,7 @@ def test_trotter_step_minimal_qubits():
         *trotter_step_minimal_qubits(grid, dt, hamiltonian_coefs['lambda'], hamiltonian_coefs['he'], hamiltonian_coefs['Je'], hamiltonian_coefs['Jm'])*20,
     )
 
-    simulator = cirq.Simulator()
+    simulator = qsimcirq.QSimSimulator()
     results = simulator.simulate_expectation_values(circuit,[observable])
 
     assert np.isclose(results[0], (0.9019627769788106+0j), atol=1e-4), ("Error in Trotterization circuit.")
