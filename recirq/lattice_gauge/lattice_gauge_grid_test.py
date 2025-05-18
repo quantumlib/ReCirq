@@ -16,7 +16,7 @@ import cirq
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .lattice_gauge_grid import LGTGrid
+from recirq.lattice_gauge.lattice_gauge_grid import LGTGrid
 
 def test_z_plaquette_to_physical_qubit_indices():
     # Create a mock LGTGrid

@@ -16,8 +16,8 @@ import cirq
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .lattice_gauge_experiment import plot_qubit_polarization_values, variational_ground_state_minimal_qubits, trotter_step_minimal_qubits
-from .lattice_gauge_grid import LGTGrid
+from recirq.lattice_gauge.lattice_gauge_experiment import plot_qubit_polarization_values, variational_ground_state_minimal_qubits, trotter_step_minimal_qubits
+from recirq.lattice_gauge.lattice_gauge_grid import LGTGrid
 
 def test_plot_qubit_polarization_values():
     # Create a mock LGTGrid
