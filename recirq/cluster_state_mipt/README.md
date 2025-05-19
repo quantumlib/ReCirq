@@ -97,10 +97,3 @@ python -m pytest recirq/cluster_state_mipt/cluster_state_test.py
 # Run data collection tests
 python -m pytest recirq/cluster_state_mipt/data_collect_test.py
 ```
-
-## Dependencies
-
-- Cirq >= 0.13.0
-- Cirq-Google >= 0.13.0
-- NumPy >= 1.19.0
-- PyTorch >= 1.9.0 (for data collection)
