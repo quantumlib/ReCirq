@@ -6,4 +6,3 @@ seaborn
 sphinx
 ipython
 black
-torch>=1.9.0
