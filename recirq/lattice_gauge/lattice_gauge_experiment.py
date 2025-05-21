@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sympy
 
-from .lattice_gauge_grid import QubitNeighbor, LGTGrid
+from recirq.lattice_gauge.lattice_gauge_grid import QubitNeighbor, LGTGrid
 
 def variational_ground_state_minimal_qubits_cols(
     grid: LGTGrid, x_ancillary_qubits_in_cols: list[set[cirq.GridQubit]], theta: float
