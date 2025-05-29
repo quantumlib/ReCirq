@@ -20,10 +20,10 @@ from recirq.kpz import experiment as kpz
 
 _CYCLES = 1
 _MU = np.inf
-_SAMPLER = cirq.Simulator()
+_SAMPLER = cirq.Simulator(seed=0)
 _TRIALS = 1000
 _REPS = 1000
-rng = np.random.default_rng()
+rng = np.random.default_rng(0)
 
 
 def test_muinf_against_analytics():
