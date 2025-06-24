@@ -133,5 +133,3 @@ included:
       path: /cirq/experiments/lattice_gauge/lattice_gauge
     - heading: Code Layout
 
-
-docs/lattice_gauge/lattice_gauge.ipynb
