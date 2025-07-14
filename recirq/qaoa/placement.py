@@ -636,8 +636,11 @@ def min_weight_simple_path_mixed_strategy(
     paths_mst = min_weight_simple_paths_mst(graph)
     start_path = paths_mst.get(n, None)
     path_greedy = min_weight_simple_path_greedy(graph, n)
-    if weight_fun(graph, path_greedy) < weight_fun(graph, start_path):
+    if path_greedy is not None and weight_fun(graph, path_greedy) < weight_fun(graph, start_path):
         start_path = path_greedy
+
+    if start_path is None:
+        return None
 
     best_path = start_path
 

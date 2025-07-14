@@ -1,0 +1,42 @@
+# Core requirements
+cirq-core~=1.4.0
+cirq-google~=1.4.0
+seaborn
+sphinx
+ipython
+black
+
+# otoc
+Py-BOBYQA
+
+# qaoa
+pytket-cirq>=0.16
+
+# optimize
+scikit-learn
+
+# hfvqe
+openfermion>=1.2.0
+
+# fermi_hubbard
+openfermion>=1.2.0
+
+# qml_lfe
+absl-py
+
+# seniority_zero
+openfermion>=1.2.0
+fqe
+
+# qcqmc
+filelock
+fqe
+joblib
+ipie>=0.7.0
+numpy>=1.23.5
+scipy
+openfermionpyscf
+pandas
+pfapack
+pyscf>=2.1.0 # For Python 3.10 compatability.
+qsimcirq>=0.14.0
