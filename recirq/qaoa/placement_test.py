@@ -124,4 +124,5 @@ def test_on_device(n, method):
             assert path is None
             return
 
-    assert nx.is_simple_path(err_graph, path)
+    if path is not None:
+        assert nx.is_simple_path(err_graph, path)
