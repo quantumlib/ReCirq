@@ -3,11 +3,14 @@ from typing import Any, Callable, Iterable, Optional, Tuple, Union
 import numpy as np
 from recirq.third_party.quaff import indexing
 
-DTYPE = np.uint8
+DTYPE = np.int8
 
 
 def dot(*args, **kwargs):
-    """Dot product over 𝔽₂. Same syntax as numpy.dot."""
+    """Dot product over 𝔽₂.
+
+    Same syntax as numpy.dot.
+    """
     return np.dot(*args, **kwargs) % 2
 
 
@@ -81,7 +84,6 @@ def get_coordinates(
         Vector x such that v = Bᵀ·x if one exists; None otherwise. If
         include_basis is true, returns (x, Y) such that x ⊕ span{rows of Y} is
         the solution space.
-
     """
     m, n = basis.shape
     system = np.append(basis, vector[np.newaxis, :], axis=0).T
