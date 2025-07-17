@@ -39,3 +39,6 @@ docs/generated
 
 # Default pycharm virtual env
 .venv/
+
+# File created by write-ci-requirements.py
+ci-requirements.txt
