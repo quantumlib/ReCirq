@@ -40,7 +40,7 @@ except ImportError:
             pytket = NotImplemented
         else:
             raise ImportError(
-                "Routing utilities don't exist in this version of Cirq and pytket is not installed."
+                "Routing utilities don't exist in this version of Cirq and PyTket is not installed."
                 )
 
 import recirq
@@ -116,27 +116,32 @@ def place_on_device(circuit: cirq.Circuit,
     """
 
     if RouteCQC is NotImplemented:
-        # Use TKET for routing
-        tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
-        tk_device = _device_to_tket_device(device)
+        # Use TKET for routing if it's available
+        if pytket is NotImplemented:
+            # This can happen in CI testing (see top of this file), in which case, the test code
+            # will deal with this scenario. In other situations, this is a problem.
+            raise RuntimeError("Routing utilities are not available")
+        else:
+            tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
+            tk_device = _device_to_tket_device(device)
 
-        unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
-        passes = SequencePass([
-            PlacementPass(GraphPlacement(tk_device)),
-            RoutingPass(tk_device)])
-        passes.apply(unit)
-        valid = unit.check_all_predicates()
-        if not valid:
-            raise RuntimeError("Routing failed")
+            unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
+            passes = SequencePass([
+                PlacementPass(GraphPlacement(tk_device)),
+                RoutingPass(tk_device)])
+            passes.apply(unit)
+            valid = unit.check_all_predicates()
+            if not valid:
+                raise RuntimeError("Routing failed")
 
-        initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                       for n1, n2 in unit.initial_map.items()}
-        final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                     for n1, n2 in unit.final_map.items()}
-        routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
+            initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
+                           for n1, n2 in unit.initial_map.items()}
+            final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
+                         for n1, n2 in unit.final_map.items()}
+            routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
 
-        return routed_circuit, initial_map, final_map
-    
+            return routed_circuit, initial_map, final_map
+
     # Else use Cirq for routing
     router = cirq.RouteCQC(device.metadata.nx_graph)
     routed_circuit, initial_map, swap_map = router.route_circuit(circuit)
@@ -636,8 +641,11 @@ def min_weight_simple_path_mixed_strategy(
     paths_mst = min_weight_simple_paths_mst(graph)
     start_path = paths_mst.get(n, None)
     path_greedy = min_weight_simple_path_greedy(graph, n)
-    if weight_fun(graph, path_greedy) < weight_fun(graph, start_path):
+    if path_greedy is not None and weight_fun(graph, path_greedy) < weight_fun(graph, start_path):
         start_path = path_greedy
+
+    if start_path is None:
+        return None
 
     best_path = start_path
 

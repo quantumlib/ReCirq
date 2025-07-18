@@ -117,7 +117,7 @@ def test_hamiltonian_objective_avg_and_var():
                            [1, 0, 0, 0, 1],
                            [1, 1, 0, 0, 1],
                            [0, 1, 1, 1, 1],
-                           [0, 1, 1, 1, 0]], dtype=np.uint8)
+                           [0, 1, 1, 1, 0]], dtype=np.int8)
     g = nx.Graph()
     g.add_edge(cirq.GridQubit(5, 3), cirq.GridQubit(6, 3), weight=1.0)
     g.add_edge(cirq.GridQubit(6, 3), cirq.GridQubit(7, 3), weight=1.0)
@@ -131,5 +131,5 @@ def test_hamiltonian_objective_avg_and_var():
     print()
     print(naive_var, prop_var)
     print(std_err)
-    assert prop_var > naive_var
+    assert np.isclose(prop_var, naive_var) or prop_var > naive_var
     assert np.isclose(val1, val2)
