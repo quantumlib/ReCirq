@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from timeit import default_timer as timer
+from typing import List
 
 import networkx as nx
 import numpy as np
@@ -53,7 +54,7 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
                                        param_guess_at_p1=None,
                                        node_to_index_map=None,
                                        dtype=np.complex128,
-                                       verbose=False):
+                                       verbose=False) -> List[OptimizationResult]:
     r"""
     Given a graph, find QAOA parameters that minimizes C=\sum_{<ij>} w_{ij} Z_i Z_j
 
