@@ -92,7 +92,7 @@ def compute_opdm(
 
             variance_dict['xy_even'][circuit_idx] = even_cov_mat
             w, _ = np.linalg.eigh(even_cov_mat * len(data[q0_a]))
-            if not np.alltrue(w >= 0):
+            if not np.all(w >= 0):
                 raise ValueError(
                     "covariance matrix for xy_even:{} not postiive semidefinite"
                     .format(circuit_idx))
@@ -111,11 +111,11 @@ def compute_opdm(
 
             variance_dict['xy_odd'][circuit_idx] = odd_cov_mat
             w, _ = np.linalg.eigh(odd_cov_mat * len(data[q0_a]))
-            if not np.alltrue(w >= 0):
+            if not np.all(w >= 0):
                 raise ValueError(
                     "covariance matrix for xy_odd:{} not postiive semidefinite".
                     format(circuit_idx))
-            assert np.alltrue(w >= 0)
+            assert np.all(w >= 0)
 
         if circuit_idx == 0:  # No re-ordering
             for qubit_idx, q in enumerate(qubits):
@@ -168,7 +168,7 @@ def covariance_construction_from_opdm(opdm: np.ndarray,
                     cov_func(j, i, p, q) + cov_func(j, i, q, p))
 
         w, _ = np.linalg.eigh(even_cov_mat)
-        if not np.alltrue(w >= 0):
+        if not np.all(w >= 0):
             raise ValueError(
                 "covariance matrix for xy_even:{} not postiive semidefinite".
                 format(circuit_idx))
@@ -183,7 +183,7 @@ def covariance_construction_from_opdm(opdm: np.ndarray,
                     cov_func(i, j, p, q) + cov_func(i, j, q, p) +
                     cov_func(j, i, p, q) + cov_func(j, i, q, p))
         w, _ = np.linalg.eigh(odd_cov_mat)
-        if not np.alltrue(w >= 0):
+        if not np.all(w >= 0):
             raise ValueError(
                 "covariance matrix for xy_odd:{} not postiive semidefinite".
                 format(circuit_idx))
@@ -196,7 +196,7 @@ def covariance_construction_from_opdm(opdm: np.ndarray,
                 for cidx, p in enumerate(range(num_qubits)):
                     z_cov_mat[ridx, cidx] = cov_func(i, i, p, p)
             w, _ = np.linalg.eigh(z_cov_mat)
-            if not np.alltrue(w >= -1.0E-15):
+            if not np.all(w >= -1.0E-15):
                 raise ValueError(
                     "covariance matrix for z:{} not postiive semidefinite".
                     format(circuit_idx))
