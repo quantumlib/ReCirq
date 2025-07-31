@@ -16,12 +16,6 @@ body:
     validations:
       required: true
 
-  - type: input
-    attributes:
-      label: What version of the software are you using?
-    validations:
-      required: false
-
   - type: textarea
     attributes:
       label: How can the issue be reproduced?
