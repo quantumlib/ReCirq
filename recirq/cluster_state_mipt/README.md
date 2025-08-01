@@ -39,7 +39,7 @@ The circuit is constructed on a 6x6 grid of qubits. Let $L$ be the system linear
 
 After these steps, projective measurement in the $Z$ basis is performed on the preparation qubits (solid red in the figure below) to prepare the probe qubits' states (solid green). Shadow measurements are then performed on the probe qubits using the $X$, $Y$, and $Z$ bases with equal probability to collect data.
 
-The nearest-neighbor gate $e^{i(\pi/4)\sum_{\langle j,k \rangle} Z_j Z_k}$ is implemented by first applying a controlled-$Z$ ($\mathrm{CZ}$) gate between each pair of qubits, followed by local $Z^{-1/2}$ on both qubits, i.e., $\mathrm{CZ}_{jk}Z_j^{-1/2}Z_k^{-1/2}$. All nearest-neighbor two-qubit gates are applied in the following sequence to maintain constant circuit depth as the system size scales up: first, odd horizontal links; then, even horizontal links; followed by odd vertical links and finally even vertical links.
+The nearest-neighbor gate $e^{i(\pi/4)\sum_{\langle j,k \rangle} Z_j Z_k}$ is implemented by first applying a controlled-$Z$ ($\mathrm{CZ}$) gate between each pair of qubits, followed by local $Z^{-1/2}$ on both qubits, i.e., $Z_j^{-1/2}Z_k^{-1/2}\mathrm{CZ}_{jk}$. All nearest-neighbor two-qubit gates are applied in the following sequence to maintain constant circuit depth as the system size scales up: first, odd horizontal links; then, even horizontal links; followed by odd vertical links and finally even vertical links.
 
 ![Experimental realization of the circuit on quantum chip with 6x6 lattice at d=5.](grid_d=5.png)
 
