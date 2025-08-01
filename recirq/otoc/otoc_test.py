@@ -56,8 +56,7 @@ def test_build_otoc_circuits():
         circuits.extend(circs.butterfly_I)
 
     results = []
-    params = [{} for _ in range(len(circuits))]
-    job = sampler.run_batch(programs=circuits, params_list=params, repetitions=2000)
+    job = sampler.run_batch(programs=circuits, repetitions=2000)
     for d in range(len(circuits)):
         results.append(abs(np.mean(job[d][0].measurements["z"])))
 
