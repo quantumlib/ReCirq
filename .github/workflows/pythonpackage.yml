@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Python package
+name: Python and notebook tests
+run-name: >-
+  Test code and/or notebooks in
+  ${{github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number)
+    || format('push to {0}', github.ref_name) }}
+  by @${{github.actor}}
+
 on:
   push:
     branches: [ master ]
