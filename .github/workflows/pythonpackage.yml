@@ -62,7 +62,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           python dev_tools/write-ci-requirements.py --relative-cirq-version=${{ matrix.cirq-version }} --all-extras
           pip install -r ci-requirements.txt
           pip install --no-deps -e .
@@ -103,5 +103,6 @@ jobs:
 
       - name: Doc check
         run: |
+          pip install --upgrade pip
           pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
           dev_tools/nbformat
