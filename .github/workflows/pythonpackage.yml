@@ -29,6 +29,11 @@ on:
 # Declare default workflow permissions as read only.
 permissions: read-all
 
+concurrency:
+  # Cancel any previously-started but still active runs on the same branch.
+  cancel-in-progress: true
+  group: ${{github.workflow}}-${{github.event.pull_request.number||github.ref}}
+
 jobs:
   pytest:
     name: Pytest
