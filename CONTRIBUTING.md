@@ -100,7 +100,18 @@ pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
 Once the environment is set up, you can do your work and `git commit` your
 changes to your branch as needed.
 
-To test your code, use `pytest`. To test notebooks, run `check/nbformat`.
+To test notebooks for proper formatting and other issues, run the following
+command:
+
+```shell
+dev_tools/nbformat
+```
+
+To test your code, run
+
+```shell
+pytest recirq
+```
 
 ### Pull requests and code reviews
 
