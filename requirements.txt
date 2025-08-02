@@ -6,3 +6,4 @@ seaborn
 sphinx
 ipython
 black
+pytest
