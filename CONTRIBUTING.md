@@ -76,7 +76,7 @@ that you are comfortable with.
 
 Then, in that virtual environment, install the ReCirq dependencies using `pip`:
 
-```python
+```shell
 pip install -r requirements.txt
 ```
 
@@ -86,14 +86,14 @@ file named `extra-requirements.txt` in the experiment's subdirectory under
 `recirq/`. For example, if you were working with `recirq/optimize`, you would
 need to install its extra dependencies like this:
 
-```python
+```shell
 pip install -r recirq/optimize/extra-requirements.txt
 ```
 
 Finally, if you are going to edit any of the Jupyter notebooks, install the
 additional requirements needed to run the notebook format checks:
 
-```python
+```shell
 pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
 ```
 
