@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+import io
 import os
 import re
 import tarfile
@@ -67,6 +68,14 @@ def fetch_guide_data_collection_data(base_dir=None):
 
     print("Downloading guide/data_collection data.")
     stream = urllib.request.urlopen("https://ndownloader.figshare.com/files/25541666")
+    # Read into a BytesIO object to make it seekable
+    stream_bytes = io.BytesIO(stream.read())
 
-    with tarfile.open(fileobj=stream, mode='r|xz') as tf:
-        tf.extractall(path=base_dir)
+    with tarfile.open(fileobj=stream_bytes, mode='r|xz') as tf:
+        for member in tf.getmembers():
+            # Ensure the path being extracted is safe.
+            if not os.path.abspath(os.path.join(base_dir, member.name)).startswith(
+                os.path.abspath(base_dir)
+            ):
+                raise ValueError(f"Encountered untrusted path {member.name}")
+            tf.extract(member, path=base_dir)

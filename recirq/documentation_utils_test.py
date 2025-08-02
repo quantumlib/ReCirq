@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import io
+import tarfile
+from unittest import mock
+
+import pytest
 
 import recirq
 from recirq.readout_scan.tasks import ReadoutScanTask
@@ -35,6 +40,23 @@ which is primarily affected by readout error.
 """
 
 
-def test_fetch_guide_data_collection_data(tmpdir):
-    recirq.fetch_guide_data_collection_data(base_dir=tmpdir)
-    assert os.path.exists(f'{tmpdir}/2020-02-tutorial')
+@mock.patch('urllib.request.urlopen')
+def test_fetch_guide_data_collection_data_traversal(mock_urlopen, tmpdir):
+    # Create a malicious tarball in memory.
+    malicious_tar_stream = io.BytesIO()
+    with tarfile.open(fileobj=malicious_tar_stream, mode='w:xz') as tf:
+        # Add a file that tries to write outside the target directory
+        malicious_info = tarfile.TarInfo(name="../../tmp/pwned")
+        tf.addfile(malicious_info, io.BytesIO(b"pwned"))
+    malicious_tar_stream.seek(0)
+
+    # Read the stream into a BytesIO object so that the mock should return a
+    # response object whose read() method returns the tarball content.
+    mock_response = mock.Mock()
+    mock_response.read.return_value = malicious_tar_stream.getvalue()
+    mock_urlopen.return_value = mock_response
+
+    with pytest.raises(ValueError, match="Encountered untrusted path"):
+        recirq.fetch_guide_data_collection_data(base_dir=tmpdir)
+
+    assert not os.path.exists('/tmp/pwned')
