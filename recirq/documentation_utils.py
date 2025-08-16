@@ -71,7 +71,7 @@ def fetch_guide_data_collection_data(base_dir=None):
     # Read into a BytesIO object to make it seekable
     stream_bytes = io.BytesIO(stream.read())
 
-    with tarfile.open(fileobj=stream_bytes, mode='r|xz') as tf:
+    with tarfile.open(fileobj=stream_bytes, mode='r:xz') as tf:
         for member in tf.getmembers():
             # Ensure the path being extracted is safe.
             if not os.path.abspath(os.path.join(base_dir, member.name)).startswith(
