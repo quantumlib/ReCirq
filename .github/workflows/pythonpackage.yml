@@ -24,7 +24,7 @@ permissions: read-all
 
 jobs:
   pytest:
-    name: Run tests on the Python code
+    name: Run Python tests
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -34,10 +34,20 @@ jobs:
           - 'next'
       fail-fast: false
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+      - name: Check out a copy of the git repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python with caching of pip dependencies
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
         with:
           python-version: '3.10'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            dev_tools/requirements/deps/tensorflow-docs.txt
+            dev_tools/check_notebooks.py
+            dev_tools/write-ci-requirements.py
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -62,14 +72,24 @@ jobs:
           RECIRQ_IMPORT_FAILSAFE=y pytest -v --skipslow
 
   nbformat:
-    name: Notebook formatting
+    name: Check notebook formatting
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+      - name: Check out a copy of the git repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python with caching of pip dependencies
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
         with:
           python-version: '3.10'
-      - name: Doc check
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            dev_tools/requirements/deps/tensorflow-docs.txt
+            dev_tools/check_notebooks.py
+            dev_tools/write-ci-requirements.py
+
+      - name: Check notebook formatting
         run: |
           pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
           dev_tools/nbformat
