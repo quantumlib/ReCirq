@@ -19,6 +19,9 @@ on:
   pull_request:
     branches: [ master ]
 
+# Declare default workflow permissions as read only.
+permissions: read-all
+
 jobs:
   pytest:
     name: Pytest
