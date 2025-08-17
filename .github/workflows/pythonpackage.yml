@@ -29,7 +29,7 @@ env:
 jobs:
   pytest:
     name: Run Python tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         cirq-version:
@@ -78,7 +78,7 @@ jobs:
 
   nbformat:
     name: Check notebook formatting
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out a copy of the git repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
