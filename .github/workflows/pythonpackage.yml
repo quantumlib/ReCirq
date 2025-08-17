@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Python package
+name: Continuous integration tests
 on:
   push:
     branches: [ master ]
@@ -24,7 +24,7 @@ permissions: read-all
 
 jobs:
   pytest:
-    name: Pytest
+    name: Run tests on the Python code
     runs-on: ubuntu-22.04
     strategy:
       matrix:
