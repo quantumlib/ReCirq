@@ -18,6 +18,9 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  merge_group:
+    types:
+      - checks_requested
   workflow_dispatch:
 
 # Declare default workflow permissions as read only.
