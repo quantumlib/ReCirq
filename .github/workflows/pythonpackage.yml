@@ -92,16 +92,15 @@ jobs:
       - name: Lint with flake8
         run: |
           pip install flake8
-          # stop the build if there are Python syntax errors or undefined names
+          # Stop the build if there are Python syntax errors or undefined names.
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          # `exit-zero` treats all errors as warnings. The GitHub editor is 127 chars wide.
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Test with pytest
         run: |
-          pip install pytest
-          # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations
-          # EXPORT_OMP_NUM_THREADS: pyscf has poor openmp performance which slows down qcqmc tests.
+          # OMP_NUM_THREADS: PySCF's poor OpenMP performance slows down QCQMC tests.
+          # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations.
           export OMP_NUM_THREADS=1
           RECIRQ_IMPORT_FAILSAFE=y pytest -v --skipslow
 
@@ -122,5 +121,6 @@ jobs:
 
       - name: Check notebook formatting
         run: |
+          pip install --upgrade pip
           pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
           dev_tools/nbformat
