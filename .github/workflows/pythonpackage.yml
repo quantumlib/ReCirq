@@ -50,7 +50,7 @@ env:
 
   # Files containing lists of dependencies installed using pip. This is used as
   # a parameter to setup-python to check whether its pip cache needs updating.
-  python_dep_files: >-
+  python_dep_files: |-
     requirements.txt
     recirq/**/extra-requirements.txt
     dev_tools/requirements/deps/*.txt
