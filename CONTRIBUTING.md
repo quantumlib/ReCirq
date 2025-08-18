@@ -69,7 +69,49 @@ Guides](https://google.github.io/styleguide/) in your code, particularly the
 
 ### Development and testing
 
-Do your work and `git commit` your changes to your branch as needed.
+Before you begin developing ReCirq experiments and modules, we recommend you
+first create a virtual Python environment. You can use either Python's built-in
+[`venv`](https://docs.python.org/3/library/venv.html) module or another tool
+that you are comfortable with.
+
+Then, in that virtual environment, install the ReCirq dependencies using `pip`:
+
+```shell
+pip install -r requirements.txt
+```
+
+You _may_ need to install additional requirements, depending on the ReCirq
+experiment you want to work on. These additional requirements will be in a
+file named `extra-requirements.txt` in the experiment's subdirectory under
+`recirq/`. For example, if you were working with `recirq/optimize`, you would
+need to install its extra dependencies like this:
+
+```shell
+pip install -r recirq/optimize/extra-requirements.txt
+```
+
+Finally, if you are going to edit any of the Jupyter notebooks, install the
+additional requirements needed to run the notebook format checks:
+
+```shell
+pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
+```
+
+Once the environment is set up, you can do your work and `git commit` your
+changes to your branch as needed.
+
+To test notebooks for proper formatting and other issues, run the following
+command:
+
+```shell
+dev_tools/nbformat
+```
+
+To test your code, run
+
+```shell
+pytest recirq
+```
 
 ### Pull requests and code reviews
 
