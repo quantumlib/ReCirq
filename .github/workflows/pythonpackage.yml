@@ -48,6 +48,15 @@ env:
   # Python version to use.
   python_version: 3.11
 
+  # Files containing lists of dependencies installed using pip. This is used as
+  # a parameter to setup-python to check whether its pip cache needs updating.
+  python_dep_files: >-
+    requirements.txt
+    recirq/**/extra-requirements.txt
+    dev_tools/requirements/deps/*.txt
+    dev_tools/check_notebooks.py
+    dev_tools/write-ci-requirements.py
+
 jobs:
   pytest:
     name: Run Python tests
@@ -69,11 +78,7 @@ jobs:
         with:
           python-version: ${{env.python_version}}
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            dev_tools/requirements/deps/tensorflow-docs.txt
-            dev_tools/check_notebooks.py
-            dev_tools/write-ci-requirements.py
+          cache-dependency-path: ${{env.python_dep_files}}
 
       - name: Install dependencies
         run: |
@@ -94,6 +99,7 @@ jobs:
 
       - name: Test with pytest
         run: |
+          pip install pytest
           # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations
           # EXPORT_OMP_NUM_THREADS: pyscf has poor openmp performance which slows down qcqmc tests.
           export OMP_NUM_THREADS=1
@@ -112,11 +118,7 @@ jobs:
         with:
           python-version: ${{env.python_version}}
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            dev_tools/requirements/deps/tensorflow-docs.txt
-            dev_tools/check_notebooks.py
-            dev_tools/write-ci-requirements.py
+          cache-dependency-path: ${{env.python_dep_files}}
 
       - name: Check notebook formatting
         run: |
