@@ -284,7 +284,7 @@ def build_otoc_circuits(
             circuit_full.append(cirq.CZ(ancilla, qubits[0]))
             additional_layer = []
         else:
-            cz_seq = cz_to_sqrt_iswap(ancilla, qubits[0], corrections=cz_correction)
+            cz_seq = cz_to_sqrt_iswap(ancilla, qubits[0])
             circuit_full.append(cz_seq[:-1])
             additional_layer = cz_seq[-1:]
 
@@ -324,7 +324,7 @@ def build_otoc_circuits(
         if use_physical_cz:
             circuit_full.append(cirq.CZ(ancilla, qubits[0]))
         else:
-            circuit_full.append(cz_to_sqrt_iswap(ancilla, qubits[0], corrections=cz_correction))
+            circuit_full.append(cz_to_sqrt_iswap(ancilla, qubits[0]))
 
         # Pulse the ancilla to the z-axis (along either +z or -z) before
         # measurement.
