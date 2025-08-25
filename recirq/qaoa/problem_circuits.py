@@ -14,7 +14,7 @@ from recirq.qaoa.gates_and_compilation import (
     compile_to_non_negligible,
     validate_well_structured,
     compile_problem_unitary_to_swap_network, compile_swap_network_to_zzswap,
-    measure_with_final_permutation, compile_problem_unitary_to_arbitrary_zz)
+    measure_with_final_permutation, compile_problem_unitary_to_arbitrary_zz, ZZSwap)
 from recirq.qaoa.placement import place_on_device
 from recirq.qaoa.problems import HardwareGridProblem, SKProblem, ThreeRegularProblem
 
@@ -122,9 +122,16 @@ def get_routed_sk_model_circuit(
         qubits: List[cirq.Qid],
         gammas: Sequence[float],
         betas: Sequence[float],
+        *,
+        keep_zzswap_as_one_op=True,
 ) -> cirq.Circuit:
     """Get a QAOA circuit for a fully-connected problem using the linear swap
     network.
+
+    This leaves the circuit in an "uncompiled" form, using ZZ, Swap, and/or ZZSwap gates
+    for the two-qubit gate and will append a permutation gate for odd p depths. The former
+    should be compiled to hardware-native two-qubit gates; the latter can be absorbed into
+    analysis routines.
 
     See Also:
         :py:func:`get_compiled_sk_model_circuit`
@@ -135,11 +142,18 @@ def get_routed_sk_model_circuit(
         qubits: The qubits to use in construction of the circuit.
         gammas: Gamma angles to use as parameters for problem unitaries
         betas: Beta angles to use as parameters for driver unitaries
+        keep_zzswap_as_one_op: If True, use `recirq.qaoa.gates_and_compilation.ZZSwap`
+            custom, composite gate. This is required for using `get_compiled_sk_model_circuit`
+            and `compile_to_syc`. Otherwise, decompose each ZZSwap operation into a ZZPowGate
+            and SWAP gate. This is useful if you plan to use vanilla Cirq transformers.
     """
     circuit = get_generic_qaoa_circuit(problem_graph, qubits, gammas, betas)
     circuit = compile_problem_unitary_to_swap_network(circuit)
     circuit = compile_swap_network_to_zzswap(circuit)
     circuit = compile_driver_unitary_to_rx(circuit)
+    if not keep_zzswap_as_one_op:
+        circuit = cirq.expand_composite(
+            circuit, no_decomp=lambda op: not isinstance(op.gate, ZZSwap))
     return circuit
 
 
