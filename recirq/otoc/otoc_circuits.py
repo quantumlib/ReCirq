@@ -49,7 +49,6 @@ def build_otoc_circuits(
     cycles_per_echo: Optional[int] = None,
     random_seed: Optional[int] = None,
     sq_gates: Optional[np.ndarray] = None,
-    cz_correction: Optional[Dict[Tuple[cirq.GridQubit, cirq.GridQubit], cirq.Circuit]] = None,
     use_physical_cz: bool = False,
     light_cone_filter: bool = False,
     cliffords: bool = False,
@@ -94,9 +93,6 @@ def build_otoc_circuits(
         sq_gates: Indices for the random single-qubit gates. Dimension should be len(qubits)
             $\times$ cycle. The values should be integers from 0 to 7 if z_only is False,
             and floats between -1 and 1 if z_only is True.
-        cz_correction: Correction to the composite CZ gate, obtained from parallel-XEB. If
-            unspecified, the ideal decomposition for CZ into sqrt-iSWAP and single-qubit gates
-            will be used.
         use_physical_cz: If True, a direct CZ gate will be used (instead of composite gate from
             sqrt-iSWAP and single-qubit gates).
         light_cone_filter: If True, gates outside the light-cones of the butterfly qubit(s) will
@@ -284,7 +280,7 @@ def build_otoc_circuits(
             circuit_full.append(cirq.CZ(ancilla, qubits[0]))
             additional_layer = []
         else:
-            cz_seq = cz_to_sqrt_iswap(ancilla, qubits[0], corrections=cz_correction)
+            cz_seq = cz_to_sqrt_iswap(ancilla, qubits[0])
             circuit_full.append(cz_seq[:-1])
             additional_layer = cz_seq[-1:]
 
@@ -324,7 +320,7 @@ def build_otoc_circuits(
         if use_physical_cz:
             circuit_full.append(cirq.CZ(ancilla, qubits[0]))
         else:
-            circuit_full.append(cz_to_sqrt_iswap(ancilla, qubits[0], corrections=cz_correction))
+            circuit_full.append(cz_to_sqrt_iswap(ancilla, qubits[0]))
 
         # Pulse the ancilla to the z-axis (along either +z or -z) before
         # measurement.
