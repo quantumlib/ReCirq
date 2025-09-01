@@ -1,0 +1,148 @@
+# Copyright 2020 Google, LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Continuous integration tests
+run-name: >-
+  Test code and notebooks in
+  ${{github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number)
+    || format('push to {0}', github.ref_name) }}
+  by @${{github.actor}}
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+  pull_request:
+    branches:
+      - master
+      - main
+
+  merge_group:
+    types:
+      - checks_requested
+
+  workflow_dispatch:
+
+# Declare default workflow permissions as read only.
+permissions: read-all
+
+concurrency:
+  # Cancel any previously-started but still active runs on the same branch.
+  cancel-in-progress: true
+  group: ${{github.workflow}}-${{github.event.pull_request.number||github.ref}}
+
+env:
+  # Python version to use.
+  python_version: 3.11
+
+  # Files containing lists of dependencies installed using pip. This is used as
+  # a parameter to setup-python to check whether its pip cache needs updating.
+  python_dep_files: |-
+    requirements.txt
+    recirq/**/extra-requirements.txt
+    dev_tools/requirements/deps/*.txt
+    dev_tools/check_notebooks.py
+    dev_tools/write-ci-requirements.py
+
+jobs:
+  pytest:
+    name: Run Python tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        cirq-version:
+          - 'current'
+          - 'previous'
+          - 'next'
+      fail-fast: false
+    steps:
+      - name: Check out a copy of the git repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python with caching of pip dependencies
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: ${{env.python_version}}
+          cache: pip
+          cache-dependency-path: ${{env.python_dep_files}}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python dev_tools/write-ci-requirements.py \
+            --relative-cirq-version=${{ matrix.cirq-version }} --all-extras
+          pip install -r ci-requirements.txt
+          pip install --no-deps -e .
+
+      - name: Test with pytest
+        run: |
+          # OMP_NUM_THREADS: PySCF's poor OpenMP performance slows down QCQMC tests.
+          # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations.
+          export OMP_NUM_THREADS=1
+          RECIRQ_IMPORT_FAILSAFE=y pytest -v --skipslow
+
+  pylint:
+    name: Run Python linters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out a copy of the git repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python with caching of pip dependencies
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: ${{env.python_version}}
+          cache: pip
+          cache-dependency-path: ${{env.python_dep_files}}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Lint with flake8
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names.
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # `exit-zero` treats all errors as warnings. The GitHub editor is 127 chars wide.
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  nbformat:
+    name: Check notebook formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out a copy of the git repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python with caching of pip dependencies
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: ${{env.python_version}}
+          cache: pip
+          cache-dependency-path: ${{env.python_dep_files}}
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r dev_tools/requirements/deps/tensorflow-docs.txt
+
+      - name: Check notebook formatting
+        run: |
+          dev_tools/nbformat
