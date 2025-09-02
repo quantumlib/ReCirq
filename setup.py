@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pathlib
 import functools
 import operator
+import pathlib
+import runpy
 
 from setuptools import find_packages, setup
 
-__version__ = ''
-exec(open('recirq/_version.py').read())
+__version__ = runpy.run_path('recirq/_version.py')['__version__']
 assert __version__, 'Version string cannot be empty'
 
 description = (
