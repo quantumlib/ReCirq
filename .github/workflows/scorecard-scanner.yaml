@@ -102,7 +102,7 @@ jobs:
       - name: Write the Scorecard report page link to the workflow summary
         run: |
           repo="${{github.repository}}"
-          url="https://scorecard.dev/viewer/?uri=github.com%2F${repo//\//%2F}"
+          url="https://scorecard.dev/viewer/?uri=github.com/${repo}"
           {
           echo -n "The results are available on the OpenSSF Scorecard "
           echo "[report page for ${{github.repository}}]($url)."
