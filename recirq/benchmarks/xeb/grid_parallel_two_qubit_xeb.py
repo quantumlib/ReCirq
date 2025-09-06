@@ -29,7 +29,6 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    TYPE_CHECKING,
     Tuple,
     cast,
 )

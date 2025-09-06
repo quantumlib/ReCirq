@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import pytest
 import numpy as np
 from recirq.qml_lfe import learn_dynamics_q
 

@@ -14,7 +14,6 @@
 
 import cirq
 import numpy as np
-import pytest
 
 from recirq.kpz import experiment as kpz
 

@@ -44,7 +44,7 @@ here they are chosen independently.
 
 """
 
-from typing import Iterator, List, Set, Tuple, Union, Optional
+from typing import Iterator, List, Union, Optional
 
 import cirq
 import numpy as np

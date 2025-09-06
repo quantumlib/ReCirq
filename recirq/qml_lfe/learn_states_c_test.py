@@ -1,6 +1,4 @@
 import os
-import pytest
-import tempfile
 import numpy as np
 from recirq.qml_lfe import learn_states_c
 

@@ -20,7 +20,7 @@ import math
 import fqe.wavefunction as fqe_wfn
 import fqe.bitstring as fqe_bs
 
-from recirq.qcqmc import analysis, convert_to_ipie
+from recirq.qcqmc import convert_to_ipie
 
 
 def test_rotate_wavefunction_explicitly():

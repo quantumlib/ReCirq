@@ -15,7 +15,6 @@
 """Runtime configuration items for excuting experiments on Weber (or sim)."""
 
 from typing import Dict, List
-import os
 import cirq
 import cirq_google
 

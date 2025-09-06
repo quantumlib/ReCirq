@@ -18,9 +18,7 @@ import os
 import tempfile
 from unittest import mock
 
-import cirq
 import cirq_google as cg
-import numpy as np
 import pytest
 
 from recirq.cluster_state_mipt import data_collect

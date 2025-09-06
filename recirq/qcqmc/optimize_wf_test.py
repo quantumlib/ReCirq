@@ -14,7 +14,6 @@
 
 import fqe
 import fqe.hamiltonians.restricted_hamiltonian as fqe_hams
-import fqe.wavefunction as fqe_wfn
 import numpy as np
 import pytest
 

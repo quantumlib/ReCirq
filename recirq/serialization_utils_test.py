@@ -14,15 +14,9 @@
 
 import recirq
 
-import abc
-import inspect
 import io
-import itertools
-import textwrap
 
-import networkx as nx
 import numpy as np
-import pytest
 
 import cirq
 
