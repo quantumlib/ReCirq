@@ -267,7 +267,7 @@ def get_ls_echo_fidelity(
         postselect [bool]: whether or not to give the fidelity with
             postselection on half-filling.
     """
-    if type(frame) == cirq.Result:
+    if isinstance(frame, cirq.Result):
         return get_ls_echo_fidelity(frame.data, qubits, group, postselect)
 
     # Get the number of successful experiments
@@ -354,7 +354,7 @@ def get_signed_count_verified(
         correct_number: How many of all_qubits (excluding msmt_qubits)
             should be equal to 1.
     """
-    if type(frame) == cirq.Result:
+    if isinstance(frame, cirq.Result):
         return get_signed_count_verified(frame.data, msmt_qubits, all_qubits, correct_number)
     other_qubit_names = [str(qubit) for qubit in all_qubits if qubit not in msmt_qubits]
     qubit_names = [str(qubit) for qubit in msmt_qubits]
@@ -388,7 +388,7 @@ def get_signed_count_postselected(
         all_qubits [List[cirq.GridQubit]] : list of all qubits
         correct_number: How many of all_qubits should be equal to 1.
     """
-    if type(frame) == cirq.Result:
+    if isinstance(frame, cirq.Result):
         return get_signed_count_postselected(frame.data, msmt_qubits, all_qubits, correct_number)
     msmt_qubit_names = [str(qubit) for qubit in msmt_qubits]
     all_qubit_names = [str(qubit) for qubit in all_qubits]
@@ -416,7 +416,7 @@ def get_p0m_count_verified(
         correct_number: How many of all_qubits (excluding msmt_qubits)
             should be equal to 1.
     """
-    if type(frame) == cirq.Result:
+    if isinstance(frame, cirq.Result):
         return get_p0m_count_verified(frame.data, msmt_qubits, all_qubits, correct_number)
     other_qubit_names = [str(qubit) for qubit in all_qubits if qubit not in msmt_qubits]
     qubit_names = [str(qubit) for qubit in msmt_qubits]

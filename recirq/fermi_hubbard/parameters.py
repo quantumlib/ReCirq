@@ -596,7 +596,7 @@ class FermiHubbardParameters:
     def equals_for_rescaling(self, other: 'FermiHubbardParameters') -> bool:
         if not isinstance(other, FermiHubbardParameters):
             return False
-        if type(self.layout) != type(other.layout):
+        if not isinstance(self.layout, type(other.layout)):
             return False
         if isinstance(self.layout, ZigZagLayout):
             interacting = not np.allclose(self.hamiltonian.u, 0.0)
