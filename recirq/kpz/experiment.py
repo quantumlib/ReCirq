@@ -166,7 +166,7 @@ class KPZExperimentResultsFromAmplitudes:
         )
 
     def jackknife_mean(self) -> float:
-        """Compute the statistical uncertainty of the mean using the remove-one jackknife.
+        r"""Compute the statistical uncertainty of the mean using the remove-one jackknife.
         If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
         is returned.
         """
@@ -176,7 +176,7 @@ class KPZExperimentResultsFromAmplitudes:
         return np.std(mean_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_variance(self) -> float:
-        """Compute the statistical uncertainty of the variance using the remove-one jackknife.
+        r"""Compute the statistical uncertainty of the variance using the remove-one jackknife.
         If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
         is returned.
         """
@@ -188,7 +188,7 @@ class KPZExperimentResultsFromAmplitudes:
         return np.std(variance_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_skew(self) -> float:
-        """Compute the statistical uncertainty of the skewness using the remove-one jackknife.
+        r"""Compute the statistical uncertainty of the skewness using the remove-one jackknife.
         If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
         is returned.
         """
@@ -198,7 +198,7 @@ class KPZExperimentResultsFromAmplitudes:
         return np.std(skew_i) * np.sqrt(self.num_initial_states - 1)
 
     def jackknife_kurtosis(self) -> float:
-        """Compute the statistical uncertainty of the kurtosis using the remove-one jackknife.
+        r"""Compute the statistical uncertainty of the kurtosis using the remove-one jackknife.
         If there is only one initial state (for example if $\mu = \infty$), zero uncertainty
         is returned.
         """
@@ -234,7 +234,7 @@ class KPZExperimentResultsFromAmplitudes:
             edgecolor="k",
         )
         ax.tick_params(direction="in", top=True, right=True)
-        ax.set_xlabel("Number of 1s that crossed center, $\mathcal{M}/2$")
+        ax.set_xlabel(r"Number of 1s that crossed center, $\mathcal{M}/2$")
         ax.set_ylabel("Probability")
         return ax
 
@@ -382,13 +382,13 @@ class KPZExperimentResults:
             edgecolor="k",
         )
         ax.tick_params(direction="in", top=True, right=True)
-        ax.set_xlabel("Number of 1s that crossed center, $\mathcal{M}/2$")
+        ax.set_xlabel(r"Number of 1s that crossed center, $\mathcal{M}/2$")
         ax.set_ylabel("Probability")
         return ax
 
 
 class KPZExperiment:
-    """A class for running/simulating the KPZ experiment.
+    r"""A class for running/simulating the KPZ experiment.
 
     This class implements 1D Floquet XXZ dynamics, realized as alternating layers of fSim
     gates. The initial states, parameterized by mu, interpolate between an
