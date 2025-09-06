@@ -48,7 +48,7 @@ def get_opdm(wf, num_orbitals, transform=of.jordan_wigner):
     # not using display style objects
     for p, q in product(range(num_orbitals), repeat=2):
         operator = creation_ops[p] @ creation_ops[q].conj().transpose()
-        opdm_hw[p, q] = wf.conj().T @ operator @ wf
+        opdm_hw[p, q] = (wf.conj().T @ operator @ wf)[0, 0]
 
     return opdm_hw
 
