@@ -56,7 +56,7 @@ def collect_data(
     theta_range = np.linspace(0, np.pi/2, 11)
     phi = np.pi*(5/4)
 
-    for d in [3,4,5,6]:
+    for d in [3, 4, 5, 6]:
         qubits_matrix, probe_qubits, anc_pairs, all_qubits = get_two_qubits_6x6(d=d)
         for theta_idx in range(len(theta_range)):
             for iteration in range(5):
