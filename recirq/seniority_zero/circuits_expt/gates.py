@@ -18,7 +18,7 @@ import cirq
 import numpy as np
 
 
-def gsgate_from_sqrt_swap(q0: cirq.Qid, q1:cirq.Qid, theta: float) -> cirq.Circuit:
+def gsgate_from_sqrt_swap(q0: cirq.Qid, q1: cirq.Qid, theta: float) -> cirq.Circuit:
     """GS(theta) is a product of a Givens rotation (by theta) and a swap"""
     circuit = cirq.Circuit()
     moment_1q1 = cirq.Moment(

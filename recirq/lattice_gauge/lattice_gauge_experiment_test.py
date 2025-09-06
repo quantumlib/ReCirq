@@ -63,7 +63,7 @@ def test_variational_ground_state_minimal_qubits():
     )
 
     # Define Hamiltonian coefficients
-    hamiltonian_coefs = {'Je': np.random.random(), 'Jm': np.random.random(), 'he':np.random.random(), 'lambda': np.random.random()}
+    hamiltonian_coefs = {'Je': np.random.random(), 'Jm': np.random.random(), 'he': np.random.random(), 'lambda': np.random.random()}
 
     # Define thetas to test
     thetas = [0, np.pi / 2]
@@ -78,20 +78,20 @@ def test_variational_ground_state_minimal_qubits():
         circuit = cirq.Circuit.from_moments(
             *variational_ground_state_minimal_qubits(grid, theta)
         )
-        
+
         observable = cirq.PauliSum()
         for row in range(lx):
             for col in range(ly):
-                observable += cirq.PauliString(hamiltonian_coefs['Je'],cirq.Z.on_each(grid.z_plaquette_to_physical_qubits(row, col).values()))
+                observable += cirq.PauliString(hamiltonian_coefs['Je'], cirq.Z.on_each(grid.z_plaquette_to_physical_qubits(row, col).values()))
         for row in range(lx-1):
             for col in range(ly-1):
-                observable += cirq.PauliString(hamiltonian_coefs['Jm'],cirq.X.on_each(grid.x_plaquette_to_physical_qubits(row, col).values()))
+                observable += cirq.PauliString(hamiltonian_coefs['Jm'], cirq.X.on_each(grid.x_plaquette_to_physical_qubits(row, col).values()))
         for qubit in grid.physical_qubits:
-            observable += cirq.PauliString(hamiltonian_coefs['he'],cirq.Z(qubit))
-            observable += cirq.PauliString(hamiltonian_coefs['lambda'],cirq.X(qubit))
+            observable += cirq.PauliString(hamiltonian_coefs['he'], cirq.Z(qubit))
+            observable += cirq.PauliString(hamiltonian_coefs['lambda'], cirq.X(qubit))
 
         # Simulate the expectation values
-        results = simulator.simulate_expectation_values(circuit,[observable])
+        results = simulator.simulate_expectation_values(circuit, [observable])
 
         if theta == np.pi:
             assert np.isclose(results[0], lx*ly*hamiltonian_coefs['Je']+(lx-1)*(ly-1)*hamiltonian_coefs['Jm'], atol=1e-2), (
@@ -114,7 +114,7 @@ def test_trotter_step_minimal_qubits():
     )
 
     # Define Hamiltonian coefficients
-    hamiltonian_coefs = {'Je': 1, 'Jm': 1, 'he':0.4, 'lambda': 0.5}
+    hamiltonian_coefs = {'Je': 1, 'Jm': 1, 'he': 0.4, 'lambda': 0.5}
     dt = 0.3
 
     observable = cirq.PauliSum()
@@ -123,14 +123,22 @@ def test_trotter_step_minimal_qubits():
     #WALA state after 20 Trotter steps is consistent with the expected value of 0.9019627769788106.
     for row in range(lx):
         for col in range(ly):
-            observable += cirq.PauliString(1/6,cirq.Z.on_each(grid.z_plaquette_to_physical_qubits(row, col).values()))
+            observable += cirq.PauliString(1/6, cirq.Z.on_each(grid.z_plaquette_to_physical_qubits(row, col).values()))
 
     circuit = cirq.Circuit.from_moments(
         *variational_ground_state_minimal_qubits(grid, 0.625),
-        *trotter_step_minimal_qubits(grid, dt, hamiltonian_coefs['lambda'], hamiltonian_coefs['he'], hamiltonian_coefs['Je'], hamiltonian_coefs['Jm'])*20,
+        *trotter_step_minimal_qubits(
+            grid,
+            dt,
+            hamiltonian_coefs['lambda'],
+            hamiltonian_coefs['he'],
+            hamiltonian_coefs['Je'],
+            hamiltonian_coefs['Jm'],
+        )
+        * 20,
     )
 
     simulator = qsimcirq.QSimSimulator()
-    results = simulator.simulate_expectation_values(circuit,[observable])
+    results = simulator.simulate_expectation_values(circuit, [observable])
 
     assert np.isclose(results[0], (0.9019627769788106+0j), atol=1e-4), ("Error in Trotterization circuit.")

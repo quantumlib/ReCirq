@@ -34,7 +34,7 @@ def test_z_plaquette_to_physical_qubit_indices():
     physical_qubit_indices = grid.z_plaquette_to_physical_qubit_indices(row = plaquette_index[0], col = plaquette_index[1])
 
     # Expected result based on the grid structure
-    expected_indices = [4,8,11,7]
+    expected_indices = [4, 8, 11, 7]
 
     # Assert the result matches the expected indices
     assert physical_qubit_indices == expected_indices, (

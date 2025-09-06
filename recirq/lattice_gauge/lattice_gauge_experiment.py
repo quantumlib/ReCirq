@@ -626,7 +626,7 @@ def cnot_on_layer(
             ),
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
         ]
-    
+
 def excitation_sep_plaquette_input(
     plaq_data: np.ndarray, plaq_rows: int = 3, plaq_cols: int = 2
 ) -> np.ndarray:
@@ -659,9 +659,9 @@ def excitation_sep_plaquette_input(
     return distances
 
 def plot_qubit_polarization_values(
-    grid:LGTGrid,
+    grid: LGTGrid,
     qubit_polarization_data: np.ndarray,
-    ancilla_states_data:np.ndarray,
+    ancilla_states_data: np.ndarray,
     ax: plt.Axes | None = None,
     qubit_kwargs: dict[str, Any] | None = None,
     set_axis_off: bool = True,
@@ -698,10 +698,10 @@ def plot_qubit_polarization_values(
     qubit_order = []
     for row in range(grid.rows+1):
         for col in range(grid.cols):
-            qubit_order.append(*grid.u_set({grid.x_plaquette_to_x_ancilla(row,col)}))
-    for row in range(1,grid.rows+1):
+            qubit_order.append(*grid.u_set({grid.x_plaquette_to_x_ancilla(row, col)}))
+    for row in range(1, grid.rows+1):
         for col in range(grid.cols+1):
-            qubit_order.append(*grid.u_set({grid.z_plaquette_to_z_ancilla(row,col)}))
+            qubit_order.append(*grid.u_set({grid.z_plaquette_to_z_ancilla(row, col)}))
     qubit_order
 
     pols_shuffled = np.array([qubit_polarization_data[np.nonzero(np.array(grid.physical_qubits) == qubit)[0][0]] for qubit in qubit_order])
@@ -775,17 +775,17 @@ def plot_qubit_polarization_values(
                     **qubit_kwargs,
                 )
             )
-            
+
     if plot_ancillas is True:
         for row, col in grid.z_plaquette_indices:
             qubit_index = (2*grid.cols+1)*row+col
             ax.add_patch(
-                get_ancilla_patch(data = ancilla_states_data, qubit_index = qubit_index,row=row, col=col, x_basis=False, ancilla_cmap = ancilla_colormap, **qubit_kwargs)
+                get_ancilla_patch(data = ancilla_states_data, qubit_index = qubit_index, row=row, col=col, x_basis=False, ancilla_cmap=ancilla_colormap, **qubit_kwargs)
             )
         for row, col in grid.x_plaquette_indices:
             qubit_index = (2*grid.cols+1)*row+3+col
             ax.add_patch(
-                get_ancilla_patch(data = ancilla_states_data, qubit_index = qubit_index,row=row, col=col, x_basis=True, ancilla_cmap = ancilla_colormap, **qubit_kwargs)
+                get_ancilla_patch(data = ancilla_states_data, qubit_index = qubit_index, row=row, col=col, x_basis=True, ancilla_cmap=ancilla_colormap, **qubit_kwargs)
                 )
 
     elif type(plot_ancillas) == list:
@@ -828,7 +828,7 @@ def get_qubit_patch_rect(
     return mpatches.Polygon(coordinates, closed=True, facecolor=color, **kwargs)
 
 def get_ancilla_patch(
-        data:np.ndarray,
+        data: np.ndarray,
         qubit_index,
         row: int,
         col: int,
@@ -855,18 +855,33 @@ def mean_field_energy(theta, Lx=5, Ly=5, Je=1., Jm=1., he=0.0):
     return energy
 
 def bitstring_to_expectation_value(
-        bitstrings:np.ndarray
+        bitstrings: np.ndarray
 )->np.ndarray:
     return -2 * bitstrings + 1
 
 def energy_from_measurements(
-        grid:LGTGrid,
-        hamiltonian_coefs:dict,
-        z_basis_results:np.ndarray,
-        x_basis_results:np.ndarray
+    grid: LGTGrid,
+    hamiltonian_coefs: dict,
+    z_basis_results: np.ndarray,
+    x_basis_results: np.ndarray,
 ) -> float:
-    return (-hamiltonian_coefs['Je'] * np.sum(np.mean(bitstring_to_expectation_value(plaquette_bitstrings(z_basis_results,grid)),axis=0))
-            -hamiltonian_coefs['Jm'] * np.sum(np.mean(bitstring_to_expectation_value(x_plaquette_bitstrings(x_basis_results,grid)),axis=0))
-            -hamiltonian_coefs['he'] * np.sum(np.mean(bitstring_to_expectation_value(z_basis_results),axis=0))
-            -hamiltonian_coefs['lambda'] * np.sum(np.mean(bitstring_to_expectation_value(x_basis_results),axis=0))
+    return (
+        -hamiltonian_coefs["Je"]
+        * np.sum(
+            np.mean(
+                bitstring_to_expectation_value(plaquette_bitstrings(z_basis_results, grid)),
+                axis=0,
+            )
+        )
+        - hamiltonian_coefs["Jm"]
+        * np.sum(
+            np.mean(
+                bitstring_to_expectation_value(x_plaquette_bitstrings(x_basis_results, grid)),
+                axis=0,
+            )
+        )
+        - hamiltonian_coefs["he"]
+        * np.sum(np.mean(bitstring_to_expectation_value(z_basis_results), axis=0))
+        - hamiltonian_coefs["lambda"]
+        * np.sum(np.mean(bitstring_to_expectation_value(x_basis_results), axis=0))
     )
