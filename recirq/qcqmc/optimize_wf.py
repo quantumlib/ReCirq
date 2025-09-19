@@ -15,7 +15,7 @@
 
 import copy
 import itertools
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import cirq
 import fqe

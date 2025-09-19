@@ -19,7 +19,6 @@
 
 
 from recirq.readout_scan.tasks import ReadoutScanTask, run_readout_scan
-import datetime
 import cirq_google as cg
 
 MAX_N_QUBITS = 5
