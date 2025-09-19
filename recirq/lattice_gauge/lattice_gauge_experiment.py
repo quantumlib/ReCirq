@@ -601,7 +601,7 @@ def cnot_on_layer(
             cirq.Moment(cirq.CZ.on(qc, qt) for qc, qt in pairs_list),
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
         ]
-    elif type(depolarization_probability) == float:
+    elif isinstance(depolarization_probability, float):
         return [
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
             cirq.Moment(cirq.CZ.on(qc, qt) for qc, qt in pairs_list),
@@ -611,7 +611,7 @@ def cnot_on_layer(
             ),
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
         ]
-    elif type(depolarization_probability) == dict:
+    elif isinstance(depolarization_probability, dict):
         # make sure there is a error for every pair.
         assert set(pairs_list).intersection(set(depolarization_probability.keys())) == set(
             pairs_list
@@ -742,7 +742,7 @@ def plot_qubit_polarization_values(
 
                 qubit_index += 1
 
-    elif type(plot_physical_qubits) == list:
+    elif isinstance(plot_physical_qubits, list):
         # Plot X plaquette top qubits
         for row, col in plot_physical_qubits[0]:
             qubit_index = (row) * grid.cols + col
@@ -788,7 +788,7 @@ def plot_qubit_polarization_values(
                 get_ancilla_patch(data = ancilla_states_data, qubit_index = qubit_index,row=row, col=col, x_basis=True, ancilla_cmap = ancilla_colormap, **qubit_kwargs)
                 )
 
-    elif type(plot_ancillas) == list:
+    elif isinstance(plot_ancillas, list):
         for row, col in plot_ancillas[0]:
             ax.add_patch(
                 get_ancilla_patch(row=row, col=col, x_basis=False, **qubit_kwargs)
