@@ -108,7 +108,7 @@ class TiltedSquareLatticeLoschmidtSpec(ExecutableSpec):
         return 'recirq.otoc'
 
     def _json_dict_(self):
-        return dataclass_json_dict(self, namespace=self._json_namespace_())
+        return dataclass_json_dict(self)
 
 
 def get_all_tilted_square_lattice_specs(

@@ -129,7 +129,8 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
 
             # first run with a guess known to work most of the time
             results = scipy.optimize.minimize(
-                qaoa_fun, [np.ones(p + 1) * np.pi / 8, -np.ones(p + 1) * np.pi / 8],
+                qaoa_fun, np.concatenate([np.ones(p + 1) * np.pi / 8,
+                                          -np.ones(p + 1) * np.pi / 8]),
                 jac=True, method='BFGS')
 
             for _ in range(1, 10):

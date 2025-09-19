@@ -5,14 +5,8 @@ import numpy as np
 import pytest
 
 import cirq
-from recirq.qaoa.circuit_structure import validate_well_structured
-
-try:
-    from cirq.interop.quirk import QuirkQubitPermutationGate
-except ImportError:
-    from cirq.contrib.quirk import QuirkQubitPermutationGate
 from cirq.testing import random_special_unitary
-
+from recirq.qaoa.circuit_structure import validate_well_structured
 from recirq.qaoa.gates_and_compilation import ZZSwap, compile_problem_unitary_to_zzswap, \
     ProblemUnitary, DriverUnitary, SwapNetworkProblemUnitary, \
     compile_problem_unitary_to_swap_network, compile_swap_network_to_zzswap, \
@@ -20,24 +14,23 @@ from recirq.qaoa.gates_and_compilation import ZZSwap, compile_problem_unitary_to
     compile_driver_unitary_to_rx, compile_single_qubit_gates, compile_to_syc, \
     measure_with_final_permutation, compile_out_virtual_z, compile_to_non_negligible, \
     _hardware_graph, compile_problem_unitary_to_hardware_graph
-
 from recirq.qaoa.problems import random_plus_minus_1_weights
 
 
 def test_zz_swap():
     q1, q2 = cirq.LineQubit.range(2)
     circuit1 = cirq.Circuit(ZZSwap(zz_exponent=0.123).on(q1, q2))
-    u1 = circuit1.unitary()
+    u1 = circuit1.unitary(dtype=np.complex128)
     circuit2 = cirq.Circuit(
         cirq.ZZ(q1, q2) ** 0.123,
         cirq.SWAP(q1, q2)
     )
-    u2 = circuit2.unitary()
+    u2 = circuit2.unitary(dtype=np.complex128)
     circuit3 = cirq.Circuit(
         cirq.SWAP(q1, q2),
         cirq.ZZ(q1, q2) ** 0.123
     )
-    u3 = circuit3.unitary()
+    u3 = circuit3.unitary(dtype=np.complex128)
 
     np.testing.assert_allclose(u1, u2)
     np.testing.assert_allclose(u2, u3)
@@ -55,12 +48,12 @@ def test_compile_problem_unitary_to_zzswap():
     for i1, i2, w in problem.edges.data('weight'):
         circuit1.append(
             cirq.ZZPowGate(exponent=2 * gamma * w / np.pi, global_shift=-0.5).on(q[i1], q[i2]))
-    u1 = circuit1.unitary()
+    u1 = circuit1.unitary(dtype=np.complex128)
 
     circuit2 = cirq.Circuit(
         compile_problem_unitary_to_zzswap(problem_graph=problem, gamma=gamma, qubits=q),
         compile_problem_unitary_to_zzswap(problem_graph=problem, gamma=0, qubits=q))
-    u2 = circuit2.unitary()
+    u2 = circuit2.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u2)
 
 
@@ -71,13 +64,13 @@ def test_problem_unitary():
     problem = random_plus_minus_1_weights(problem, rs=np.random.RandomState(52))
     gamma = 0.151
     problem_unitary = ProblemUnitary(problem_graph=problem, gamma=gamma)
-    u1 = cirq.unitary(problem_unitary)
+    u1 = cirq.Circuit(problem_unitary.on(*q)).unitary(qubit_order=q, dtype=np.complex128)
 
     circuit = cirq.Circuit()
     for i1, i2, w in problem.edges.data('weight'):
         circuit.append(
             cirq.ZZPowGate(exponent=2 * gamma * w / np.pi, global_shift=-0.5).on(q[i1], q[i2]))
-    u2 = circuit.unitary()
+    u2 = circuit.unitary(dtype=np.complex128)
 
     np.testing.assert_allclose(u1, u2)
 
@@ -89,14 +82,14 @@ def test_swap_network_problem_unitary():
     problem = random_plus_minus_1_weights(problem, rs=np.random.RandomState(52))
     gamma = 0.151
     spu = SwapNetworkProblemUnitary(problem_graph=problem, gamma=gamma)
-    u1 = cirq.unitary(spu)
+    u1 = cirq.Circuit(spu.on(*q)).unitary(qubit_order=q, dtype=np.complex128)
 
     circuit = cirq.Circuit()
     for i1, i2, w in problem.edges.data('weight'):
         circuit.append(
             cirq.ZZPowGate(exponent=2 * gamma * w / np.pi, global_shift=-0.5).on(q[i1], q[i2]))
-    circuit += QuirkQubitPermutationGate('i', 'name', list(range(n))[::-1]).on(*q)
-    u2 = circuit.unitary()
+    circuit += cirq.QubitPermutationGate(list(range(n))[::-1]).on(*q)
+    u2 = circuit.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u2)
 
 
@@ -109,10 +102,10 @@ def test_compile_problem_unitary_to_swap_network_p1():
     c1 = cirq.Circuit(ProblemUnitary(problem_graph=problem, gamma=0.123).on(*q))
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
-    assert isinstance(c2.moments[-1].operations[0].gate, QuirkQubitPermutationGate)
+    assert isinstance(c2.moments[-1].operations[0].gate, cirq.QubitPermutationGate)
 
-    u1 = c1.unitary()
-    u2 = c2.unitary()
+    u1 = c1.unitary(dtype=np.complex128)
+    u2 = c2.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u2)
 
 
@@ -128,9 +121,9 @@ def test_compile_problem_unitary_to_swap_network_p2():
     )
     c2 = compile_problem_unitary_to_swap_network(c1)
     assert c1 != c2
-    assert not isinstance(c2.moments[-1].operations[0].gate, QuirkQubitPermutationGate)
-    u1 = c1.unitary()
-    u2 = c2.unitary()
+    assert not isinstance(c2.moments[-1].operations[0].gate, cirq.QubitPermutationGate)
+    u1 = c1.unitary(dtype=np.complex128)
+    u2 = c2.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u2)
 
 
@@ -146,8 +139,8 @@ def test_compile_swap_network_to_zzswap():
     c3 = compile_swap_network_to_zzswap(c2)
     assert c2 != c3
 
-    u1 = c1.unitary()
-    u3 = c3.unitary()
+    u1 = c1.unitary(dtype=np.complex128)
+    u3 = c3.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u3)
 
 
@@ -167,8 +160,8 @@ def test_compile_sk_problem_unitary_to_zzswap_2():
     c3 = compile_swap_network_to_zzswap(c2)
     assert c2 != c3
 
-    u1 = c1.unitary()
-    u3 = c3.unitary()
+    u1 = c1.unitary(dtype=np.complex128)
+    u3 = c3.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u3)
 
 
@@ -213,7 +206,7 @@ def test_compile_problem_unitary_to_hardware_graph():
     c2 = compile_problem_unitary_to_hardware_graph(c1, coordinates)
     assert c1 != c2
 
-    np.testing.assert_allclose(c1.unitary(), c2.unitary())
+    np.testing.assert_allclose(c1.unitary(dtype=np.complex128), c2.unitary(dtype=np.complex128))
 
 
 def test_driver_unitary():
@@ -222,8 +215,8 @@ def test_driver_unitary():
     du = DriverUnitary(num_qubits=n, beta=0.123).on(*q)
     circuit = cirq.Circuit(cirq.rx(2 * 0.123).on_each(*q))
 
-    u1 = cirq.unitary(du)
-    u2 = cirq.unitary(circuit)
+    u1 = cirq.Circuit(du).unitary(qubit_order=q, dtype=np.complex128)
+    u2 = circuit.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u2)
 
 
@@ -234,9 +227,9 @@ def test_compile_driver_unitary_to_rx():
     c2 = cirq.Circuit(cirq.rx(2 * 0.123).on_each(*q))
     c3 = compile_driver_unitary_to_rx(c1)
 
-    u1 = c1.unitary()
-    u2 = c2.unitary()
-    u3 = c3.unitary()
+    u1 = c1.unitary(dtype=np.complex128)
+    u2 = c2.unitary(dtype=np.complex128)
+    u3 = c3.unitary(dtype=np.complex128)
     np.testing.assert_allclose(u1, u2)
     np.testing.assert_allclose(u1, u3)
 
@@ -246,7 +239,7 @@ def test_single_q_const_depth():
     ops = single_qubit_matrix_to_phased_x_z_const_depth(su)
     assert len(ops) == 2
     circuit = cirq.Circuit([op.on(cirq.LineQubit(1)) for op in ops])
-    u2 = circuit.unitary()
+    u2 = circuit.unitary(dtype=np.complex128)
     cirq.testing.assert_allclose_up_to_global_phase(su, u2, atol=1e-8)
 
 
@@ -262,8 +255,8 @@ def test_compile_single_qubit_gates():
     assert isinstance(c2[0].operations[0].gate, cirq.PhasedXPowGate)
     assert isinstance(c2[1].operations[0].gate, cirq.ZPowGate)
 
-    u1 = c1.unitary()
-    u2 = c2.unitary()
+    u1 = c1.unitary(dtype=np.complex128)
+    u2 = c2.unitary(dtype=np.complex128)
     cirq.testing.assert_allclose_up_to_global_phase(u1, u2, atol=1e-8)
 
 
@@ -273,8 +266,8 @@ def test_zzswap_as_syc():
     circuit = zzswap_as_syc(zzs.theta, q1, q2)
     assert len(circuit) == 3 * 3 + 2
 
-    u1 = cirq.unitary(zzs)
-    u2 = cirq.unitary(circuit)
+    u1 = cirq.Circuit(zzs.on(q1, q2)).unitary(qubit_order=(q1, q2), dtype=np.complex128)
+    u2 = circuit.unitary(dtype=np.complex128)
     cirq.testing.assert_allclose_up_to_global_phase(u1, u2, atol=1e-8)
 
 
@@ -296,8 +289,8 @@ def test_zz_as_syc():
     circuit = zz_as_syc(zz.exponent * np.pi / 2, q1, q2)
     assert len(circuit) == 3 * 2 + 2
 
-    u1 = cirq.unitary(zz)
-    u2 = cirq.unitary(circuit)
+    u1 = cirq.Circuit(zz.on(q1, q2)).unitary(qubit_order=(q1, q2), dtype=np.complex128)
+    u2 = circuit.unitary(dtype=np.complex128)
     cirq.testing.assert_allclose_up_to_global_phase(u1, u2, atol=1e-8)
 
 
@@ -336,12 +329,12 @@ def test_compile_to_syc(p):
     c5 = compile_to_syc(c4)
     validate_well_structured(c5, allow_terminal_permutations=True)
 
-    np.testing.assert_allclose(c1.unitary(), c2.unitary())
-    np.testing.assert_allclose(c1.unitary(), c3.unitary())
-    np.testing.assert_allclose(c1.unitary(), c4.unitary())
+    np.testing.assert_allclose(c1.unitary(dtype=np.complex128), c2.unitary(dtype=np.complex128))
+    np.testing.assert_allclose(c1.unitary(dtype=np.complex128), c3.unitary(dtype=np.complex128))
+    np.testing.assert_allclose(c1.unitary(dtype=np.complex128), c4.unitary(dtype=np.complex128))
     # Single qubit throws out global phase
     cirq.testing.assert_allclose_up_to_global_phase(
-        c1.unitary(), c5.unitary(), atol=1e-8)
+        c1.unitary(dtype=np.complex128), c5.unitary(dtype=np.complex128), atol=1e-8)
 
 
 @pytest.mark.parametrize("p", [1, 2, 3])
@@ -377,7 +370,7 @@ def test_measure_with_final_permutation(p):
         permutation.append(final_qubits.index(q))
     c1_prime = (
             c1
-            + QuirkQubitPermutationGate('', '', permutation).on(*qubits)
+            + cirq.QubitPermutationGate(permutation).on(*qubits)
             + cirq.measure(*qubits, key='z')
     )
     cirq.testing.assert_circuits_with_terminal_measurements_are_equivalent(c1_prime, c6, atol=1e-5)

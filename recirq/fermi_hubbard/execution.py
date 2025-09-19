@@ -13,6 +13,7 @@
 # limitations under the License.
 """Routines and data types for experiment execution and life cycle."""
 
+from dataclasses import dataclass
 from typing import (
     Callable, Dict, IO, Iterable, Optional, Tuple, Type, Union, cast)
 
@@ -31,7 +32,7 @@ from recirq.fermi_hubbard.layouts import (
 from recirq.fermi_hubbard.parameters import FermiHubbardParameters
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class ExperimentResult:
     """Accumulated results of a single Fermi-Hubbard circuit run.
 
@@ -52,10 +53,17 @@ class ExperimentResult:
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 
-@cirq.json_serializable_dataclass
+@dataclass
 class ExperimentRun:
     """Single Fermi-Hubbard circuit execution run data.
 
@@ -84,15 +92,23 @@ class ExperimentRun:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **ExperimentResult.cirq_resolvers()
         }
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @property
     def calibration_timestamp_sec(self) -> float:
         return self.calibration_timestamp_usec / 1000.
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass
+
+@dataclass
 class FermiHubbardExperiment:
     """Results of a Fermi-Hubbard experiment execution for fixed parameters.
 
@@ -113,9 +129,21 @@ class FermiHubbardExperiment:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **ExperimentRun.cirq_resolvers(),
             **FermiHubbardParameters.cirq_resolvers(),
         }
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
 
 def save_experiment(experiment: FermiHubbardExperiment,

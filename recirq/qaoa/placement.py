@@ -10,20 +10,38 @@ import cirq
 import cirq.contrib.routing as ccr
 import cirq_google as cg
 
+# Try importing routing utilities from Cirq. If they don't exist try importing tket for routing.
+# This block of code can be replaced with a simple `from cirq import RouteCQC` once a Cirq
+# release containing routing is pushed and no previous Cirq releases that don't contain routing
+# are supported in ReCirq.
 try:
-    # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
-    # dependency. We do this for CI testing against the next, pre-release Cirq version.
-    import pytket
-    import pytket.extensions.cirq
-    from pytket.circuit import Node, Qubit
-    from pytket.passes import SequencePass, RoutingPass, PlacementPass
-    from pytket.predicates import CompilationUnit, ConnectivityPredicate
-    from pytket.routing import GraphPlacement
-except ImportError as e:
-    if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
-        pytket = NotImplemented
-    else:
-        raise e
+    from cirq import RouteCQC
+except ImportError:
+    RouteCQC = NotImplemented
+    try:
+        # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
+        # dependency. We do this for CI testing against the next, pre-release Cirq version.
+        import pytket
+        import pytket.extensions.cirq
+        from pytket.circuit import Node, Qubit
+        from pytket.passes import SequencePass, RoutingPass, PlacementPass
+        from pytket.predicates import CompilationUnit, ConnectivityPredicate
+        try:
+            from pytket.placement import GraphPlacement
+        except ImportError:
+            from pytket.routing import GraphPlacement
+
+        try:
+            from pytket.architecture import Architecture
+        except ImportError:
+            from pytket.routing import Architecture
+    except ImportError:
+        if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
+            pytket = NotImplemented
+        else:
+            raise ImportError(
+                "Routing utilities don't exist in this version of Cirq and PyTket is not installed."
+                )
 
 import recirq
 
@@ -49,27 +67,26 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
     return err_graph
 
 
-def _qubit_index_edges(device):
-    """Helper function in `_device_to_tket_device`"""
-    dev_graph = ccr.gridqubits_to_graph_device(device.qubit_set())
+def _qubit_index_edges(device: cirq.Device):
+    """Helper function in `_device_to_tket_device`."""
+    qubits = device.metadata.qubit_set if device.metadata else ()
+    dev_graph = ccr.gridqubits_to_graph_device(qubits)
     for n1, n2 in dev_graph.edges:
         yield Node('grid', n1.row, n1.col), Node('grid', n2.row, n2.col)
 
 
-def _device_to_tket_device(device):
+def _device_to_tket_device(device: cirq.Device):
     """Custom function to turn a device into a pytket device.
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
-    return pytket.routing.Architecture(
+    return Architecture(
         list(_qubit_index_edges(device))
     )
 
 
 def tk_to_cirq_qubit(tk: 'Qubit'):
-    """Convert a tket Qubit to either a LineQubit or GridQubit.
-
-    """
+    """Convert a tket Qubit to either a LineQubit or GridQubit."""
     ind = tk.index
     return (
         cirq.LineQubit(ind[0])
@@ -79,7 +96,7 @@ def tk_to_cirq_qubit(tk: 'Qubit'):
 
 
 def place_on_device(circuit: cirq.Circuit,
-                    device: cg.XmonDevice,
+                    device: cirq.Device,
                     ) -> Tuple[cirq.Circuit,
                                Dict[cirq.Qid, cirq.Qid],
                                Dict[cirq.Qid, cirq.Qid]]:
@@ -97,25 +114,39 @@ def place_on_device(circuit: cirq.Circuit,
         initial_map: Initial placement of qubits
         final_map: The final placement of qubits after action of the circuit
     """
-    tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
-    tk_device = _device_to_tket_device(device)
 
-    unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
-    passes = SequencePass([
-        PlacementPass(GraphPlacement(tk_device)),
-        RoutingPass(tk_device)])
-    passes.apply(unit)
-    valid = unit.check_all_predicates()
-    if not valid:
-        raise RuntimeError("Routing failed")
+    if RouteCQC is NotImplemented:
+        # Use TKET for routing if it's available
+        if pytket is NotImplemented:
+            # This can happen in CI testing (see top of this file), in which case, the test code
+            # will deal with this scenario. In other situations, this is a problem.
+            raise RuntimeError("Routing utilities are not available")
+        else:
+            tk_circuit = pytket.extensions.cirq.cirq_to_tk(circuit)
+            tk_device = _device_to_tket_device(device)
 
-    initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                   for n1, n2 in unit.initial_map.items()}
-    final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
-                 for n1, n2 in unit.final_map.items()}
-    routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
+            unit = CompilationUnit(tk_circuit, [ConnectivityPredicate(tk_device)])
+            passes = SequencePass([
+                PlacementPass(GraphPlacement(tk_device)),
+                RoutingPass(tk_device)])
+            passes.apply(unit)
+            valid = unit.check_all_predicates()
+            if not valid:
+                raise RuntimeError("Routing failed")
 
-    return routed_circuit, initial_map, final_map
+            initial_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
+                           for n1, n2 in unit.initial_map.items()}
+            final_map = {tk_to_cirq_qubit(n1): tk_to_cirq_qubit(n2)
+                         for n1, n2 in unit.final_map.items()}
+            routed_circuit = pytket.extensions.cirq.tk_to_cirq(unit.circuit)
+
+            return routed_circuit, initial_map, final_map
+
+    # Else use Cirq for routing
+    router = cirq.RouteCQC(device.metadata.nx_graph)
+    routed_circuit, initial_map, swap_map = router.route_circuit(circuit)
+    return routed_circuit, initial_map, {lq: swap_map[initial_map[lq]] for lq in initial_map}
+
 
 
 def path_weight(graph: nx.Graph, path,
@@ -610,8 +641,11 @@ def min_weight_simple_path_mixed_strategy(
     paths_mst = min_weight_simple_paths_mst(graph)
     start_path = paths_mst.get(n, None)
     path_greedy = min_weight_simple_path_greedy(graph, n)
-    if weight_fun(graph, path_greedy) < weight_fun(graph, start_path):
+    if path_greedy is not None and weight_fun(graph, path_greedy) < weight_fun(graph, start_path):
         start_path = path_greedy
+
+    if start_path is None:
+        return None
 
     best_path = start_path
 
@@ -633,7 +667,9 @@ def _get_device_calibration(device_name: str):
     if processor_id is None:
         # TODO: https://github.com/quantumlib/ReCirq/issues/14
         device_obj = recirq.get_device_obj_by_name(device_name)
-        dummy_graph = ccr.gridqubits_to_graph_device(device_obj.qubits)
+        dummy_graph = ccr.gridqubits_to_graph_device(
+            device_obj.metadata.qubit_set if device_obj.metadata is not None else ()
+        )
         nx.set_edge_attributes(dummy_graph, name='weight', values=0.01)
         return dummy_graph
 

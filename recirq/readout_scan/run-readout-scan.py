@@ -19,7 +19,6 @@
 
 
 from recirq.readout_scan.tasks import ReadoutScanTask, run_readout_scan
-import datetime
 import cirq_google as cg
 
 MAX_N_QUBITS = 5
@@ -44,7 +43,7 @@ def main():
             qubit=qubit,
             resolution_factor=6,
         )
-        for qubit in cg.Sycamore23.qubits[:MAX_N_QUBITS]
+        for qubit in sorted(cg.Sycamore23.metadata.qubit_set)[:MAX_N_QUBITS]
     ]
 
     for dc_task in data_collection_tasks:

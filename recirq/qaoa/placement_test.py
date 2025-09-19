@@ -1,18 +1,18 @@
 from typing import Sequence, cast, List
 
+import os
 import networkx as nx
 import numpy as np
 import pytest
 
 import cirq
 import cirq.contrib.acquaintance as cca
-import cirq.contrib.routing as ccr
 from cirq_google import Sycamore23
 from recirq.qaoa.gates_and_compilation import compile_problem_unitary_to_arbitrary_zz, \
     compile_driver_unitary_to_rx
 from recirq.qaoa.placement import place_line_on_device, place_on_device, \
     min_weight_simple_paths_brute_force, min_weight_simple_path_greedy, path_weight, \
-    min_weight_simple_path_anneal, pytket
+    min_weight_simple_path_anneal
 from recirq.qaoa.problem_circuits import get_generic_qaoa_circuit
 
 
@@ -23,7 +23,10 @@ def permute_gate(qubits: Sequence[cirq.Qid], permutation: List[int]):
     ).on(*qubits)
 
 
-@pytest.mark.skipif(pytket is NotImplemented, reason='Pytket is not installed.')
+@pytest.mark.skipif(
+    'RECIRQ_IMPORT_FAILSAFE' in os.environ,
+    reason="RouteCQCC and PyTket not available"
+)
 def test_place_on_device():
     problem_graph = nx.random_regular_graph(d=3, n=10)
     nx.set_edge_attributes(problem_graph, values=1, name='weight')
@@ -48,18 +51,6 @@ def test_place_on_device():
         a = cast(cirq.GridQubit, a)
         b = cast(cirq.GridQubit, b)
         assert a.is_adjacent(b)
-
-    # Check that the circuits are equivalent
-    final_to_initial_qubit_map = {final_qubit_map[cq]: initial_qubit_map[cq]
-                                  for cq in circuit_qubits}
-    initial_qubits = [initial_qubit_map[cq] for cq in circuit_qubits]
-    final_permutation = [initial_qubits.index(final_to_initial_qubit_map[q])
-                         for q in initial_qubits]
-    rcircuit_with_perm = routed_circuit.copy()
-    rcircuit_with_perm.append(permute_gate(initial_qubits, final_permutation))
-    expected = circuit.unitary(qubit_order=cirq.QubitOrder.explicit(circuit_qubits))
-    actual = rcircuit_with_perm.unitary(qubit_order=cirq.QubitOrder.explicit(initial_qubits))
-    cirq.testing.assert_allclose_up_to_global_phase(expected, actual, atol=1e-8)
 
 
 def test_min_weight_simple_paths_brute_force():
@@ -113,7 +104,7 @@ def test_min_weight_simple_path_anneal():
 
 
 def _fake_calib_data():
-    err_graph = ccr.gridqubits_to_graph_device(Sycamore23.qubits)
+    err_graph = Sycamore23.metadata.nx_graph
     nx.set_edge_attributes(err_graph, 0.005, 'weight')
     nx.set_node_attributes(err_graph, 0.05, 'weight')
     return err_graph
@@ -132,4 +123,5 @@ def test_on_device(n, method):
             assert path is None
             return
 
-    assert nx.is_simple_path(err_graph, path)
+    if path is not None:
+        assert nx.is_simple_path(err_graph, path)

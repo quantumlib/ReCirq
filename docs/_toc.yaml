@@ -1,16 +1,15 @@
 toc:
-- title: "Research using Cirq"
-  path: /cirq/experiments
-
-- heading: "Guide"
+- heading: "ReCirq Guide"
+- title: "Research with ReCirq"
+  path: /cirq/experiments/research
 - title: "Data collection idioms"
   path: /cirq/experiments/guide/data_collection_idioms
-- title: "Best practices"
-  path: /cirq/experiments/guide/best_practices
 - title: "Data collection"
   path: /cirq/experiments/guide/data_collection
 - title: "Data analysis"
   path: /cirq/experiments/guide/data_analysis
+- title: "Best practices"
+  path: /cirq/experiments/guide/best_practices
 
 - heading: "QAOA"
 - title: "Overview"
@@ -29,16 +28,14 @@ toc:
   path: /cirq/experiments/qaoa/hardware_grid_circuits
 - title: "Routing with tket"
   path: /cirq/experiments/qaoa/routing_with_tket
+- title: "QAOA Max-Cut"
+  path: /cirq/experiments/qaoa/qaoa_maxcut
+- title: "QAOA: Ising Model"
+  path: /cirq/experiments/qaoa/qaoa_ising
+- title: "Binary Paintshop"
+  path: /cirq/experiments/qaoa/binary_paintshop
 
-- heading: "Quantum Chess"
-- title: "Overview"
-  path: /cirq/experiments/quantum_chess
-- title: "Concepts"
-  path: /cirq/experiments/quantum_chess/concepts
-- title: "Quantum Chess REST API"
-  path: /cirq/experiments/quantum_chess/quantum_chess_rest_api
-- title: "Quantum Chess client"
-  path: /cirq/experiments/quantum_chess/quantum_chess_client
+- include: /cirq/experiments/unitary/_toc.yaml
 
 - heading: "Hartree-Fock VQE"
 - title: "Overview"
@@ -68,3 +65,25 @@ toc:
   path: /cirq/experiments/toric_code
 - title: "Ground State"
   path: /cirq/experiments/toric_code/toric_code_ground_state
+
+- heading: "Rabi oscillations"
+- title: "Rabi Oscillation Experiment"
+  path: /cirq/experiments/benchmarks/rabi_oscillations
+
+- heading: "Kardar-Parisi-Zhang"
+- title: "KPZ and the Heisenberg Spin Chain"
+  path: /cirq/experiments/kpz/kpz
+
+- heading: "Quantum-Classical Quantum Monte Carlo"
+- title: "Overview"
+  path: /cirq/experiments/qcqmc
+- title: "Code Layout"
+  path: /cirq/experiments/qcqmc/high_level
+- title: "End-to-End Example"
+  path: /cirq/experiments/qcqmc/full_workflow
+- title: "Experimental Wavefunctions"
+  path: /cirq/experiments/qcqmc/experimental_wavefunctions
+
+- heading: "Lattice Gauge Theory"
+- title: "Simulation of Charges and Strings"
+  path: /cirq/experiments/lattice_gauge/lattice_gauge

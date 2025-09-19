@@ -87,13 +87,13 @@ NOTEBOOKS = [
     'docs/qaoa/tasks.ipynb',
     'docs/qaoa/landscape_analysis.ipynb',
     'docs/qaoa/routing_with_tket.ipynb',
-    'docs/quantum_chess/concepts.ipynb',
-    # 'docs/quantum_chess/quantum_chess_rest_api.ipynb', # runs a server, never finishes.
-    # 'docs/quantum_chess/quantum_chess_client.ipynb',   # uses the server, requires modification.
     'docs/hfvqe/molecular_data.ipynb',
     'docs/hfvqe/quickstart.ipynb',
     'docs/fermi_hubbard/publication_results.ipynb',
     'docs/fermi_hubbard/experiment_example.ipynb',
+    'docs/qcqmc/high_level.ipynb',
+    'docs/qcqmc/full_workflow.ipynb',
+    'docs/qcqmc/experimental_wavefunctions.ipynb',
 ]
 
 

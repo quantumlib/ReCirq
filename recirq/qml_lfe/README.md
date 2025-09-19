@@ -17,5 +17,3 @@ To generate bitstring data for an 8-qubit experiment on learning physical states
 `python3 -m recirq.qml_lfe.learn_states_c.py --n=8`
 
 `python3 -m recirq.qml_lfe.learn_states_q.py --n=8`
-
-

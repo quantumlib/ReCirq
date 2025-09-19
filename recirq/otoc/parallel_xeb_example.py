@@ -75,8 +75,7 @@ def main():
             sq_gates.append(sq_gate_indices_i)
             for c in circuits:
                 c.append(cirq.measure(*qubits, key="z"))
-            sweep_params = [{} for _ in range(len(circuits))]
-            job = sampler.run_batch(programs=circuits, params_list=sweep_params, repetitions=5000)
+            job = sampler.run_batch(programs=circuits, repetitions=5000)
             bits.append([job[j][0].measurements["z"] for j in range(num_cycles)])
         all_bits.append(bits)
         all_sq_gates.append(sq_gates)

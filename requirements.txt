@@ -1,8 +1,9 @@
-cirq-core>=0.13.0
-cirq-google>=0.13.0
+cirq-core>=1.3.0
+cirq-google>=1.3.0
 # When changing Cirq requirements be sure to update dev_tools/write-ci-requirements.py
 
 seaborn
 sphinx
 ipython
 black
+pytest

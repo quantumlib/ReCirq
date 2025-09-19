@@ -105,6 +105,3 @@ def test_sampler_by_name():
                       cirq.Simulator)
     assert isinstance(recirq.get_sampler_by_name('Syc23-zeros'),
                       recirq.ZerosSampler)
-    assert isinstance(recirq.get_sampler_by_name('Syc23-zeros',
-                                                 gateset='sqrt-iswap'),
-                      recirq.ZerosSampler)

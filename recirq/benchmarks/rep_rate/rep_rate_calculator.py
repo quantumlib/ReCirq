@@ -14,6 +14,13 @@ import cirq_google as cg
 import numpy as np
 
 
+_VALID_ENTANGLING_GATES = [
+    cirq.CZ,
+    cirq.SQRT_ISWAP,
+    cg.SYC,
+]
+
+
 def _latency_circuit(qubits: List[cirq.Qid]) -> cirq.Circuit:
     """Circuit for measuring round-trip latency.
 
@@ -118,20 +125,28 @@ class RepRateCalculator:
             device: Device object to use to construct circuits.
             sampler: Sampler to test for rep rate.
             gate: two-qubit gate to use for sample circuits.
+
+        Raises:
+            ValueError: If the device does not contain metadata.
         """
+        if device.metadata is None:
+            raise ValueError("Invalid device: device must contain metadata.")
+
         self.device = device
         self.sampler = sampler
         self.gate = gate
-        self.qubits = list(self.device.qubits)
+        self.qubits = sorted(device.metadata.qubit_set)
 
         # log of print statements for testing
         self.print_log = ''
 
     @classmethod
-    def from_engine(cls,
-                    engine: cg.Engine,
-                    processor_id: str,
-                    gate_set: Optional[cg.SerializableGateSet] = None):
+    def from_engine(
+        cls,
+        engine: cg.Engine,
+        processor_id: str,
+        gate: cirq.Gate = cirq.CZ
+    ):
         """
         Constructs a RepRateTester using a cirq_google.Engine object.
         Uses the device from the device specification from the API
@@ -139,16 +154,17 @@ class RepRateCalculator:
 
         Args:
             engine: cirq_google.Engine to use for device and sampler.
-            gate_set: gate set to use.  Defaults to square root of iswap
             processor_id: Processor to test on.
+            gate: Entangling gate to use. Defaults to cirq.CZ.
+
+        Raises:
+            ValueError: If gate is not a supported entangling gate.
         """
-        gate_set = gate_set or cg.SQRT_ISWAP_GATESET
-        device = engine.get_processor(processor_id).get_device(
-            gate_sets=[gate_set])
-        sampler = engine.sampler(processor_id=processor_id, gate_set=gate_set)
-        gate = cirq.ISWAP**0.5
-        if gate_set == cg.SYC_GATESET:
-            gate = cg.SYC
+        if gate not in _VALID_ENTANGLING_GATES:
+            raise ValueError(f'{gate} is not supported. Supported entangling gates: {_VALID_ENTANGLING_GATES}')
+
+        device = engine.get_processor(processor_id).get_device()
+        sampler = engine.sampler(processor_id=processor_id)
         return cls(device, sampler, gate)
 
     def _flush_print_log(self) -> None:

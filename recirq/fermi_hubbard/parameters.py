@@ -13,6 +13,7 @@
 # limitations under the License.
 """Containers to represent Fermi-Hubbard problem."""
 
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Optional, Tuple, Type, Union
 
 import abc
@@ -32,7 +33,7 @@ from recirq.fermi_hubbard.layouts import (
 Real = Union[int, float]
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class Hamiltonian:
     """Single spin-chain Fermi-Hubbard Hamiltonian description.
 
@@ -89,7 +90,11 @@ class Hamiltonian:
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @property
     def interactions_count(self) -> int:
@@ -205,6 +210,8 @@ class Hamiltonian:
 
         return openfermion.DiagonalCoulombHamiltonian(one_body, two_body)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 class SingleParticle:
     """Base class for initial states that define single particle on a chain."""
@@ -226,7 +233,7 @@ class SingleParticle:
         """
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class FixedSingleParticle(SingleParticle):
     """Fixed array of particle amplitudes.
 
@@ -240,7 +247,11 @@ class FixedSingleParticle(SingleParticle):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         if sites_count != len(self.amplitudes):
@@ -248,21 +259,31 @@ class FixedSingleParticle(SingleParticle):
                              f'{sites_count} sites')
         return np.array(self.potential)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass
+
+@dataclass
 class UniformSingleParticle(SingleParticle):
     """Uniform single particle amplitudes initial state."""
     pass
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         return np.full(sites_count, 1.0 / np.sqrt(sites_count))
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass(init=False)
+
+@dataclass(init=False)
 class PhasedGaussianSingleParticle(SingleParticle):
     """Gaussian shaped particle density distribution initial state.
 
@@ -301,13 +322,20 @@ class PhasedGaussianSingleParticle(SingleParticle):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_amplitudes(self, sites_count: int) -> np.ndarray:
         return _phased_gaussian_amplitudes(sites_count,
                                            self.k,
                                            self.sigma,
                                            self.position)
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 
 class TrappingPotential:
@@ -351,7 +379,7 @@ class TrappingPotential:
             self.get_potential(sites_count), j)
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class FixedTrappingPotential(TrappingPotential):
     """Fixed array describing trapping potential."""
     particles: int
@@ -363,7 +391,11 @@ class FixedTrappingPotential(TrappingPotential):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_potential(self, sites_count: int) -> np.ndarray:
         if sites_count != len(self.potential):
@@ -371,8 +403,11 @@ class FixedTrappingPotential(TrappingPotential):
                              f'{sites_count} sites')
         return np.array(self.potential)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass(init=False)
+
+@dataclass(init=False)
 class UniformTrappingPotential(TrappingPotential):
     """Uniform trapping potential initial state."""
     particles: int
@@ -382,13 +417,20 @@ class UniformTrappingPotential(TrappingPotential):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_potential(self, sites_count: int) -> np.ndarray:
         return np.zeros(sites_count)
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
-@cirq.json_serializable_dataclass(init=False)
+
+@dataclass(init=False)
 class GaussianTrappingPotential(TrappingPotential):
     """Gaussian shaped trapping potential for creating the initial state.
 
@@ -424,13 +466,20 @@ class GaussianTrappingPotential(TrappingPotential):
 
     @classmethod
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
-        return {cls.__name__: cls}
+        return {cls.__name__: cls, f'recirq.{cls.__name__}': cls}
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     def get_potential(self, sites_count: int) -> np.ndarray:
         def gaussian(x: int) -> float:
             return self.scale * np.exp(-0.5 * ((x - self.center) /
                                                     self.sigma) ** 2)
         return np.array([gaussian(x) for x in np.linspace(0, 1, sites_count)])
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
 
 
 ChainInitialState = Union[FixedSingleParticle,
@@ -442,7 +491,7 @@ ChainInitialState = Union[FixedSingleParticle,
 """Initial state that describes independent, noninteracting chain."""
 
 
-@cirq.json_serializable_dataclass(init=False)
+@dataclass(init=False)
 class IndependentChainsInitialState:
     """Initial state with two independent, noninteracting chains."""
 
@@ -459,6 +508,7 @@ class IndependentChainsInitialState:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **FixedSingleParticle.cirq_resolvers(),
             **PhasedGaussianSingleParticle.cirq_resolvers(),
             **FixedTrappingPotential.cirq_resolvers(),
@@ -466,6 +516,10 @@ class IndependentChainsInitialState:
             **UniformSingleParticle.cirq_resolvers(),
             **UniformTrappingPotential.cirq_resolvers()
         }
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @property
     def up_particles(self) -> int:
@@ -475,12 +529,15 @@ class IndependentChainsInitialState:
     def down_particles(self) -> int:
         return self.down.particles
 
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
+
 
 InitialState = IndependentChainsInitialState
 """Arbitrary initial state type."""
 
 
-@cirq.json_serializable_dataclass
+@dataclass
 class FermiHubbardParameters:
     """Parameters of a Fermi-Hubbard problem instance.
 
@@ -503,11 +560,16 @@ class FermiHubbardParameters:
     def cirq_resolvers(cls) -> Dict[str, Optional[Type]]:
         return {
             cls.__name__: cls,
+            f'recirq.{cls.__name__}': cls,
             **Hamiltonian.cirq_resolvers(),
             **IndependentChainsInitialState.cirq_resolvers(),
             **LineLayout.cirq_resolvers(),
             **ZigZagLayout.cirq_resolvers(),
         }
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
     @property
     def sites_count(self) -> int:
@@ -534,13 +596,18 @@ class FermiHubbardParameters:
     def equals_for_rescaling(self, other: 'FermiHubbardParameters') -> bool:
         if not isinstance(other, FermiHubbardParameters):
             return False
-        if type(self.layout) != type(other.layout):
-            return False
-        if isinstance(self.layout, ZigZagLayout):
+        if isinstance(self.layout, ZigZagLayout) and isinstance(other.layout, ZigZagLayout):
             interacting = not np.allclose(self.hamiltonian.u, 0.0)
             other_interacting = not np.allclose(other.hamiltonian.u, 0.0)
             return interacting == other_interacting
         return False
+
+    def _json_dict_(self):
+        return cirq.dataclass_json_dict(self)
+
+    @classmethod
+    def _json_namespace_(cls):
+        return 'recirq'
 
 
 def _check_normalized(array: Iterable[Number]) -> None:
