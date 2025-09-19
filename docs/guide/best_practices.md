@@ -41,4 +41,3 @@ Be exhaustive in metadata pertaining to your experiment. You should likely
 be saving job ids, calibration ids, durations of various parts of your
 task, circuits, and more. By default, a timestamp is saved with each
 file.
-

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Sequence, Tuple, List, Iterator
+from typing import Sequence, List, Iterator
 
 import functools
 import numpy as np

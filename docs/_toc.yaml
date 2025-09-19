@@ -1,6 +1,6 @@
 toc:
-- heading: "Guide"
-- title: "Research using Cirq"
+- heading: "ReCirq Guide"
+- title: "Research with ReCirq"
   path: /cirq/experiments/research
 - title: "Data collection idioms"
   path: /cirq/experiments/guide/data_collection_idioms
@@ -69,3 +69,21 @@ toc:
 - heading: "Rabi oscillations"
 - title: "Rabi Oscillation Experiment"
   path: /cirq/experiments/benchmarks/rabi_oscillations
+
+- heading: "Kardar-Parisi-Zhang"
+- title: "KPZ and the Heisenberg Spin Chain"
+  path: /cirq/experiments/kpz/kpz
+
+- heading: "Quantum-Classical Quantum Monte Carlo"
+- title: "Overview"
+  path: /cirq/experiments/qcqmc
+- title: "Code Layout"
+  path: /cirq/experiments/qcqmc/high_level
+- title: "End-to-End Example"
+  path: /cirq/experiments/qcqmc/full_workflow
+- title: "Experimental Wavefunctions"
+  path: /cirq/experiments/qcqmc/experimental_wavefunctions
+
+- heading: "Lattice Gauge Theory"
+- title: "Simulation of Charges and Strings"
+  path: /cirq/experiments/lattice_gauge/lattice_gauge

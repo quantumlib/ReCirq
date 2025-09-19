@@ -15,4 +15,3 @@ in [arXiv:2010.07965](https://arxiv.org/abs/2010.07965) **[quant-ph]**:
   analysis of results from the data set which was released together with the publication.
   The data set consists of four zip files and can be accessed at 
   [https://doi.org/10.5061/dryad.crjdfn32v](https://doi.org/10.5061/dryad.crjdfn32v).
-  

@@ -93,8 +93,7 @@ def main():
         for c, circuits_ic in enumerate(circuits_i):
             print("Measuring circuit instance {}, cycle {}...".format(i, c))
             stats = int(2000 + 10000 * (c / max(cycles)) ** 3)
-            params = [{} for _ in range(len(circuits_ic))]
-            job = sampler.run_batch(programs=circuits_ic, params_list=params, repetitions=stats)
+            job = sampler.run_batch(programs=circuits_ic, repetitions=stats)
             for d in range(num_qubits):
                 p = np.mean(job[4 * d][0].measurements["z"])
                 p -= np.mean(job[4 * d + 1][0].measurements["z"])

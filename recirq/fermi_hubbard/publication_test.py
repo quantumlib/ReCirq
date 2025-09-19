@@ -16,7 +16,11 @@ import os
 from recirq.fermi_hubbard.publication import fetch_publication_data
 
 
-def test_fetch_publication_data():
+def try_fetch_publication_data():
+    """Tests fetching publication data from dryad.
+    
+    Note that this will not run as part of CI, to avoid external URL fetches.
+    """
     base_dir = "fermi_hubbard_data"
     fetch_publication_data(base_dir=base_dir, exclude=["trapping_3u3d"])
 

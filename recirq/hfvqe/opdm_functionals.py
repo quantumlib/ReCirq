@@ -100,7 +100,7 @@ class OpdmFunctional():  # testpragma: no cover
             'z': {},
             'xy_even': {},
             'xy_odd': {},
-            'qubits': [f'({q.row}, {q.col})' for q in self.qubits],
+            'qubits': [str(q) for q in self.qubits],
             'qubit_permutations': ccu.generate_permutations(len(self.qubits)),
             'circuits': circuits,
             'circuits_with_measurement': circuits_dict
