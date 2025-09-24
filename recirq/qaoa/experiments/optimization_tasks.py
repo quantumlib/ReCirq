@@ -1,6 +1,5 @@
 from typing import Dict, Sequence, Optional, List, Tuple
 import os
-import shutil
 
 import numpy as np
 import cirq

@@ -14,9 +14,8 @@
 """Trial wavefunction circuit ansatz primitives."""
 
 import itertools
-from typing import Dict, Iterable, Iterator, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Sequence, Tuple
 
-import attrs
 import cirq
 import numpy as np
 import openfermion

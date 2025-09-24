@@ -415,8 +415,8 @@ def safe_concatenate_circuits(circuit1: cirq.Circuit, circuit2: cirq.Circuit) ->
 def merge_faster(gate1: cirq.Gate, gate2: cirq.Gate, tol: Optional[float]=1e-6) -> cirq.Gate:
     """Merges single qubit gates to a phasedXZ gate, is faster than cirq when gates are rz."""
     if (
-        type(gate1.gate) == cirq.PhasedXZGate
-        and type(gate2.gate) == cirq.PhasedXZGate
+        isinstance(gate1.gate, cirq.PhasedXZGate)
+        and isinstance(gate2.gate, cirq.PhasedXZGate)
         and abs(gate2.gate.x_exponent) < tol
     ):
         new_gate = cirq.PhasedXZGate(
