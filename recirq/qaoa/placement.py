@@ -15,7 +15,7 @@ import cirq_google as cg
 # release containing routing is pushed and no previous Cirq releases that don't contain routing
 # are supported in ReCirq.
 try:
-    from cirq import RouteCQCC
+    from cirq import RouteCQC
 except ImportError:
     RouteCQC = NotImplemented
     try:

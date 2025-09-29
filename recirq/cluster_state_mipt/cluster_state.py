@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import cirq
-import cirq_google as cg
 import numpy as np
 
 def get_two_qubits_6x6(d=6):

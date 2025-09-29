@@ -15,8 +15,6 @@ from recirq.qaoa.placement import place_line_on_device, place_on_device, \
     min_weight_simple_path_anneal
 from recirq.qaoa.problem_circuits import get_generic_qaoa_circuit
 
-from recirq.qaoa.placement import pytket
-
 
 def permute_gate(qubits: Sequence[cirq.Qid], permutation: List[int]):
     return cca.LinearPermutationGate(
