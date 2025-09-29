@@ -109,10 +109,10 @@ class ToricCodePlaquettes:
             qubit_idxs = code.z_plaquette_to_qubit_idxs(row, col)
 
         total_qubits = len(code.qubits)
-        parities = data.applymap(
+        parities = data.map(
             lambda value: cls.compute_parity(value, qubit_idxs, total_qubits)
         )
-        return float(parities.mean())
+        return float(parities.mean().iloc[0])
 
     @staticmethod
     def compute_parity(value: int, qubit_idxs: Iterable[int], total_qubits: int) -> int:

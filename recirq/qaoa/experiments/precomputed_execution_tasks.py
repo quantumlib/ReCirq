@@ -4,7 +4,6 @@ import cirq
 import recirq
 from recirq.qaoa.circuit_structure import BadlyStructuredCircuitError, \
     find_circuit_structure_violations
-from recirq.qaoa.classical_angle_optimization import OptimizationResult
 from recirq.qaoa.experiments.angle_precomputation_tasks import AnglePrecomputationTask, \
     DEFAULT_BASE_DIR as DEFAULT_PRECOMPUTATION_BASE_DIR
 from recirq.qaoa.experiments.problem_generation_tasks import \
@@ -13,7 +12,8 @@ from recirq.qaoa.gates_and_compilation import compile_to_non_negligible
 from recirq.qaoa.placement import place_line_on_device
 from recirq.qaoa.problem_circuits import get_compiled_hardware_grid_circuit, \
     get_compiled_sk_model_circuit, get_compiled_3_regular_maxcut_circuit
-from recirq.qaoa.problems import ProblemT, HardwareGridProblem, SKProblem, ThreeRegularProblem
+from recirq.qaoa.problems import HardwareGridProblem, SKProblem, ThreeRegularProblem
+
 
 EXPERIMENT_NAME = 'qaoa-precomputed'
 DEFAULT_BASE_DIR = os.path.expanduser(f'~/cirq-results/{EXPERIMENT_NAME}')
