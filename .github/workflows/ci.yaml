@@ -22,12 +22,10 @@ run-name: >-
 on:
   push:
     branches:
-      - master
       - main
 
   pull_request:
     branches:
-      - master
       - main
 
   merge_group:
@@ -146,3 +144,35 @@ jobs:
       - name: Check notebook formatting
         run: |
           dev_tools/nbformat
+
+  workflow-validation:
+    name: GitHub Actions workflow checks
+      # This uses a Mac runner because actionlint isn't available via Linux apt.
+    runs-on: macos-14
+    timeout-minutes: 5
+    steps:
+      - name: Check out a copy of the git repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Determine if workflow files were changed
+        id: changes
+        uses: tj-actions/changed-files@v44
+        with:
+          files: .github/workflows/**
+
+      - if: steps.changes.outputs.any_changed != 'true'
+        name: Stop early if there were no changes to workflow files
+        run: exit 0
+
+      - name: Verify that all workflow actions have pinned versions
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@fc87bb5b5a97953d987372e74478de634726b3e5
+
+      # If we didn't fail the previous check, go on to more time-consuming ones.
+      - name: Install actionlint
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install actionlint
+
+      - name: Set up actionlint output problem matcher
+        run: echo "::add-matcher::.github/problem-matchers/actionlint.json"
+
+      - name: Verify that all GitHub Actions workflows are valid
+        run: /opt/homebrew/bin/actionlint -color
