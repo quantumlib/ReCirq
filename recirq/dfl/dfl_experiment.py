@@ -1073,7 +1073,7 @@ class DFLExperiment2D(DFLExperiment):
         self.e0 = np.array([])
         self.e1 = np.array([])
         self.num_gc_instances = num_gc_instances
-        self.executor = process_pool.get_executor()
+        self.executor = concurrent.futures.ProcessPoolExecutor()
         self.readout_ideal_bitstrs = np.array([])
         self.save_directory = save_directory
         self.lgtdfl = dfl_2d.LGTDFL(qubits, origin_qubit, tau, h, mu)
