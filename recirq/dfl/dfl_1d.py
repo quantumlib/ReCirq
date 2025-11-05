@@ -184,7 +184,10 @@ def _change_basis(grid: Sequence[cirq.GridQubit]) -> cirq.Circuit:
         moment_2.append(cirq.CZ(q3, q2))
         moment_h.append(cirq.H(q2))
     return cirq.Circuit.from_moments(
-        cirq.Moment(moment_h), cirq.Moment(moment_1), cirq.Moment(moment_2), cirq.Moment(moment_h)
+        cirq.Moment(moment_h),
+        cirq.Moment(moment_1),
+        cirq.Moment(moment_2),
+        cirq.Moment(moment_h),
     )
 
 
@@ -225,15 +228,21 @@ def get_1d_dfl_experiment_circuits(
     basis="dual",
 ):
     if initial_state == "single_sector":
-        initial_circuit = _energy_bump_initial_state(grid, h, "single_sector", excited_qubits)
+        initial_circuit = _energy_bump_initial_state(
+            grid, h, "single_sector", excited_qubits
+        )
     elif initial_state == "superposition":
-        initial_circuit = _energy_bump_initial_state(grid, h, "superposition", excited_qubits)
+        initial_circuit = _energy_bump_initial_state(
+            grid, h, "superposition", excited_qubits
+        )
     else:
         raise ValueError("Invalid initial state")
     circuits = []
     for n_cycle in tqdm(n_cycles):
         print(int(np.max([0, n_cycle - 1])))
-        circ = initial_circuit + trotter_circuit(grid, n_cycle, dt, h, mu, two_qubit_gate)
+        circ = initial_circuit + trotter_circuit(
+            grid, n_cycle, dt, h, mu, two_qubit_gate
+        )
         if basis == "lgt":
             circ += _change_basis(grid)
         elif basis == "dual":
@@ -252,7 +261,11 @@ def get_1d_dfl_experiment_circuits(
                 )
             else:
                 raise ValueError("Invalid option for basis")
-            circ_x = circ + _layer_hadamard(grid, "all") + cirq.measure([q for q in grid], key="m")
+            circ_x = (
+                circ
+                + _layer_hadamard(grid, "all")
+                + cirq.measure([q for q in grid], key="m")
+            )
             circuits.append(circ_z)
             circuits.append(circ_x)
     return circuits

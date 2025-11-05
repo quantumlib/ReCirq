@@ -16,7 +16,9 @@ from . import dfl_2d_second_order_trotter as dfl_2d
 
 def _apply_gauge_compiling(seed: int, circuit: cirq.Circuit) -> cirq.Circuit:
     return cirq.merge_single_qubit_moments_to_phxz(
-        cirq.transformers.gauge_compiling.CPhaseGaugeTransformerMM()(circuit, rng_or_seed=seed)
+        cirq.transformers.gauge_compiling.CPhaseGaugeTransformerMM()(
+            circuit, rng_or_seed=seed
+        )
     )
 
 
@@ -157,7 +159,10 @@ class DFLExperiment:
 
         if random_compile:
             circuits = list(
-                self.executor.map(partial(_apply_gauge_compiling, circuit=circuit), range(self.num_gc_instances))
+                self.executor.map(
+                    partial(_apply_gauge_compiling, circuit=circuit),
+                    range(self.num_gc_instances),
+                )
             )
         else:
             circuits = [circuit]
@@ -179,7 +184,10 @@ class DFLExperiment:
         random_circuits = []
         random_circuits = [
             cirq.Circuit(
-                [x_or_I(bit)(qubit) for bit, qubit in zip(bitstr, self.qubits[: len(bitstr)])]
+                [
+                    x_or_I(bit)(qubit)
+                    for bit, qubit in zip(bitstr, self.qubits[: len(bitstr)])
+                ]
                 + [cirq.M(*self.qubits[: len(bitstr)], key="m")]
             )
             for bitstr in bitstrs
@@ -193,10 +201,12 @@ class DFLExperiment:
                 break
 
         bit_fn = lambda gate: 1 if gate == cirq.X else 0
-        self.readout_ideal_bitstrs = np.array([
-            [bit_fn(circuit[0][qubit].gate) for qubit in self.qubits]
-            for circuit in self.all_circuits[-num_bitstrs:]
-        ])
+        self.readout_ideal_bitstrs = np.array(
+            [
+                [bit_fn(circuit[0][qubit].gate) for qubit in self.qubits]
+                for circuit in self.all_circuits[-num_bitstrs:]
+            ]
+        )
 
     def generate_all_circuits(
         self,
@@ -213,7 +223,11 @@ class DFLExperiment:
 
         all_circuits = []
         with tqdm(
-            total=2 * 2 * len(zero_trotter_options) * len(self.cycles) * num_gc_instances
+            total=2
+            * 2
+            * len(zero_trotter_options)
+            * len(self.cycles)
+            * num_gc_instances
         ) as pbar:
             for initial_state in ["gauge_invariant", "superposition"]:
                 for basis in ["z", "x"]:
@@ -230,7 +244,9 @@ class DFLExperiment:
                             )
                             pbar.update(num_gc_instances)
 
-        bitstrs, readout_circuits = self.create_readout_benchmark_circuits(num_random_bitstrings)
+        bitstrs, readout_circuits = self.create_readout_benchmark_circuits(
+            num_random_bitstrings
+        )
         all_circuits += readout_circuits
 
         expected_number = (
@@ -242,7 +258,9 @@ class DFLExperiment:
         self.all_circuits = all_circuits
         self.readout_ideal_bitstrs = bitstrs
 
-    def load_circuits_from_file(self, filename: str, old_qubits_list: list[cirq.Qid] | None = None):
+    def load_circuits_from_file(
+        self, filename: str, old_qubits_list: list[cirq.Qid] | None = None
+    ):
         """Load the circuits from a file.
 
         Args:
@@ -259,7 +277,9 @@ class DFLExperiment:
             self.all_circuits = circuits
         self.identify_ideal_readout_bitstrings_from_circuits()
 
-    def shuffle_circuits_and_save(self, batch_size: int = 500, delete_circuit_list: bool = True):
+    def shuffle_circuits_and_save(
+        self, batch_size: int = 500, delete_circuit_list: bool = True
+    ):
         """Shuffle all of the circuits and save them to files.
 
         Args:
@@ -281,7 +301,9 @@ class DFLExperiment:
             circuits_i = circuits_shuffled[start_idx : (start_idx + batch_size)]
             pickle.dump(
                 circuits_i,
-                open(self.save_directory + f"/shuffled_circuits/{start_idx}.pickle", "wb"),
+                open(
+                    self.save_directory + f"/shuffled_circuits/{start_idx}.pickle", "wb"
+                ),
             )
 
         params = {
@@ -290,7 +312,9 @@ class DFLExperiment:
             "readout_ideal_bitstrs": self.readout_ideal_bitstrs,
             "batch_size": batch_size,
         }
-        pickle.dump(params, open(self.save_directory + "/shuffled_circuits/params.pickle", "wb"))
+        pickle.dump(
+            params, open(self.save_directory + "/shuffled_circuits/params.pickle", "wb")
+        )
 
         if delete_circuit_list:
             del self.all_circuits
@@ -447,7 +471,9 @@ class DFLExperiment:
         )
 
         # load the parameters for the shuffled circuits:
-        params = pickle.load(open(self.save_directory + "/shuffled_circuits/params.pickle", "rb"))
+        params = pickle.load(
+            open(self.save_directory + "/shuffled_circuits/params.pickle", "rb")
+        )
         indices = params["indices"]
         inv_map = params["inv_map"]
         self.readout_ideal_bitstrs = params["readout_ideal_bitstrs"]
@@ -480,7 +506,9 @@ class DFLExperiment:
                             * len(zero_trotter_options)
                             * len(self.cycles)
                             * self.num_gc_instances
-                            + zero_trotter_number * len(self.cycles) * self.num_gc_instances
+                            + zero_trotter_number
+                            * len(self.cycles)
+                            * self.num_gc_instances
                             + cycle_number * self.num_gc_instances
                         )
                         end_index = start_index + self.num_gc_instances
@@ -494,7 +522,9 @@ class DFLExperiment:
         # run the experiment and save shuffled measurements to files (avoids memory issues)
         for start_idx in tqdm(range(initial_start_index, tot_num_circuits, batch_size)):
             circuits_i = pickle.load(
-                open(self.save_directory + f"/shuffled_circuits/{start_idx}.pickle", "rb")
+                open(
+                    self.save_directory + f"/shuffled_circuits/{start_idx}.pickle", "rb"
+                )
             )
             if old_qubits is not None and new_qubits is not None:
                 print("Transforming qubits")
@@ -502,15 +532,21 @@ class DFLExperiment:
                     circuit.transform_qubits(dict(zip(old_qubits, new_qubits)))
                     for circuit in circuits_i
                 ]
-            print(f"Shots this batch: {sum(repetitions[start_idx : (start_idx + batch_size)])}")
+            print(
+                f"Shots this batch: {sum(repetitions[start_idx : (start_idx + batch_size)])}"
+            )
             result = self.sampler.run_batch(
-                circuits_i, repetitions=repetitions[start_idx : (start_idx + batch_size)]
+                circuits_i,
+                repetitions=repetitions[start_idx : (start_idx + batch_size)],
             )
             results_i = [res[0].measurements["m"].astype(bool) for res in result]
             if not os.path.isdir(self.save_directory + f"/shuffled_results"):
                 os.mkdir(self.save_directory + f"/shuffled_results")
             pickle.dump(
-                results_i, open(self.save_directory + f"/shuffled_results/{start_idx}.pickle", "wb")
+                results_i,
+                open(
+                    self.save_directory + f"/shuffled_results/{start_idx}.pickle", "wb"
+                ),
             )
 
     def load_shuffled_measurements(self):
@@ -518,7 +554,9 @@ class DFLExperiment:
 
         First, you should have run `run_experiment_from_saved_circuits` or `run_experiment`.
         """
-        params = pickle.load(open(self.save_directory + "/shuffled_circuits/params.pickle", "rb"))
+        params = pickle.load(
+            open(self.save_directory + "/shuffled_circuits/params.pickle", "rb")
+        )
         indices = params["indices"]
         inv_map = params["inv_map"]
         self.readout_ideal_bitstrs = params["readout_ideal_bitstrs"]
@@ -532,7 +570,9 @@ class DFLExperiment:
         measurements_shuffled = []
         for start_idx in tqdm(range(0, tot_num_circuits, batch_size)):
             measurements_shuffled += pickle.load(
-                open(self.save_directory + f"/shuffled_results/{start_idx}.pickle", "rb")
+                open(
+                    self.save_directory + f"/shuffled_results/{start_idx}.pickle", "rb"
+                )
             )
 
         self.measurements = [measurements_shuffled[i] for i in inv_map]
@@ -583,7 +623,9 @@ class DFLExperiment:
         if cycle_number < 0:
             raise ValueError("Cycle number should be nonnegative")
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
+            )
         if initial_state == "single_sector":
             initial_state = "gauge_invariant"
         init_state_number = ["gauge_invariant", "superposition"].index(initial_state)
@@ -596,7 +638,10 @@ class DFLExperiment:
             * len(zero_trotter_options)
             * len(self.cycles)
             * self.num_gc_instances
-            + basis_number * len(zero_trotter_options) * len(self.cycles) * self.num_gc_instances
+            + basis_number
+            * len(zero_trotter_options)
+            * len(self.cycles)
+            * self.num_gc_instances
             + zero_trotter_number * len(self.cycles) * self.num_gc_instances
             + cycle_number * self.num_gc_instances
         )
@@ -605,7 +650,9 @@ class DFLExperiment:
             self.measurements[start_index : (start_index + self.num_gc_instances)]
         )
         repetitions = len(measurements[0])
-        measurements = measurements.reshape(repetitions * self.num_gc_instances, len(self.qubits))
+        measurements = measurements.reshape(
+            repetitions * self.num_gc_instances, len(self.qubits)
+        )
         if post_select:
             mask = np.all(measurements[:, self.matter_sites] == False, axis=1)
             measurements = measurements[mask, :]
@@ -644,7 +691,9 @@ class DFLExperiment:
         if cycle_number < 0:
             raise ValueError("Cycle number should be nonnegative")
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
+            )
 
         if readout_mitigate and len(self.e0) == 0 or len(self.e1) == 0:
             self.extract_readout_error_rates()
@@ -702,19 +751,23 @@ class DFLExperiment:
                 "initial_state should be 'superposition' or 'gauge_invariant' (or 'single_sector' which is the same as 'gauge_invariant')"
             )
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
-
-        return np.array([
-            self.extract_zzz_single_cycle(
-                initial_state,
-                cycle,
-                zero_trotter,
-                readout_mitigate,
-                post_select,
-                tolerated_distance_to_error,
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
             )
-            for cycle in tqdm(self.cycles, total=len(self.cycles))
-        ])
+
+        return np.array(
+            [
+                self.extract_zzz_single_cycle(
+                    initial_state,
+                    cycle,
+                    zero_trotter,
+                    readout_mitigate,
+                    post_select,
+                    tolerated_distance_to_error,
+                )
+                for cycle in tqdm(self.cycles, total=len(self.cycles))
+            ]
+        )
 
     def extract_gauge_x_single_cycle(
         self,
@@ -748,7 +801,9 @@ class DFLExperiment:
         if cycle_number < 0:
             raise ValueError("Cycle number should be nonnegative")
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
+            )
 
         if readout_mitigate and len(self.e0) == 0 or len(self.e1) == 0:
             self.extract_readout_error_rates()
@@ -806,19 +861,23 @@ class DFLExperiment:
                 "initial_state should be 'superposition' or 'gauge_invariant' (or 'single_sector' which is the same as 'gauge_invariant')"
             )
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
-
-        return np.array([
-            self.extract_gauge_x_single_cycle(
-                initial_state,
-                cycle,
-                readout_mitigate=readout_mitigate,
-                post_select=post_select,
-                zero_trotter=zero_trotter,
-                tolerated_distance_to_error=tolerated_distance_to_error,
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
             )
-            for cycle in self.cycles
-        ])
+
+        return np.array(
+            [
+                self.extract_gauge_x_single_cycle(
+                    initial_state,
+                    cycle,
+                    readout_mitigate=readout_mitigate,
+                    post_select=post_select,
+                    zero_trotter=zero_trotter,
+                    tolerated_distance_to_error=tolerated_distance_to_error,
+                )
+                for cycle in self.cycles
+            ]
+        )
 
     def extract_matter_x_single_cycle(
         self,
@@ -854,7 +913,9 @@ class DFLExperiment:
         if cycle_number < 0:
             raise ValueError("Cycle number should be nonnegative")
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
+            )
 
         if readout_mitigate and len(self.e0) == 0 or len(self.e1) == 0:
             self.extract_readout_error_rates()
@@ -880,7 +941,9 @@ class DFLExperiment:
                 self.qubits[q_idx],
                 self.qubits[(q_idx + 1) % len(self.qubits)],
             ]
-            indices = np.array([self.qubits.index(cast(cirq.GridQubit, qi)) for qi in qubits_i])
+            indices = np.array(
+                [self.qubits.index(cast(cirq.GridQubit, qi)) for qi in qubits_i]
+            )
             if post_select and tolerated_distance_to_error < np.inf:
                 raise NotImplementedError
             else:
@@ -892,12 +955,21 @@ class DFLExperiment:
                 for i in indices:
                     e0_sq = e0[i]
                     e1_sq = e1[i]
-                    single_qubit_cmats.append(np.array([[1 - e0_sq, e1_sq], [e0_sq, 1 - e1_sq]]))
+                    single_qubit_cmats.append(
+                        np.array([[1 - e0_sq, e1_sq], [e0_sq, 1 - e1_sq]])
+                    )
                     qubits_to_mitigate.append(self.qubits[i])
 
-                tcm = cirq.experiments.TensoredConfusionMatrices(single_qubit_cmats, [[q] for q in qubits_to_mitigate], repetitions=measurements_i.shape[0], timestamp = 0.0)
+                tcm = cirq.experiments.TensoredConfusionMatrices(
+                    single_qubit_cmats,
+                    [[q] for q in qubits_to_mitigate],
+                    repetitions=measurements_i.shape[0],
+                    timestamp=0.0,
+                )
 
-                x_i, dx_i = tcm.readout_mitigation_pauli_uncorrelated(qubits_to_mitigate, measurements_i)
+                x_i, dx_i = tcm.readout_mitigation_pauli_uncorrelated(
+                    qubits_to_mitigate, measurements_i
+                )
             else:
                 repetitions = measurements_i.shape[0]
                 p1 = np.mean(np.sum(measurements_i, axis=1) % 2)
@@ -938,19 +1010,23 @@ class DFLExperiment:
                 "initial_state should be 'superposition' or 'gauge_invariant' (or 'single_sector' which is the same as 'gauge_invariant')"
             )
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
-
-        return np.array([
-            self.extract_matter_x_single_cycle(
-                initial_state,
-                cycle,
-                readout_mitigate=readout_mitigate,
-                post_select=post_select,
-                zero_trotter=zero_trotter,
-                tolerated_distance_to_error=tolerated_distance_to_error,
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
             )
-            for cycle in self.cycles
-        ])
+
+        return np.array(
+            [
+                self.extract_matter_x_single_cycle(
+                    initial_state,
+                    cycle,
+                    readout_mitigate=readout_mitigate,
+                    post_select=post_select,
+                    zero_trotter=zero_trotter,
+                    tolerated_distance_to_error=tolerated_distance_to_error,
+                )
+                for cycle in self.cycles
+            ]
+        )
 
 
 class DFLExperiment2D(DFLExperiment):
@@ -1095,9 +1171,9 @@ class DFLExperiment2D(DFLExperiment):
         """
 
         for q in qubits_to_fix_disorder:
-            assert q in self.lgtdfl.matter_qubits, (
-                "qubits_to_fix_disorder must all be matter qubits"
-            )
+            assert (
+                q in self.lgtdfl.matter_qubits
+            ), "qubits_to_fix_disorder must all be matter qubits"
 
         if initial_state not in ["gauge_invariant", "single_sector", "superposition"]:
             raise ValueError(
@@ -1120,7 +1196,9 @@ class DFLExperiment2D(DFLExperiment):
             [ncycles],
             excited_qubits=self.excited_qubits,
             n_instances=1,
-            two_qubit_gate="cphase_simultaneous" if self.use_cphase else "cz_simultaneous",
+            two_qubit_gate=(
+                "cphase_simultaneous" if self.use_cphase else "cz_simultaneous"
+            ),
         )[basis_index]
         new_moment_0 = cirq.Moment(
             list(circuit[0].operations)
@@ -1170,10 +1248,12 @@ class DFLExperiment2D(DFLExperiment):
         """
         matter_qubits = self.lgtdfl.matter_qubits
         matter_indices = np.array(self.lgtdfl._matter_indices())
-        distances = np.array([
-            min(_distance(q_operator, qubit) for q_operator in operator_qubits)
-            for qubit in matter_qubits
-        ])
+        distances = np.array(
+            [
+                min(_distance(q_operator, qubit) for q_operator in operator_qubits)
+                for qubit in matter_qubits
+            ]
+        )
         errors = measurements[:, matter_indices]
         distance_to_error = np.min(np.where(errors, distances, np.inf), axis=1)
         return measurements[distance_to_error >= tolerated_distance_to_error]
@@ -1211,7 +1291,9 @@ class DFLExperiment2D(DFLExperiment):
         if cycle_number < 0:
             raise ValueError("Cycle number should be nonnegative")
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
+            )
 
         if readout_mitigate and len(self.e0) == 0 or len(self.e1) == 0:
             self.extract_readout_error_rates()
@@ -1288,7 +1370,9 @@ class DFLExperiment2D(DFLExperiment):
         if cycle_number < 0:
             raise ValueError("Cycle number should be nonnegative")
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
+            )
 
         if readout_mitigate and len(self.e0) == 0 or len(self.e1) == 0:
             self.extract_readout_error_rates()
@@ -1367,7 +1451,9 @@ class DFLExperiment2D(DFLExperiment):
         if cycle_number < 0:
             raise ValueError("Cycle number should be nonnegative")
         if initial_state == "superposition" and post_select:
-            raise ValueError("Post selection is intended for the gauge invariant initial state.")
+            raise ValueError(
+                "Post selection is intended for the gauge invariant initial state."
+            )
 
         if readout_mitigate and len(self.e0) == 0 or len(self.e1) == 0:
             self.extract_readout_error_rates()
@@ -1388,13 +1474,20 @@ class DFLExperiment2D(DFLExperiment):
                 e0[idx] = 0.0
                 e1[idx] = 0.0
         for q in self.lgtdfl.matter_qubits:
-            qubits_i = [q_n for q_n in q.neighbors() if q_n in self.lgtdfl.all_qubits] + [q]
-            indices = np.array([
-                self.lgtdfl.all_qubits.index(cast(cirq.GridQubit, qi)) for qi in qubits_i
-            ])
+            qubits_i = [
+                q_n for q_n in q.neighbors() if q_n in self.lgtdfl.all_qubits
+            ] + [q]
+            indices = np.array(
+                [
+                    self.lgtdfl.all_qubits.index(cast(cirq.GridQubit, qi))
+                    for qi in qubits_i
+                ]
+            )
             if post_select and tolerated_distance_to_error < np.inf:
                 measurements_i = self.post_select_measurements_on_distance(
-                    measurements, tolerated_distance_to_error, cast(list[cirq.GridQubit], qubits_i)
+                    measurements,
+                    tolerated_distance_to_error,
+                    cast(list[cirq.GridQubit], qubits_i),
                 )[:, indices]
                 print(
                     f"Matter X term, cycle {cycle_number}, qubit {q}, {len(measurements_i)} counts of {len(measurements)}"
@@ -1408,16 +1501,21 @@ class DFLExperiment2D(DFLExperiment):
                 for i in indices:
                     e0_sq = e0[i]
                     e1_sq = e1[i]
-                    single_qubit_cmats.append(np.array([[1 - e0_sq, e1_sq], [e0_sq, 1 - e1_sq]]))
+                    single_qubit_cmats.append(
+                        np.array([[1 - e0_sq, e1_sq], [e0_sq, 1 - e1_sq]])
+                    )
                     qubits_to_mitigate.append(self.qubits[i])
 
-                tcm = cirq.experiments.TensoredConfusionMatrices(single_qubit_cmats,
-                                                                 [[q] for q in qubits_to_mitigate],
-                                                                 repetitions=measurements_i.shape[
-                                                                     0], timestamp=0.0)
+                tcm = cirq.experiments.TensoredConfusionMatrices(
+                    single_qubit_cmats,
+                    [[q] for q in qubits_to_mitigate],
+                    repetitions=measurements_i.shape[0],
+                    timestamp=0.0,
+                )
 
-                x_i, dx_i = tcm.readout_mitigation_pauli_uncorrelated(qubits_to_mitigate,
-                                                                      measurements_i)
+                x_i, dx_i = tcm.readout_mitigation_pauli_uncorrelated(
+                    qubits_to_mitigate, measurements_i
+                )
             else:
                 repetitions = measurements_i.shape[0]
                 p1 = np.mean(np.sum(measurements_i, axis=1) % 2)

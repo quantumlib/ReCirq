@@ -93,7 +93,9 @@ class LGTDFL:
                 if q in self.gauge_qubits
             ]
 
-    def create_lgt_grid(self) -> Tuple[Tuple[cirq.GridQubit, ...], Tuple[cirq.GridQubit, ...]]:
+    def create_lgt_grid(
+        self,
+    ) -> Tuple[Tuple[cirq.GridQubit, ...], Tuple[cirq.GridQubit, ...]]:
         """Creates a lattice gauge theory (LGT) grid with simplified logic.
 
         Args:
@@ -120,7 +122,8 @@ class LGTDFL:
                     # Find matter neighbors for gauge qubits
                     if neighbor.row == current_matter.row:  # Horizontal gauge
                         horizontal_neighbor = cirq.GridQubit(
-                            neighbor.row, neighbor.col + (neighbor.col - current_matter.col)
+                            neighbor.row,
+                            neighbor.col + (neighbor.col - current_matter.col),
                         )
                         if (
                             horizontal_neighbor in self.qubit_grid
@@ -130,7 +133,8 @@ class LGTDFL:
                             queue.append(horizontal_neighbor)
                     else:  # Vertical gauge
                         vertical_neighbor = cirq.GridQubit(
-                            neighbor.row + (neighbor.row - current_matter.row), neighbor.col
+                            neighbor.row + (neighbor.row - current_matter.row),
+                            neighbor.col,
                         )
                         if (
                             vertical_neighbor in self.qubit_grid
@@ -194,7 +198,9 @@ class LGTDFL:
                     + self._layer_floquet_cphase_simultaneous_last_missing_piece()
                 )
 
-    def layer_floquet(self, two_qubit_gate="cz_simultaneous", layer="middle") -> cirq.Circuit:
+    def layer_floquet(
+        self, two_qubit_gate="cz_simultaneous", layer="middle"
+    ) -> cirq.Circuit:
         if two_qubit_gate == "cz_simultaneous":
             return self._layer_floquet_cz_simultaneous()
 
@@ -477,7 +483,9 @@ class LGTDFL:
             prod_x = bits_x_rescaled[:, self.all_qubits.index(q)]
             q_nbrs = [q_n for q_n in q.neighbors() if q_n in self.all_qubits]
             for q_n in q_nbrs:
-                prod_x *= bits_x_rescaled[:, self.all_qubits.index(cast(cirq.GridQubit, q_n))]
+                prod_x *= bits_x_rescaled[
+                    :, self.all_qubits.index(cast(cirq.GridQubit, q_n))
+                ]
             matter_x_terms.append(prod_x)
 
         exp_matter_x = np.mean(matter_x_terms, axis=1)
@@ -499,12 +507,14 @@ class LGTDFL:
             em = (
                 exp_interaction[gauge_index]
                 + self.h * exp_gauge_x[gauge_index]
-                + self.mu * (w0 * exp_matter_x[mat_1_index] + w1 * exp_matter_x[mat_2_index])
+                + self.mu
+                * (w0 * exp_matter_x[mat_1_index] + w1 * exp_matter_x[mat_2_index])
             )
             ev = (
                 var_interaction[gauge_index]
                 + self.h * var_gauge_x[gauge_index]
-                + self.mu * (w0 * var_matter_x[mat_1_index] + w1 * var_matter_x[mat_2_index])
+                + self.mu
+                * (w0 * var_matter_x[mat_1_index] + w1 * var_matter_x[mat_2_index])
             )
             exp_energy.append(em)
             var_energy.append(ev)
@@ -517,11 +527,15 @@ class LGTDFL:
         ]
 
     def compute_observables_dual_basis(
-        self, bits_z: Sequence[npt.NDArray[np.int8]], bits_x: Sequence[npt.NDArray[np.int8]]
+        self,
+        bits_z: Sequence[npt.NDArray[np.int8]],
+        bits_x: Sequence[npt.NDArray[np.int8]],
     ) -> Sequence[np.ndarray]:
         num_instances = len(bits_z)
         if num_instances == 1:
-            return self._compute_observables_one_instance_dual_basis(bits_z[0], bits_x[0])
+            return self._compute_observables_one_instance_dual_basis(
+                bits_z[0], bits_x[0]
+            )
         else:
             # compute mean and variance of the mean over randomized instances
             matter_x = []
@@ -599,9 +613,13 @@ class LGTDFL:
         basis="dual",
     ):
         if initial_state == "single_sector":
-            initial_circuit = self._energy_bump_initial_state("single_sector", excited_qubits)
+            initial_circuit = self._energy_bump_initial_state(
+                "single_sector", excited_qubits
+            )
         elif initial_state == "superposition":
-            initial_circuit = self._energy_bump_initial_state("superposition", excited_qubits)
+            initial_circuit = self._energy_bump_initial_state(
+                "superposition", excited_qubits
+            )
         else:
             raise ValueError("Invalid initial state")
         circuits = []
