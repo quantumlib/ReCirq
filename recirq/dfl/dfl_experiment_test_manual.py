@@ -13,14 +13,14 @@ def test_dfl_experiment_3x3():
     """This test takes a minute to run, so I'm leaving it as a manual test."""
     qubits = cirq.GridQubit.rect(3, 3, 0, 0)
     sampler = cirq.Simulator()
-    for num_rc_instances in [1, 2]:
+    for num_gc_instances in [1, 2]:
         for use_cphase in [False, True]:
             dfl_expt = dfl.DFLExperiment2D(
                 sampler,
                 qubits,
                 origin_qubit=cirq.q(0, 0),
                 save_directory="test_circuits",
-                num_rc_instances=num_rc_instances,
+                num_gc_instances=num_gc_instances,
                 excited_qubits=[cirq.q(0, 1)],
                 cycles=np.array([0, 1]),
                 use_cphase=use_cphase,
