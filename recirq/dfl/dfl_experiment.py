@@ -1317,6 +1317,25 @@ class DFLExperiment2D(DFLExperiment):
                 print(
                     f"Interaction term, cycle {cycle_number}, qubit {op_qubit}, {len(measurements_q)} counts of {len(measurements)}"
                 )
+                if os.path.isfile("dfl_surviving_counts.pickle"):
+                    log_dict = pickle.load(open("dfl_surviving_counts.pickle", "rb"))
+                else:
+                    log_dict = {
+                        "gauge_x": [{} for _ in range(31)],
+                        "matter_x": [{} for _ in range(31)],
+                        "interaction": [{} for _ in range(31)],
+                        "gauge_x_zero_trotter": [{} for _ in range(31)],
+                        "matter_x_zero_trotter": [{} for _ in range(31)],
+                        "interaction_zero_trotter": [{} for _ in range(31)],
+                        "total_measurements": [0 for _ in range(31)],
+                    }
+                key = "interaction"
+                if zero_trotter:
+                    key += "_zero_trotter"
+                log_dict[key][cycle_number][op_qubit] = len(measurements_q)
+                log_dict["total_measurements"][cycle_number] = len(measurements)
+                pickle.dump(log_dict, open("dfl_surviving_counts.pickle", "wb"))
+
                 if len(measurements_q) == 0:
                     p1[idx] = np.nan
                     dp1[idx] = np.nan
@@ -1396,6 +1415,26 @@ class DFLExperiment2D(DFLExperiment):
                 print(
                     f"Gauge X term, cycle {cycle_number}, qubit {op_qubit}, {len(measurements_q)} counts of {len(measurements)}"
                 )
+
+                if os.path.isfile("dfl_surviving_counts.pickle"):
+                    log_dict = pickle.load(open("dfl_surviving_counts.pickle", "rb"))
+                else:
+                    log_dict = {
+                        "gauge_x": [{} for _ in range(31)],
+                        "matter_x": [{} for _ in range(31)],
+                        "interaction": [{} for _ in range(31)],
+                        "gauge_x_zero_trotter": [{} for _ in range(31)],
+                        "matter_x_zero_trotter": [{} for _ in range(31)],
+                        "interaction_zero_trotter": [{} for _ in range(31)],
+                        "total_measurements": [0 for _ in range(31)],
+                    }
+                key = "gauge_x"
+                if zero_trotter:
+                    key += "_zero_trotter"
+                log_dict[key][cycle_number][op_qubit] = len(measurements_q)
+                log_dict["total_measurements"][cycle_number] = len(measurements)
+                pickle.dump(log_dict, open("dfl_surviving_counts.pickle", "wb"))
+
                 if len(measurements_q) == 0:
                     p1[idx] = np.nan
                     dp1[idx] = np.nan
@@ -1492,6 +1531,26 @@ class DFLExperiment2D(DFLExperiment):
                 print(
                     f"Matter X term, cycle {cycle_number}, qubit {q}, {len(measurements_i)} counts of {len(measurements)}"
                 )
+
+                if os.path.isfile("dfl_surviving_counts.pickle"):
+                    log_dict = pickle.load(open("dfl_surviving_counts.pickle", "rb"))
+                else:
+                    log_dict = {
+                        "gauge_x": [{} for _ in range(31)],
+                        "matter_x": [{} for _ in range(31)],
+                        "interaction": [{} for _ in range(31)],
+                        "gauge_x_zero_trotter": [{} for _ in range(31)],
+                        "matter_x_zero_trotter": [{} for _ in range(31)],
+                        "interaction_zero_trotter": [{} for _ in range(31)],
+                        "total_measurements": [0 for _ in range(31)],
+                    }
+                key = "matter_x"
+                if zero_trotter:
+                    key += "_zero_trotter"
+                log_dict[key][cycle_number][q] = len(measurements_i)
+                log_dict["total_measurements"][cycle_number] = len(measurements)
+                pickle.dump(log_dict, open("dfl_surviving_counts.pickle", "wb"))
+
             else:
                 measurements_i = measurements[:, indices]
             if readout_mitigate:
