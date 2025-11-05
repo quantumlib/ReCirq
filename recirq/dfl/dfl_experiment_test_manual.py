@@ -25,12 +25,14 @@ def test_dfl_experiment_3x3():
                 cycles=np.array([0, 1]),
                 use_cphase=use_cphase,
             )
-            for random_compile in [False, True]:
+            for gauge_compile in [False, True]:
                 for dynamical_decouple in [False, True]:
                     dfl_expt.run_experiment(
-                        random_compile=random_compile,
+                        gauge_compile=gauge_compile,
                         dynamical_decouple=dynamical_decouple,
-                        repetitions_post_selection=np.ones(len(dfl_expt.cycles), dtype=int)
+                        repetitions_post_selection=np.ones(
+                            len(dfl_expt.cycles), dtype=int
+                        )
                         * 10_000,
                     )
 
@@ -70,7 +72,8 @@ def test_dfl_experiment_3x3():
                                                     gauge_x[1, 0],
                                                     atol=5
                                                     * np.sqrt(
-                                                        gauge_x[0, 1] ** 2 + gauge_x[1, 1] ** 2
+                                                        gauge_x[0, 1] ** 2
+                                                        + gauge_x[1, 1] ** 2
                                                     ),
                                                 )
                                             )
@@ -85,7 +88,9 @@ def test_dfl_experiment_3x3():
                                 if q in dfl_expt.qubits
                             ]
                         )
-                        matter_expected.append(np.prod(gauge_expected[neighbor_indices]))
+                        matter_expected.append(
+                            np.prod(gauge_expected[neighbor_indices])
+                        )
 
                     for readout_mitigate in [False, True]:
                         for post_select in [False, True]:
@@ -98,7 +103,9 @@ def test_dfl_experiment_3x3():
                                 )
                                 assert np.all(
                                     np.isclose(
-                                        matter_x[0, 0], matter_expected, atol=5 * matter_x[0, 1]
+                                        matter_x[0, 0],
+                                        matter_expected,
+                                        atol=5 * matter_x[0, 1],
                                     )
                                 )
                                 if zero_trotter:
@@ -107,7 +114,10 @@ def test_dfl_experiment_3x3():
                                             matter_x[0, 0],
                                             matter_x[1, 0],
                                             atol=5
-                                            * np.sqrt(matter_x[0, 1] ** 2 + matter_x[1, 1] ** 2),
+                                            * np.sqrt(
+                                                matter_x[0, 1] ** 2
+                                                + matter_x[1, 1] ** 2
+                                            ),
                                         )
                                     )
 
@@ -119,13 +129,18 @@ def test_dfl_experiment_3x3():
                                 post_select=False,
                                 zero_trotter=zero_trotter,
                             )
-                            assert np.all(np.isclose(matter_x[0, 0], 0.0, atol=5 * matter_x[0, 1]))
+                            assert np.all(
+                                np.isclose(matter_x[0, 0], 0.0, atol=5 * matter_x[0, 1])
+                            )
                             if zero_trotter:
                                 assert np.all(
                                     np.isclose(
                                         matter_x[0, 0],
                                         matter_x[1, 0],
-                                        atol=5 * np.sqrt(matter_x[0, 1] ** 2 + matter_x[1, 1] ** 2),
+                                        atol=5
+                                        * np.sqrt(
+                                            matter_x[0, 1] ** 2 + matter_x[1, 1] ** 2
+                                        ),
                                     )
                                 )
 

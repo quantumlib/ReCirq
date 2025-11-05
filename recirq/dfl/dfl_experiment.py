@@ -134,7 +134,7 @@ class DFLExperiment:
         initial_state: str,
         ncycles: int,
         basis: str,
-        random_compile: bool = True,
+        gauge_compile: bool = True,
         dynamical_decouple: bool = True,
         dd_sequence: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
         zero_trotter: bool = False,
@@ -157,7 +157,7 @@ class DFLExperiment:
             "dual",
         )[["z", "x"].index(basis)]
 
-        if random_compile:
+        if gauge_compile:
             circuits = list(
                 self.executor.map(
                     partial(_apply_gauge_compiling, circuit=circuit),
@@ -210,12 +210,12 @@ class DFLExperiment:
 
     def generate_all_circuits(
         self,
-        random_compile: bool = True,
+        gauge_compile: bool = True,
         dynamical_decouple: bool = True,
         dd_sequence: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
         num_random_bitstrings: int = 30,
     ):
-        if not random_compile:
+        if not gauge_compile:
             self.num_gc_instances = 1
         num_gc_instances = self.num_gc_instances
 
@@ -237,7 +237,7 @@ class DFLExperiment:
                                 initial_state,
                                 ncycles,
                                 basis,
-                                random_compile,
+                                gauge_compile,
                                 dynamical_decouple,
                                 dd_sequence,
                                 zero_trotter,
@@ -325,7 +325,7 @@ class DFLExperiment:
         repetitions_non_post_selection: int | list[int] = 2000,
         batch_size: int = 500,
         readout_repetitions: int = 1000,
-        random_compile: bool = True,
+        gauge_compile: bool = True,
         dynamical_decouple: bool = True,
         dd_sequence: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
         num_random_bitstrings: int = 30,
@@ -377,14 +377,14 @@ class DFLExperiment:
             repetitions_post_selection: How many repetitions to use for the gauge invariant initial state at each cycle number.
             repetitions_non_post_selection: How many repetitions to use for the superposition initial state.
             batch_size: The maximum number of circuits per file and per run_batch call.
-            random_compile: Whether to add randomized compiling.
+            gauge_compile: Whether to add gauge compiling.
             dynamical_decouple: Whether to add dynamical decoupling.
             dd_sequence: The dynamical decoupling sequence to use.
             num_random_bitstrings: The number of bitstrings to use for readout mitigation.
             readout_repetitions: The number of repetitions to use for readout benchmarking.
         """
         self.generate_all_circuits(
-            random_compile=random_compile,
+            gauge_compile=gauge_compile,
             dynamical_decouple=dynamical_decouple,
             dd_sequence=dd_sequence,
             num_random_bitstrings=num_random_bitstrings,
@@ -1041,7 +1041,7 @@ class DFLExperiment2D(DFLExperiment):
         tau: The Trotter step size.
         rng: The pseudorandom number generator to use for readout benchmarking.
         cycles: The number of cycles for which to run the experiment.
-        num_gc_instances: The number of randomized compiling instances to use.
+        num_gc_instances: The number of gauge compiling instances to use.
         excited_qubits: Which qubits to excite.
         use_cphase: Whether to use cphase gates.
         include_zero_trotter: Whether to include circuits with the Trotter step set to 0.
@@ -1142,7 +1142,7 @@ class DFLExperiment2D(DFLExperiment):
         initial_state: str,
         ncycles: int,
         basis: str,
-        random_compile: bool = True,
+        gauge_compile: bool = True,
         dynamical_decouple: bool = True,
         dd_sequence: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
         zero_trotter: bool = False,
@@ -1156,7 +1156,7 @@ class DFLExperiment2D(DFLExperiment):
             initial_state: Which initial state, either "gauge_invariant" or "superposition".
             ncycles: The number of Trotter steps (can be 0).
             basis: The basis in which to measure. Either "x" or "z".
-            random_compile: Whether to apply randomized compiling.
+            gauge_compile: Whether to apply gauge compiling.
             dynamical_decouple: Whether to apply dynamical decoupling.
             dd_sequence: The dynamical decoupling sequence to use.
             zero_trotter: Whether to set the trotter step size to 0 (used to calibrate error mitigation).
@@ -1209,7 +1209,7 @@ class DFLExperiment2D(DFLExperiment):
         )
         circuit = cirq.Circuit(new_moment_0) + circuit[1:]
 
-        if random_compile:
+        if gauge_compile:
             circuits = list(
                 self.executor.map(
                     partial(_apply_gauge_compiling, circuit=circuit),
