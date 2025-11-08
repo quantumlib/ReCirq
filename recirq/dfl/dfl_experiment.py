@@ -91,6 +91,13 @@ class DFLExperiment:
         self.gauge_sites = np.arange(1, len(qubits), 2)
 
     def save_to_file(self, filename: str):
+        """Saves the experiment parameters and measurement
+        results to a file.
+
+        Args:
+            filename: The path and filename to which the data
+                dictionary will be pickled.
+        """
         d_to_save = {
             "measurements": self.measurements,
             "readout_ideal_bitstrs": self.readout_ideal_bitstrs,
@@ -112,6 +119,12 @@ class DFLExperiment:
         pickle.dump(d_to_save, open(filename, "wb"))
 
     def load_from_file(self, filename: str):
+        """Loads experiment parameters and measurement results from a saved file.
+
+        Args:
+            filename: The path and filename from which to load the data
+                  dictionary.
+        """
         d = pickle.load(open(filename, "rb"))
         self.measurements = d["measurements"]
         self.readout_ideal_bitstrs = d["readout_ideal_bitstrs"]
@@ -139,6 +152,21 @@ class DFLExperiment:
         dd_sequence: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
         zero_trotter: bool = False,
     ) -> list[cirq.Circuit]:
+        """Generates the circuit instances for a given initial state, number of cycles,
+        and measurement basis.
+
+        Args:
+            initial_state: The initial state. Must be "gauge_invariant" or "superposition".
+            ncycles: The number of Trotter steps.
+            basis: The measurement basis. Must be "z" or "x".
+            gauge_compile: Whether to apply gauge compiling.
+            dynamical_decouple: Whether to apply dynamical decoupling.
+            dd_sequence: The dynamical decoupling sequence to use.
+            zero_trotter: Whether to set the Trotter step size to 0.
+
+        Returns:
+            A list of the generated circuit instances.
+        """
         if initial_state == "gauge_invariant":
             initial_state = "single_sector"
 
@@ -178,6 +206,14 @@ class DFLExperiment:
     def create_readout_benchmark_circuits(
         self, num_random_bitstrings: int = 30
     ) -> tuple[np.ndarray, list[cirq.Circuit]]:
+        """Creates circuits for readout error benchmarking.
+        Args:
+            num_random_bitstrings: The number of random bitstrings to use.
+        Returns:
+            A tuple containing:
+            1. The ideal bitstrings
+            2. A list of the corresponding readout benchmark circuits.
+        """
         n = len(self.qubits)
         x_or_I = lambda bit: cirq.X if bit == 1 else cirq.I
         bitstrs = self.rng.integers(0, 2, size=(num_random_bitstrings, n))
@@ -195,6 +231,8 @@ class DFLExperiment:
         return bitstrs, random_circuits
 
     def identify_ideal_readout_bitstrings_from_circuits(self):
+        """Identifies the ideal expected bitstrings for the readout calibration circuits.
+        """
         # first identify the number of readout bitstrings:
         for num_bitstrs, circuit in enumerate(self.all_circuits[::-1]):
             if len(circuit) > 2:
@@ -215,6 +253,16 @@ class DFLExperiment:
         dd_sequence: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
         num_random_bitstrings: int = 30,
     ):
+        """Generates and stores all circuits needed for the DFL experiment.
+        The results are stored in `self.all_circuits`.
+
+        Args:
+            gauge_compile: Whether to apply gauge compiling instances.
+            dynamical_decouple: Whether to apply dynamical decoupling to the circuits.
+            dd_sequence: The dynamical decoupling sequence to use.
+            num_random_bitstrings: The number of random bitstrings to use for
+                readout error benchmarking.
+        """
         if not gauge_compile:
             self.num_gc_instances = 1
         num_gc_instances = self.num_gc_instances
@@ -224,10 +272,10 @@ class DFLExperiment:
         all_circuits = []
         with tqdm(
             total=2
-            * 2
-            * len(zero_trotter_options)
-            * len(self.cycles)
-            * num_gc_instances
+                  * 2
+                  * len(zero_trotter_options)
+                  * len(self.cycles)
+                  * num_gc_instances
         ) as pbar:
             for initial_state in ["gauge_invariant", "superposition"]:
                 for basis in ["z", "x"]:
@@ -265,7 +313,8 @@ class DFLExperiment:
 
         Args:
             filename: The filename from which to load the circuits.
-            old_qubits_list: The previous ordered list of qubits if mapping to different qubits.
+            old_qubits_list: The previous ordered list of qubits if
+                             mapping to different qubits.
         """
         circuits = pickle.load(open(filename, "rb"))
         if old_qubits_list is not None and old_qubits_list != self.qubits:
@@ -298,7 +347,7 @@ class DFLExperiment:
         circuits_shuffled = [circuits[_] for _ in indices]
         # save the shuffled circuits
         for start_idx in tqdm(range(0, len(circuits), batch_size)):
-            circuits_i = circuits_shuffled[start_idx : (start_idx + batch_size)]
+            circuits_i = circuits_shuffled[start_idx: (start_idx + batch_size)]
             pickle.dump(
                 circuits_i,
                 open(
@@ -513,8 +562,8 @@ class DFLExperiment:
                         )
                         end_index = start_index + self.num_gc_instances
                         repetitions[start_index:end_index] = [
-                            reps_list[cycle_number]
-                        ] * self.num_gc_instances
+                                                                 reps_list[cycle_number]
+                                                             ] * self.num_gc_instances
 
         # now apply the shuffle
         repetitions = [repetitions[index] for index in indices]
@@ -533,11 +582,11 @@ class DFLExperiment:
                     for circuit in circuits_i
                 ]
             print(
-                f"Shots this batch: {sum(repetitions[start_idx : (start_idx + batch_size)])}"
+                f"Shots this batch: {sum(repetitions[start_idx: (start_idx + batch_size)])}"
             )
             result = self.sampler.run_batch(
                 circuits_i,
-                repetitions=repetitions[start_idx : (start_idx + batch_size)],
+                repetitions=repetitions[start_idx: (start_idx + batch_size)],
             )
             results_i = [res[0].measurements["m"].astype(bool) for res in result]
             if not os.path.isdir(self.save_directory + f"/shuffled_results"):
@@ -578,6 +627,13 @@ class DFLExperiment:
         self.measurements = [measurements_shuffled[i] for i in inv_map]
 
     def extract_readout_error_rates(self) -> None:
+        """Calculates the readout error rates e0 and e1 from the readout
+        benchmarking measurements. The results are stored in the `self.e0`
+        (1 -> 0 error rate) and `self.e1` (0 -> 1 error rate) attributes.
+
+        Returns:
+            None.
+        """
         ideal_bitstrs = self.readout_ideal_bitstrs
         num_bitstrs = len(ideal_bitstrs)
         readout_measurements = np.array(self.measurements[-num_bitstrs:])
@@ -647,7 +703,7 @@ class DFLExperiment:
         )
 
         measurements = np.array(
-            self.measurements[start_index : (start_index + self.num_gc_instances)]
+            self.measurements[start_index: (start_index + self.num_gc_instances)]
         )
         repetitions = len(measurements[0])
         measurements = measurements.reshape(
@@ -1514,8 +1570,8 @@ class DFLExperiment2D(DFLExperiment):
                 e1[idx] = 0.0
         for q in self.lgtdfl.matter_qubits:
             qubits_i = [
-                q_n for q_n in q.neighbors() if q_n in self.lgtdfl.all_qubits
-            ] + [q]
+                           q_n for q_n in q.neighbors() if q_n in self.lgtdfl.all_qubits
+                       ] + [q]
             indices = np.array(
                 [
                     self.lgtdfl.all_qubits.index(cast(cirq.GridQubit, qi))

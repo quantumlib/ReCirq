@@ -10,7 +10,10 @@ if not os.path.isdir("test_circuits"):
 
 
 def test_dfl_experiment_3x3():
-    """This test takes a minute to run, so I'm leaving it as a manual test."""
+    """Performs a comprehensive integration test of the 2D DFL experiment setup.
+
+    Note: This test is designed to be run manually as it is time-consuming.
+    """
     qubits = cirq.GridQubit.rect(3, 3, 0, 0)
     sampler = cirq.Simulator()
     for num_gc_instances in [1, 2]:
@@ -33,7 +36,7 @@ def test_dfl_experiment_3x3():
                         repetitions_post_selection=np.ones(
                             len(dfl_expt.cycles), dtype=int
                         )
-                        * 10_000,
+                                                   * 10_000,
                     )
 
                     # check readout error rates
@@ -43,7 +46,7 @@ def test_dfl_experiment_3x3():
                     # check gauge_x
                     signs = np.ones(len(dfl_expt.lgtdfl._gauge_indices()))
                     signs[0] = -1
-                    gauge_expected = dfl_expt.h / np.sqrt(dfl_expt.h**2 + 1) * signs
+                    gauge_expected = dfl_expt.h / np.sqrt(dfl_expt.h ** 2 + 1) * signs
 
                     for readout_mitigate in [False, True]:
                         for initial_state in ["gauge_invariant", "superposition"]:
@@ -71,7 +74,7 @@ def test_dfl_experiment_3x3():
                                                     gauge_x[0, 0],
                                                     gauge_x[1, 0],
                                                     atol=5
-                                                    * np.sqrt(
+                                                         * np.sqrt(
                                                         gauge_x[0, 1] ** 2
                                                         + gauge_x[1, 1] ** 2
                                                     ),
@@ -114,7 +117,7 @@ def test_dfl_experiment_3x3():
                                             matter_x[0, 0],
                                             matter_x[1, 0],
                                             atol=5
-                                            * np.sqrt(
+                                                 * np.sqrt(
                                                 matter_x[0, 1] ** 2
                                                 + matter_x[1, 1] ** 2
                                             ),
@@ -138,14 +141,14 @@ def test_dfl_experiment_3x3():
                                         matter_x[0, 0],
                                         matter_x[1, 0],
                                         atol=5
-                                        * np.sqrt(
+                                             * np.sqrt(
                                             matter_x[0, 1] ** 2 + matter_x[1, 1] ** 2
                                         ),
                                     )
                                 )
 
                     # check interaction
-                    interaction_expected = 1 / np.sqrt(dfl_expt.h**2 + 1) * signs
+                    interaction_expected = 1 / np.sqrt(dfl_expt.h ** 2 + 1) * signs
                     for readout_mitigate in [False, True]:
                         for initial_state in ["gauge_invariant", "superposition"]:
                             for zero_trotter in [False, True]:
@@ -172,7 +175,7 @@ def test_dfl_experiment_3x3():
                                                     interaction[0, 0],
                                                     interaction[1, 0],
                                                     atol=5
-                                                    * np.sqrt(
+                                                         * np.sqrt(
                                                         interaction[0, 1] ** 2
                                                         + interaction[1, 1] ** 2
                                                     ),

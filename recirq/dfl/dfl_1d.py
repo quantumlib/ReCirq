@@ -18,6 +18,23 @@ def trotter_circuit(
     mu: float,
     two_qubit_gate="cz",
 ) -> cirq.Circuit:
+    """Constructs the Trotter circuit for 1D DFL simulation.
+
+    Args:
+        grid: The 1D sequence of qubits used in the experiment.
+        n_cycles: The number of Trotter steps/cycles to include.
+        dt: The time step size for the Trotterization.
+        h: The gauge field strength coefficient.
+        mu: The matter field strength coefficient.
+        two_qubit_gate: The type of two-qubit gate to use in the layers.
+            Valid values are "cz" or "cphase".
+
+    Returns:
+        The complete cirq.Circuit for the Trotter evolution.
+
+    Raises:
+        ValueError: If an invalid `two_qubit_gate` option is provided.
+    """
     if two_qubit_gate == "cz":
         return _layer_floquet_cz(grid, dt, h, mu) * n_cycles
 
@@ -226,7 +243,31 @@ def get_1d_dfl_experiment_circuits(
     n_instances: int = 10,
     two_qubit_gate: str = "cz",
     basis="dual",
-):
+) -> List[cirq.Circuit]:
+    """Generates the circuits needed for the 1D DFL experiment.
+
+    Args:
+        grid: The 1D sequence of qubits used in the experiment.
+        initial_state: The initial state preparation. Valid values are
+            "single_sector" or "superposition".
+        n_cycles: The number of Trotter steps (cycles) to simulate.
+        excited_qubits: Qubits to be excited in the initial state.
+        dt: The time step size for the Trotterization.
+        h: The gauge field strength coefficient.
+        mu: The matter field strength coefficient.
+        n_instances: The number of instances to generate.
+        two_qubit_gate: The type of two-qubit gate to use in the Trotter step.
+            Valid values are "cz" or "cphase".
+        basis: The basis for the final circuit structure. Valid values are
+            "lgt" or "dual".
+
+    Returns:
+        A list of all generated cirq.Circuit objects.
+
+    Raises:
+        ValueError: If an invalid option for `initial_state` or
+            `basis` is given.
+    """
     if initial_state == "single_sector":
         initial_circuit = _energy_bump_initial_state(
             grid, h, "single_sector", excited_qubits

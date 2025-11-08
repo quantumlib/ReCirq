@@ -50,8 +50,17 @@ class LGTDFL:
         self.all_qubits = sorted(self.matter_qubits + self.gauge_qubits)
 
     def get_y_neighbors(self, qubit: cirq.GridQubit) -> Sequence[cirq.GridQubit]:
-        """Returns horizontal neighbors. If matter qubit is provided return gauge qubits and vice
-        versa."""
+        """Returns the vertical (row-axis) neighbors of a qubit.
+        If a matter qubit is provided, this returns the neighboring gauge qubits,
+        and vice-versa.
+
+        Args:
+            qubit: The central qubit.
+
+        Returns:
+            A sequence of neighboring qubits of the opposite type that are
+            within the defined grid.
+        """
         if qubit in self.gauge_qubits:
             return [
                 q
@@ -72,8 +81,17 @@ class LGTDFL:
             ]
 
     def get_x_neighbors(self, qubit: cirq.GridQubit) -> Sequence[cirq.GridQubit]:
-        """Returns vertical neighbors. If matter qubit is provided return gauge qubits and vice
-        versa."""
+        """Returns the horizontal (column-axis) neighbors of a qubit.
+        If a matter qubit is provided, this returns the neighboring gauge qubits,
+        and vice-versa.
+
+        Args:
+            qubit: The central qubit.
+
+        Returns:
+            A sequence of neighboring qubits of the opposite type that are
+            within the defined grid.
+        """
         if qubit in self.gauge_qubits:
             return [
                 q
@@ -161,6 +179,15 @@ class LGTDFL:
         return cirq.Circuit.from_moments(cirq.Moment(moment))
 
     def layer_hadamard(self, which_qubits="all") -> cirq.Circuit:
+        """Creates a circuit layer containing Hadamard gates on the specified qubits.
+
+        Args:
+            which_qubits: Specifies which qubits get the Hadamard gates.
+                Valid values are "all", "gauge", or "matter".
+
+        Returns:
+            A cirq.Circuit containing a single Moment of Hadamard operations.
+        """
         moment = []
         if which_qubits == "gauge":
             for q in self.gauge_qubits:
@@ -174,12 +201,28 @@ class LGTDFL:
         return cirq.Circuit.from_moments(cirq.Moment(moment))
 
     def layer_measure(self) -> cirq.Circuit:
+        """Creates a circuit layer containing measurement operations on all qubits.
+
+        Returns:
+            A cirq.Circuit containing a single Moment of measurement operations
+            with the key "m".
+        """
         moment = []
         for q in self.all_qubits:
             moment.append(cirq.measure(q, key="m"))
         return cirq.Circuit.from_moments(cirq.Moment(moment))
 
-    def trotter_circuit(self, n_cycles, two_qubit_gate="cz_simultaneous"):
+    def trotter_circuit(self, n_cycles, two_qubit_gate="cz_simultaneous") -> cirq.Circuit:
+        """Constructs the second-order Trotter circuit for the DFL Hamiltonian.
+
+        Args:
+            n_cycles: The number of Trotter steps/cycles to include in the circuit.
+            two_qubit_gate: The type of two-qubit gate to use in the layers.
+                Valid values are "cz_simultaneous" or "cphase_simultaneous".
+
+        Returns:
+            The complete cirq.Circuit for the Trotter evolution.
+        """
         if two_qubit_gate == "cz_simultaneous":
             return self._layer_floquet_cz_simultaneous() * n_cycles
 
@@ -201,6 +244,22 @@ class LGTDFL:
     def layer_floquet(
         self, two_qubit_gate="cz_simultaneous", layer="middle"
     ) -> cirq.Circuit:
+
+        """Constructs a layer of the Trotter circuit.
+
+        Args:
+            two_qubit_gate: The type of two-qubit gate to use.
+                Valid values are "cz_simultaneous" or "cphase_simultaneous".
+            layer: Specifies which piece of the sequence to return.
+                Valid values are "middle", "last", or "first".
+
+        Returns:
+            The cirq.Circuit representing the requested Trotter layer.
+
+        Raises:
+            ValueError: If an invalid option for `two_qubit_gate` or `layer` is given.
+        """
+
         if two_qubit_gate == "cz_simultaneous":
             return self._layer_floquet_cz_simultaneous()
 
@@ -220,7 +279,6 @@ class LGTDFL:
         self,
         matter_config: str,
         excited_qubits: Sequence[cirq.GridQubit],
-        two_qubit_gate="cz_simultaneous",
     ) -> cirq.Circuit:
         """Circuit for energy bump initial state.
         It typically consists of single qubit gates and the basis change circuit U_B.
@@ -484,8 +542,8 @@ class LGTDFL:
             q_nbrs = [q_n for q_n in q.neighbors() if q_n in self.all_qubits]
             for q_n in q_nbrs:
                 prod_x *= bits_x_rescaled[
-                    :, self.all_qubits.index(cast(cirq.GridQubit, q_n))
-                ]
+                          :, self.all_qubits.index(cast(cirq.GridQubit, q_n))
+                          ]
             matter_x_terms.append(prod_x)
 
         exp_matter_x = np.mean(matter_x_terms, axis=1)
@@ -531,6 +589,18 @@ class LGTDFL:
         bits_z: Sequence[npt.NDArray[np.int8]],
         bits_x: Sequence[npt.NDArray[np.int8]],
     ) -> Sequence[np.ndarray]:
+        """This calculates the mean and variance over multiple instances
+        of measurement outcomes for the matter X, gauge X, interaction
+        and energy terms.
+
+        Args:
+            bits_z: Measurement outcomes in the Z basis.
+            bits_x: Measurement outcomes in the X basis.
+
+        Returns:
+            A sequence of NumPy arrays, where each array contains the mean and
+            variance for the respective observable.
+        """
         num_instances = len(bits_z)
         if num_instances == 1:
             return self._compute_observables_one_instance_dual_basis(
@@ -595,6 +665,14 @@ class LGTDFL:
         return bits[selected]
 
     def postselect_on_charge_dual_basis(self, bits: npt.NDArray[np.int8]) -> np.ndarray:
+        """Performs charge post-selection on measurement outcomes.
+
+        Args:
+            bits: The raw measurement outcomes.
+
+        Returns:
+            A NumPy array containing only the post-selected measurement instances.
+        """
         num_instances = bits.shape[0]
         bits_ps = []
         for ins in range(num_instances):
@@ -611,7 +689,27 @@ class LGTDFL:
         n_instances: int = 10,
         two_qubit_gate: str = "cz_simultaneous",
         basis="dual",
-    ):
+    ) -> List[cirq.Circuit]:
+        """Generates the set of circuits needed for the 2D DFL experiment.
+
+        Args:
+            initial_state: The initial state preparation.
+                Valid values are "single_sector" or "superposition".
+            n_cycles: The number of Trotter steps (cycles) to simulate.
+            excited_qubits: Qubits to be excited in the initial state.
+            n_instances: The number of instances to generate
+            two_qubit_gate: The type of two-qubit gate to use in the Trotter step.
+                Valid values are "cz_simultaneous" or "cphase_simultaneous".
+            basis: The basis for the final circuit structure.
+                Valid values are "lgt" or "dual".
+
+        Returns:
+            A list of all generated cirq.Circuit objects.
+
+        Raises:
+            ValueError: If an invalid option for `initial_state`
+                or `basis` is given.
+        """
         if initial_state == "single_sector":
             initial_circuit = self._energy_bump_initial_state(
                 "single_sector", excited_qubits
