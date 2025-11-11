@@ -1,3 +1,22 @@
+# Copyright 2025 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Core class and methods for simulating Disorder-Free Localization (DFL) on a 2D
+Lattice Gauge Theory (LGT) model using second-order trotterization.
+"""
+
+import enum
 import os
 import pickle
 from typing import cast, List, Sequence, Set, Tuple
@@ -7,10 +26,24 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm
 
+class TwoQubitGate2D(enum.Enum):
+    """Available two-qubit gate types for the Trotter simulation."""
+    CZ_SIMULTANEOUS = 'cz_simultaneous'
+    CPHASE_SIMULTANEOUS = 'cphase_simultaneous'
 
-class LGTDFL:
-    """
-    A class for simulating Disorder-free localization (DFL) on a 2-dimensional Lattice Gauge
+class InitialState(enum.Enum):
+    """Available initial quantum states for the DFL experiment."""
+    SINGLE_SECTOR = 'single_sector'
+    SUPERPOSITION = 'superposition'
+
+class Basis(enum.Enum):
+    """Available bases for the circuit structure and final measurement."""
+    LGT = 'lgt'
+    DUAL = 'dual'
+
+
+class LatticeGaugeTheoryDFL2D:
+    """A class for simulating Disorder-free localization (DFL) on a 2-dimensional Lattice Gauge
     Theory (LGT) with  Second order trotter dynamics.
 
     Attributes:
@@ -32,7 +65,7 @@ class LGTDFL:
         h: float,
         mu: float,
     ):
-        """Initializes the LGTDFL class.
+        """Initializes the LatticeGaugeTheoryDFL2D class.
 
         Args:
             qubit_grid: A list of cirq.GridQubit objects representing the 2D grid.
@@ -212,21 +245,21 @@ class LGTDFL:
             moment.append(cirq.measure(q, key="m"))
         return cirq.Circuit.from_moments(cirq.Moment(moment))
 
-    def trotter_circuit(self, n_cycles, two_qubit_gate="cz_simultaneous") -> cirq.Circuit:
+    def trotter_circuit(self, n_cycles, two_qubit_gate: TwoQubitGate2D = TwoQubitGate2D.CZ_SIMULTANEOUS) -> cirq.Circuit:
         """Constructs the second-order Trotter circuit for the DFL Hamiltonian.
 
         Args:
             n_cycles: The number of Trotter steps/cycles to include in the circuit.
             two_qubit_gate: The type of two-qubit gate to use in the layers.
-                Valid values are "cz_simultaneous" or "cphase_simultaneous".
+                Use an Enum member from TwoQubitGate2D (CZ_SIMULTANEOUS or CPHASE_SIMULTANEOUS).
 
         Returns:
             The complete cirq.Circuit for the Trotter evolution.
         """
-        if two_qubit_gate == "cz_simultaneous":
+        if two_qubit_gate.value == TwoQubitGate2D.CZ_SIMULTANEOUS.value:
             return self._layer_floquet_cz_simultaneous() * n_cycles
 
-        elif two_qubit_gate == "cphase_simultaneous":
+        elif two_qubit_gate.value == TwoQubitGate2D.CPHASE_SIMULTANEOUS.value:
             if n_cycles == 0:
                 return cirq.Circuit()
             if n_cycles == 1:
@@ -242,14 +275,14 @@ class LGTDFL:
                 )
 
     def layer_floquet(
-        self, two_qubit_gate="cz_simultaneous", layer="middle"
+        self, two_qubit_gate: TwoQubitGate2D = TwoQubitGate2D.CZ_SIMULTANEOUS, layer="middle"
     ) -> cirq.Circuit:
 
         """Constructs a layer of the Trotter circuit.
 
         Args:
             two_qubit_gate: The type of two-qubit gate to use.
-                Valid values are "cz_simultaneous" or "cphase_simultaneous".
+                Use an Enum member from TwoQubitGate2D (CZ_SIMULTANEOUS or CPHASE_SIMULTANEOUS).
             layer: Specifies which piece of the sequence to return.
                 Valid values are "middle", "last", or "first".
 
@@ -260,10 +293,10 @@ class LGTDFL:
             ValueError: If an invalid option for `two_qubit_gate` or `layer` is given.
         """
 
-        if two_qubit_gate == "cz_simultaneous":
+        if two_qubit_gate.value == TwoQubitGate2D.CZ_SIMULTANEOUS.value:
             return self._layer_floquet_cz_simultaneous()
 
-        elif two_qubit_gate == "cphase_simultaneous":
+        elif two_qubit_gate.value == TwoQubitGate2D.CPHASE_SIMULTANEOUS.value:
             if layer == "middle":
                 return self._layer_floquet_cphase_simultaneous_middle()
             elif layer == "last":
@@ -277,13 +310,11 @@ class LGTDFL:
 
     def _energy_bump_initial_state(
         self,
-        matter_config: str,
+        matter_config: InitialState,
         excited_qubits: Sequence[cirq.GridQubit],
     ) -> cirq.Circuit:
-        """Circuit for energy bump initial state.
-        It typically consists of single qubit gates and the basis change circuit U_B.
-        But in this second order implementation, I am removing U_B since
-        it cancels out with the U_B in the second order trotter circuit."""
+        """Circuit for energy bump initial state."""
+
         theta = np.arctan(self.h)
         moment = []
         for q in self.gauge_qubits:
@@ -293,7 +324,7 @@ class LGTDFL:
                 moment.append(cirq.ry(theta).on(q))
 
         for q in self.matter_qubits:
-            if matter_config == "single_sector":
+            if matter_config.value == InitialState.SINGLE_SECTOR.value:
                 moment.append(cirq.H(q))
 
         return cirq.Circuit.from_moments(moment)
@@ -519,6 +550,20 @@ class LGTDFL:
     def _compute_observables_one_instance_dual_basis(
         self, bits_z: npt.NDArray[np.int8], bits_x: npt.NDArray[np.int8]
     ) -> Sequence[np.ndarray]:
+        """Computes all expectation values for a single measurement instance.
+
+        This function calculates the mean and variance for the gauge X, matter X,
+        interaction, and total energy terms based on the measured bitstrings in
+        both the Z and X bases for a single instance of the experiment.
+
+        Args:
+            bits_z: The measurement outcomes (bitstrings) in the Z basis.
+            bits_x: The measurement outcomes (bitstrings) in the X basis.
+
+        Returns:
+            A sequence of NumPy arrays, where each array contains the calculated
+            expectation value (mean) and variance for one of the four observables.
+        """
         bits_x_rescaled = 1 - 2 * bits_x
         bits_z_rescaled = 1 - 2 * bits_z
 
@@ -683,25 +728,26 @@ class LGTDFL:
 
     def get_2d_dfl_experiment_circuits(
         self,
-        initial_state: str,
+        initial_state: InitialState,
         n_cycles: Sequence[int] | npt.NDArray,
         excited_qubits: Sequence[cirq.GridQubit],
         n_instances: int = 10,
-        two_qubit_gate: str = "cz_simultaneous",
-        basis="dual",
+        two_qubit_gate: TwoQubitGate2D = TwoQubitGate2D.CZ_SIMULTANEOUS,
+        basis: Basis = Basis.DUAL,
     ) -> List[cirq.Circuit]:
         """Generates the set of circuits needed for the 2D DFL experiment.
 
         Args:
-            initial_state: The initial state preparation.
-                Valid values are "single_sector" or "superposition".
+            initial_state: The initial state preparation.Use an Enum member from
+                InitialState (SINGLE_SECTOR or SUPERPOSITION).
             n_cycles: The number of Trotter steps (cycles) to simulate.
             excited_qubits: Qubits to be excited in the initial state.
             n_instances: The number of instances to generate
             two_qubit_gate: The type of two-qubit gate to use in the Trotter step.
-                Valid values are "cz_simultaneous" or "cphase_simultaneous".
-            basis: The basis for the final circuit structure.
-                Valid values are "lgt" or "dual".
+                Use an Enum member from TwoQubitGate2D (CZ_SIMULTANEOUS or CPHASE_SIMULTANEOUS).
+            basis: The basis for the final circuit structure. Use an Enum member from
+                Basis (LGT or DUAL).
+
 
         Returns:
             A list of all generated cirq.Circuit objects.
@@ -710,13 +756,13 @@ class LGTDFL:
             ValueError: If an invalid option for `initial_state`
                 or `basis` is given.
         """
-        if initial_state == "single_sector":
+        if initial_state.value == InitialState.SINGLE_SECTOR.value:
             initial_circuit = self._energy_bump_initial_state(
-                "single_sector", excited_qubits
+                InitialState.SINGLE_SECTOR, excited_qubits
             )
-        elif initial_state == "superposition":
+        elif initial_state.value == InitialState.SUPERPOSITION.value:
             initial_circuit = self._energy_bump_initial_state(
-                "superposition", excited_qubits
+                InitialState.SUPERPOSITION, excited_qubits
             )
         else:
             raise ValueError("Invalid initial state")
@@ -724,16 +770,16 @@ class LGTDFL:
         for n_cycle in tqdm(n_cycles):
             print(int(np.max([0, n_cycle - 1])))
             circ = initial_circuit + self.trotter_circuit(n_cycle, two_qubit_gate)
-            if basis == "lgt":
+            if basis.value == Basis.LGT.value:
                 circ += self._change_basis()
-            elif basis == "dual":
+            elif basis.value == Basis.DUAL.value:
                 pass
             else:
                 raise ValueError("Invalid option for basis")
             for _ in range(n_instances):
-                if basis == "lgt":
+                if basis.value == Basis.LGT.value:
                     circ_z = circ + cirq.measure([q for q in self.all_qubits], key="m")
-                elif basis == "dual":
+                elif basis.value == Basis.DUAL.value:
                     circ_z = (
                         circ
                         + self.layer_hadamard("matter")

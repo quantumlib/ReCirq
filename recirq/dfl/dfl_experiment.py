@@ -1,3 +1,26 @@
+# Copyright 2025 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Core experiment classes for the DFL project.
+
+This module defines the DFLExperiment base class and DFLExperiment2D derived
+class, which handle the overall simulation workflow and data management for
+the 1D and 2D Disorder-Free Localization (DFL) experiments.
+
+The methods are based on the paper: https://arxiv.org/abs/2410.06557
+"""
+
 import os
 import pickle
 from copy import deepcopy
@@ -10,8 +33,14 @@ import numpy as np
 from tqdm import tqdm
 
 import concurrent.futures
-from . import dfl_1d as dfl
-from . import dfl_2d_second_order_trotter as dfl_2d
+from recirq.dfl import dfl_1d as dfl
+from recirq.dfl import dfl_2d_second_order_trotter as dfl_2d
+
+#imort Enums explicitly
+from recirq.dfl.dfl_1d import InitialState, Basis, TwoQubitGate1D
+from recirq.dfl.dfl_2d_second_order_trotter import TwoQubitGate2D
+
+
 
 
 def _apply_gauge_compiling(seed: int, circuit: cirq.Circuit) -> cirq.Circuit:
@@ -37,6 +66,7 @@ def _distance(q1: cirq.GridQubit, q2: cirq.GridQubit) -> int:
 
 class DFLExperiment:
     """A class for performing the 1D DFL experiment (Fig 1 of the paper).
+    The paper is available at: https://arxiv.org/abs/2410.06557
 
     Attrs:
         qubits: The qubits to use for the experiment.
@@ -156,7 +186,8 @@ class DFLExperiment:
         and measurement basis.
 
         Args:
-            initial_state: The initial state. Must be "gauge_invariant" or "superposition".
+            initial_state: The initial state. Can be "gauge_invariant", "single_sector",
+             or "superposition".
             ncycles: The number of Trotter steps.
             basis: The measurement basis. Must be "z" or "x".
             gauge_compile: Whether to apply gauge compiling.
@@ -172,17 +203,22 @@ class DFLExperiment:
 
         assert initial_state in ["single_sector", "superposition"]
 
+        if initial_state == "single_sector":
+            initial_state_enum = InitialState.SINGLE_SECTOR
+        else:
+            initial_state_enum = InitialState.SUPERPOSITION
+
         circuit = dfl.get_1d_dfl_experiment_circuits(
             self.qubits,
-            initial_state,
+            initial_state_enum,
             [ncycles],
             [self.qubits[1]],  # put the excitation on the first gauge site
             0.0 if zero_trotter else self.tau,
             self.h,
             self.mu,
             1,
-            "cphase" if self.use_cphase else "cz",
-            "dual",
+            TwoQubitGate1D.CPHASE if self.use_cphase else TwoQubitGate1D.CZ,
+            Basis.DUAL,
         )[["z", "x"].index(basis)]
 
         if gauge_compile:
@@ -423,8 +459,12 @@ class DFLExperiment:
         ```
 
         Args:
-            repetitions_post_selection: How many repetitions to use for the gauge invariant initial state at each cycle number.
-            repetitions_non_post_selection: How many repetitions to use for the superposition initial state.
+            repetitions_post_selection: How many repetitions to use for the  gauge invariant
+              initial state at each cycle number. Can be a single integer (for uniform repetitions)
+              or a list of integers (to specify repetitions per cycle).
+            repetitions_non_post_selection: How many repetitions to use for the superposition
+              initial state. Can be a single integer (for uniform repetitions) or a list of
+              integers (to specify repetitions per cycle).
             batch_size: The maximum number of circuits per file and per run_batch call.
             gauge_compile: Whether to add gauge compiling.
             dynamical_decouple: Whether to add dynamical decoupling.
@@ -465,46 +505,15 @@ class DFLExperiment:
         The location of the saved files is `self.save_directory + "/shuffled_results"`.
 
         Note: These default values are used for the 1D experiment. For the 2D experiment, we use
-        ```
-        repetitions_post_selection = [
-            1000,
-            1000,
-            1000,
-            1000,
-            1000,
-            1000,
-            1000,
-            1000,
-            1136,
-            1317,
-            1604,
-            2267,
-            4139,
-            5655,
-            6579,
-            7688,
-            11550,
-            17332,
-            25493,
-            37463,
-            46275,
-            63527,
-            69691,
-            111862,
-            137194,
-            227824,
-            348209,
-            346286,
-            406434,
-            500000,
-            682846,
-        ],
-        repetitions_non_post_selection = 1000
-        ```
+        the values specified in the docstring of method "run_experiment".
 
         Args:
-            repetitions_post_selection: How many repetitions to use for the gauge invariant initial state at each cycle number.
-            repetitions_non_post_selection: How many repetitions to use for the superposition initial state.
+            repetitions_post_selection: How many repetitions to use for the  gauge invariant
+              initial state at each cycle number. Can be a single integer (for uniform repetitions)
+              or a list of integers (to specify repetitions per cycle).
+            repetitions_non_post_selection: How many repetitions to use for the superposition
+              initial state. Can be a single integer (for uniform repetitions) or a list of
+              integers (to specify repetitions per cycle).
             initial_start_index: The circuit number to start at (inteneded for resuming datataking if it crashed before).
             old_qubits: The order of qubits for which the circuits were originally generated.
             new_qubits: The order of qubits to use now.
@@ -661,7 +670,7 @@ class DFLExperiment:
 
         Args:
             basis_number: 0 for z-basis and 1 for x-basis.
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             cycle_number: The number of Trotter steps (can be 0).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             post_select: Whether to post select on the gauge charges (intended for the gauge_invariant initial state only).
@@ -727,7 +736,7 @@ class DFLExperiment:
         here as Z_gauge in the dual basis).
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             cycle_number: The number of Trotter steps (can be 0).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             readout_mitigate: Whether to use readout error mitigation.
@@ -790,7 +799,7 @@ class DFLExperiment:
         here as Z_gauge in the dual basis) at all cycles.
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             readout_mitigate: Whether to use readout error mitigation.
             post_select: Whether to post select on the gauge charges (intended for the gauge_invariant initial state only).
@@ -837,7 +846,7 @@ class DFLExperiment:
         """Get the expectation value of the h term, which is X_gauge in both the LGT and dual bases.
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             cycle_number: The number of Trotter steps (can be 0).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             readout_mitigate: Whether to use readout error mitigation.
@@ -900,7 +909,7 @@ class DFLExperiment:
         at all cycle numbers.
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             readout_mitigate: Whether to use readout error mitigation.
             post_select: Whether to post select on the gauge charges (intended for the gauge_invariant initial state only).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
@@ -949,7 +958,7 @@ class DFLExperiment:
         This is X_matter in the LGT basis and a product of Xs on a matter site and the neighboring gauge sites in the dual basis.
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             cycle_number: The number of Trotter steps (can be 0).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             readout_mitigate: Whether to use readout error mitigation.
@@ -1049,7 +1058,7 @@ class DFLExperiment:
         This is X_matter in the LGT basis and a product of Xs on a matter site and the neighboring gauge sites in the dual basis.
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             readout_mitigate: Whether to use readout error mitigation.
             post_select: Whether to post select on the gauge charges (intended for the gauge_invariant initial state only).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
@@ -1132,8 +1141,8 @@ class DFLExperiment2D(DFLExperiment):
         self.executor = concurrent.futures.ProcessPoolExecutor()
         self.readout_ideal_bitstrs = np.array([])
         self.save_directory = save_directory
-        self.lgtdfl = dfl_2d.LGTDFL(qubits, origin_qubit, tau, h, mu)
-        self.lgtdfl_zero_trotter = dfl_2d.LGTDFL(qubits, origin_qubit, 0.0, h, mu)
+        self.lgtdfl = dfl_2d.LatticeGaugeTheoryDFL2D(qubits, origin_qubit, tau, h, mu)
+        self.lgtdfl_zero_trotter = dfl_2d.LatticeGaugeTheoryDFL2D(qubits, origin_qubit, 0.0, h, mu)
         self.qubits = self.lgtdfl.all_qubits
         self.excited_qubits = excited_qubits
         self.use_cphase = use_cphase
@@ -1243,18 +1252,23 @@ class DFLExperiment2D(DFLExperiment):
         basis_index = ["z", "x"].index(basis)
         if initial_state == "gauge_invariant":
             initial_state = "single_sector"
+
         if zero_trotter:
             lgtdfl = self.lgtdfl_zero_trotter
         else:
             lgtdfl = self.lgtdfl
+
+        if initial_state == "single_sector":
+            initial_state_enum = InitialState.SINGLE_SECTOR
+        else:
+            initial_state_enum = InitialState.SUPERPOSITION
         circuit = lgtdfl.get_2d_dfl_experiment_circuits(
-            initial_state,
+            initial_state_enum,
             [ncycles],
             excited_qubits=self.excited_qubits,
             n_instances=1,
-            two_qubit_gate=(
-                "cphase_simultaneous" if self.use_cphase else "cz_simultaneous"
-            ),
+            two_qubit_gate=
+                TwoQubitGate2D.CPHASE_SIMULTANEOUS if self.use_cphase else TwoQubitGate2D.CZ_SIMULTANEOUS,
         )[basis_index]
         new_moment_0 = cirq.Moment(
             list(circuit[0].operations)
@@ -1327,7 +1341,7 @@ class DFLExperiment2D(DFLExperiment):
         here as Z_gauge in the dual basis).
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             cycle_number: The number of Trotter steps (can be 0).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             readout_mitigate: Whether to use readout error mitigation.
@@ -1425,7 +1439,7 @@ class DFLExperiment2D(DFLExperiment):
         """Get the expectation value of the h term, which is X_gauge in both the LGT and dual bases.
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant".
             cycle_number: The number of Trotter steps (can be 0).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             readout_mitigate: Whether to use readout error mitigation.
@@ -1526,7 +1540,7 @@ class DFLExperiment2D(DFLExperiment):
         This is X_matter in the LGT basis and a product of Xs on a matter site and the neighboring gauge sites in the dual basis.
 
         Args:
-            initial_state: Either "superposition" or "gauge_invariant"
+            initial_state: Either "superposition", "single_sector", or "gauge_invariant"
             cycle_number: The number of Trotter steps (can be 0).
             zero_trotter: Whether to set the time step to 0 (for calibrating error mitigation).
             readout_mitigate: Whether to use readout error mitigation.

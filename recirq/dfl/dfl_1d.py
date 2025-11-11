@@ -1,3 +1,21 @@
+# Copyright 2025 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Generates the Trotterized circuits for 1D Disorder-Free Localization (DFL) experiments.
+"""
+
+import enum
 import os
 import pickle
 from collections.abc import Sequence
@@ -9,6 +27,20 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm
 
+class TwoQubitGate1D(enum.Enum):
+    """Available two-qubit gate types for the Trotter simulation."""
+    CZ = 'cz'
+    CPHASE = 'cphase'
+
+class InitialState(enum.Enum):
+    """Available initial quantum states for the DFL experiment."""
+    SINGLE_SECTOR = 'single_sector'
+    SUPERPOSITION = 'superposition'
+
+class Basis(enum.Enum):
+    """Available bases for the circuit structure and final measurement."""
+    LGT = 'lgt'
+    DUAL = 'dual'
 
 def trotter_circuit(
     grid: Sequence[cirq.GridQubit],
@@ -16,9 +48,9 @@ def trotter_circuit(
     dt: float,
     h: float,
     mu: float,
-    two_qubit_gate="cz",
+    two_qubit_gate: TwoQubitGate1D = TwoQubitGate1D.CZ,
 ) -> cirq.Circuit:
-    """Constructs the Trotter circuit for 1D DFL simulation.
+    """Constructs a Trotter circuit for 1D Disorder-Free Localization (DFL) simulation.
 
     Args:
         grid: The 1D sequence of qubits used in the experiment.
@@ -27,7 +59,7 @@ def trotter_circuit(
         h: The gauge field strength coefficient.
         mu: The matter field strength coefficient.
         two_qubit_gate: The type of two-qubit gate to use in the layers.
-            Valid values are "cz" or "cphase".
+            Use an Enum member from TwoQubitGate1D (CZ or CPHASE).
 
     Returns:
         The complete cirq.Circuit for the Trotter evolution.
@@ -35,10 +67,10 @@ def trotter_circuit(
     Raises:
         ValueError: If an invalid `two_qubit_gate` option is provided.
     """
-    if two_qubit_gate == "cz":
+    if two_qubit_gate.value == TwoQubitGate1D.CZ.value:
         return _layer_floquet_cz(grid, dt, h, mu) * n_cycles
 
-    elif two_qubit_gate == "cphase":
+    elif two_qubit_gate.value == TwoQubitGate1D.CPHASE.value:
         if n_cycles == 0:
             return cirq.Circuit()
         if n_cycles == 1:
@@ -58,11 +90,10 @@ def trotter_circuit(
 def _layer_floquet_cz(
     grid: Sequence[cirq.GridQubit], dt: float, h: float, mu: float
 ) -> cirq.Circuit:
-    n = len(grid)
     moment_rz = []
     moment_rx = []
     moment_h = []
-    for i in range(n):
+    for i in range(len(grid)):
         q = grid[i]
         if i % 2 == 1:
             moment_rz.append(cirq.rz(dt).on(q))
@@ -133,11 +164,10 @@ def _layer_floquet_cphase_middle(
 def _layer_floquet_cphase_first(
     grid: Sequence[cirq.GridQubit], dt: float, h: float, mu: float
 ) -> cirq.Circuit:
-    n = len(grid)
     moment_rz = []
     moment_rx = []
 
-    for i in range(n):
+    for i in range(len(grid)):
         q = grid[i]
         if i % 2 == 1:
             moment_rz.append(cirq.rz(dt).on(q))
@@ -155,9 +185,8 @@ def _layer_floquet_cphase_first(
 def _layer_floquet_cphase_last_missing_piece(
     grid: Sequence[cirq.GridQubit], dt: float, h: float, mu: float
 ) -> cirq.Circuit:
-    n = len(grid)
     moment_rz = []
-    for i in range(n):
+    for i in range(len(grid)):
         q = grid[i]
         if i % 2 == 1:
             moment_rz.append(cirq.rz(dt).on(q))
@@ -167,8 +196,7 @@ def _layer_floquet_cphase_last_missing_piece(
 
 def _layer_hadamard(grid: Sequence[cirq.GridQubit], which_qubits="all") -> cirq.Circuit:
     moment = []
-    n = len(grid)
-    for i in range(n):
+    for i in range(len(grid)):
         q = grid[i]
 
         if i % 2 == 1 and (which_qubits == "gauge" or which_qubits == "all"):
@@ -180,9 +208,8 @@ def _layer_hadamard(grid: Sequence[cirq.GridQubit], which_qubits="all") -> cirq.
 
 
 def _layer_measure(grid: Sequence[cirq.GridQubit]) -> cirq.Circuit:
-    n = len(grid)
     moment = []
-    for i in range(n // 2):
+    for i in range(len(grid) // 2):
         moment.append(cirq.measure(grid[2 * i], key="m"))
     return cirq.Circuit.from_moments(cirq.Moment(moment))
 
@@ -209,16 +236,13 @@ def _change_basis(grid: Sequence[cirq.GridQubit]) -> cirq.Circuit:
 
 
 def _energy_bump_initial_state(
-    grid, h: float, matter_config: str, excited_qubits: Sequence[cirq.GridQubit]
+    grid, h: float, matter_config: InitialState, excited_qubits: Sequence[cirq.GridQubit]
 ) -> cirq.Circuit:
-    """Circuit for energy bump initial state.
-    It typically consists of single qubit gates and the basis change circuit U_B.
-    But in this second order implementation, I am removing U_B since
-    it cancels out with the U_B in the second order trotter circuit."""
-    n = len(grid)
+    """Circuit for energy bump initial state."""
+
     theta = np.arctan(h)
     moment = []
-    for i in range(n):
+    for i in range(len(grid)):
         q = grid[i]
         if i % 2 == 1:
             if q in excited_qubits:
@@ -227,29 +251,29 @@ def _energy_bump_initial_state(
                 moment.append(cirq.ry(theta).on(q))
 
         else:
-            if matter_config == "single_sector":
+            if matter_config.value == InitialState.SINGLE_SECTOR.value:
                 moment.append(cirq.H(q))
     return cirq.Circuit.from_moments(moment)
 
 
 def get_1d_dfl_experiment_circuits(
     grid: Sequence[cirq.GridQubit],
-    initial_state: str,
+    initial_state: InitialState,
     n_cycles: Sequence[int] | npt.NDArray,
     excited_qubits: Sequence[cirq.GridQubit],
     dt: float,
     h: float,
     mu: float,
     n_instances: int = 10,
-    two_qubit_gate: str = "cz",
-    basis="dual",
+    two_qubit_gate: TwoQubitGate1D = TwoQubitGate1D.CZ,
+    basis: Basis = Basis.DUAL,
 ) -> List[cirq.Circuit]:
     """Generates the circuits needed for the 1D DFL experiment.
 
     Args:
         grid: The 1D sequence of qubits used in the experiment.
-        initial_state: The initial state preparation. Valid values are
-            "single_sector" or "superposition".
+        initial_state: The initial state preparation. Use an Enum member from
+            InitialState (SINGLE_SECTOR or SUPERPOSITION).
         n_cycles: The number of Trotter steps (cycles) to simulate.
         excited_qubits: Qubits to be excited in the initial state.
         dt: The time step size for the Trotterization.
@@ -257,9 +281,9 @@ def get_1d_dfl_experiment_circuits(
         mu: The matter field strength coefficient.
         n_instances: The number of instances to generate.
         two_qubit_gate: The type of two-qubit gate to use in the Trotter step.
-            Valid values are "cz" or "cphase".
-        basis: The basis for the final circuit structure. Valid values are
-            "lgt" or "dual".
+            Use an Enum member from TwoQubitGate1D (CZ or CPHASE).
+        basis: The basis for the final circuit structure. Use an Enum member from
+            Basis (LGT or DUAL).
 
     Returns:
         A list of all generated cirq.Circuit objects.
@@ -268,13 +292,13 @@ def get_1d_dfl_experiment_circuits(
         ValueError: If an invalid option for `initial_state` or
             `basis` is given.
     """
-    if initial_state == "single_sector":
+    if initial_state.value == InitialState.SINGLE_SECTOR.value:
         initial_circuit = _energy_bump_initial_state(
-            grid, h, "single_sector", excited_qubits
+            grid, h, InitialState.SINGLE_SECTOR, excited_qubits
         )
-    elif initial_state == "superposition":
+    elif initial_state.value == InitialState.SUPERPOSITION.value:
         initial_circuit = _energy_bump_initial_state(
-            grid, h, "superposition", excited_qubits
+            grid, h, InitialState.SUPERPOSITION, excited_qubits
         )
     else:
         raise ValueError("Invalid initial state")
@@ -284,17 +308,17 @@ def get_1d_dfl_experiment_circuits(
         circ = initial_circuit + trotter_circuit(
             grid, n_cycle, dt, h, mu, two_qubit_gate
         )
-        if basis == "lgt":
+        if basis.value == Basis.LGT.value:
             circ += _change_basis(grid)
-        elif basis == "dual":
+        elif basis.value == Basis.DUAL.value:
             pass
         else:
             raise ValueError("Invalid option for basis")
         for _ in range(n_instances):
 
-            if basis == "lgt":
+            if basis.value == Basis.LGT.value:
                 circ_z = circ + cirq.measure([q for q in grid], key="m")
-            elif basis == "dual":
+            elif basis.value == Basis.DUAL.value:
                 circ_z = (
                     circ
                     + _layer_hadamard(grid, "matter")
