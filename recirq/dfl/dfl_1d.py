@@ -15,9 +15,6 @@
 """Generates the Trotterized circuits for 1D Disorder-Free Localization (DFL) experiments.
 """
 
-import enum
-import os
-import pickle
 from collections.abc import Sequence
 from typing import List
 
@@ -27,20 +24,8 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm
 
-class TwoQubitGate1D(enum.Enum):
-    """Available two-qubit gate types for the Trotter simulation."""
-    CZ = 'cz'
-    CPHASE = 'cphase'
-
-class InitialState(enum.Enum):
-    """Available initial quantum states for the DFL experiment."""
-    SINGLE_SECTOR = 'single_sector'
-    SUPERPOSITION = 'superposition'
-
-class Basis(enum.Enum):
-    """Available bases for the circuit structure and final measurement."""
-    LGT = 'lgt'
-    DUAL = 'dual'
+#import Enums
+from recirq.dfl.dfl_enums import TwoQubitGate, InitialState, Basis
 
 def trotter_circuit(
     grid: Sequence[cirq.GridQubit],
@@ -48,7 +33,7 @@ def trotter_circuit(
     dt: float,
     h: float,
     mu: float,
-    two_qubit_gate: TwoQubitGate1D = TwoQubitGate1D.CZ,
+    two_qubit_gate: TwoQubitGate = TwoQubitGate.CZ,
 ) -> cirq.Circuit:
     """Constructs a Trotter circuit for 1D Disorder-Free Localization (DFL) simulation.
 
@@ -59,7 +44,7 @@ def trotter_circuit(
         h: The gauge field strength coefficient.
         mu: The matter field strength coefficient.
         two_qubit_gate: The type of two-qubit gate to use in the layers.
-            Use an Enum member from TwoQubitGate1D (CZ or CPHASE).
+            Use an Enum member from TwoQubitGate (CZ or CPHASE).
 
     Returns:
         The complete cirq.Circuit for the Trotter evolution.
@@ -67,10 +52,10 @@ def trotter_circuit(
     Raises:
         ValueError: If an invalid `two_qubit_gate` option is provided.
     """
-    if two_qubit_gate.value == TwoQubitGate1D.CZ.value:
+    if two_qubit_gate.value == TwoQubitGate.CZ.value:
         return _layer_floquet_cz(grid, dt, h, mu) * n_cycles
 
-    elif two_qubit_gate.value == TwoQubitGate1D.CPHASE.value:
+    elif two_qubit_gate.value == TwoQubitGate.CPHASE.value:
         if n_cycles == 0:
             return cirq.Circuit()
         if n_cycles == 1:
@@ -265,7 +250,7 @@ def get_1d_dfl_experiment_circuits(
     h: float,
     mu: float,
     n_instances: int = 10,
-    two_qubit_gate: TwoQubitGate1D = TwoQubitGate1D.CZ,
+    two_qubit_gate: TwoQubitGate = TwoQubitGate.CZ,
     basis: Basis = Basis.DUAL,
 ) -> List[cirq.Circuit]:
     """Generates the circuits needed for the 1D DFL experiment.
@@ -281,7 +266,7 @@ def get_1d_dfl_experiment_circuits(
         mu: The matter field strength coefficient.
         n_instances: The number of instances to generate.
         two_qubit_gate: The type of two-qubit gate to use in the Trotter step.
-            Use an Enum member from TwoQubitGate1D (CZ or CPHASE).
+            Use an Enum member from TwoQubitGate (CZ or CPHASE).
         basis: The basis for the final circuit structure. Use an Enum member from
             Basis (LGT or DUAL).
 

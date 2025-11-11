@@ -16,9 +16,6 @@
 Lattice Gauge Theory (LGT) model using second-order trotterization.
 """
 
-import enum
-import os
-import pickle
 from typing import cast, List, Sequence, Set, Tuple
 
 import cirq
@@ -26,20 +23,8 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm
 
-class TwoQubitGate2D(enum.Enum):
-    """Available two-qubit gate types for the Trotter simulation."""
-    CZ_SIMULTANEOUS = 'cz_simultaneous'
-    CPHASE_SIMULTANEOUS = 'cphase_simultaneous'
-
-class InitialState(enum.Enum):
-    """Available initial quantum states for the DFL experiment."""
-    SINGLE_SECTOR = 'single_sector'
-    SUPERPOSITION = 'superposition'
-
-class Basis(enum.Enum):
-    """Available bases for the circuit structure and final measurement."""
-    LGT = 'lgt'
-    DUAL = 'dual'
+#import Enums
+from recirq.dfl.dfl_enums import TwoQubitGate, InitialState, Basis
 
 
 class LatticeGaugeTheoryDFL2D:
@@ -245,21 +230,21 @@ class LatticeGaugeTheoryDFL2D:
             moment.append(cirq.measure(q, key="m"))
         return cirq.Circuit.from_moments(cirq.Moment(moment))
 
-    def trotter_circuit(self, n_cycles, two_qubit_gate: TwoQubitGate2D = TwoQubitGate2D.CZ_SIMULTANEOUS) -> cirq.Circuit:
+    def trotter_circuit(self, n_cycles, two_qubit_gate: TwoQubitGate = TwoQubitGate.CZ) -> cirq.Circuit:
         """Constructs the second-order Trotter circuit for the DFL Hamiltonian.
 
         Args:
             n_cycles: The number of Trotter steps/cycles to include in the circuit.
             two_qubit_gate: The type of two-qubit gate to use in the layers.
-                Use an Enum member from TwoQubitGate2D (CZ_SIMULTANEOUS or CPHASE_SIMULTANEOUS).
+                Use an Enum member from TwoQubitGate (CZ or CPHASE).
 
         Returns:
             The complete cirq.Circuit for the Trotter evolution.
         """
-        if two_qubit_gate.value == TwoQubitGate2D.CZ_SIMULTANEOUS.value:
+        if two_qubit_gate.value == TwoQubitGate.CZ.value:
             return self._layer_floquet_cz_simultaneous() * n_cycles
 
-        elif two_qubit_gate.value == TwoQubitGate2D.CPHASE_SIMULTANEOUS.value:
+        elif two_qubit_gate.value == TwoQubitGate.CPHASE.value:
             if n_cycles == 0:
                 return cirq.Circuit()
             if n_cycles == 1:
@@ -275,14 +260,14 @@ class LatticeGaugeTheoryDFL2D:
                 )
 
     def layer_floquet(
-        self, two_qubit_gate: TwoQubitGate2D = TwoQubitGate2D.CZ_SIMULTANEOUS, layer="middle"
+        self, two_qubit_gate: TwoQubitGate = TwoQubitGate.CZ, layer="middle"
     ) -> cirq.Circuit:
 
         """Constructs a layer of the Trotter circuit.
 
         Args:
             two_qubit_gate: The type of two-qubit gate to use.
-                Use an Enum member from TwoQubitGate2D (CZ_SIMULTANEOUS or CPHASE_SIMULTANEOUS).
+                Use an Enum member from TwoQubitGate (CZ or CPHASE).
             layer: Specifies which piece of the sequence to return.
                 Valid values are "middle", "last", or "first".
 
@@ -293,10 +278,10 @@ class LatticeGaugeTheoryDFL2D:
             ValueError: If an invalid option for `two_qubit_gate` or `layer` is given.
         """
 
-        if two_qubit_gate.value == TwoQubitGate2D.CZ_SIMULTANEOUS.value:
+        if two_qubit_gate.value == TwoQubitGate.CZ.value:
             return self._layer_floquet_cz_simultaneous()
 
-        elif two_qubit_gate.value == TwoQubitGate2D.CPHASE_SIMULTANEOUS.value:
+        elif two_qubit_gate.value == TwoQubitGate.CPHASE.value:
             if layer == "middle":
                 return self._layer_floquet_cphase_simultaneous_middle()
             elif layer == "last":
@@ -732,7 +717,7 @@ class LatticeGaugeTheoryDFL2D:
         n_cycles: Sequence[int] | npt.NDArray,
         excited_qubits: Sequence[cirq.GridQubit],
         n_instances: int = 10,
-        two_qubit_gate: TwoQubitGate2D = TwoQubitGate2D.CZ_SIMULTANEOUS,
+        two_qubit_gate: TwoQubitGate = TwoQubitGate.CZ,
         basis: Basis = Basis.DUAL,
     ) -> List[cirq.Circuit]:
         """Generates the set of circuits needed for the 2D DFL experiment.
@@ -744,7 +729,7 @@ class LatticeGaugeTheoryDFL2D:
             excited_qubits: Qubits to be excited in the initial state.
             n_instances: The number of instances to generate
             two_qubit_gate: The type of two-qubit gate to use in the Trotter step.
-                Use an Enum member from TwoQubitGate2D (CZ_SIMULTANEOUS or CPHASE_SIMULTANEOUS).
+                Use an Enum member from TwoQubitGate (CZ or CPHASE).
             basis: The basis for the final circuit structure. Use an Enum member from
                 Basis (LGT or DUAL).
 

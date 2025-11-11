@@ -36,9 +36,8 @@ import concurrent.futures
 from recirq.dfl import dfl_1d as dfl
 from recirq.dfl import dfl_2d_second_order_trotter as dfl_2d
 
-#imort Enums explicitly
-from recirq.dfl.dfl_1d import InitialState, Basis, TwoQubitGate1D
-from recirq.dfl.dfl_2d_second_order_trotter import TwoQubitGate2D
+#import Enums
+from recirq.dfl.dfl_enums import TwoQubitGate, InitialState, Basis
 
 
 
@@ -217,7 +216,7 @@ class DFLExperiment:
             self.h,
             self.mu,
             1,
-            TwoQubitGate1D.CPHASE if self.use_cphase else TwoQubitGate1D.CZ,
+            TwoQubitGate.CPHASE if self.use_cphase else TwoQubitGate.CZ,
             Basis.DUAL,
         )[["z", "x"].index(basis)]
 
@@ -1268,7 +1267,7 @@ class DFLExperiment2D(DFLExperiment):
             excited_qubits=self.excited_qubits,
             n_instances=1,
             two_qubit_gate=
-                TwoQubitGate2D.CPHASE_SIMULTANEOUS if self.use_cphase else TwoQubitGate2D.CZ_SIMULTANEOUS,
+                TwoQubitGate.CPHASE if self.use_cphase else TwoQubitGate.CZ,
         )[basis_index]
         new_moment_0 = cirq.Moment(
             list(circuit[0].operations)
