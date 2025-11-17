@@ -118,11 +118,11 @@ def initial_state_for_entropy(grid: Sequence[cirq.GridQubit],
     moment = []
     for i in range(len(grid)):
         if i % 2 == 0:
-            if matter_config.value == InitialState.SINGLE_SECTOR.value:
+            if matter_config == InitialState.SINGLE_SECTOR:
                 moment.append(cirq.X(grid[i]))
                 moment.append(cirq.H(grid[i]))
 
-            elif matter_config.value == InitialState.DISORDERED.value:
+            elif matter_config == InitialState.DISORDERED:
                 r = np.random.choice([0, 1])
                 if r:
                     moment.append(cirq.X(grid[i]))
@@ -131,7 +131,7 @@ def initial_state_for_entropy(grid: Sequence[cirq.GridQubit],
             else:
                 moment.append(cirq.I(grid[i]))
         else:
-            if matter_config.value == InitialState.DISORDERED.value:
+            if matter_config == InitialState.DISORDERED:
                 moment.append(cirq.X(grid[i]))
             moment.append(cirq.H(grid[i]))
 
@@ -164,15 +164,10 @@ def get_1d_dfl_entropy_experiment_circuits(
             ValueError: If initial_state is not valid.
         """
 
-    if initial_state == "single_sector":
+    if initial_state in ("single_sector", "disordered", "superposition"):
         initial_circuit = initial_state_for_entropy(
-            grid, InitialState.SINGLE_SECTOR)
-    elif initial_state == "superposition":
-        initial_circuit = initial_state_for_entropy(
-            grid, InitialState.SUPERPOSITION)
-    elif initial_state == "disordered":
-        initial_circuit = initial_state_for_entropy(
-            grid, InitialState.DISORDERED)
+            grid, getattr(InitialState, initial_state.upper()))
+        
     else:
         raise ValueError("Invalid initial state")
 
