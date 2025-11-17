@@ -36,6 +36,7 @@ class InitialState(enum.Enum):
     """
     SINGLE_SECTOR = 'single_sector'
     SUPERPOSITION = 'superposition'
+    DISORDERED = 'disordered'
 
 
 class Basis(enum.Enum):
