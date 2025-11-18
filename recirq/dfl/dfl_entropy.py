@@ -17,24 +17,38 @@ in 1D DFL circuits.
 """
 
 
-import os
-import pickle
 from collections.abc import Sequence
+from pathlib import Path
+import pickle
 
 import cirq
-from cirq.transformers import gauge_compiling, dynamical_decoupling, randomized_measurements
+from cirq.transformers import (
+    dynamical_decoupling,
+    gauge_compiling,
+    randomized_measurements,
+)
 import numpy as np
 import numpy.typing as npt
 
 from recirq.dfl.dfl_enums import InitialState
 
 
-def _layer_interaction(grid: Sequence[cirq.GridQubit],
-                       dt: float,) -> cirq.Circuit:
+def _layer_interaction(
+    grid: Sequence[cirq.GridQubit],
+    dt: float,
+) -> cirq.Circuit:
     """Implements the ZZZ term of the DFL Hamiltonian
+    Each ZZZ term acts on matter-gauge-matter qubits.
+    The resulting circuit for each term looks like:
+        0: ───────@────────────────────────@───────
+                  │                        │
+        1: ───H───@───@───Rx(2 * dt)───@───@───H───
+                      │                │
+        2: ───────────@────────────────@───────────
+
     Args:
         grid: The 1D sequence of qubits used in the experiment.
-        dt: The time step size for the Trotterization. 
+        dt: The time step size for the Trotterization.
 
     Returns:
         cirq.Circuit for the Trotter evolution of the ZZZ term.
@@ -60,12 +74,20 @@ def _layer_interaction(grid: Sequence[cirq.GridQubit],
         cirq.Moment(moment_3),
         cirq.Moment(moment_2),
         cirq.Moment(moment_1),
-        cirq.Moment(moment_h))
+        cirq.Moment(moment_h),
+    )
 
 
 def _layer_matter_gauge_x(
-        grid: Sequence[cirq.GridQubit], dt: float, mu: float, h: float) -> cirq.Circuit:
-    """Implements the matter and gauge fields
+    grid: Sequence[cirq.GridQubit], dt: float, h: float, mu: float
+) -> cirq.Circuit:
+    """Implements the X rotation for the matter and gauge qubits.
+    The resulting circuit should look like:
+        0: ──Rx(2*mu*dt)──
+
+        1: ──Rx(2*h*dt)────
+
+        2: ──Rx(2*mu*dt)───
 
     Args:
         grid: The 1D sequence of qubits used in the experiment.
@@ -80,35 +102,34 @@ def _layer_matter_gauge_x(
     moment = []
     for i in range(len(grid)):
         if i % 2 == 0:
-            moment.append(cirq.rx(2 * mu*dt).on(grid[i]))
+            moment.append(cirq.rx(2 * mu * dt).on(grid[i]))
         else:
-            moment.append(cirq.rx(2 * h*dt).on(grid[i]))
+            moment.append(cirq.rx(2 * h * dt).on(grid[i]))
     return cirq.Circuit.from_moments(cirq.Moment(moment))
 
 
-def _layer_floquet(grid: Sequence[cirq.GridQubit],
-                   dt: float,
-                   h: float,
-                   mu: float) -> cirq.Circuit:
+def layer_floquet(
+    grid: Sequence[cirq.GridQubit], dt: float, h: float, mu: float
+) -> cirq.Circuit:
     """Constructs a Trotter circuit for 1D Disorder-Free Localization (DFL) simulation.
 
     Args:
         grid: The 1D sequence of qubits used in the experiment.
-        dt: The time step size for the Trotterization.
-        h: The gauge field strength coefficient.
-        mu: The matter field strength coefficient.
+        dt: Trotter step size.
+        h: The coefficient on the gauge X term.
+        mu: The coefficient on the matter sigma_x term.
 
     Returns:
         The complete cirq.Circuit for the Trotter evolution.
 
     """
 
-    return _layer_interaction(grid,
-                              dt) + _layer_matter_gauge_x(grid, dt, mu, h)
+    return _layer_interaction(grid, dt) + _layer_matter_gauge_x(grid, dt, h, mu)
 
 
-def initial_state_for_entropy(grid: Sequence[cirq.GridQubit],
-                              matter_config: InitialState) -> cirq.Circuit:
+def initial_state_for_entropy(
+    grid: Sequence[cirq.GridQubit], matter_config: InitialState
+) -> cirq.Circuit:
     """Circuit for three types of initial states:
     single_sector: |-> |+> |-> |+>...
     superposition: |0> |+> |0> |+>...
@@ -139,44 +160,37 @@ def initial_state_for_entropy(grid: Sequence[cirq.GridQubit],
 
 
 def get_1d_dfl_entropy_experiment_circuits(
-        grid: Sequence[cirq.GridQubit],
-        initial_state: str,
-        ncycles: int,
-        dt: float,
-        h: float,
-        mu: float,
-        n_basis: int = 100) -> Sequence[cirq.Circuit]:
-    """Generate the circuit instances the entropy experiment
+    grid: Sequence[cirq.GridQubit],
+    initial_state: InitialState,
+    ncycles: int,
+    dt: float,
+    h: float,
+    mu: float,
+    n_basis: int = 100,
+) -> Sequence[cirq.Circuit]:
+    """Generate the circuit instances for the entropy experiment
 
-        Args:
-            initial_state: Which initial state, either "single_sector" or  "superposition" or "disordered.
-            ncycles: The number of Trotter steps (can be 0).
-            basis: The basis in which to measure. Either "x" or "z".
-            dt: Trotter step size.
-            h: The coefficient on the gauge X term.
-            mu: The coefficient on the matter sigma_x term.
-            n_basis: The number of random measurement bases to use.
+    Args:
+        grid: The qubits to use for the experiment.
+        initial_state: Which initial state, see `InitialState` enum.
+        ncycles: The number of Trotter steps (can be 0).
+        dt: Trotter step size.
+        h: The coefficient on the gauge X term.
+        mu: The coefficient on the matter sigma_x term.
+        n_basis: The number of random measurement bases to use.
 
-        Returns:
-            A list of the circuit instances.
+    Returns:
+        A list of the circuit instances.
+    """
 
-        Raises:
-            ValueError: If initial_state is not valid.
-        """
-
-    if initial_state in ("single_sector", "disordered", "superposition"):
-        initial_circuit = initial_state_for_entropy(
-            grid, getattr(InitialState, initial_state.upper()))
-        
-    else:
-        raise ValueError("Invalid initial state")
-
+    initial_circuit = initial_state_for_entropy(grid, initial_state)
     circuits = []
-    circ = initial_circuit + _layer_floquet(grid, dt, h, mu)*ncycles
+    circ = initial_circuit + layer_floquet(grid, dt, h, mu) * ncycles
 
     for _ in range(n_basis):
         circ_randomized = randomized_measurements.RandomizedMeasurements()(
-            circ, unitary_ensemble="Clifford")
+            circ, unitary_ensemble="Clifford"
+        )
 
         circuits.append(circ_randomized)
 
@@ -184,92 +198,77 @@ def get_1d_dfl_entropy_experiment_circuits(
 
 
 def run_1d_dfl_entropy_experiment(
-        grid: Sequence[cirq.GridQubit],
-        initial_states: Sequence[str],
-        save_dir: str,
-        n_cycles: Sequence[int] | npt.NDArray,
-        dt: float,
-        h: float,
-        mu: float,
-        n_basis: int = 100,
-        n_shots: int = 1000,
-        sampler: cirq.Sampler = cirq.Simulator(),
-        gauge_compile: bool = True,
-        dynamical_decouple: bool = True) -> None:
+    grid: Sequence[cirq.GridQubit],
+    initial_states: Sequence[InitialState],
+    save_dir: Path,
+    n_cycles: Sequence[int] | npt.NDArray,
+    dt: float,
+    h: float,
+    mu: float,
+    n_basis: int = 100,
+    n_shots: int = 1000,
+    sampler: cirq.Sampler = cirq.Simulator(),
+    gauge_compile: bool = True,
+    dynamical_decouple: bool = True,
+) -> None:
     """Run the 1D DFL experiment (Fig 4 of the paper).
     The paper is available at: https://arxiv.org/abs/2410.06557
+    Saves the measurement bitstrings to save_dir.
+
+    Data is saved in the following directory structure:
+        save_dir/dt{dt}/h{h}_mu{mu}/{initial_state}/cycle{n_cycle}.pickle
 
     Attrs:
         grid: The qubits to use for the experiment.
-        initial_states: The list of initial states to use.
+        initial_states: The list of InitialState to use.
         save_dir: The directory in which to save the results.
         n_cycles: The list of number of Trotter steps to use.
         dt: The Trotter step size.
         h: The coefficient on the gauge X term.
         mu: The coefficient on the matter sigma_x term.
         n_basis: The number of random measurement bases to use.
-        n_shots: The number of measurement shots to use.        
+        n_shots: The number of measurement shots to use.
         sampler: The cirq sampler to use.
         gauge_compile: Whether to apply gauge compiling.
         dynamical_decouple: Whether to apply dynamical decoupling.
 
     Returns:
-        None    
+        None
     """
 
-    if not os.path.isdir(save_dir + "/dt{:.2f}".format(dt)):
-        os.mkdir(save_dir + "/dt{:.2f}".format(dt))
-
-    if not os.path.isdir(save_dir +
-                         "/dt{:.2f}/h{:.2f}_mu{:.2f}".format(dt, h, mu)):
-        os.mkdir(
-            save_dir + "/dt{:.2f}/h{:.2f}_mu{:.2f}".format(dt, h, mu))
-
     for initial_state in initial_states:
-        if not os.path.isdir(
-            save_dir +
-            "/dt{:.2f}/h{:.2f}_mu{:.2f}/{:s}".format(
-                dt,
-                h,
-                mu,
-                initial_state)):
-            os.mkdir(
-                save_dir +
-                "/dt{:.2f}/h{:.2f}_mu{:.2f}/{:s}".format(
-                    dt,
-                    h,
-                    mu,
-                    initial_state))
+        dir_path = (
+            save_dir / f"dt{dt:.2f}" / f"h{h:.2f}_mu{mu:.2f}" / initial_state.value
+        )
+        dir_path.mkdir(parents=True, exist_ok=True)
 
         for n_cycle in n_cycles:
-            print(initial_state, n_cycle)
-            fname = (
-                save_dir
-                + "/dt{:.2f}/h{:.2f}_mu{:.2f}/{:s}/cycle{}.pickle".format(
-                    dt, h, mu, initial_state, n_cycle
-                )
+            print("Initial state:", initial_state.value, "Cycle:", n_cycle)
+            fname = dir_path / "cycle{}.pickle".format(n_cycle)
+            circuits = get_1d_dfl_entropy_experiment_circuits(
+                grid,
+                initial_state=initial_state,
+                ncycles=n_cycle,
+                dt=dt,
+                h=h,
+                mu=mu,
+                n_basis=n_basis,
             )
-            circuits = get_1d_dfl_entropy_experiment_circuits(grid, initial_state=initial_state,
-                                                              ncycles=n_cycle, dt=dt, h=h, mu=mu,
-                                                              n_basis=n_basis)
 
             circuits_modified = []
             for i in range(len(circuits)):
                 circ_i = circuits[i]
 
                 if gauge_compile:
-                    circ_i = gauge_compiling.CZGaugeTransformer(
-                        circ_i)
+                    circ_i = gauge_compiling.CZGaugeTransformer(circ_i)
                 if dynamical_decouple:
-                    circ_i = dynamical_decoupling.add_dynamical_decoupling(
-                        circ_i)
+                    circ_i = dynamical_decoupling.add_dynamical_decoupling(circ_i)
                 circuits_modified.append(circ_i)
 
             results = sampler.run_batch(circuits, repetitions=n_shots)
             bitstrings = []
             for j in range(n_basis):
-                bitstrings.append(
-                    results[j][0].measurements["m"])
+                bitstrings.append(results[j][0].measurements["m"])
 
             with open(fname, "wb") as myfile:
                 pickle.dump(bitstrings, myfile)
