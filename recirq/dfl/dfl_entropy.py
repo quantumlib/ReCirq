@@ -23,10 +23,7 @@ import pickle
 
 import cirq
 from cirq import add_dynamical_decoupling
-from cirq.transformers import (
-    gauge_compiling,
-)
-from cirq.transformers.randomized_measurements import RandomizedMeasurements
+from cirq.transformers import gauge_compiling, RandomizedMeasurements
 import numpy as np
 import numpy.typing as npt
 
