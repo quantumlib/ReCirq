@@ -25,8 +25,8 @@ import cirq
 from cirq import add_dynamical_decoupling
 from cirq.transformers import (
     gauge_compiling,
-    randomized_measurements,
 )
+from cirq.transformers.randomized_measurements import RandomizedMeasurements
 import numpy as np
 import numpy.typing as npt
 
@@ -188,9 +188,7 @@ def get_1d_dfl_entropy_experiment_circuits(
     circ = initial_circuit + layer_floquet(grid, dt, h, mu) * ncycles
 
     for _ in range(n_basis):
-        circ_randomized = randomized_measurements.RandomizedMeasurements()(
-            circ, unitary_ensemble="Clifford"
-        )
+        circ_randomized = RandomizedMeasurements()(circ, unitary_ensemble="Clifford")
 
         circuits.append(circ_randomized)
 
