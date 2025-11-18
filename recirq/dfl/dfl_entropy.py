@@ -22,7 +22,6 @@ from pathlib import Path
 import pickle
 
 import cirq
-from cirq.transformers import gauge_compiling
 import numpy as np
 import numpy.typing as npt
 
@@ -256,7 +255,7 @@ def run_1d_dfl_entropy_experiment(
                 circ_i = circuits[i]
 
                 if gauge_compile:
-                    circ_i = gauge_compiling.CZGaugeTransformer(circ_i)
+                    circ_i = cirq.transformers.gauge_compiling.CZGaugeTransformer(circ_i)
                 if dynamical_decouple:
                     circ_i = cirq.add_dynamical_decoupling(circ_i)
                 circuits_modified.append(circ_i)
