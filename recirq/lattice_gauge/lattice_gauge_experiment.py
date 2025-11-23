@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections.abc import Sequence
+import numbers
 from typing import Any
 
 import cirq
@@ -601,7 +602,7 @@ def cnot_on_layer(
             cirq.Moment(cirq.CZ.on(qc, qt) for qc, qt in pairs_list),
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
         ]
-    elif isinstance(depolarization_probability, float):
+    elif isinstance(depolarization_probability, numbers.Real):
         return [
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
             cirq.Moment(cirq.CZ.on(qc, qt) for qc, qt in pairs_list),

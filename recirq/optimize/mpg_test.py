@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+import numbers
 
 from recirq.optimize.mpg import model_policy_gradient
 
@@ -81,7 +82,7 @@ def test_model_policy_gradient_limited_iterations():
     )
 
     assert isinstance(result.x, np.ndarray)
-    assert isinstance(result.fun, float)
+    assert isinstance(result.fun, numbers.Real)
     assert result.nit == 15
 
 
@@ -103,7 +104,7 @@ def test_model_policy_gradient_limited_evaluations():
     )
 
     assert isinstance(result.x, np.ndarray)
-    assert isinstance(result.fun, float)
+    assert isinstance(result.fun, numbers.Real)
     assert result.nfev == 91
 
 
