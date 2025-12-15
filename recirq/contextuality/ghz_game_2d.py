@@ -1,3 +1,17 @@
+# Copyright 2025 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 r"""Functions and Classes for the 2D GHZ Game Experiment.
 
 This module provides a complete pipeline for benchmarking the fidelity of
@@ -118,7 +132,9 @@ def generate_2d_ghz_circuit(
         raise ValueError("num_qubits must be a positive integer.")
 
     if num_qubits > len(graph.nodes):
-        raise ValueError("num_qubits cannot exceed the total number of qubits on the processor.")
+        raise ValueError(
+            "num_qubits cannot exceed the total number of qubits on the processor."
+        )
 
     if randomized:
         rng = (
@@ -141,7 +157,8 @@ def generate_2d_ghz_circuit(
             distance from the center.
             """
             return sorted(
-                neighbors, key=lambda q: (q.row - center.row) ** 2 + (q.col - center.col) ** 2
+                neighbors,
+                key=lambda q: (q.row - center.row) ** 2 + (q.col - center.col) ** 2,
             )
 
     bfs_tree = nx.bfs_tree(graph, center, sort_neighbors=sort_neighbors_fn)
@@ -264,7 +281,9 @@ class GHZ2dExperiment:
             )
 
             qubits = list(base_circuit.all_qubits())
-            circuit_base_dropped_measurements = cirq.drop_terminal_measurements(base_circuit)
+            circuit_base_dropped_measurements = cirq.drop_terminal_measurements(
+                base_circuit
+            )
 
             a_all = rng_game.integers(0, 2, size=(num_trials_per_circuit, num_qubits))
             a_all[:, -1] = np.sum(a_all[:, :-1], axis=1) % 2
@@ -273,17 +292,22 @@ class GHZ2dExperiment:
             for trial_idx in range(num_trials_per_circuit):
                 a_values = a_all[trial_idx]
                 appended_circuit = self._get_circuit_to_append(a_values, qubits)
-                full_trial_circuit = circuit_base_dropped_measurements + appended_circuit
+                full_trial_circuit = (
+                    circuit_base_dropped_measurements + appended_circuit
+                )
 
                 circuits.append(full_trial_circuit)
-                metadata_list.append({
-                    "type": "ghz_game",
-                    "num_qubits": num_qubits,
-                    "a_values": a_values,
-                })
+                metadata_list.append(
+                    {
+                        "type": "ghz_game",
+                        "num_qubits": num_qubits,
+                        "a_values": a_values,
+                    }
+                )
 
             circuits.append(
-                circuit_base_dropped_measurements + cirq.Circuit(cirq.M(*qubits, key="m"))
+                circuit_base_dropped_measurements
+                + cirq.Circuit(cirq.M(*qubits, key="m"))
             )
             metadata_list.append({"type": "z_stabilizer", "num_qubits": num_qubits})
 
@@ -333,7 +357,9 @@ class GHZ2dExperiment:
         original_indices = list(range(len(circuits_original_order)))
         shuffled_indices = original_indices.copy()
         random.shuffle(shuffled_indices)
-        shuffled_circuits_to_run = [circuits_original_order[i] for i in shuffled_indices]
+        shuffled_circuits_to_run = [
+            circuits_original_order[i] for i in shuffled_indices
+        ]
 
         print(
             f"Running {len(shuffled_circuits_to_run)} circuits in a shuffled batch with "
@@ -350,7 +376,9 @@ class GHZ2dExperiment:
             original_idx = shuffled_indices[i]
             results_original_order[original_idx] = shuffled_result[0]
 
-        return GHZ2dResults(metadata_list, results_original_order, num_trials_per_circuit)
+        return GHZ2dResults(
+            metadata_list, results_original_order, num_trials_per_circuit
+        )
 
 
 class GHZ2dResults:
@@ -412,7 +440,9 @@ class GHZ2dResults:
 
                 all_parities = np.sum(all_measurements_for_this_circuit, axis=1) % 2
                 winning_repetitions = all_parities == expected_parity
-                results_metrics["win_mean"][num_qubits].append(np.mean(winning_repetitions))
+                results_metrics["win_mean"][num_qubits].append(
+                    np.mean(winning_repetitions)
+                )
 
                 transformed_measurements = 1 - 2 * all_measurements_for_this_circuit
                 mean_product_raw = np.mean(np.prod(transformed_measurements, axis=1))

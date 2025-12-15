@@ -1,3 +1,17 @@
+# Copyright 2025 Google
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import cast
 
 import cirq
@@ -14,7 +28,9 @@ center_qubit = cirq.GridQubit(4, 5)
 @pytest.mark.parametrize("num_qubits", list(range(1, len(graph.nodes) + 1)))
 @pytest.mark.parametrize("randomized", [True, False])
 @pytest.mark.parametrize("add_dd_and_align_right", [True, False])
-def test_ghz_circuits_size(num_qubits: int, randomized: bool, add_dd_and_align_right: bool) -> None:
+def test_ghz_circuits_size(
+    num_qubits: int, randomized: bool, add_dd_and_align_right: bool
+) -> None:
     """Tests the size of the GHZ circuits."""
     circuit = ghz_2d.generate_2d_ghz_circuit(
         center_qubit,
@@ -58,7 +74,11 @@ def test_ghz_circuits_state(
 def test_transform_circuit_properties() -> None:
     """Tests that _transform_circuit preserves circuit properties."""
     circuit = ghz_2d.generate_2d_ghz_circuit(
-        center_qubit, graph, num_qubits=9, randomized=False, add_dd_and_align_right=False
+        center_qubit,
+        graph,
+        num_qubits=9,
+        randomized=False,
+        add_dd_and_align_right=False,
     )
     transformed_circuit = ghz_2d._transform_circuit(circuit)
 
@@ -73,7 +93,9 @@ def test_transform_circuit_properties() -> None:
     assert not any(isinstance(op.gate, cirq.MeasurementGate) for op in final_moment)
 
     # Check the two circuits are equivalent
-    assert cirq.equal_up_to_global_phase(circuit.unitary(), transformed_circuit.unitary())
+    assert cirq.equal_up_to_global_phase(
+        circuit.unitary(), transformed_circuit.unitary()
+    )
 
 
 def manhattan_distance(q1: cirq.GridQubit, q2: cirq.GridQubit) -> int:
@@ -107,8 +129,12 @@ def test_ghz_circuits_bfs_order(num_qubits: int) -> None:
                 qubits = op.qubits
 
                 # Identify the distance of the two qubits involved in the CZ
-                dist_q0 = manhattan_distance(center_qubit, cast(cirq.GridQubit, qubits[0]))
-                dist_q1 = manhattan_distance(center_qubit, cast(cirq.GridQubit, qubits[1]))
+                dist_q0 = manhattan_distance(
+                    center_qubit, cast(cirq.GridQubit, qubits[0])
+                )
+                dist_q1 = manhattan_distance(
+                    center_qubit, cast(cirq.GridQubit, qubits[1])
+                )
 
                 # The 'child' is the qubit farther away from the center.
                 child_qubit_distance = max(dist_q0, dist_q1)
@@ -131,7 +157,8 @@ def test_ghz_circuits_bfs_order(num_qubits: int) -> None:
     included_qubits = circuit.all_qubits()
     if included_qubits:
         max_dist_required = max(
-            manhattan_distance(center_qubit, cast(cirq.GridQubit, q)) for q in included_qubits
+            manhattan_distance(center_qubit, cast(cirq.GridQubit, q))
+            for q in included_qubits
         )
         assert max_dist_seen == max_dist_required
 
