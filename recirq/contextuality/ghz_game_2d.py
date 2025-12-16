@@ -30,6 +30,7 @@ The formal rules of the non-communication game are:
    $$ \\sum_{j=1}^{N} y_j \\pmod 2 = \frac{1}{2} \\sum_{j=1}^{N} x_j \\pmod 2 $$
 
 This module performs the following steps:
+
 1. State Preparation: Creating the 2D GHZ state (using H and CZ gates).
 2. Challenge Mapping: Assignments of the input bits $x_j$ (where $\\sum x_j$ is even) are
    mapped to local measurement settings: If $x_j=1$, measure in Y basis;
@@ -39,6 +40,7 @@ This module performs the following steps:
    bits ($\\sum y_j$) satisfies the parity condition derived from the challenge.
 
 The experiment workflow is divided into two parts:
+
 - **GHZ2dExperiment:** Creates and executes all necessary circuits
   (GHZ game trials and Z-stabilizer checks).
 - **GHZ2dResults:** Stores the raw data and calculates the final fidelity metrics -
@@ -52,7 +54,14 @@ from typing import Any, cast
 import cirq
 import networkx as nx
 import numpy as np
+import warnings
 
+_CIRCUIT_DD_SUPPORTED = hasattr(cirq, 'add_dynamical_decoupling')
+
+if _CIRCUIT_DD_SUPPORTED:
+    _ADD_DD_FUNC = cirq.add_dynamical_decoupling
+else:
+    _ADD_DD_FUNC = None
 
 def _transform_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
     """Transforms a Cirq circuit by applying a series of modifications.
@@ -60,6 +69,7 @@ def _transform_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
     `generate_2d_ghz_circuit` when `add_dd_and_align_right` is True.
 
     The transformations for a circuit include:
+
     1. Adding a measurement to all qubits with a key 'm'.
        It serves as a stopping gate for the DD operation.
     2. Aligning the circuit and merging single-qubit gates.
@@ -81,7 +91,14 @@ def _transform_circuit(circuit: cirq.Circuit) -> cirq.Circuit:
     circuit = cirq.stratified_circuit(
         circuit[::-1], categories=[lambda op: cirq.num_qubits(op) == k for k in (1, 2)]
     )[::-1]
-    circuit = cirq.add_dynamical_decoupling(circuit)
+    if _CIRCUIT_DD_SUPPORTED:
+        circuit = _ADD_DD_FUNC(circuit)
+    else:
+        warnings.warn(
+            "Skipping Dynamical Decoupling: This feature requires Cirq 1.4 or later. "
+            "Please upgrade your Cirq version to enable noise mitigation.",
+            UserWarning
+        )
     circuit = cirq.Circuit(circuit[:-1])
     return circuit
 
