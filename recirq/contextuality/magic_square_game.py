@@ -49,9 +49,7 @@ class ContextualityResult:
         alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
         bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
 
-        alice_choices[0, :, :, 0] = self.alice_measurements[
-            0, :, :, 1
-        ]  # TODO: is this swap of 1<->0 a bug?
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]
         alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]
         alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]
         alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]
@@ -76,9 +74,7 @@ class ContextualityResult:
         alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
         bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
 
-        alice_choices[0, :, :, 0] = self.alice_measurements[
-            0, :, :, 1
-        ]  # TODO: is this swap of 1<->0 a bug?
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]
         alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]
         alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]
         alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]
@@ -111,9 +107,7 @@ class ContextualityResult:
         alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
         bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
 
-        alice_choices[0, :, :, 0] = self.alice_measurements[
-            0, :, :, 1
-        ]  # TODO: is this swap of 1<->0 a bug?
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]
         alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]
         alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]
         alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]
@@ -188,9 +182,8 @@ class ContextualityResult:
         print(f"{repetitions=}")
         for row in range(3):
             for col in range(3):
-                number_of_matches = (
-                    0  # if multiplication rules are not respected, there is no match
-                )
+                # if multiplication rules are not respected, there is no match
+                number_of_matches = 0
                 for rep in range(repetitions):
                     alice_triad = alice_choices[row, col, rep, :]
                     bob_triad = bob_choices[row, col, rep, :]
@@ -201,7 +194,7 @@ class ContextualityResult:
                 print("Times they both multi[ly correctly to +-1 =", number_of_matches)
                 win_matrix[row, col] = (
                     win_matrix[row, col] / number_of_matches
-                )  # TODO: uncomment once done with testing
+                )
         return win_matrix
 
     def get_multiply_matrix(self, game, seed: int | None = None) -> np.ndarray:
