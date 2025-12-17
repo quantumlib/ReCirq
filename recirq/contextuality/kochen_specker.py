@@ -24,9 +24,9 @@ import cirq
 import matplotlib.pyplot as plt
 import numpy as np
 
-type Axis = Literal["row", "col"]
-type QndStrategy = Literal["map_all_paulis_to_ancilla", "map_2q_paulis_to_ancilla"]
-type CircuitStyle = Literal["flat", "jt", "jt_pauli", "jt_pauli_pivot"]
+Axis = Literal["row", "col"]
+QndStrategy = Literal["map_all_paulis_to_ancilla", "map_2q_paulis_to_ancilla"]
+CircuitStyle = Literal["flat", "jt", "jt_pauli", "jt_pauli_pivot"]
 
 
 _CIRCUIT_DD_SUPPORTED = hasattr(cirq, "add_dynamical_decoupling")
