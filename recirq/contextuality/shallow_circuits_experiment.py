@@ -103,7 +103,7 @@ def hlf_circuit_biased_dropout(
     s_dropout_fraction: float = 0.5,
     seed: int | None = None,
 ) -> HLFCircuit:
-    """Generates a random Clifford circuit on a grid with dropout fraction.
+    """Generates a shallow Clifford circuit on a grid with a random dropout fraction for S and CZ gates.
 
     Args:
         n_qubits: The number of qubits for the circuit.
