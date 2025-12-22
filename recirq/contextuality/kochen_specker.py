@@ -39,7 +39,18 @@ else:
 
 @attrs.frozen
 class MagicSquare:
-    """A Mermin-Peres magic square."""
+    """Represents a MagicSquare.
+
+    A MagicSquare is a 3x3 grid of two-qubit Pauli operators used to demonstrate quantum
+    contextuality, specifically the Kochen-Specker theorem.
+
+    The operators in each row and each column mutually commute.
+    The product of operators in each row is +I.
+    The product of operators in each column is -I.
+
+    Attributes:
+        paulis: A 3x3 sequence of strings representing the Pauli operators in the square.
+    """
 
     paulis: Sequence[Sequence[str]]
 
@@ -102,9 +113,14 @@ class MagicSquare:
         qnd_strategy: QndStrategy = "map_all_paulis_to_ancilla",
         virtual_z_half_turns: float = 0.0,
     ) -> MagicSquareExperiment:
-        """Builds a Kochen-Specker experiment.
+        """Builds a Kochen-Specker experiment, which measures state-independent contextuality.
+
+        See https://arxiv.org/pdf/2512.02284 for more details.
 
         Args:
+            q0: First data qubit.
+            q1: Second data qubit.
+            anc: Ancilla qubit.
             num_contexts: Number of rows+cols measured out of the 6
                 possible row/col.
             seed: Seed for random number generator. Specifying this will give
@@ -114,6 +130,9 @@ class MagicSquare:
                 amount of half turns around the Z axis to apply on the ancilla during the mapping of
                 the paulis from the data qubits (q0, q1). This virtualZ is applied before the last
                 Hadamard during the mapping of the Pauli to the ancilla.
+
+        Returns:
+            A `MagicSquareExperiment` object containing the constructed circuit and context info.
         """
 
         axes: list[Axis] = ["col", "row"]
@@ -178,23 +197,64 @@ def _copy_circuit(circuit: cirq.FrozenCircuit) -> cirq.FrozenCircuit:
 
 @attrs.frozen
 class MagicSquareExperiment:
+    """An experiment to test for contextuality using a magic square.
+
+    Attributes:
+        square: The `MagicSquare` instance used for the experiment.
+        circuit: The `cirq.FrozenCircuit` that will be run. This circuit
+            is composed of measurements for a sequence of randomly chosen
+            contexts (rows or columns of the magic square).
+        contexts: A dictionary mapping each possible context (row or column) to
+            the sequence of `PauliKey`s that identify the measurements for that
+            context.
+    """
+
     square: MagicSquare
     circuit: cirq.FrozenCircuit
     contexts: dict[tuple[Axis, int], Sequence[PauliKey]]
 
     def run(self, sampler: cirq.Sampler, repetitions: int = 1000) -> MagicSquareResult:
+        """Runs the experiment circuit on a sampler.
+
+        Args:
+            sampler: The `cirq.Sampler` to run the experiment on.
+            repetitions: The number of times to repeat the circuit.
+
+        Returns:
+            A `MagicSquareResult` object containing the results of the experiment.
+        """
         result = sampler.run(self.circuit, repetitions=repetitions)
         return MagicSquareResult(self, result)
 
 
 @attrs.frozen
 class PauliKey:
+    """A key to identify a specific Pauli measurement in a circuit.
+
+    Attributes:
+        key: The measurement key string for the Pauli measurement.
+        slice: A slice or list of indices to select specific measurement instances
+            if the key appears multiple times in a circuit for a given context.
+            Defaults to `slice(None)` to select all instances.
+    """
+
     key: str
     slice: list[int] | slice = slice(None)
 
 
 @attrs.frozen(slots=False)
 class MagicSquareResult:
+    """The results of a `MagicSquareExperiment`.
+
+    This class holds the `cirq.Result` from running the experiment and provides
+    methods to analyze the results, such as estimating the Kochen-Specker value (chi)
+    and other statistical properties.
+
+    Attributes:
+        expt: The `MagicSquareExperiment` that was run.
+        result: The `cirq.Result` object from the sampler.
+    """
+
     expt: MagicSquareExperiment
     result: cirq.Result
 
@@ -790,7 +850,7 @@ def estimate_parities(
         records: The value for each key is a 2-D array of booleans, with the first index running
             over circuit repetitions, the second index running over instances of the measurement
             key in the circuit.
-        contexts: # TODO
+        contexts: Mapping contexts to their corresponding pauli keys.
 
     Returns:
         context_averages: A dictionary mapping a context (axis, idx) to a tuple
