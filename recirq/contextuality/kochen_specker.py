@@ -62,13 +62,14 @@ class MagicSquare:
         virtual_z_half_turns: float = 0.0,
         add_ancilla_to_measure_key: bool = False,
     ) -> cirq.FrozenCircuit:
-        """Circuit to measure the idx'th col or row of this magic square.
+        """Circuit to measure a specific context (row or col) of this magic square.
 
         Args:
             context: Tuple of (Axis, idx). Axis corresponds to either a row or a column, while idx
-                determines which row or col to measure from the Mermin-Peres square.
+                is an integer that determines which row or col to measure from the Mermin-Peres
+                square.
             trios: Sequence of three-element tuples of the form (q0, q1, ancilla).
-            qnd_strategy: Whether to use ancillae for measuring single-qubit paulis.
+            qnd_strategy: Whether to use ancilla qubit for measuring single-qubit paulis.
             virtual_z_half_turns: This applied only for Paulis mapped to an ancilla. If not zero,
                 amount of half turns around the Z axis to apply on the ancilla during the mapping of
                 the paulis from the data qubits (q0, q1). This virtualZ is applied before the last
@@ -153,15 +154,14 @@ class MagicSquare:
             for idx in indices
         }
 
-        def pauli_key(row: int, col: int, axis: Axis) -> PauliKey:
-            return PauliKey(f"{self.paulis[row][col]}_{axis}")
-
         contexts: dict[tuple[Axis, int], Sequence[PauliKey]] = {
             **{
-                ("row", r): [pauli_key(r, c, "row") for c in range(3)] for r in range(3)
+                ("row", r): [self.pauli_key(r, c, "row") for c in range(3)]
+                for r in range(3)
             },
             **{
-                ("col", c): [pauli_key(r, c, "col") for r in range(3)] for c in range(3)
+                ("col", c): [self.pauli_key(r, c, "col") for r in range(3)]
+                for c in range(3)
             },
         }
 
@@ -172,6 +172,9 @@ class MagicSquare:
             ks_circuits=ks_circuits,
         )
         return MagicSquareExperiment(self, circuit, contexts)
+
+    def pauli_key(self, row: int, col: int, axis: Axis) -> PauliKey:
+        return PauliKey(f"{self.paulis[row][col]}_{axis}")
 
 
 EASY_SQUARE = MagicSquare(
@@ -670,10 +673,11 @@ def _generate_qnd_pauli_circuit(
     measure_key: str | None,
     virtual_z_half_turns: float = 0.0,
 ) -> cirq.FrozenCircuit:
-    """Make a circuit to perform QND measurement of the specified Pauli.
+    """Make a circuit to perform a quantum non-demolition (QND) measurement of the specified Pauli.
 
     If len(pauli)==1, we do not map the qubit to an ancilla, and just perform a QND measurement on
-    the qubit itself.
+    the qubit itself. A QND measurement allows you to observe a specific property (an observable) of
+    a quantum system repeatedly without disturbing.
 
     Args:
         q0: Data qubit 0
@@ -753,6 +757,22 @@ def _generate_qnd_pauli_circuit_with_ancillas(
 def measure_reset_circuit(
     q0: cirq.Qid, q1: cirq.Qid, anc: cirq.Qid, measure_key: str | None
 ) -> cirq.FrozenCircuit:
+    """Creates a circuit to measure and reset an ancilla qubit.
+
+    This function generates a circuit that performs a measurement on the ancilla
+    qubit (`anc`) and then resets it. Identity gates are applied to the data
+    qubits (`q0` and `q1`) to ensure they are part of the same circuit moment.
+    Dynamical decoupling is optionally applied if supported by the Cirq version.
+
+    Args:
+        q0: First data qubit.
+        q1: Second data qubit.
+        anc: The ancilla qubit to be measured and reset.
+        measure_key: The key to use for the measurement gate.
+
+    Returns:
+        A `cirq.FrozenCircuit` containing the measurement and reset operations.
+    """
     m = cirq.M(anc, key=measure_key)
     circuit = cirq.FrozenCircuit.from_moments(
         [
