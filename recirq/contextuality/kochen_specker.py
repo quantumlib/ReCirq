@@ -177,6 +177,9 @@ class MagicSquare:
         return PauliKey(f"{self.paulis[row][col]}_{axis}")
 
 
+# MagicSquare instances representing the standard magic squares found in the literature. We
+# label them as EASY and HARD given that the latter involves 2-qubit Paulis on all entries,
+# so needs more gates.
 EASY_SQUARE = MagicSquare(
     [["1Z", "Z1", "ZZ"], ["X1", "1X", "XX"], ["-XZ", "-ZX", "YY"]]
 )
