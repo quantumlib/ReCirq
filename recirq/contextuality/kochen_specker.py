@@ -72,7 +72,7 @@ class MagicSquare:
             qnd_strategy: Whether to use ancilla qubit for measuring single-qubit paulis.
             virtual_z_half_turns: This applied only for Paulis mapped to an ancilla. If not zero,
                 amount of half turns around the Z axis to apply on the ancilla during the mapping of
-                the paulis from the data qubits (q0, q1). This virtualZ is applied before the last
+                the paulis from the data qubits (q0, q1). This virtual Z is applied before the last
                 Hadamard during the mapping of the Pauli to the ancilla.
             add_ancilla_to_measure_key: Whether to include the ancilla qubit name in the measure
                 key or not.
@@ -129,7 +129,7 @@ class MagicSquare:
             qnd_strategy: Whether to map all paulis to an ancilla, or only 2q paulis.
             virtual_z_half_turns: This applied only for Paulis mapped to an ancilla. If not zero,
                 amount of half turns around the Z axis to apply on the ancilla during the mapping of
-                the paulis from the data qubits (q0, q1). This virtualZ is applied before the last
+                the paulis from the data qubits (q0, q1). This virtual Z is applied before the last
                 Hadamard during the mapping of the Pauli to the ancilla.
 
         Returns:
@@ -335,10 +335,6 @@ class MagicSquareResult:
         outcomes to have a probability of coincidence P=1, while for incompatible measurements
         we expect the probability of coincidence P=0.5 (since there are measurements in between
         that do not commute with such Pauli, so its outcome gets scrambled).
-
-        Args:
-            circuit: a cirq.FrozenCircuit. Need to pass a circuit without using the jump table
-                (flatten=True).
 
         Returns:
             - pauli_to_compatible_coincidences: dict
@@ -676,9 +672,9 @@ def _generate_qnd_pauli_circuit(
         anc: Ancilla qubit
         paulis: The Paulis to measure on each qubit.
         measure_key: A key to associate to the measurement.
-        virtual_z_half_turns: This applied only for Paulis mapped to an ancilla. If not zero,
+        virtual_z_half_turns: This applies only for Paulis mapped to an ancilla. If not zero,
             amount of half turns around the Z axis to apply on the ancilla during the mapping of
-            the paulis from the data qubits (q0, q1). This virtualZ is applied twice, once before
+            the paulis from the data qubits (q0, q1). This virtual Z is applied twice, once before
             each Hadamard during the mapping of the Pauli to the ancilla.
 
     Returns:
@@ -730,7 +726,7 @@ def _generate_qnd_pauli_circuit_with_ancillas(
         measure_key: A key to associate to the measurement.
         virtual_z_half_turns: This applied only for Paulis mapped to an ancilla. If not zero,
             amount of half turns around the Z axis to apply on the ancilla during the mapping of
-            the paulis from the data qubits (q0, q1). This virtualZ is applied twice, once before
+            the paulis from the data qubits (q0, q1). This virtual Z is applied twice, once before
             each Hadamard during the mapping of the Pauli to the ancilla.
     """
     # Get pre- and post- rotations for the pauli to measure.
@@ -804,7 +800,7 @@ def generate_qnd_pauli_circuit(
         qnd_strategy: Whether to map all PauliStrings to the ancilla or only map two-qubit Paulis.
         virtual_z_half_turns: This applied only for Paulis mapped to an ancilla. If not zero,
             amount of half turns around the Z axis to apply on the ancilla during the mapping of
-            the paulis from the data qubits (q0, q1). This virtualZ is applied twice, once before
+            the paulis from the data qubits (q0, q1). This virtual Z is applied twice, once before
             each Hadamard during the mapping of the Pauli to the ancilla.
     """
     # Split into signed single-qubit paulis. Include the sign on an X or Y term if possible.
