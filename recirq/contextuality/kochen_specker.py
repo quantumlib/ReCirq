@@ -168,9 +168,8 @@ class MagicSquare:
         ks_circuits = [
             context_to_circuit[axis, idx] for axis, idx in zip(random_axes, random_idx)
         ]
-        circuit = transform_circuit_for_jump_table(
-            ks_circuits=ks_circuits,
-        )
+        circuit = cirq.FrozenCircuit(ks_circuits)
+
         return MagicSquareExperiment(self, circuit, contexts)
 
     def pauli_key(self, row: int, col: int, axis: Axis) -> PauliKey:
@@ -184,17 +183,6 @@ EASY_SQUARE = MagicSquare(
     [["1Z", "Z1", "ZZ"], ["X1", "1X", "XX"], ["-XZ", "-ZX", "YY"]]
 )
 HARD_SQUARE = MagicSquare([["ZX", "YY", "XZ"], ["XY", "ZZ", "YX"], ["YZ", "XX", "ZY"]])
-
-
-def transform_circuit_for_jump_table(
-    ks_circuits: list[cirq.FrozenCircuit],
-) -> cirq.FrozenCircuit:
-    """Transform the circuit.
-
-    Args:
-        ks_circuits: Sequence of circuits to measure a sequence of contexts.
-    """
-    return cirq.FrozenCircuit(ks_circuits)
 
 
 def _copy_circuit(circuit: cirq.FrozenCircuit) -> cirq.FrozenCircuit:
