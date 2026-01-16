@@ -92,7 +92,7 @@ jobs:
           # OMP_NUM_THREADS: PySCF's poor OpenMP performance slows down QCQMC tests.
           # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations.
           export OMP_NUM_THREADS=1
-          RECIRQ_IMPORT_FAILSAFE=y pytest -v --skipslow
+          RECIRQ_IMPORT_FAILSAFE=y pytest -n logical -v --skipslow
 
   pylint:
     name: Run Python linters
