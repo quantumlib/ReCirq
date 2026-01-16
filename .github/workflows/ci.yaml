@@ -161,6 +161,4 @@ jobs:
           sudo apt-get install --no-install-recommends -y yamllint
 
       - name: Lint the YAML files
-        run: |
-          find . '(' -name '*.yaml' -o -name '*.yml' ')' -print0 | \
-            xargs -0 yamllint -f github
+        run: yamllint -f github .
