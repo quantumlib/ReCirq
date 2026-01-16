@@ -58,7 +58,7 @@ env:
 jobs:
   pytest:
     name: Run Python tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04-x64-8-core
     timeout-minutes: 15
     strategy:
       matrix:
