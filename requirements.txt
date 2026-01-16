@@ -7,4 +7,4 @@ sphinx
 ipython
 black
 pytest
-pytest-xdist[psutil]
+pytest-xdist
