@@ -144,3 +144,23 @@ jobs:
       - name: Check notebook formatting
         run: |
           dev_tools/nbformat
+
+  yaml-lint:
+    name: YAML lint checks
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    steps:
+      - name: Check out a copy of the git repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y yamllint
+
+      - name: Lint the YAML files
+        run: |
+          find . '(' -name '*.yaml' -o -name '*.yml' ')' -print0 | \
+            xargs -0 yamllint -f github
