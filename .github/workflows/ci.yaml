@@ -58,6 +58,7 @@ env:
 jobs:
   pytest:
     name: Run Python tests
+    if: github.repository_owner == 'quantumlib'
     runs-on: ubuntu-22.04-x64-8-core
     timeout-minutes: 15
     strategy:
@@ -96,6 +97,7 @@ jobs:
 
   pylint:
     name: Run Python linters
+    if: github.repository_owner == 'quantumlib'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -123,6 +125,7 @@ jobs:
 
   nbformat:
     name: Check notebook formatting
+    if: github.repository_owner == 'quantumlib'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -147,6 +150,7 @@ jobs:
 
   yaml-lint:
     name: YAML lint checks
+    if: github.repository_owner == 'quantumlib'
     runs-on: ubuntu-slim
     timeout-minutes: 15
     steps:
