@@ -78,6 +78,7 @@ jobs:
           publish_results: true
 
       - name: Upload results to code-scanning dashboard
+        # yamllint disable-line rule:line-length
         uses: github/codeql-action/upload-sarif@f6a16bef8e5c39e398e4da16862d381f76824ac6 # codeql-bundle-v2.23.9
         with:
           sarif_file: scorecard-results.sarif
