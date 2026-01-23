@@ -12,13 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Runs the MagicSquareGame."""
+"""The magic square game is a quantum parity challenge where two players, Alice and Bob, must fill
+rows and columns of a 3x3 grid with values of +1 or -1. Alice is assigned a random
+row and Bob a random column, and they win if their shared cell matches while Alice’s row product
+is +1 and Bob’s column product is -1. While no classical strategy can guarantee a win every
+time, players using shared entangled quantum states can win with 100% certainty by exploiting
+non-local correlations. The game serves as a "proof" of quantum contextuality, demonstrating that
+the outcome of a measurement depends on the other measurements performed alongside it (its context).
+In a classical world, each cell in the square would have a fixed, pre-existing value regardless
+of whether it's being measured as part of a row or a column. However, the Mermin-Peres game
+proves that these values cannot exist independently of their measurement context,
+as the algebraic requirements for the rows and columns are mathematically impossible to satisfy
+simultaneously with fixed values.
+"""
 
 import dataclasses
 from typing import Any, Literal
 
 import cirq
 import numpy as np
+
+type GameType = Literal[
+    "guess_3rd",
+    "measure_3rd_classical_multiplication",
+    "measure_3rd_quantum_multiplication",
+]
 
 
 @dataclasses.dataclass
@@ -65,7 +83,7 @@ class ContextualityResult:
         self,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Generate choices from Alice and Bob's measurements by measuring
-        two one-body obserbables and making a classical multiplication to get the result
+        two one-body observables and making a classical multiplication to get the result
 
         Returns:
             Alice and Bob's choices in the game.
@@ -124,23 +142,17 @@ class ContextualityResult:
 
     def generate_choices(
         self,
-        game: Literal[
-            "guess_3rd",
-            "measure_3rd_classical_multiplication",
-            "measure_3rd_quantum_multiplication",
-        ],
-        seed: int | None = None,
+        game: GameType,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Generate choices from Alice and Bob's measurements.
 
         Args:
-            seed: A seed for the random number generator.
             game:
                 guess_3rd means making two measurements and infering the third bit
-                measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+                "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
                 get three bits out of them by mutiplying two of them toghether.
                 This corresponds to measure A and B to compute A*B.
-                measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+                "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
 
         Returns:
@@ -157,26 +169,23 @@ class ContextualityResult:
         if game == "measure_3rd_quantum_multiplication":
             return self._generate_choices_from_rules_measure_3rd_quantum_multiplication()
 
-    def get_win_matrix(self, game, seed: int | None = None) -> np.ndarray:
-        """Find the fraction of the time that
-        Alice and Bob "agree" (in the intersection)
-        given that
+    def get_win_matrix(self, game: GameType) -> np.ndarray:
+        """Find the fraction of the time that Alice and Bob "agree" (in the intersection) given that
         they "multiply correctly" (alice to -1 and bob to +1).
 
         Args:
-            seed: The seed for the random number generator.
             game:
                 guess_3rd means making two measurements and infering the third bit
-                measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+                "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
                 get three bits out of them by mutiplying two of them toghether.
                 This corresponds to measure A and B to compute A*B.
-                measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+                "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
 
         Returns:
             The fraction of the time that they "agree" given that they "multiply correctly".
         """
-        alice_choices, bob_choices = self.generate_choices(game, seed)
+        alice_choices, bob_choices = self.generate_choices(game)
         win_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
@@ -191,30 +200,29 @@ class ContextualityResult:
                         number_of_matches += 1
                         if alice_triad[col] == bob_triad[row]:
                             win_matrix[row, col] += 1
-                print("Times they both multi[ly correctly to +-1 =", number_of_matches)
+                print("Times they both multiply correctly to +-1 =", number_of_matches)
                 win_matrix[row, col] = (
                     win_matrix[row, col] / number_of_matches
                 )
         return win_matrix
 
-    def get_multiply_matrix(self, game, seed: int | None = None) -> np.ndarray:
+    def get_multiply_matrix(self, game: GameType) -> np.ndarray:
         """Find the fraction of the time that Alice and Bob
         "multiply correctly" (alice to -1 and bob to +1).
 
         Args:
-            seed: The seed for the random number generator.
             game:
                 guess_3rd means making two measurements and infering the third bit
-                measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+                "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
                 get three bits out of them by mutiplying two of them toghether.
                 This corresponds to measure A and B to compute A*B.
-                measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+                "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
 
         Returns:
             The fraction of the time that they "multiply correctly".
         """
-        alice_choices, bob_choices = self.generate_choices(game, seed)
+        alice_choices, bob_choices = self.generate_choices(game)
         win_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
@@ -229,24 +237,22 @@ class ContextualityResult:
                 win_matrix[row, col] = win_matrix[row, col] / repetitions
         return win_matrix
 
-    def get_agree_matrix(self, game, seed: int | None = None) -> np.ndarray:
-        """Find the fraction of the time that Alice and Bob
-        Alice and Bob "agree"(in the intersection) .
+    def get_agree_matrix(self, game: GameType) -> np.ndarray:
+        """Fraction of the time that Alice and Bob Alice and Bob "agree" (in the intersection).
 
         Args:
-            seed: The seed for the random number generator.
             game:
-                guess_3rd means making two measurements and infering the third bit
-                measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+                "guess_3rd": making two measurements and infering the third bit
+                "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
                 get three bits out of them by mutiplying two of them toghether.
                 This corresponds to measure A and B to compute A*B.
-                measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+                "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
 
         Returns:
             The fraction of the time that they "agree".
         """
-        alice_choices, bob_choices = self.generate_choices(game, seed)
+        alice_choices, bob_choices = self.generate_choices(game)
         win_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
@@ -260,26 +266,25 @@ class ContextualityResult:
                 win_matrix[row, col] = win_matrix[row, col] / repetitions
         return win_matrix
 
-    def get_agree_and_multiply_matrix(self, game, seed: int | None = None) -> np.ndarray:
+    def get_agree_and_multiply_matrix(self, game: GameType) -> np.ndarray:
         """Find the fraction of the time that Alice and Bob
         Alice and Bob "agree" (in the intersection)
         and
         they "multiply correctly" (alice to -1 and bob to +1).
 
         Args:
-            seed: The seed for the random number generator.
             game:
-                guess_3rd means making two measurements and infering the third bit
-                measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+                "guess_3rd": making two measurements and infering the third bit
+                "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
                 get three bits out of them by mutiplying two of them toghether.
                 This corresponds to measure A and B to compute A*B.
-                measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+                "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
 
         Returns:
             The fraction of the time that they "multiply correctly" AND "agree".
         """
-        alice_choices, bob_choices = self.generate_choices(game, seed)
+        alice_choices, bob_choices = self.generate_choices(game)
         win_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
@@ -302,9 +307,7 @@ def run_contextuality_experiment(
     sampler: cirq.Sampler,
     alice_qubits: list[cirq.GridQubit],
     bob_qubits: list[cirq.GridQubit],
-    game: Literal[
-        "guess_3rd", "measure_3rd_classical_multiplication", "measure_3rd_quantum_multiplication"
-    ],
+    game: GameType,
     sub_case: Literal["square_1", "square_2", "only_two_qubits"],
     repetitions: int = 10_000,
     add_dd: bool = True,
@@ -322,11 +325,11 @@ def run_contextuality_experiment(
         add_dd: Whether to add dynamical decoupling.
         dd_scheme: The dynamical decoupling sequence to use if doing DD.
         game:
-                guess_3rd means making two measurements and infering the third bit
-                measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+                "guess_3rd": making two measurements and infering the third bit
+                "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
                 get three bits out of them by mutiplying two of them toghether.
                 This corresponds to measure A and B to compute A*B.
-                measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+                "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
         sub_case:
             square1 is the wikipedia square: https://en.wikipedia.org/wiki/Quantum_pseudo-telepathy
@@ -357,10 +360,6 @@ def run_contextuality_experiment(
     alice_measurements = np.zeros((3, 3, repetitions, 3), dtype=bool)
     bob_measurements = np.zeros((3, 3, repetitions, 3), dtype=bool)
     idx = 0
-
-    # Useful for classical multiplication
-    def multiply_bool(bool_0: list[bool] | Any, bool_1: list[bool] | Any):
-        return [el0 == el1 for el0, el1 in zip(bool_0, bool_1)]
 
     for row in range(3):
         for col in range(3):
@@ -394,6 +393,11 @@ def run_contextuality_experiment(
             idx += 1
 
     return ContextualityResult(alice_measurements, bob_measurements)
+
+
+def multiply_bool(bool_0: list[bool], bool_1: list[bool]) -> list[bool]:
+    """Perform boolean multiplication. Useful for "measure_3rd_classical_multiplication".""""
+    return [el0 == el1 for el0, el1 in zip(bool_0, bool_1)]
 
 
 def bell_pair_prep_circuit(q0: cirq.GridQubit, q1: cirq.GridQubit) -> cirq.Circuit:
@@ -431,9 +435,7 @@ def construct_measure_circuit(
     bob_qubits: list[cirq.GridQubit],
     mermin_row: int,
     mermin_col: int,
-    game: Literal[
-        "guess_3rd", "measure_3rd_classical_multiplication", "measure_3rd_quantum_multiplication"
-    ],
+    game: GameType,
     sub_case: Literal["square_1", "square_2", "only_two_qubits"],
 ) -> cirq.Circuit:
     """Construct a circuit to implement the measurement.
@@ -451,11 +453,11 @@ def construct_measure_circuit(
         mermin_row: The row of the Mermin-Peres square to measure.
         mermin_col: The column of the Mermin-Peres square to measure.
         game:
-            guess_3rd means making two measurements and infering the third bit
-            measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+            "guess_3rd": making two measurements and infering the third bit
+            "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
             get three bits out of them by mutiplying two of them toghether.
             This corresponds to measure A and B to compute A*B.
-            measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+            "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
             Use a two qubit interaction to directly measure A*B.
         sub_case:
             square1 is the wikipedia square: https://en.wikipedia.org/wiki/Quantum_pseudo-telepathy
@@ -469,7 +471,6 @@ def construct_measure_circuit(
     q = alice_qubits[1:3]  # data qubits
     m = (alice_qubits[0], alice_qubits[3])  # measure qubits
     if mermin_row == 0:
-        # print("print me ")
         if sub_case == "square_1":
             alice_circuit = cirq.Circuit(
                 # map datas into two measures to measure I ⊗ Z  and Z ⊗ I on them
@@ -702,9 +703,7 @@ def construct_contextuality_circuit(
     mermin_row: int,
     mermin_col: int,
     add_dd: bool,
-    game: Literal[
-        "guess_3rd", "measure_3rd_classical_multiplication", "measure_3rd_quantum_multiplication"
-    ],
+    game: GameType,
     sub_case: Literal["square_1", "square_2", "only_two_qubits"],
     dd_scheme: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
 ) -> cirq.Circuit:
@@ -725,11 +724,11 @@ def construct_contextuality_circuit(
         add_dd: Whether to add dynamical decoupling.
         dd_scheme: The dynamical decoupling sequence to use if doing DD.
         game:
-            guess_3rd means making two measurements and infering the third bit
-            measure_3rd_classical_multiplication: make 4 measurements for Alice and 4 for Bob.
+            "guess_3rd": making two measurements and infering the third bit
+            "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
             get three bits out of them by mutiplying two of them toghether.
             This corresponds to measure A and B to compute A*B.
-            measure_3rd_quantum_multiplication: make 3 measurements for Alice and 3 for Bob.
+            "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
             Use a two qubit interaction to directly measure A*B.
 
     Returns:
