@@ -64,19 +64,24 @@ class ContextualityResult:
             Alice and Bob's choices in the game.
         """
         repetitions = self.alice_measurements.shape[2]
+
+        # the following two arrays have indices signifying
+        # [query_row, query_column, repetition, index_of_output]
         alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
         bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
 
-        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]
-        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]
-        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]
-        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]
-        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]
-        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]
-        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]
+        # the following manipulations implment the Mermin-Peres square from the
+        # docstring of `construct_contextuality_circuit`
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1] # I ⊗ Z
+        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0] # Z ⊗ I
+        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2] # X ⊗ I | I ⊗ X
+        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2] # -X ⊗ Z |-Z ⊗ X
+        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1] # I ⊗ Z
+        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0] # X ⊗ I
+        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2] # Z ⊗ I | I ⊗ X
 
-        alice_choices[:, :, :, 2] = np.sum(alice_choices, axis=3) % 2
-        bob_choices[:, :, :, 2] = 1 - (np.sum(bob_choices, axis=3) % 2)
+        alice_choices[:, :, :, 2] = np.sum(alice_choices, axis=3) % 2 # infer from rule
+        bob_choices[:, :, :, 2] = 1 - (np.sum(bob_choices, axis=3) % 2) # infer from rule
         return alice_choices, bob_choices
 
     def _generate_choices_from_rules_measure_3rd_classical_multiplication(
@@ -156,7 +161,8 @@ class ContextualityResult:
                 Use a two qubit interaction to directly measure A*B.
 
         Returns:
-            Alice and Bob's choices in the game.
+            Alice and Bob's choices in the game. The two numpy arrays have indices
+            signifying [query_row, query_column, repetition, index_of_output].
 
         Raises:
             NotImplementedError: If Alice and Bob measure unequal numbers of Paulis.
