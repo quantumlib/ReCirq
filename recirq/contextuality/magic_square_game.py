@@ -72,16 +72,16 @@ class ContextualityResult:
 
         # the following manipulations implment the Mermin-Peres square from the
         # docstring of `construct_contextuality_circuit`
-        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1] # I ⊗ Z
-        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0] # Z ⊗ I
-        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2] # X ⊗ I | I ⊗ X
-        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2] # -X ⊗ Z |-Z ⊗ X
-        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1] # I ⊗ Z
-        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0] # X ⊗ I
-        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2] # Z ⊗ I | I ⊗ X
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]  # I ⊗ Z
+        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]  # Z ⊗ I
+        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]  # X ⊗ I | I ⊗ X
+        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]  # -X ⊗ Z |-Z ⊗ X
+        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]  # I ⊗ Z
+        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]  # X ⊗ I
+        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]  # Z ⊗ I | I ⊗ X
 
-        alice_choices[:, :, :, 2] = np.sum(alice_choices, axis=3) % 2 # infer from rule
-        bob_choices[:, :, :, 2] = 1 - (np.sum(bob_choices, axis=3) % 2) # infer from rule
+        alice_choices[:, :, :, 2] = np.sum(alice_choices, axis=3) % 2  # infer from rule
+        bob_choices[:, :, :, 2] = 1 - (np.sum(bob_choices, axis=3) % 2)  # infer from rule
         return alice_choices, bob_choices
 
     def _generate_choices_from_rules_measure_3rd_classical_multiplication(
