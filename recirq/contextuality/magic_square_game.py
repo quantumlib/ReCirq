@@ -33,7 +33,7 @@ import cirq
 import numpy as np
 
 type GameType = Literal[
-    "guess_3rd",
+    "infer_3rd",
     "measure_3rd_classical_multiplication",
     "measure_3rd_quantum_multiplication",
 ]
@@ -58,7 +58,7 @@ class ContextualityResult:
     def _select_choices_from_second_data(self) -> tuple[np.ndarray, np.ndarray]:
         return self.alice_measurements, self.bob_measurements
 
-    def _generate_choices_from_rules_guess_3rd(self) -> tuple[np.ndarray, np.ndarray]:
+    def _generate_choices_from_rules_infer_3rd(self) -> tuple[np.ndarray, np.ndarray]:
         """Generate choices from Alice and Bob's measurements by inferring the third number from the
         first two.
 
@@ -161,9 +161,9 @@ class ContextualityResult:
 
         Args:
             game:
-                guess_3rd means making two measurements and infering the third bit
+                infer_3rd means making two measurements and inferring the third bit
                 "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-                get three bits out of them by mutiplying two of them toghether.
+                get three bits out of them by multiplying two of them together.
                 This corresponds to measure A and B to compute A*B.
                 "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
@@ -176,8 +176,8 @@ class ContextualityResult:
             NotImplementedError: If Alice and Bob measure unequal numbers of Paulis.
         """
         # return self._select_choices_from_second_data()
-        if game == "guess_3rd":
-            return self._generate_choices_from_rules_guess_3rd()
+        if game == "infer_3rd":
+            return self._generate_choices_from_rules_infer_3rd()
         if game == "measure_3rd_classical_multiplication":
             return self._generate_choices_from_rules_measure_3rd_classical_multiplication()
         if game == "measure_3rd_quantum_multiplication":
@@ -189,9 +189,9 @@ class ContextualityResult:
 
         Args:
             game:
-                guess_3rd means making two measurements and infering the third bit
+                infer_3rd means making two measurements and inferring the third bit
                 "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-                get three bits out of them by mutiplying two of them toghether.
+                get three bits out of them by multiplying two of them together.
                 This corresponds to measure A and B to compute A*B.
                 "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
@@ -226,9 +226,9 @@ class ContextualityResult:
 
         Args:
             game:
-                guess_3rd means making two measurements and infering the third bit
+                infer_3rd means making two measurements and inferring the third bit
                 "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-                get three bits out of them by mutiplying two of them toghether.
+                get three bits out of them by multiplying two of them together.
                 This corresponds to measure A and B to compute A*B.
                 "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
@@ -256,9 +256,9 @@ class ContextualityResult:
 
         Args:
             game:
-                "guess_3rd": making two measurements and infering the third bit
+                "infer_3rd": making two measurements and inferring the third bit
                 "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-                get three bits out of them by mutiplying two of them toghether.
+                get three bits out of them by multiplying two of them together.
                 This corresponds to measure A and B to compute A*B.
                 "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
@@ -288,9 +288,9 @@ class ContextualityResult:
 
         Args:
             game:
-                "guess_3rd": making two measurements and infering the third bit
+                "infer_3rd": making two measurements and inferring the third bit
                 "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-                get three bits out of them by mutiplying two of them toghether.
+                get three bits out of them by multiplying two of them together.
                 This corresponds to measure A and B to compute A*B.
                 "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
@@ -339,16 +339,16 @@ def run_contextuality_experiment(
         add_dd: Whether to add dynamical decoupling.
         dd_scheme: The dynamical decoupling sequence to use if doing DD.
         game:
-                "guess_3rd": making two measurements and infering the third bit
+                "infer_3rd": making two measurements and inferring the third bit
                 "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-                get three bits out of them by mutiplying two of them toghether.
+                get three bits out of them by multiplying two of them together.
                 This corresponds to measure A and B to compute A*B.
                 "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
                 Use a two qubit interaction to directly measure A*B.
         sub_case:
             square1 is the wikipedia square: https://en.wikipedia.org/wiki/Quantum_pseudo-telepathy
             square2 is not implemented, all blocks have 2body observables
-            only_two_qubits means with 4q total (2 per player). Can only do guess_3rd
+            only_two_qubits means with 4q total (2 per player). Can only do infer_3rd
 
     Returns:
         A ContextualityResult object containing the experiment results.
@@ -467,16 +467,16 @@ def construct_measure_circuit(
         mermin_row: The row of the Mermin-Peres square to measure.
         mermin_col: The column of the Mermin-Peres square to measure.
         game:
-            "guess_3rd": making two measurements and infering the third bit
+            "infer_3rd": making two measurements and inferring the third bit
             "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-            get three bits out of them by mutiplying two of them toghether.
+            get three bits out of them by multiplying two of them together.
             This corresponds to measure A and B to compute A*B.
             "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
             Use a two qubit interaction to directly measure A*B.
         sub_case:
             square1 is the wikipedia square: https://en.wikipedia.org/wiki/Quantum_pseudo-telepathy
             square2 is not implemented, all blocks have 2body observables
-            only_two_qubits means with 4q total (2 per player). Can only do guess_3rd
+            only_two_qubits means with 4q total (2 per player). Can only do infer_3rd
 
     Returns:
         A circuit implementing the measurement.
@@ -495,7 +495,7 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.M(*m, key="alice")),
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             elif game == "measure_3rd_classical_multiplication":
                 alice_circuit.append(cirq.M(*q, key="alice_datas"))
@@ -511,10 +511,10 @@ def construct_measure_circuit(
         if sub_case == "only_two_qubits":
             alice_circuit = cirq.Circuit(cirq.Moment(cirq.M(*q, key="alice_datas")))
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             else:
-                raise ValueError("You can only game = guess_3rd if you sub_case = only_two_qubits")
+                raise ValueError("You can only game = infer_3rd if you sub_case = only_two_qubits")
 
     elif mermin_row == 1:
         if sub_case == "square_1":
@@ -525,7 +525,7 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.M(*m, key="alice")),
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
 
             elif game == "measure_3rd_classical_multiplication":
@@ -544,10 +544,10 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.H.on_each(*q)), cirq.Moment(cirq.M(*q, key="alice_datas"))
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             else:
-                raise ValueError("You can only game = guess_3rd if you sub_case = only_two_qubits")
+                raise ValueError("You can only game = infer_3rd if you sub_case = only_two_qubits")
 
     elif mermin_row == 2:
         if sub_case == "square_1":
@@ -561,7 +561,7 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.M(*m, key="alice")),
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             elif game == "measure_3rd_classical_multiplication":
                 alice_circuit.append([
@@ -590,10 +590,10 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.M(*q, key="alice_datas")),
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             else:
-                raise ValueError("You can only game = guess_3rd if you sub_case = only_two_qubits")
+                raise ValueError("You can only game = infer_3rd if you sub_case = only_two_qubits")
 
     q = bob_qubits[1:3]  # data qubits
     m = (bob_qubits[0], bob_qubits[3])  # measure qubits
@@ -607,7 +607,7 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.M(*m, key="bob")),
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             elif game == "measure_3rd_classical_multiplication":
                 bob_circuit.append(cirq.M(*q, key="bob_datas"))
@@ -624,10 +624,10 @@ def construct_measure_circuit(
         if sub_case == "only_two_qubits":
             bob_circuit = cirq.Circuit(cirq.H.on(q[0]), cirq.Moment(cirq.M(*q, key="bob_datas")))
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             else:
-                raise ValueError("You can only game = guess_3rd if you sub_case = only_two_qubits")
+                raise ValueError("You can only game = infer_3rd if you sub_case = only_two_qubits")
 
     elif mermin_col == 1:
         if sub_case == "square_1":
@@ -639,7 +639,7 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.M(*m, key="bob")),
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             elif game == "measure_3rd_classical_multiplication":
                 bob_circuit.append(cirq.M(*q, key="bob_datas"))
@@ -656,10 +656,10 @@ def construct_measure_circuit(
         if sub_case == "only_two_qubits":
             bob_circuit = cirq.Circuit(cirq.H.on(q[1]), cirq.Moment(cirq.M(*q, key="bob_datas")))
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             else:
-                raise ValueError("You can only game = guess_3rd if you sub_case = only_two_qubits")
+                raise ValueError("You can only game = infer_3rd if you sub_case = only_two_qubits")
 
     elif mermin_col == 2:
         if sub_case == "square_1":
@@ -676,7 +676,7 @@ def construct_measure_circuit(
                 cirq.Moment(cirq.M(*m, key="bob")),
             )
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             elif game == "measure_3rd_classical_multiplication":
                 bob_circuit.append([
@@ -705,10 +705,10 @@ def construct_measure_circuit(
 
 
 
-            if game == "guess_3rd":
+            if game == "infer_3rd":
                 pass
             else:
-                raise ValueError("You can only sub_case = only_two_qubits if game = guess_3rd")
+                raise ValueError("You can only sub_case = only_two_qubits if game = infer_3rd")
     return cirq.align_right(alice_circuit + bob_circuit)
 
 def construct_contextuality_circuit(
@@ -738,9 +738,9 @@ def construct_contextuality_circuit(
         add_dd: Whether to add dynamical decoupling.
         dd_scheme: The dynamical decoupling sequence to use if doing DD.
         game:
-            "guess_3rd": making two measurements and infering the third bit
+            "infer_3rd": making two measurements and inferring the third bit
             "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
-            get three bits out of them by mutiplying two of them toghether.
+            get three bits out of them by multiplying two of them together.
             This corresponds to measure A and B to compute A*B.
             "measure_3rd_quantum_multiplication": make 3 measurements for Alice and 3 for Bob.
             Use a two qubit interaction to directly measure A*B.
