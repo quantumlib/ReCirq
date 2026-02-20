@@ -25,7 +25,7 @@ def test_run_contextuality_experiment(game: msg.GameType, add_dd: bool) -> None:
         sub_case="square_1",
         repetitions=10,
     )
-    assert np.all(result.get_win_matrix(game) == np.ones((3, 3)))
+    assert np.all(result.get_agree_given_multiply_matrix(game) == np.ones((3, 3)))
 
 
 @pytest.mark.parametrize(
@@ -44,6 +44,6 @@ def test_invalid_input_raises(game: msg.GameType, add_dd: bool):
             bob_qubits,
             game=game,
             add_dd=add_dd,
-            sub_case=sub_case,
+            sub_case="square_1",
             repetitions=10,
         )
