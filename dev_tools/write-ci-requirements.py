@@ -12,7 +12,7 @@ CIRQ_VERSIONS = {
     'current': '~=1.4.0',
     'next': '>=1.5.0',
 }
-"""Give names to relative Cirq versions so CI can have consistent names while versions 
+"""Give names to relative Cirq versions so CI can have consistent names while versions
 get incremented."""
 
 
@@ -76,7 +76,7 @@ def main(*, out_fn: str = 'ci-requirements.txt', relative_cirq_version: str = 'c
 
     extras_require = [
         'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard', 'qml_lfe',
-        'seniority_zero', 'qcqmc'
+        'seniority_zero', 'qcqmc', 'contextuality'
     ]
     extras_require = {
         r: _parse_requirements(pathlib.Path(REPO_DIR / f'recirq/{r}/extra-requirements.txt'))
