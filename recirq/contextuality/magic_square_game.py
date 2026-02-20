@@ -158,7 +158,7 @@ class ContextualityResult:
         if game == "measure_3rd_quantum_multiplication":
             return self._generate_choices_from_rules_measure_3rd_quantum_multiplication()
 
-    def get_win_matrix(self, game: GameType) -> np.ndarray:
+    def get_agree_given_multiply_matrix(self, game: GameType) -> np.ndarray:
         """Find the fraction of the time that Alice and Bob "agree" (in the intersection) given that
         they "multiply correctly" (alice to -1 and bob to +1).
 
@@ -175,7 +175,7 @@ class ContextualityResult:
             The fraction of the time that they "agree" given that they "multiply correctly".
         """
         alice_choices, bob_choices = self.generate_choices(game)
-        win_matrix = np.zeros((3, 3))
+        agree_given_multiply_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
         for row in range(3):
@@ -188,12 +188,12 @@ class ContextualityResult:
                     if np.sum(alice_triad) % 2 == 0 and np.sum(bob_triad) % 2 == 1:
                         number_of_matches += 1
                         if alice_triad[col] == bob_triad[row]:
-                            win_matrix[row, col] += 1
+                            agree_given_multiply_matrix[row, col] += 1
                 print("Times they both multiply correctly to +-1 =", number_of_matches)
-                win_matrix[row, col] = (
-                    win_matrix[row, col] / number_of_matches
+                agree_given_multiply_matrix[row, col] = (
+                    agree_given_multiply_matrix[row, col] / number_of_matches
                 )
-        return win_matrix
+        return agree_given_multiply_matrix
 
     def get_multiply_matrix(self, game: GameType) -> np.ndarray:
         """Find the fraction of the time that Alice and Bob
@@ -212,7 +212,7 @@ class ContextualityResult:
             The fraction of the time that they "multiply correctly".
         """
         alice_choices, bob_choices = self.generate_choices(game)
-        win_matrix = np.zeros((3, 3))
+        multiply_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
         for row in range(3):
@@ -221,10 +221,10 @@ class ContextualityResult:
                     alice_triad = alice_choices[row, col, rep, :]
                     bob_triad = bob_choices[row, col, rep, :]
                     if np.sum(alice_triad) % 2 == 0 and np.sum(bob_triad) % 2 == 1:
-                        win_matrix[row, col] += 1
+                        multiply_matrix[row, col] += 1
 
-                win_matrix[row, col] = win_matrix[row, col] / repetitions
-        return win_matrix
+                multiply_matrix[row, col] = multiply_matrix[row, col] / repetitions
+        return multiply_matrix
 
     def get_agree_matrix(self, game: GameType) -> np.ndarray:
         """Fraction of the time that Alice and Bob Alice and Bob "agree" (in the intersection).
@@ -242,7 +242,7 @@ class ContextualityResult:
             The fraction of the time that they "agree".
         """
         alice_choices, bob_choices = self.generate_choices(game)
-        win_matrix = np.zeros((3, 3))
+        agree_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
         for row in range(3):
@@ -251,9 +251,9 @@ class ContextualityResult:
                     alice_triad = alice_choices[row, col, rep, :]
                     bob_triad = bob_choices[row, col, rep, :]
                     if alice_triad[col] == bob_triad[row]:
-                        win_matrix[row, col] += 1
-                win_matrix[row, col] = win_matrix[row, col] / repetitions
-        return win_matrix
+                        agree_matrix[row, col] += 1
+                agree_matrix[row, col] = agree_matrix[row, col] / repetitions
+        return agree_matrix
 
     def get_agree_and_multiply_matrix(self, game: GameType) -> np.ndarray:
         """Find the fraction of the time that Alice and Bob
@@ -274,7 +274,7 @@ class ContextualityResult:
             The fraction of the time that they "multiply correctly" AND "agree".
         """
         alice_choices, bob_choices = self.generate_choices(game)
-        win_matrix = np.zeros((3, 3))
+        agree_and_multiply_matrix = np.zeros((3, 3))
         repetitions = alice_choices.shape[2]
         print(f"{repetitions=}")
         for row in range(3):
@@ -287,9 +287,9 @@ class ContextualityResult:
                         and np.sum(alice_triad) % 2 == 0
                         and np.sum(bob_triad) % 2 == 1
                     ):
-                        win_matrix[row, col] += 1
-                win_matrix[row, col] = win_matrix[row, col] / repetitions
-        return win_matrix
+                        agree_and_multiply_matrix[row, col] += 1
+                agree_and_multiply_matrix[row, col] = agree_and_multiply_matrix[row, col] / repetitions
+        return agree_and_multiply_matrix
 
 
 def run_contextuality_experiment(
