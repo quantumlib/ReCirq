@@ -55,8 +55,25 @@ class ContextualityResult:
     alice_measurements: np.ndarray
     bob_measurements: np.ndarray
 
-    def _select_choices_from_second_data(self) -> tuple[np.ndarray, np.ndarray]:
-        return self.alice_measurements, self.bob_measurements
+    def _assign_choices_from_measurements(self) -> tuple[np.ndarray, np.ndarray]:
+        """Initialize and assign choices from Alice and Bob's measurements."""
+
+        repetitions = self.alice_measurements.shape[2]
+
+        # the following two arrays have indices signifying
+        # [query_row, query_column, repetition, index_of_output]
+        alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
+        bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
+
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]  # I ⊗ Z
+        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]  # Z ⊗ I
+        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]  # X ⊗ I | I ⊗ X
+        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]  # -X ⊗ Z |-Z ⊗ X
+        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]  # I ⊗ Z
+        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]  # X ⊗ I
+        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]  # Z ⊗ I | I ⊗ X
+
+        return alice_choices, bob_choices
 
     def _generate_choices_from_rules_infer_3rd(self) -> tuple[np.ndarray, np.ndarray]:
         """Generate choices from Alice and Bob's measurements by inferring the third number from the
@@ -65,22 +82,7 @@ class ContextualityResult:
         Returns:
             Alice and Bob's choices in the game.
         """
-        repetitions = self.alice_measurements.shape[2]
-
-        # the following two arrays have indices signifying
-        # [query_row, query_column, repetition, index_of_output]
-        alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
-        bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
-
-        # the following manipulations implment the Mermin-Peres square from the
-        # docstring of `construct_contextuality_circuit`
-        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]  # I ⊗ Z
-        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]  # Z ⊗ I
-        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]  # X ⊗ I | I ⊗ X
-        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]  # -X ⊗ Z |-Z ⊗ X
-        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]  # I ⊗ Z
-        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]  # X ⊗ I
-        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]  # Z ⊗ I | I ⊗ X
+        alice_choices, bob_choices = self._assign_choices_from_measurements()
 
         alice_choices[:, :, :, 2] = np.sum(alice_choices, axis=3) % 2  # infer from rule
         bob_choices[:, :, :, 2] = 1 - (np.sum(bob_choices, axis=3) % 2)  # infer from rule
@@ -95,20 +97,7 @@ class ContextualityResult:
         Returns:
             Alice and Bob's choices in the game.
         """
-        repetitions = self.alice_measurements.shape[2]
-
-        # the following two arrays have indices signifying
-        # [query_row, query_column, repetition, index_of_output]
-        alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
-        bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
-
-        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]  # I ⊗ Z
-        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]  # Z ⊗ I
-        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]  # X ⊗ I | I ⊗ X
-        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]  # -X ⊗ Z |-Z ⊗ X
-        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]  # I ⊗ Z
-        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]  # X ⊗ I
-        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]  # Z ⊗ I | I ⊗ X
+        alice_choices, bob_choices = self._assign_choices_from_measurements()
 
         alice_choices[:, :, :, 2] = 1 - self.alice_measurements[:, :, :, 2]
 
@@ -131,20 +120,7 @@ class ContextualityResult:
         Returns:
             Alice and Bob's choices in the game.
         """
-        repetitions = self.alice_measurements.shape[2]
-
-        # the following two arrays have indices signifying
-        # [query_row, query_column, repetition, index_of_output]
-        alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
-        bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
-
-        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]  # I ⊗ Z
-        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]  # Z ⊗ I
-        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]  # X ⊗ I | I ⊗ X
-        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]  # -X ⊗ Z |-Z ⊗ X
-        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]  # I ⊗ Z
-        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]  # X ⊗ I
-        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]  # Z ⊗ I | I ⊗ X
+        alice_choices, bob_choices = self._assign_choices_from_measurements()
 
         alice_choices[:, :, :, 2] = self.alice_measurements[:, :, :, 2]
         bob_choices[:, 0, :, 2] = 1 - self.bob_measurements[:, 0, :, 2]
@@ -175,7 +151,6 @@ class ContextualityResult:
         Raises:
             NotImplementedError: If Alice and Bob measure unequal numbers of Paulis.
         """
-        # return self._select_choices_from_second_data()
         if game == "infer_3rd":
             return self._generate_choices_from_rules_infer_3rd()
         if game == "measure_3rd_classical_multiplication":
