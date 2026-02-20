@@ -32,13 +32,13 @@ from typing import Any, Literal
 import cirq
 import numpy as np
 
-type GameType = Literal[
+GameType = Literal[
     "infer_3rd",
     "measure_3rd_classical_multiplication",
     "measure_3rd_quantum_multiplication",
 ]
 
-type SubCase = Literal["square_1", "square_2", "only_two_qubits"]
+SubCase = Literal["square_1", "square_2", "only_two_qubits"]
 
 
 @dataclasses.dataclass
