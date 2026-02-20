@@ -38,6 +38,8 @@ type GameType = Literal[
     "measure_3rd_quantum_multiplication",
 ]
 
+type SubCase = Literal["square_1", "square_2", "only_two_qubits"]
+
 
 @dataclasses.dataclass
 class ContextualityResult:
@@ -94,16 +96,19 @@ class ContextualityResult:
             Alice and Bob's choices in the game.
         """
         repetitions = self.alice_measurements.shape[2]
+
+        # the following two arrays have indices signifying
+        # [query_row, query_column, repetition, index_of_output]
         alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
         bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
 
-        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]
-        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]
-        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]
-        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]
-        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]
-        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]
-        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]  # I ⊗ Z
+        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]  # Z ⊗ I
+        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]  # X ⊗ I | I ⊗ X
+        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]  # -X ⊗ Z |-Z ⊗ X
+        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]  # I ⊗ Z
+        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]  # X ⊗ I
+        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]  # Z ⊗ I | I ⊗ X
 
         alice_choices[:, :, :, 2] = 1 - self.alice_measurements[:, :, :, 2]
 
@@ -127,16 +132,19 @@ class ContextualityResult:
             Alice and Bob's choices in the game.
         """
         repetitions = self.alice_measurements.shape[2]
+
+        # the following two arrays have indices signifying
+        # [query_row, query_column, repetition, index_of_output]
         alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
         bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
 
-        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]
-        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]
-        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]
-        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]
-        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]
-        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]
-        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]
+        alice_choices[0, :, :, 0] = self.alice_measurements[0, :, :, 1]  # I ⊗ Z
+        alice_choices[0, :, :, 1] = self.alice_measurements[0, :, :, 0]  # Z ⊗ I
+        alice_choices[1, :, :, :2] = self.alice_measurements[1, :, :, :2]  # X ⊗ I | I ⊗ X
+        alice_choices[2, :, :, :2] = 1 - self.alice_measurements[2, :, :, :2]  # -X ⊗ Z |-Z ⊗ X
+        bob_choices[:, 0, :, 0] = self.bob_measurements[:, 0, :, 1]  # I ⊗ Z
+        bob_choices[:, 0, :, 1] = self.bob_measurements[:, 0, :, 0]  # X ⊗ I
+        bob_choices[:, 1:, :, :2] = self.bob_measurements[:, 1:, :, :2]  # Z ⊗ I | I ⊗ X
 
         alice_choices[:, :, :, 2] = self.alice_measurements[:, :, :, 2]
         bob_choices[:, 0, :, 2] = 1 - self.bob_measurements[:, 0, :, 2]
@@ -314,7 +322,7 @@ def run_contextuality_experiment(
     alice_qubits: list[cirq.GridQubit],
     bob_qubits: list[cirq.GridQubit],
     game: GameType,
-    sub_case: Literal["square_1", "square_2", "only_two_qubits"],
+    sub_case: SubCase,
     repetitions: int = 10_000,
     add_dd: bool = True,
     dd_scheme: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
@@ -402,7 +410,7 @@ def run_contextuality_experiment(
 
 
 def multiply_bool(bool_0: list[bool], bool_1: list[bool]) -> list[bool]:
-    """Perform boolean multiplication. Useful for "measure_3rd_classical_multiplication".""""
+    """Perform boolean multiplication. Useful for "measure_3rd_classical_multiplication"."""
     return [el0 == el1 for el0, el1 in zip(bool_0, bool_1)]
 
 
@@ -442,7 +450,7 @@ def construct_measure_circuit(
     mermin_row: int,
     mermin_col: int,
     game: GameType,
-    sub_case: Literal["square_1", "square_2", "only_two_qubits"],
+    sub_case: SubCase,
 ) -> cirq.Circuit:
     """Construct a circuit to implement the measurement.
 
@@ -710,7 +718,7 @@ def construct_contextuality_circuit(
     mermin_col: int,
     add_dd: bool,
     game: GameType,
-    sub_case: Literal["square_1", "square_2", "only_two_qubits"],
+    sub_case: SubCase,
     dd_scheme: tuple[cirq.Gate, ...] = (cirq.X, cirq.Y, cirq.X, cirq.Y),
 ) -> cirq.Circuit:
     """Construct a circuit to implement the contextuality experiment on hardware.
