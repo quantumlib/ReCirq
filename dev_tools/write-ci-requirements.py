@@ -10,7 +10,7 @@ print('Repo dir:', REPO_DIR)
 CIRQ_VERSIONS = {
     'previous': '~=1.5.0',
     'current': '~=1.6.0',
-    'next': '>=>=1.7.0.dev',
+    'next': '>=1.7.0.dev',
 }
 """Give names to relative Cirq versions so CI can have consistent names while versions
 get incremented."""
