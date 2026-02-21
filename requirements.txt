@@ -1,5 +1,5 @@
-cirq-core>=1.4.0
-cirq-google>=1.4.0
+cirq-core>=1.5.0
+cirq-google>=1.5.0
 # When changing Cirq requirements be sure to update dev_tools/write-ci-requirements.py
 
 seaborn
