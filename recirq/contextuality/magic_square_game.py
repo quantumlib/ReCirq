@@ -145,8 +145,8 @@ class ContextualityResult:
                 Use a two qubit interaction to directly measure A*B.
 
         Returns:
-            Alice and Bob's choices in the game. The two numpy arrays have indices
-            signifying [query_row, query_column, repetition, index_of_output].
+            Alice and Bob's choices in the game. The two numpy arrays have indices signifying
+                [query_row, query_column, repetition, index_of_output].
 
         Raises:
             NotImplementedError: If Alice and Bob measure unequal numbers of Paulis.
