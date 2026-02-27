@@ -51,7 +51,7 @@ def characterize_pairs(
     sampler: cirq.Sampler,
     qubits: List[cirq.GridQubit],
     gate: cirq.Gate
-) -> Dict[Tuple[cirq.GridQubit, cirq.GridQubit], cirq.PhasedFSimGate]:
+) -> Dict[Tuple[cirq.Qid, cirq.Qid], cirq.PhasedFSimGate]:
     """Performs XEB characterization for PhasedFSimGate angles.
 
     Args:
@@ -116,9 +116,10 @@ def make_rcs_circuit(
         cirq.Y ** 0.5,
         cirq.PhasedXPowGate(exponent=0.5, phase_exponent=0.25)
     ),
-    two_qubit_op_factory: Callable[[cirq.Qid, cirq.Qid, random.Random], cirq.Operation] = (
-        lambda a, b, _: cirq_google.SYC(a, b)
-    )
+    two_qubit_op_factory: Callable[
+        [cirq.GridQubit, cirq.GridQubit, np.random.RandomState],
+        cirq.OP_TREE
+    ] = lambda a, b, _: cirq_google.SYC(a, b)
 ) -> cirq.Circuit:
     """Generates a customizable RCS circuit using official Cirq experiment utilities.
 
@@ -187,9 +188,8 @@ class RCSexperiment:
             seed: Master seed for reproducibility.
 
         Raises:
-            ValueError: If patches are not disjoint.
-            ValueError: If a patch contains isolated qubits.
-            ValueError: If a patch is split into islands.
+            ValueError: If patches are not disjoint, contain isolated qubits,
+                or are split into islands.
         """
 
         # Basic Disjointness Check
@@ -302,11 +302,12 @@ class RCSexperiment:
 class RCSresults:
     """Calculates Linear Cross-Entropy Benchmarking (XEB) fidelity.
 
-    Args:
+    Attributes:
         circuits: Unzipped individual circuits for the measurements.
         measurements: Measured bitstrings per circuit.
-        metadata: Tracking info (patch, depth).
+        metadata: Tracking info (e.g., patch, depth).
         characterization: A dictionary mapping qubit pairs to their calibrated PhasedFSimGate.
+        fidelities_lin: A dictionary mapping (patch, depth) to computed linear XEB fidelity values.
     """
 
     def __init__(
@@ -349,7 +350,7 @@ class RCSresults:
             measured_probs = counts / len(measured_ints)
             amplitudes = sim.compute_amplitudes(
                 program=program,
-                bitstrings=unique_ints,
+                bitstrings=list(unique_ints),
                 qubit_order=qubits
             )
             ideal_probs = np.abs(np.array(amplitudes)) ** 2
