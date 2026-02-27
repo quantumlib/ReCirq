@@ -30,7 +30,7 @@ def test_rcs_multi_depth_regression():
     N_REPETITIONS = 10000
     FIXED_SEED = 2026
 
-    # Benchmark values from your deterministic run
+    # Benchmark values from the deterministic run
     expected_benchmarks = {
         (0, 30): 0.9846,
         (0, 50): 0.9753,
