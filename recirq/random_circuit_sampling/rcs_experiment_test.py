@@ -40,7 +40,7 @@ def test_rcs_multi_depth_regression():
         (2, 50): 0.9927,
     }
 
-    experiment = rcs.RCSexperiment(
+    experiment = rcs.RCSExperiment(
         patches=patches,
         depths=DEPTHS,
         num_instances=NUM_INSTANCES,
@@ -51,7 +51,7 @@ def test_rcs_multi_depth_regression():
     simulator = cirq.Simulator(seed=FIXED_SEED)
     results = experiment.run(sampler=simulator, n_repetitions=N_REPETITIONS, characterize=False)
 
-    fidelities = results.fidelities_lin
+    fidelities = results.fidelities_lin()
 
     for (patch_idx, depth), expected_val in expected_benchmarks.items():
         actual_val = np.mean(fidelities[(patch_idx, depth)])
@@ -65,16 +65,16 @@ def test_rcs_validation_logic():
 
     # Test Overlapping Patches
     with pytest.raises(ValueError, match="disjoint"):
-        rcs.RCSexperiment(patches=[[q0, q1], [q1]], depths=[5], num_instances=1)
+        rcs.RCSExperiment(patches=[[q0, q1], [q1]], depths=[5], num_instances=1)
 
     # Test Isolated Qubits
     with pytest.raises(ValueError, match="isolated"):
-        rcs.RCSexperiment(patches=[[q0, q1, q_far]], depths=[5], num_instances=1)
+        rcs.RCSExperiment(patches=[[q0, q1, q_far]], depths=[5], num_instances=1)
 
     # Test Disconnected Islands
     q_far_neighbor = cirq.GridQubit(5, 6)
     with pytest.raises(ValueError, match="connected"):
-        rcs.RCSexperiment(patches=[[q0, q1, q_far, q_far_neighbor]], depths=[5], num_instances=1)
+        rcs.RCSExperiment(patches=[[q0, q1, q_far, q_far_neighbor]], depths=[5], num_instances=1)
 
 
 def test_rcs_data_consistency():
@@ -84,7 +84,7 @@ def test_rcs_data_consistency():
     depths = [5, 10, 20]
     num_instances = 4
 
-    exp = rcs.RCSexperiment(patches=[p1, p2], depths=depths, num_instances=num_instances)
+    exp = rcs.RCSExperiment(patches=[p1, p2], depths=depths, num_instances=num_instances)
     results = exp.run(sampler=cirq.Simulator(), n_repetitions=10)
 
     # Check total result count (Patches * Depths * Instances)
@@ -104,12 +104,38 @@ def test_rcs_data_consistency():
 def test_rcs_analysis_evaluation():
     """Ensures fidelities_lin triggers analysis automatically via property."""
     p = [cirq.GridQubit(0, 0), cirq.GridQubit(0, 1)]
-    exp = rcs.RCSexperiment(patches=[p], depths=[2], num_instances=1)
+    exp = rcs.RCSExperiment(patches=[p], depths=[2], num_instances=1)
     results = exp.run(sampler=cirq.Simulator(), n_repetitions=100)
 
     # Check that analysis hasn't run yet
     assert results._fidelities_lin is None
     # Accessing the property triggers rcs.RCSresults._analyze()
-    fids = results.fidelities_lin
+    fids = results.fidelities_lin()
     assert fids is not None
     assert (0, 2) in fids
+
+
+def test_get_calibrated_circuit():
+    """Verifies that 2-qubit measurements are not replaced by calibrated gates."""
+    q0, q1 = cirq.GridQubit(0, 0), cirq.GridQubit(0, 1)
+
+
+    circuit = cirq.Circuit(
+        cirq.CZ(q0, q1),
+        cirq.measure(q0, q1, key='m')
+    )
+
+    # Mock characterization
+    calibrated_gate = cirq.PhasedFSimGate(theta=0.1)
+    characterization = {(q0, q1): calibrated_gate}
+
+    calibrated_circuit = rcs.get_calibrated_circuit(circuit, characterization)
+
+
+    assert any(isinstance(op.gate, cirq.PhasedFSimGate) for op in
+               calibrated_circuit.all_operations())
+
+    measurements = [op for op in calibrated_circuit.all_operations() if
+                    cirq.is_measurement(op)]
+    assert len(measurements) == 1
+    assert measurements[0].qubits == (q0, q1)

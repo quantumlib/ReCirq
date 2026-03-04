@@ -26,9 +26,9 @@ detailed in:
     https://www.nature.com/articles/s41586-019-1666-5
 
 Main components:
-    - RCSexperiment: Manages parallel execution of circuit instances across
+    - RCSExperiment: Manages parallel execution of circuit instances across
         disjoint grid patches.
-    - RCSresults: Performs noiseless simulation and computes Linear XEB fidelity.
+    - RCSResults: Performs noiseless simulation and computes Linear XEB fidelity.
 """
 
 import random
@@ -46,11 +46,15 @@ import cirq.experiments.random_quantum_circuit_generation as rqcg
 from cirq.experiments import xeb_fitting
 import cirq.experiments.z_phase_calibration as xeb_characterize
 
-
 def characterize_pairs(
     sampler: cirq.Sampler,
     qubits: List[cirq.GridQubit],
-    gate: cirq.Gate
+    gate: cirq.Gate,
+    theta: bool = True,
+    phi: bool = True,
+    zeta: bool = True,
+    chi: bool = True,
+    gamma: bool = True
 ) -> Dict[Tuple[cirq.Qid, cirq.Qid], cirq.PhasedFSimGate]:
     """Performs XEB characterization for PhasedFSimGate angles.
 
@@ -58,20 +62,19 @@ def characterize_pairs(
         sampler: The cirq.Sampler used for data collection.
         qubits: All qubits involved in the characterization.
         gate: The baseline ideal gate to calibrate against, e.g., cirq_google.SYC
+        theta, phi, zeta, chi, gamma: Toggles for parameters to characterize. Defaults to True
+        for all.
 
     Returns:
         A dictionary mapping qubit pairs to their calibrated PhasedFSimGate.
     """
-
-    base_options = xeb_fitting.XEBPhasedFSimCharacterizationOptions(
-        characterize_theta=True,
-        characterize_phi=True,
-        characterize_zeta=True,
-        characterize_chi=True,
-        characterize_gamma=True
-    )
-
-    options = base_options.with_defaults_from_gate(gate)
+    options = xeb_fitting.XEBPhasedFSimCharacterizationOptions(
+        characterize_theta=theta,
+        characterize_phi=phi,
+        characterize_zeta=zeta,
+        characterize_chi=chi,
+        characterize_gamma=gamma
+    ).with_defaults_from_gate(gate)
 
     results = xeb_characterize.calibrate_z_phases(
         sampler=sampler,
@@ -82,7 +85,7 @@ def characterize_pairs(
     return results
 
 
-def get_calibrated_circuit(circuit: cirq.Circuit, characterization: dict | None) -> cirq.Circuit:
+def get_calibrated_circuit(circuit: cirq.Circuit, characterization: Optional[Dict] = None) -> cirq.Circuit:
     """Replaces ideal 2-qubit gates with calibrated PhasedFSimGate models.
 
     Args:
@@ -97,7 +100,7 @@ def get_calibrated_circuit(circuit: cirq.Circuit, characterization: dict | None)
         return circuit
 
     def map_func(op: cirq.Operation, _):
-        if len(op.qubits) == 2:
+        if len(op.qubits) == 2 and not cirq.is_measurement(op):
             edge = tuple(op.qubits)
             gate = characterization.get(edge) or characterization.get(edge[::-1])
             if gate: return gate.on(*op.qubits)
@@ -163,7 +166,7 @@ def make_rcs_circuit(
     return circuit
 
 
-class RCSexperiment:
+class RCSExperiment:
     """Manages generation and parallel execution of RCS experiments."""
 
     def __init__(
@@ -223,17 +226,28 @@ class RCSexperiment:
             cirq.X ** 0.5, cirq.Y ** 0.5, cirq.PhasedXPowGate(exponent=0.5, phase_exponent=0.25)
         )
 
-    def run(self, sampler: cirq.Sampler, n_repetitions: int,
-            characterize: bool = False) -> "RCSresults":
+    def run(
+        self,
+        sampler: cirq.Sampler,
+        n_repetitions: int,
+        characterize: bool = False,
+        theta: bool = True,
+        phi: bool = True,
+        zeta: bool = True,
+        chi: bool = True,
+        gamma: bool = True
+    ) -> "RCSResults":
         """Executes circuits in parallel using unique keys for patch separation.
 
         Args:
             sampler: Sampler to execute circuits.
             n_repetitions: Shots per circuit.
             characterize: If True, performs gate characterization before analysis.
+            theta, phi, zeta, chi, gamma: Toggles for characterization angles. Default to True
+            for all.
 
         Returns:
-            An RCSresults object.
+            An RCSResults object.
         """
 
         char_data = None
@@ -241,7 +255,12 @@ class RCSexperiment:
             char_data = characterize_pairs(
                 sampler=sampler,
                 qubits=self.all_qubits,
-                gate=self.two_qubit_gate
+                gate=self.two_qubit_gate,
+                theta=theta,
+                phi=phi,
+                zeta=zeta,
+                chi=chi,
+                gamma=gamma
             )
 
         zipped_circuits = []
@@ -291,7 +310,7 @@ class RCSexperiment:
                 patch_data = combined_result[0].measurements[key]
                 measurements_flat.append(patch_data)
 
-        return RCSresults(
+        return RCSResults(
             circuits=all_individual_circuits,
             measurements=measurements_flat,
             metadata=metadata_flat,
@@ -299,7 +318,7 @@ class RCSexperiment:
         )
 
 
-class RCSresults:
+class RCSResults:
     """Calculates Linear Cross-Entropy Benchmarking (XEB) fidelity.
 
     Attributes:
@@ -307,7 +326,6 @@ class RCSresults:
         measurements: Measured bitstrings per circuit.
         metadata: Tracking info (e.g., patch, depth).
         characterization: A dictionary mapping qubit pairs to their calibrated PhasedFSimGate.
-        fidelities_lin: A dictionary mapping (patch, depth) to computed linear XEB fidelity values.
     """
 
     def __init__(
@@ -323,13 +341,23 @@ class RCSresults:
         self.characterization = characterization
         self._fidelities_lin: Optional[Dict] = None
 
-    def _analyze(self) -> None:
+    def fidelities_lin(self, simulator: cirq.SimulatesAmplitudes = cirq.Simulator()) -> Dict:
+        """Accesses or calculates Linear XEB fidelities.
+
+        Args:
+            simulator: The simulator to use for computing ideal amplitudes.  Defaults to
+            cirq.Simulator().
+        """
+        if self._fidelities_lin is None:
+            self._analyze(simulator=simulator)
+        return self._fidelities_lin
+
+    def _analyze(self, simulator: cirq.SimulatesAmplitudes) -> None:
         """Calculates linear xeb by comparing measured counts against ideal probabilities.
 
         Formula used for linear XEB: F = dimensions * E[P_ideal] - 1
         """
-        fidelities_lin = defaultdict(list)
-        sim = cirq.Simulator()
+        fidelities = defaultdict(list)
 
         for i, circuit_measurements in enumerate(tqdm(self.measurements, desc="XEB Analysis")):
             raw_circuit = self.circuits[i]
@@ -348,7 +376,7 @@ class RCSresults:
             measured_ints = [cirq.big_endian_bits_to_int(m) for m in circuit_measurements]
             unique_ints, counts = np.unique(measured_ints, return_counts=True)
             measured_probs = counts / len(measured_ints)
-            amplitudes = sim.compute_amplitudes(
+            amplitudes = simulator.compute_amplitudes(
                 program=program,
                 bitstrings=list(unique_ints),
                 qubit_order=qubits
@@ -356,14 +384,8 @@ class RCSresults:
             ideal_probs = np.abs(np.array(amplitudes)) ** 2
 
             # Calculate linear fidelity
-            linear_fidelity = dim * np.sum(measured_probs * ideal_probs) - 1
-            fidelities_lin[(patch_idx, depth)].append(linear_fidelity)
+            linear_fidelity =  dim * (measured_probs @ ideal_probs) - 1
+            fidelities[(patch_idx, depth)].append(linear_fidelity)
 
-        self._fidelities_lin = dict(fidelities_lin)
+        self._fidelities_lin = dict(fidelities)
 
-    @property
-    def fidelities_lin(self):
-        """Accesses the Linear XEB fidelities, triggering analysis if needed."""
-        if self._fidelities_lin is None:
-            self._analyze()
-        return self._fidelities_lin
