@@ -339,7 +339,7 @@ class RCSResults:
         self.measurements = measurements
         self.metadata = metadata
         self.characterization = characterization
-        self._fidelities_lin: Optional[Dict] = None
+        self._fidelities_lin: Optional[Dict[Tuple[int, int], float]] = None
 
     def fidelities_lin(self, simulator: cirq.SimulatesAmplitudes = cirq.Simulator()) -> Dict:
         """Accesses or calculates Linear XEB fidelities.
@@ -349,10 +349,10 @@ class RCSResults:
             cirq.Simulator().
         """
         if self._fidelities_lin is None:
-            self._analyze(simulator=simulator)
+            self._fidelities_lin = self._analyze(simulator=simulator)
         return self._fidelities_lin
 
-    def _analyze(self, simulator: cirq.SimulatesAmplitudes) -> None:
+    def _analyze(self, simulator: cirq.SimulatesAmplitudes) -> Dict[Tuple[int, int], float]:
         """Calculates linear xeb by comparing measured counts against ideal probabilities.
 
         Formula used for linear XEB: F = dimensions * E[P_ideal] - 1
@@ -387,5 +387,4 @@ class RCSResults:
             linear_fidelity =  dim * (measured_probs @ ideal_probs) - 1
             fidelities[(patch_idx, depth)].append(linear_fidelity)
 
-        self._fidelities_lin = dict(fidelities)
-
+        return dict(fidelities)
