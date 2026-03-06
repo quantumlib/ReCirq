@@ -39,7 +39,6 @@ jupyter_kernel.lock
 .pytest_cache/
 .python-version
 .pytype/
-.pytype/
 .ruff_cache/
 .tox/
 __pycache__/
