@@ -33,7 +33,7 @@ Main components:
 
 import random
 from collections import defaultdict
-from typing import Dict, Tuple, List, Callable, Optional
+from typing import Dict, Tuple, List, Callable, Optional, Literal
 
 import cirq
 import cirq_google
@@ -57,6 +57,10 @@ def characterize_pairs(
     gamma: bool = True
 ) -> Dict[Tuple[cirq.Qid, cirq.Qid], cirq.PhasedFSimGate]:
     """Performs XEB characterization for PhasedFSimGate angles.
+
+    This characterization involves running XEB  circuits to extract the
+    specific unitary parameters (theta, phi,  zeta, chi, gamma) for the
+    PhasedFSim gates on each qubit pair.
 
     Args:
         sampler: The cirq.Sampler used for data collection.
@@ -167,14 +171,24 @@ def make_rcs_circuit(
 
 
 class RCSExperiment:
-    """Manages generation and parallel execution of RCS experiments."""
+    """Manages generation and parallel execution of RCS experiments.
+
+    This experiment accepts a list of different disjoint subgrids known as
+    patches and execute random circuits on them simultaneously. Qubit
+    interactions are defined by a tiling 'pattern' as defined in Section
+    VII C of https://arxiv.org/pdf/1910.11333:
+
+    - 'staggered': The 8-cycle ABCDCDAB sequence.
+    - 'half': A 4-cycle ABCD staggered sequence.
+    - 'aligned': A 4-cycle EFGH non-staggered sequence.
+    """
 
     def __init__(
         self,
         patches: List[List[cirq.GridQubit]],
         depths: List[int],
         num_instances: int,
-        pattern_name: str = "staggered",
+        pattern_name: Literal["staggered", "half", "aligned"] = "staggered",
         single_qubit_gates: Optional[Tuple[cirq.Gate, ...]] = None,
         two_qubit_gate: cirq.Gate = cirq_google.SYC,
         seed: Optional[int] = None
@@ -320,6 +334,15 @@ class RCSExperiment:
 
 class RCSResults:
     """Calculates Linear Cross-Entropy Benchmarking (XEB) fidelity.
+
+    This class provides tools to estimate circuit fidelity by comparing
+    experimental bitstring distributions with ideal probabilities. It uses
+    the Linear XEB estimator, which is statistically optimal for
+    low-fidelity regimes observed on noisy quantum processors.
+
+    Logarithmic XEB is an alternative estimator that provides lower
+    statistical variance in high-fidelity regimes. For a detailed comparison
+    of these estimators, see Section IV of https://arxiv.org/pdf/1910.11333.
 
     Attributes:
         circuits: Unzipped individual circuits for the measurements.
