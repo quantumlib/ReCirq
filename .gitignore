@@ -18,7 +18,6 @@
 /bazel-*
 
 # Jupyter-specific items.
-*/.ipynb_checkpoints/
 .ipynb_checkpoints
 ipython_config.py
 jupyter_kernel.lock
