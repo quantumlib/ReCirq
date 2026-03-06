@@ -67,10 +67,6 @@ wheelhouse/
 *.so
 *.x
 
-# Executables
-*.exe
-*.out
-
 # macOS directory metadata files.
 *.DS_Store
 
