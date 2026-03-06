@@ -243,8 +243,8 @@ class RCSExperiment:
             sampler: Sampler to execute circuits.
             n_repetitions: Shots per circuit.
             characterize: If True, performs gate characterization before analysis.
-            theta, phi, zeta, chi, gamma: Toggles for characterization angles. Default to True
-            for all.
+            theta, phi, zeta, chi, gamma: Toggles for characterization angles.
+                Default to True for all.
 
         Returns:
             An RCSResults object.
