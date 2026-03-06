@@ -304,7 +304,7 @@ class RCSExperiment:
         batch_results = sampler.run_batch(zipped_circuits, repetitions=n_repetitions)
 
         measurements_flat = []
-        for i, combined_result in enumerate(batch_results):
+        for combined_result in batch_results:
             for patch_idx in range(len(self.patches)):
                 key = f"m_{patch_idx}"
                 patch_data = combined_result[0].measurements[key]
