@@ -62,8 +62,8 @@ def characterize_pairs(
         sampler: The cirq.Sampler used for data collection.
         qubits: All qubits involved in the characterization.
         gate: The baseline ideal gate to calibrate against, e.g., cirq_google.SYC
-        theta, phi, zeta, chi, gamma: Toggles for parameters to characterize. Defaults to True
-        for all.
+        theta, phi, zeta, chi, gamma: Toggles for parameters to characterize.
+            Defaults to True for all.
 
     Returns:
         A dictionary mapping qubit pairs to their calibrated PhasedFSimGate.
