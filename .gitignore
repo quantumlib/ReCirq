@@ -76,7 +76,6 @@ wheelhouse/
 *.log
 *.swp
 *.tmp
-*.~*~
 *~
 .\#*
 .idea/
