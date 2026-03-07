@@ -60,13 +60,6 @@ wheelhouse/
 # Default pycharm virtual env.
 .venv/
 
-# Generated C/C++ files and libraries.
-*.a
-*.mod
-*.o
-*.so
-*.x
-
 # macOS directory metadata files.
 *.DS_Store
 
