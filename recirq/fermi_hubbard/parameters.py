@@ -18,7 +18,7 @@ from typing import Any, Dict, Iterable, Optional, Tuple, Type, Union
 
 import abc
 from itertools import product
-from numbers import Number
+from numbers import Number, Real as NumbersReal
 
 import cirq
 import numpy as np
@@ -30,7 +30,8 @@ from recirq.fermi_hubbard.layouts import (
     ZigZagLayout
 )
 
-Real = Union[int, float]
+# Type alias for real numbers (supports int, float, np.float32, np.float64, etc.)
+RealNumber = Union[int, float]
 
 
 @dataclass(init=False)
@@ -61,23 +62,23 @@ class Hamiltonian:
         mu_down: Local chemical potential for spin-down states μ_↓.
     """
     sites_count: int
-    j: Union[Real, Tuple[Real]]
-    u: Union[Real, Tuple[Real]]
-    v: Union[Real, Tuple[Real]]
-    local_charge: Union[Real, Tuple[Real]]
-    local_spin: Union[Real, Tuple[Real]]
-    mu_up: Union[Real, Tuple[Real]]
-    mu_down: Union[Real, Tuple[Real]]
+    j: Union[RealNumber, Tuple[RealNumber]]
+    u: Union[RealNumber, Tuple[RealNumber]]
+    v: Union[RealNumber, Tuple[RealNumber]]
+    local_charge: Union[RealNumber, Tuple[RealNumber]]
+    local_spin: Union[RealNumber, Tuple[RealNumber]]
+    mu_up: Union[RealNumber, Tuple[RealNumber]]
+    mu_down: Union[RealNumber, Tuple[RealNumber]]
 
     def __init__(self, *,
                  sites_count: int,
-                 j: Union[Real, Iterable[Real]],
-                 u: Union[Real, Iterable[Real]],
-                 v: Union[Real, Iterable[Real]] = 0,
-                 local_charge: Union[Real, Iterable[Real]] = 0,
-                 local_spin: Union[Real, Iterable[Real]] = 0,
-                 mu_up: Union[Real, Iterable[Real]] = 0,
-                 mu_down: Union[Real, Iterable[Real]] = 0,
+                 j: Union[RealNumber, Iterable[RealNumber]],
+                 u: Union[RealNumber, Iterable[RealNumber]],
+                 v: Union[RealNumber, Iterable[RealNumber]] = 0,
+                 local_charge: Union[RealNumber, Iterable[RealNumber]] = 0,
+                 local_spin: Union[RealNumber, Iterable[RealNumber]] = 0,
+                 mu_up: Union[RealNumber, Iterable[RealNumber]] = 0,
+                 mu_down: Union[RealNumber, Iterable[RealNumber]] = 0,
                  ) -> None:
         self.sites_count = sites_count
         self.j = _iterable_to_tuple(j)
@@ -102,45 +103,45 @@ class Hamiltonian:
 
     @property
     def j_array(self) -> np.ndarray:
-        if isinstance(self.j, tuple):
-            return np.array(self.j)
-        return np.full(self.interactions_count, self.j)
+        if isinstance(self.j, NumbersReal):
+            return np.full(self.interactions_count, self.j)
+        return np.array(self.j)
 
     @property
     def u_array(self) -> np.ndarray:
-        if isinstance(self.u, tuple):
-            return np.array(self.u)
-        return np.full(self.sites_count, self.u)
+        if isinstance(self.u, NumbersReal):
+            return np.full(self.sites_count, self.u)
+        return np.array(self.u)
 
     @property
     def v_array(self) -> np.ndarray:
-        if isinstance(self.v, tuple):
-            return np.array(self.v)
-        return np.full(self.interactions_count, self.v)
+        if isinstance(self.v, NumbersReal):
+            return np.full(self.interactions_count, self.v)
+        return np.array(self.v)
 
     @property
     def local_charge_array(self) -> np.ndarray:
-        if isinstance(self.local_charge, tuple):
-            return np.array(self.local_charge)
-        return np.full(self.sites_count, self.local_charge)
+        if isinstance(self.local_charge, NumbersReal):
+            return np.full(self.sites_count, self.local_charge)
+        return np.array(self.local_charge)
 
     @property
     def local_spin_array(self) -> np.ndarray:
-        if isinstance(self.local_spin, tuple):
-            return np.array(self.local_spin)
-        return np.full(self.sites_count, self.local_spin)
+        if isinstance(self.local_spin, NumbersReal):
+            return np.full(self.sites_count, self.local_spin)
+        return np.array(self.local_spin)
 
     @property
     def mu_up_array(self) -> np.ndarray:
-        if isinstance(self.mu_up, tuple):
-            return np.array(self.mu_up)
-        return np.full(self.sites_count, self.mu_up)
+        if isinstance(self.mu_up, NumbersReal):
+            return np.full(self.sites_count, self.mu_up)
+        return np.array(self.mu_up)
 
     @property
     def mu_down_array(self) -> np.ndarray:
-        if isinstance(self.mu_down, tuple):
-            return np.array(self.mu_down)
-        return np.full(self.sites_count, self.mu_down)
+        if isinstance(self.mu_down, NumbersReal):
+            return np.full(self.sites_count, self.mu_down)
+        return np.array(self.mu_down)
 
     @property
     def local_up_array(self):
@@ -311,11 +312,11 @@ class PhasedGaussianSingleParticle(SingleParticle):
         interval, m = position * (sites_count - 1) + 1.
     """
 
-    k: Real
-    sigma: Real
-    position: Real
+    k: RealNumber
+    sigma: RealNumber
+    position: RealNumber
 
-    def __init__(self, *, k: Real, sigma: Real, position: Real) -> None:
+    def __init__(self, *, k: RealNumber, sigma: RealNumber, position: RealNumber) -> None:
         self.k = k
         self.sigma = sigma
         self.position = position
@@ -356,7 +357,7 @@ class TrappingPotential:
 
     def as_quadratic_hamiltonian(self,
                                  sites_count: int,
-                                 j: Union[Real, Iterable[Real]],
+                                 j: Union[RealNumber, Iterable[RealNumber]],
                                  ) -> openfermion.QuadraticHamiltonian:
         """Creates a nonintercting Hamiltonian H_0 that describes particle
         in a trapping potential:
@@ -383,9 +384,9 @@ class TrappingPotential:
 class FixedTrappingPotential(TrappingPotential):
     """Fixed array describing trapping potential."""
     particles: int
-    potential: Tuple[Real]
+    potential: Tuple[RealNumber]
 
-    def __init__(self, *, particles: int, potential: Iterable[Real]) -> None:
+    def __init__(self, *, particles: int, potential: Iterable[RealNumber]) -> None:
         self.particles = particles
         self.potential = tuple(potential)
 
@@ -450,15 +451,15 @@ class GaussianTrappingPotential(TrappingPotential):
     """
 
     particles: int
-    center: Real
-    sigma: Real
-    scale: Real
+    center: RealNumber
+    sigma: RealNumber
+    scale: RealNumber
 
     def __init__(self, *,
                  particles: int,
-                 center: Real,
-                 sigma: Real,
-                 scale: Real) -> None:
+                 center: RealNumber,
+                 sigma: RealNumber,
+                 scale: RealNumber) -> None:
         self.particles = particles
         self.center = center
         self.sigma = sigma
@@ -634,14 +635,14 @@ def _phased_gaussian_amplitudes(sites_count: int,
 
 def _potential_to_quadratic_hamiltonian(
         potential: np.ndarray,
-        j: Union[Real, Iterable[Real]]
+        j: Union[RealNumber, Iterable[RealNumber]]
 ) -> openfermion.QuadraticHamiltonian:
     sites_count = len(potential)
 
-    if isinstance(j, Iterable):
-        j = np.array(j)
-    else:
+    if isinstance(j, NumbersReal):
         j = np.full(sites_count - 1, j)
+    else:
+        j = np.array(j)
 
     if len(j) != sites_count - 1:
         raise ValueError('Hopping coefficient size incompatible with potential')
@@ -662,4 +663,4 @@ def _potential_to_quadratic_hamiltonian(
 
 
 def _iterable_to_tuple(value: Any) -> Any:
-    return tuple(value) if isinstance(value, Iterable) else value
+    return value if isinstance(value, NumbersReal) else tuple(value)
