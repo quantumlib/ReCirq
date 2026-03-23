@@ -263,7 +263,7 @@ class ContextualityResult:
 
         Args:
             game:
-                "infer_3rd": making two measurements and inferring the third bit
+                "infer_3rd": make two measurements and infer the third bit.
                 "measure_3rd_classical_multiplication": make 4 measurements for Alice and 4 for Bob.
                 get three bits out of them by multiplying two of them together.
                 This corresponds to measure A and B to compute A*B.
