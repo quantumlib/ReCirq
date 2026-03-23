@@ -386,7 +386,7 @@ def run_contextuality_experiment(
 
 def multiply_bool(bool_0: list[bool], bool_1: list[bool]) -> list[bool]:
     """Perform boolean multiplication. Useful for "measure_3rd_classical_multiplication"."""
-    return [el0 == el1 for el0, el1 in zip(bool_0, bool_1)]
+    return bool_0 == bool_1
 
 
 def bell_pair_prep_circuit(q0: cirq.GridQubit, q1: cirq.GridQubit) -> cirq.Circuit:
