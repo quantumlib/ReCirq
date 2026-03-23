@@ -384,7 +384,7 @@ def run_contextuality_experiment(
     return ContextualityResult(alice_measurements, bob_measurements)
 
 
-def multiply_bool(bool_0: list[bool], bool_1: list[bool]) -> list[bool]:
+def multiply_bool(bool_0: np.ndarray, bool_1: np.ndarray) -> np.ndarray:
     """Perform boolean multiplication. Useful for "measure_3rd_classical_multiplication"."""
     return bool_0 == bool_1
 
