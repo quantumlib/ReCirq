@@ -139,3 +139,41 @@ def test_get_calibrated_circuit():
                     cirq.is_measurement(op)]
     assert len(measurements) == 1
     assert measurements[0].qubits == (q0, q1)
+
+
+def test_characterize_pairs_ideal():
+    """Verifies that characterization on a noiseless simulator returns ideal angles."""
+    q0, q1 = cirq.GridQubit(0, 0), cirq.GridQubit(0, 1)
+    qubits = [q0, q1]
+    sampler = cirq.Simulator()
+
+    theta = np.pi / 2
+    phi = np.pi / 6
+    base_gate = cirq.FSimGate(theta=theta, phi=phi)
+
+    char_results = rcs.characterize_pairs(
+        sampler=sampler,
+        qubits=qubits,
+        gate=base_gate,
+        theta=False,
+        phi=False,
+        zeta=True,
+        chi=True,
+        gamma=True
+    )
+
+
+    pair = tuple(sorted((q0, q1)))
+    assert pair in char_results
+
+    actual_gate = char_results[pair]
+    assert isinstance(actual_gate, cirq.PhasedFSimGate)
+
+    # Theta and phi angles should be close to the ideal values in ideal sim
+    assert actual_gate.theta == pytest.approx(theta, abs=1e-2)
+    assert actual_gate.phi == pytest.approx(phi, abs=1e-2)
+
+    # Z-phases (zeta, chi, gamma) should be effectively zero in ideal sim
+    assert actual_gate.zeta == pytest.approx(0, abs=1e-1)
+    assert actual_gate.chi == pytest.approx(0, abs=1e-1)
+    assert actual_gate.gamma == pytest.approx(0, abs=1e-1)

@@ -83,6 +83,7 @@ def characterize_pairs(
     results = xeb_characterize.calibrate_z_phases(
         sampler=sampler,
         qubits=qubits,
+        two_qubit_gate= gate,
         options=options,
     )
 
