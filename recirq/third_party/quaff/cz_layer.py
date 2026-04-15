@@ -144,7 +144,14 @@ class CZLayerGate(cirq.Gate):
         return phase_poly % 4
 
     def _get_phases(self):
-        """TODO"""
+        """Computes phase exponents for the single-qubit S gates in the decomposition.
+
+        Returns:
+            A tuple (linear, quadratic), where linear is a vector of exponents for
+            the initial single-qubit phase layer, and quadratic is a matrix where
+            each row s contains exponents for the single-qubit phase layer following
+            the s-th basis change stage.
+        """
         n = self.num_qubits()
         phase_poly = self.phase_poly
         quadratic = np.zeros((n // 2, n), dtype=linalg.DTYPE)
