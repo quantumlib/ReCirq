@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Summary: run the OSSF Scorecard scanner on PRs and every night.
-#
+name: Scorecard analysis
+run-name: Run Scorecard scanner for security best practices
+
 # Scorecard (https://github.com/ossf/scorecard) is a repository-scanning tool
 # that evaluates a project's security practices. Its use is suggested by
 # Google's GitHub team. Scorecard's findings are reported in a repo's scanning
 # results page, https://github.com/quantumlib/REPO/security/code-scanning/.
-
-name: Scorecard analysis
-run-name: Run Scorecard scanner for security best practices
 
 on:
   schedule:
@@ -32,26 +30,16 @@ on:
     branches:
       - main
 
-  # Support merge queues.
-  merge_group:
-    types:
-      - checks_requested
-
   # Allow manual invocation.
   workflow_dispatch:
-    inputs:
-      debug:
-        description: 'Run with debugging options'
-        type: boolean
-        default: true
-
-# Declare default workflow permissions as read only.
-permissions: read-all
 
 concurrency:
   # Cancel any previously-started but still active runs on the same branch.
   cancel-in-progress: true
   group: ${{github.workflow}}-${{github.event.pull_request.number||github.ref}}
+
+# Declare default workflow permissions as read only.
+permissions: read-all
 
 jobs:
   run-scorecard:
@@ -64,11 +52,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out a copy of the git repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
       - name: Run Scorecard analysis
+        # yamllint disable rule:line-length
         uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
         with:
           # Save the results
@@ -78,25 +67,17 @@ jobs:
           publish_results: true
 
       - name: Upload results to code-scanning dashboard
-        # yamllint disable-line rule:line-length
-        uses: github/codeql-action/upload-sarif@f6a16bef8e5c39e398e4da16862d381f76824ac6 # codeql-bundle-v2.23.9
+        # yamllint disable rule:line-length
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           sarif_file: scorecard-results.sarif
-
-      - if: github.event.inputs.debug == true
-        name: Upload results as artifacts to the workflow Summary page
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: Scorecard SARIF file
-          path: scorecard-results.sarif
-          retention-days: 5
 
   # Scorecard currently (ver. 2.4.x) doesn't allow submissions from jobs having
   # steps that use "run:". To print to the summary, we need to use another job.
   write-summary:
     name: Scorecard results
     needs: run-scorecard
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - name: Write the Scorecard report page link to the workflow summary
