@@ -1,8 +1,0 @@
-tutorials/
-qaoa/*.ipynb
-qaoa/images
-
-_static/g3618.png
-_static/recirq_logo_notext.png
-best_practices.md
-data_collection_idioms.md
