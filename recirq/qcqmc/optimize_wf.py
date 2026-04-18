@@ -15,6 +15,7 @@
 
 import copy
 import itertools
+import numbers
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import cirq
@@ -295,7 +296,7 @@ def get_energy_and_check_sanity(
     ansatz_energy = np.real_if_close(
         (np.conj(circuit_wf) @ sparse_ham @ circuit_wf)
     ).item()
-    assert isinstance(ansatz_energy, float)
+    assert isinstance(ansatz_energy, numbers.Real)
 
     fqe_energy = np.real(fqe_wf.expectationValue(fqe_ham) + e_core)
     np.testing.assert_array_almost_equal(ansatz_energy, fqe_energy)
