@@ -1,4 +1,5 @@
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
+from numbers import Real
 
 import numpy as np
 import scipy.optimize
@@ -9,7 +10,7 @@ from recirq.optimize.mpg import model_policy_gradient
 OPTIMIZERS = {'mgd': model_gradient_descent, 'mpg': model_policy_gradient}
 
 
-def minimize(fun: Callable[..., float],
+def minimize(fun: Callable[..., Real],
              x0: np.ndarray,
              args: Tuple = (),
              method: Optional[str] = None,
