@@ -18,30 +18,39 @@ try:
     from cirq import RouteCQC
 except ImportError:
     RouteCQC = NotImplemented
-    try:
-        # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
-        # dependency. We do this for CI testing against the next, pre-release Cirq version.
-        import pytket
-        import pytket.extensions.cirq
-        from pytket.circuit import Node, Qubit
-        from pytket.passes import SequencePass, RoutingPass, PlacementPass
-        from pytket.predicates import CompilationUnit, ConnectivityPredicate
-        try:
-            from pytket.placement import GraphPlacement
-        except ImportError:
-            from pytket.routing import GraphPlacement
 
-        try:
-            from pytket.architecture import Architecture
-        except ImportError:
-            from pytket.routing import Architecture
+try:
+    # Set the 'RECIRQ_IMPORT_FAILSAFE' environment variable to treat PyTket as an optional
+    # dependency. We do this for CI testing against the next, pre-release Cirq version.
+    import pytket
+    import pytket.extensions.cirq
+    from pytket.circuit import Node, Qubit
+    from pytket.passes import SequencePass, RoutingPass, PlacementPass
+    from pytket.predicates import CompilationUnit, ConnectivityPredicate
+    try:
+        from pytket.placement import GraphPlacement
     except ImportError:
-        if 'RECIRQ_IMPORT_FAILSAFE' in os.environ:
-            pytket = NotImplemented
-        else:
-            raise ImportError(
-                "Routing utilities don't exist in this version of Cirq and PyTket is not installed."
-                )
+        from pytket.routing import GraphPlacement
+
+    try:
+        from pytket.architecture import Architecture
+    except ImportError:
+        from pytket.routing import Architecture
+except ImportError:
+    pytket = NotImplemented
+    Node = NotImplemented
+    Qubit = NotImplemented
+    SequencePass = NotImplemented
+    RoutingPass = NotImplemented
+    PlacementPass = NotImplemented
+    CompilationUnit = NotImplemented
+    ConnectivityPredicate = NotImplemented
+    GraphPlacement = NotImplemented
+    Architecture = NotImplemented
+    if 'RECIRQ_IMPORT_FAILSAFE' not in os.environ and RouteCQC is NotImplemented:
+        raise ImportError(
+            "Routing utilities don't exist in this version of Cirq and PyTket is not installed."
+        )
 
 import recirq
 
@@ -69,6 +78,10 @@ def calibration_data_to_graph(calib_dict: cg.Calibration) -> nx.Graph:
 
 def _qubit_index_edges(device: cirq.Device):
     """Helper function in `_device_to_tket_device`."""
+    if Node is NotImplemented:
+        raise ImportError(
+            "pytket-cirq is required for this function but not installed."
+        )
     qubits = device.metadata.qubit_set if device.metadata else ()
     dev_graph = ccr.gridqubits_to_graph_device(qubits)
     for n1, n2 in dev_graph.edges:
@@ -80,6 +93,10 @@ def _device_to_tket_device(device: cirq.Device):
 
     This supports any device that supports `ccr.xmon_device_to_graph`.
     """
+    if Architecture is NotImplemented:
+        raise ImportError(
+            "pytket-cirq is required for this function but not installed."
+        )
     return Architecture(
         list(_qubit_index_edges(device))
     )

@@ -88,11 +88,10 @@ def optimize_instance_interp_heuristic(graph: nx.Graph,
     max_c = np.real_if_close(np.max(HamC))
 
     # check if the node degrees are always odd or even
-    # TODO: Why do we mod 2 twice?
     degree_list = np.array([deg for node, deg in graph.degree()]) % 2
-    if np.all(degree_list % 2 == 0):
+    if np.all(degree_list == 0):
         parity = EVEN_DEGREE_ONLY
-    elif np.all(degree_list % 2 == 1):
+    elif np.all(degree_list == 1):
         parity = ODD_DEGREE_ONLY
     else:
         # Not all of one or another

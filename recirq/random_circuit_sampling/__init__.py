@@ -1,4 +1,4 @@
-# Copyright 2024 Google
+# Copyright 2026 Google
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 
-
-def pytest_addoption(parser):
-    parser.addoption("--skipslow", action="store_true", help="skips slow tests")
-
-
-def pytest_runtest_setup(item):
-    if "slow" in item.keywords and item.config.getvalue("skipslow"):
-        pytest.skip("skipped because of --skipslow option")
+from recirq.random_circuit_sampling.rcs_experiment import (
+    characterize_pairs,
+    make_rcs_circuit,
+    RCSExperiment,
+    RCSResults,
+)
