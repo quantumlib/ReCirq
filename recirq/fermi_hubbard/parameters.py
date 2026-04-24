@@ -30,8 +30,6 @@ from recirq.fermi_hubbard.layouts import (
     ZigZagLayout
 )
 
-# Type alias for real numbers (supports int, float, np.float32, np.float64, etc.)
-
 
 @dataclass(init=False)
 class Hamiltonian:
