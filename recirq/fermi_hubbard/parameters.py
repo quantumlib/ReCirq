@@ -660,4 +660,4 @@ def _potential_to_quadratic_hamiltonian(
 
 
 def _iterable_to_tuple(value: Any) -> Any:
-    return value if isinstance(value, Real) else tuple(value)
+    return tuple(value) if isinstance(value, Iterable) else value
