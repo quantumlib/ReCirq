@@ -216,7 +216,7 @@ def rainbow23_layouts(sites_count: int = 8) -> Tuple[ZigZagLayout]:
 
 
 def fetch_publication_data(
-        base_dir: Optional[str] = None,
+        base_dir: Optional[str] = "fermi_hubbard_data",
         exclude: Optional[List[str]] = None,
         auth_token: Optional[str] = None,
 ) -> None:
