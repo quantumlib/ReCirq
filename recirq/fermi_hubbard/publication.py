@@ -16,8 +16,8 @@
 from io import BytesIO
 from copy import deepcopy
 import os
+import requests
 from typing import Callable, List, Optional, Tuple
-from urllib.request import urlopen
 from zipfile import ZipFile
 
 import numpy as np
@@ -218,6 +218,7 @@ def rainbow23_layouts(sites_count: int = 8) -> Tuple[ZigZagLayout]:
 def fetch_publication_data(
         base_dir: Optional[str] = None,
         exclude: Optional[List[str]] = None,
+        auth_token: Optional[str] = None,
 ) -> None:
     """Downloads and extracts publication data from the Dryad repository at
     https://doi.org/10.5061/dryad.crjdfn32v, saving to disk.
@@ -235,29 +236,53 @@ def fetch_publication_data(
         base_dir: Base directory as a relative path to save data in.
             Set to "fermi_hubbard_data" if not specified.
         exclude: List of data to skip while downloading. See above for options.
+        auth_token: OAuth2 token for Dryad API.
     """
-    if base_dir is None:
-        base_dir = "fermi_hubbard_data"
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir)
 
-    api_url = 'https://datadryad.org/api/v2/'
+    api_url = 'https://datadryad.org/api/v2'
+
+    # These IDs are specific to version 1 of DOI 10.5061/dryad.crjdfn32v
+    # If the dataset was updated, these IDs might have changed!
     data = {
         "gaussians_1u1d_nofloquet": "451326",
         "gaussians_1u1d": "451327",
         "trapping_2u2d": "451328",
         "trapping_3u3d": "451329"
     }
-    if exclude is not None:
+
+    if exclude:
         data = {path: key for path, key in data.items() if path not in exclude}
+
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Authorization": f"Bearer {auth_token}"
+    }
 
     for file_name, file_id in data.items():
         print(f"Downloading {file_name}...")
-        if os.path.exists(path=base_dir + os.path.sep + file_name):
-            print("Data already exists.\n")
+
+        if os.path.exists(os.path.join(base_dir, file_name)):
+            print("Data already exists. Skipping.\n")
             continue
 
-        url = f'{api_url}/files/{file_id}/download'
-        with urlopen(url) as stream:
-            with ZipFile(BytesIO(stream.read())) as zfile:
-                zfile.extractall(base_dir)
+        # Correct endpoint for file download
+        url = f"{api_url}/files/{file_id}/download"
 
-        print("Successfully downloaded.\n")
+        try:
+            # stream=True is better for large zip files
+            response = requests.get(url, headers=headers, stream=True)
+
+            # If you still get a 400, this will print the server's explanation
+            if response.status_code != 200:
+                print(f"Server returned {response.status_code}: {response.text}")
+                continue
+
+            with ZipFile(BytesIO(response.content)) as zfile:
+                zfile.extractall(base_dir)
+                print(f"Successfully downloaded and extracted {file_name}.\n")
+
+        except Exception as e:
+            print(f"Failed to download {file_name}: {e}")
+
