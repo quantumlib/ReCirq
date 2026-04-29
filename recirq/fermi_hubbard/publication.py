@@ -216,7 +216,7 @@ def rainbow23_layouts(sites_count: int = 8) -> Tuple[ZigZagLayout]:
 
 
 def fetch_publication_data(
-        base_dir: Optional[str] = "fermi_hubbard_data",
+        base_dir: str = "fermi_hubbard_data",
         exclude: Optional[List[str]] = None,
         auth_token: Optional[str] = None,
 ) -> None:
@@ -270,19 +270,15 @@ def fetch_publication_data(
         # Correct endpoint for file download
         url = f"{api_url}/files/{file_id}/download"
 
-        try:
-            # stream=True is better for large zip files
-            response = requests.get(url, headers=headers, stream=True)
+        # stream=True is better for large zip files
+        response = requests.get(url, headers=headers, stream=True)
 
-            # If you still get a 400, this will print the server's explanation
-            if response.status_code != 200:
-                print(f"Server returned {response.status_code}: {response.text}")
-                continue
+        # If you still get a 400, this will print the server's explanation
+        if response.status_code != 200:
+            print(f"Server returned {response.status_code}: {response.text}")
+            continue
 
-            with ZipFile(BytesIO(response.content)) as zfile:
-                zfile.extractall(base_dir)
-                print(f"Successfully downloaded and extracted {file_name}.\n")
-
-        except Exception as e:
-            print(f"Failed to download {file_name}: {e}")
+        with ZipFile(BytesIO(response.content)) as zfile:
+            zfile.extractall(base_dir)
+            print(f"Successfully downloaded and extracted {file_name}.\n")
 
