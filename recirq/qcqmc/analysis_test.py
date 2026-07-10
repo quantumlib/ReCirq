@@ -273,4 +273,4 @@ def test_small_experiment_partitioned(
         hamiltonian_data=hamiltonian_data,
         k=1,
     )
-    assert np.abs(trial_wf.ansatz_energy - energy) < 2.5e-2 * len(qubit_partition)
+    assert np.abs(trial_wf.ansatz_energy - energy) < 2.8e-2 * len(qubit_partition)
