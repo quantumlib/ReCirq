@@ -8,3 +8,4 @@ ipython
 black
 pytest
 pytest-xdist
+pytz
