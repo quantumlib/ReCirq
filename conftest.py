@@ -14,6 +14,10 @@
 
 import pytest
 
+from recirq.testing_utils import set_threading_limits
+
+set_threading_limits()
+
 
 def pytest_addoption(parser):
     parser.addoption("--skipslow", action="store_true", help="skips slow tests")

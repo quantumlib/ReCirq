@@ -506,7 +506,8 @@ def compute_grid_parallel_two_qubit_xeb_results(
                 cycles,
             )
         )
-    num_processors = min(num_processors, len(arguments))
+    from recirq.testing_utils import get_available_cpu_count
+    num_processors = min(num_processors, len(arguments), get_available_cpu_count())
     with multiprocessing.Pool(num_processors) as pool:
         xeb_result_list = pool.starmap(_get_xeb_result, arguments)
     xeb_results = {
