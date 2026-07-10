@@ -7,7 +7,11 @@ import recirq.contextuality.magic_square_game as msg
 
 @pytest.mark.parametrize(
     "game",
-    ["infer_3rd", "measure_3rd_classical_multiplication", "measure_3rd_quantum_multiplication"],
+    [
+        "infer_3rd",
+        "measure_3rd_classical_multiplication",
+        "measure_3rd_quantum_multiplication",
+    ],
 )
 @pytest.mark.parametrize("add_dd", [True, False])
 def test_run_contextuality_experiment(game: msg.GameType, add_dd: bool) -> None:
@@ -22,7 +26,7 @@ def test_run_contextuality_experiment(game: msg.GameType, add_dd: bool) -> None:
         bob_qubits,
         game=game,
         add_dd=add_dd,
-        sub_case="square_1",
+        sub_case="standard",
         repetitions=10,
     )
     assert np.all(result.get_agree_given_multiply_matrix(game) == np.ones((3, 3)))
