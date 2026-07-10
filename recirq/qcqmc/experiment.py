@@ -143,7 +143,7 @@ def get_samples_from_simulation(
             circuits.
 
     """
-    simulator = qsimcirq.QSimSimulator()
+    simulator = qsimcirq.QSimSimulator(seed=seed)
 
     sampled_bitstrings = []
 
