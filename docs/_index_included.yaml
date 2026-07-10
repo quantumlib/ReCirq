@@ -133,3 +133,11 @@ included:
       path: /cirq/experiments/lattice_gauge/lattice_gauge
     - heading: Code Layout
 
+- heading: Random Circuit Sampling
+  description: Random circuit sampling (RCS) on simulators and real quantum hardware
+  options:
+    - cards
+  items:
+    - heading: Experiment Example
+      path: /cirq/experiments/random_circuit_sampling/rcs_experiment_demonstration
+    - heading: Code Layout
