@@ -28,6 +28,8 @@ import numpy as np
 
 import cirq
 
+from recirq.cpu_utils import get_available_cpu_count
+
 SIGMA_X_IND, SIGMA_Y_IND, SIGMA_Z_IND = (1, 2, 3)
 
 
@@ -305,7 +307,6 @@ def exact_qaoa_values_on_grid(
 
     HamC = create_ZZ_HamC(graph, dtype=dtype)
     N = graph.number_of_nodes()
-    from recirq.testing_utils import get_available_cpu_count
     num_processors = min(num_processors, get_available_cpu_count())
     with multiprocessing.Pool(num_processors) as pool:
         vals = pool.starmap(_ising_qaoa_expectation,
