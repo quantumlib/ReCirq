@@ -15,7 +15,7 @@
 import os
 from unittest import mock
 
-from recirq.testing_utils import get_available_cpu_count, set_threading_limits
+from recirq.cpu_utils import get_available_cpu_count, set_threading_limits
 
 
 def test_get_available_cpu_count_default():
@@ -65,7 +65,7 @@ def test_get_available_cpu_count_xdist_invalid():
 
 def test_set_threading_limits_xdist():
     with mock.patch.dict(os.environ, {"PYTEST_XDIST_WORKER_COUNT": "4"}), \
-         mock.patch("recirq.testing_utils.get_available_cpu_count", return_value=2):
+         mock.patch("recirq.cpu_utils.get_available_cpu_count", return_value=2):
         set_threading_limits()
         for var in ["MKL_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS"]:
             assert os.environ[var] == "1"
@@ -76,7 +76,7 @@ def test_set_threading_limits_no_xdist():
     env_patch = os.environ.copy()
     env_patch.pop("PYTEST_XDIST_WORKER_COUNT", None)
     with mock.patch.dict(os.environ, env_patch, clear=True), \
-         mock.patch("recirq.testing_utils.get_available_cpu_count", return_value=4):
+         mock.patch("recirq.cpu_utils.get_available_cpu_count", return_value=4):
         set_threading_limits()
         for var in ["MKL_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS"]:
             assert os.environ[var] == "3"  # get_available_cpu_count() - 1 = 3
