@@ -14,7 +14,7 @@
 
 import pytest
 
-from recirq.testing_utils import set_threading_limits
+from recirq.cpu_utils import set_threading_limits
 
 set_threading_limits()
 
