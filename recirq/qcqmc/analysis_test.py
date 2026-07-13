@@ -90,7 +90,7 @@ def test_small_experiment_partition_match_reversed_partition_same_seed(
         n_samples_per_clifford=n_samples_per_clifford,
         noise_model_name="None",
         noise_model_params=(0,),
-        seed=2,
+        seed=1,
     )
 
     experiment_1 = ExperimentData.build_experiment_from_dependencies(
