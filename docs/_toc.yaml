@@ -87,3 +87,7 @@ toc:
 - heading: "Lattice Gauge Theory"
 - title: "Simulation of Charges and Strings"
   path: /cirq/experiments/lattice_gauge/lattice_gauge
+
+- heading: "Random Circuit Sampling"
+- title: "Demonstration of random circuit sampling"
+  path: /cirq/experiments/random_circuit_sampling/rcs_experiment_demonstration
