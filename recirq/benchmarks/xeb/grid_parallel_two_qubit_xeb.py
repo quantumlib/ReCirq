@@ -51,6 +51,8 @@ from recirq.benchmarks.xeb.xeb_results import (
     SpecklePurityPair,
 )
 
+from recirq.cpu_utils import get_available_cpu_count
+
 DEFAULT_BASE_DIR = os.path.expanduser(
     os.path.join("~", "cirq-results", "grid-parallel-two-qubit-xeb")
 )
@@ -506,7 +508,7 @@ def compute_grid_parallel_two_qubit_xeb_results(
                 cycles,
             )
         )
-    num_processors = min(num_processors, len(arguments))
+    num_processors = min(num_processors, len(arguments), get_available_cpu_count())
     with multiprocessing.Pool(num_processors) as pool:
         xeb_result_list = pool.starmap(_get_xeb_result, arguments)
     xeb_results = {
