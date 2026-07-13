@@ -27,7 +27,7 @@ simultaneously with fixed values.
 """
 
 import dataclasses
-from typing import Any, Literal
+from typing import Literal
 
 import cirq
 import numpy as np
