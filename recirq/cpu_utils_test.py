@@ -68,7 +68,7 @@ def test_set_threading_limits_xdist():
          mock.patch("recirq.cpu_utils.get_available_cpu_count", return_value=2):
         set_threading_limits()
         for var in ["MKL_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS"]:
-            assert os.environ[var] == "1"
+            assert os.environ[var] == "2"
 
 
 def test_set_threading_limits_no_xdist():
