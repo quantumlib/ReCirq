@@ -53,7 +53,7 @@ def set_threading_limits() -> None:
     available CPU resources on high-core-count or multi-worker environments.
     """
     if "PYTEST_XDIST_WORKER_COUNT" in os.environ:
-        limit = "1"
+        limit = str(max(get_available_cpu_count(), 1))
     else:
         limit = str(max(get_available_cpu_count() - 1, 1))
     for var in ["MKL_NUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS"]:
