@@ -60,8 +60,8 @@ class ContextualityResult:
 
         repetitions = self.alice_measurements.shape[2]
 
-        # the following two arrays have indices signifying
-        # [query_row, query_column, repetition, index_of_output]
+        # The following two arrays have indices signifying
+        # [query_row, query_column, repetition, index_of_output].
         alice_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
         bob_choices = np.zeros((3, 3, repetitions, 3), dtype=bool)
 
