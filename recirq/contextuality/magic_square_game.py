@@ -261,10 +261,8 @@ class ContextualityResult:
         return agree_matrix
 
     def get_agree_and_multiply_matrix(self, game: GameType) -> np.ndarray:
-        """Find the fraction of the time that Alice and Bob
-        Alice and Bob "agree" (in the intersection)
-        and
-        they "multiply correctly" (alice to -1 and bob to +1).
+        """Find the fraction of the time that Alice and Bob "agree" (in the intersection)
+        and they "multiply correctly" (alice to -1 and bob to +1).
 
         Args:
             game:
