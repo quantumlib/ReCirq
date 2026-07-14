@@ -188,7 +188,7 @@ class ContextualityResult:
         repetitions = alice_choices.shape[2]
         for row in range(3):
             for col in range(3):
-                # if multiplication rules are not respected, there is no match
+                # If multiplication rules are not respected, there is no match.
                 number_of_matches = 0
                 for rep in range(repetitions):
                     alice_triad = alice_choices[row, col, rep, :]
