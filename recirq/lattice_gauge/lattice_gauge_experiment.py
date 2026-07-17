@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections.abc import Sequence
+from numbers import Real
 from typing import Any
 
 import cirq
@@ -25,7 +26,7 @@ import sympy
 from recirq.lattice_gauge.lattice_gauge_grid import QubitNeighbor, LGTGrid
 
 def variational_ground_state_minimal_qubits_cols(
-    grid: LGTGrid, x_ancillary_qubits_in_cols: list[set[cirq.GridQubit]], theta: float
+    grid: LGTGrid, x_ancillary_qubits_in_cols: list[set[cirq.GridQubit]], theta: Real
 ) -> list[cirq.Moment]:
     """Moments to prepare the state from the toric code variational ansatz for two columns.
 
@@ -63,7 +64,7 @@ def variational_ground_state_minimal_qubits_cols(
 
 
 def variational_ground_state_minimal_qubits(
-    grid: LGTGrid, theta: float, extra_x_plaquette_indices: list[tuple[int, int]] = []
+    grid: LGTGrid, theta: Real, extra_x_plaquette_indices: list[tuple[int, int]] = []
 ) -> list[cirq.Moment]:
     """Moments to prepare the state from the toric code variation ansatz.
 
@@ -585,7 +586,7 @@ def x_plaquette_bitstrings(data: np.array, grid: LGTGrid) -> np.ndarray:
 
 def cnot_on_layer(
     pairs_list: Sequence[tuple[cirq.GridQubit, cirq.GridQubit]],
-    depolarization_probability: float | dict | None = None,
+    depolarization_probability: Real | dict | None = None,
 ) -> Sequence[cirq.Moment]:
     """Outputs a list of moments for CNOT between two lists, in terms of CZ gates.
 
@@ -601,7 +602,7 @@ def cnot_on_layer(
             cirq.Moment(cirq.CZ.on(qc, qt) for qc, qt in pairs_list),
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
         ]
-    elif isinstance(depolarization_probability, float):
+    elif isinstance(depolarization_probability, Real):
         return [
             cirq.Moment(cirq.H.on_each(pair[1] for pair in pairs_list)),
             cirq.Moment(cirq.CZ.on(qc, qt) for qc, qt in pairs_list),
