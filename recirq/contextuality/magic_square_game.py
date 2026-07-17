@@ -168,8 +168,9 @@ class ContextualityResult:
             raise ValueError(f"Unknown game: {game}")
 
     def get_agree_given_multiply_matrix(self, game: GameType) -> np.ndarray:
-        """Find the fraction of the time that Alice and Bob "agree" (in the intersection) given that
-        they "multiply correctly" (alice to -1 and bob to +1).
+        """Fraction of time Alice and Bob agree in the intersection when they multiply correctly.
+
+        Alice should multiply to +1 and Bob to -1.
 
         Args:
             game:
@@ -203,8 +204,9 @@ class ContextualityResult:
         return agree_given_multiply_matrix
 
     def get_multiply_matrix(self, game: GameType) -> np.ndarray:
-        """Find the fraction of the time that Alice and Bob
-        "multiply correctly" (alice to -1 and bob to +1).
+        """Fraction of the time that Alice and Bob multiply correctly.
+
+        Alice should multiply to +1 and Bob to -1.
 
         Args:
             game:
@@ -233,7 +235,7 @@ class ContextualityResult:
         return multiply_matrix
 
     def get_agree_matrix(self, game: GameType) -> np.ndarray:
-        """Fraction of the time that Alice and Bob Alice and Bob "agree" (in the intersection).
+        """Fraction of the time that Alice and Bob agree in the intersection.
 
         Args:
             game:
