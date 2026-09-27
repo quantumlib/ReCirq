@@ -74,14 +74,17 @@ def main(*, out_fn: str = 'ci-requirements.txt', relative_cirq_version: str = 'c
     core_reqs = _parse_requirements(REPO_DIR / 'requirements.txt')
     core_reqs = _set_cirq_version(core_reqs, relative_cirq_version)
 
-    extras_require = [
-        'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard', 'qml_lfe',
-        'seniority_zero', 'qcqmc', 'contextuality'
-    ]
-    extras_require = {
-        r: _parse_requirements(pathlib.Path(REPO_DIR / f'recirq/{r}/extra-requirements.txt'))
-        for r in extras_require
-    }
+    extras_require = {}
+    recirq_dir = REPO_DIR / 'recirq'
+
+    for package_dir in sorted(recirq_dir.iterdir()):
+        if not package_dir.is_dir():
+            continue
+
+        requirements_file = package_dir / 'extra-requirements.txt'
+        if requirements_file.exists():
+            extras_require[package_dir.name] = _parse_requirements(requirements_file)
+
     extras_require['qaoa'] = _set_qaoa_hacks(extras_require['qaoa'], relative_cirq_version)
 
     lines = ['# Core requirements'] + core_reqs
