@@ -12,30 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import recirq.qec_memory.utils as utils
-import cirq
+import recirq.qec_memory.analysis as qec_analysis
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-
-
-def test_get_pre_loop_key():
-    keys = ["0", "1", "2", "3[0]", "3[1]", "3[2]", "4[0]", "4[1]", "4[2]", "5", "6"]
-    assert utils.get_pre_loop_key(keys) == 2
-
-
-def test_replace_loop_repetitions():
-    circuit = cirq.Circuit(
-        cirq.X(cirq.q(0)),
-        cirq.CircuitOperation(cirq.Circuit(cirq.X(cirq.q(0))).freeze(), repetitions=8),
-        cirq.X(cirq.q(0)),
-    )
-    circuit2 = utils.replace_loop_repetitions(circuit, cycles=20, original_cycles=10)
-    assert circuit2 == cirq.Circuit(
-        cirq.X(cirq.q(0)),
-        cirq.CircuitOperation(cirq.Circuit(cirq.X(cirq.q(0))).freeze(), repetitions=18),
-        cirq.X(cirq.q(0)),
-    )
 
 
 def test_fit_logical_error_per_cycle():
@@ -45,28 +25,15 @@ def test_fit_logical_error_per_cycle():
     fidelity = amp * (1 - 2 * epsilon) ** cycles
     lep = (1 - fidelity) / 2
     d_lep = 0.001
-    popt, cov = utils.fit_logical_error_per_cycle(cycles, lep, d_lep)
+    popt, cov = qec_analysis.fit_logical_error_per_cycle(cycles, lep, d_lep)
     assert np.isclose(popt[0], amp)
     assert np.isclose(popt[1], epsilon)
-
-
-def test_add_sweep_bits():
-    qubits = cirq.GridQubit.rect(1, 10)
-    measure_qubits = set(qubits[0::2])
-    data_qubits = set(qubits[1::2])
-    circuit = cirq.Circuit(*[cirq.M(q) for q in measure_qubits], cirq.M(*qubits))
-    assert utils.identify_data_qubits(circuit) == data_qubits
-    rng = np.random.default_rng(0)
-    new_circuit = utils.add_sweep_bits(circuit, rng=rng)
-    assert new_circuit == cirq.Circuit(
-        cirq.X.on_each(cirq.q(0, 1), cirq.q(0, 9)) + circuit
-    )
 
 
 def test_lambda_experiment_results():
     cycles = np.arange(1, 201)
     for num_sweep_bit_choices in [1, 4]:
-        lambda_results = utils.LambdaExperimentResults(
+        lambda_results = qec_analysis.LambdaExperimentResults(
             cycles_list=copy.deepcopy(cycles),
             repetitions=1000,
             num_sweep_bit_choices=num_sweep_bit_choices,
@@ -84,11 +51,11 @@ def test_lambda_experiment_results():
                     fidelity = amp * (1 - 2 * epsilon) ** cycles_all
                     lep = (1 - fidelity) / 2
                     lambda_results.add_result(
-                        utils.SurfaceCodeParams(
+                        qec_analysis.SurfaceCodeParams(
                             distance=distance, shift=shift, observable=basis
                         ),
                         lep,
-                        cycles_all,
+                        copy.deepcopy(cycles_all),
                     )
         lambda_results.fit_exponential()
         assert np.isclose(lambda_results.fitted_ler[3], epsilon_3)
@@ -102,3 +69,4 @@ def test_lambda_experiment_results():
         ax = lambda_results.plot(ax=ax)
         num_lines = len(ax.get_lines())
         assert num_lines == 84 if num_sweep_bit_choices == 4 else 30
+        plt.close(fig)
