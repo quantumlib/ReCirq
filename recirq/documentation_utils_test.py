@@ -60,3 +60,41 @@ def test_fetch_guide_data_collection_data_traversal(mock_urlopen, tmpdir):
         recirq.fetch_guide_data_collection_data(base_dir=tmpdir)
 
     assert not os.path.exists('/tmp/pwned')
+
+
+@mock.patch('urllib.request.urlopen')
+def test_fetch_guide_data_collection_data_uses_seekable_tar_mode(
+    mock_urlopen, tmpdir
+):
+    # Create a valid tar.xz archive in memory.
+    tar_stream = io.BytesIO()
+    with tarfile.open(fileobj=tar_stream, mode='w:xz') as tf:
+        data = b"test data"
+        info = tarfile.TarInfo(
+            name="2020-02-tutorial/Syc23-test/q-test/test.json"
+        )
+        info.size = len(data)
+        tf.addfile(info, io.BytesIO(data))
+
+    mock_response = mock.Mock()
+    mock_response.read.return_value = tar_stream.getvalue()
+    mock_urlopen.return_value = mock_response
+
+    original_tarfile_open = tarfile.open
+
+    def checked_tarfile_open(*args, **kwargs):
+        assert kwargs["mode"] == "r:xz"
+        return original_tarfile_open(*args, **kwargs)
+
+    with mock.patch('tarfile.open', side_effect=checked_tarfile_open):
+        recirq.fetch_guide_data_collection_data(base_dir=tmpdir)
+
+    output_file = os.path.join(
+        tmpdir,
+        "2020-02-tutorial",
+        "Syc23-test",
+        "q-test",
+        "test.json",
+    )
+
+    assert os.path.exists(output_file)
