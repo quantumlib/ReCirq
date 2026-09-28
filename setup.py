@@ -34,13 +34,10 @@ def _parse_requirements(path: pathlib.Path):
 
 
 install_requires = _parse_requirements(pathlib.Path('requirements.txt'))
-extras_require = [
-    'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard', 'qml_lfe',
-    'seniority_zero', 'qcqmc'
-]
+requirements_files = pathlib.Path('recirq').glob('*/extra-requirements.txt')
 extras_require = {
-    r: _parse_requirements(pathlib.Path(f'recirq/{r}/extra-requirements.txt'))
-    for r in extras_require
+    req_file.parent.name: _parse_requirements(req_file)
+    for req_file in sorted(requirements_files)
 }
 
 # TODO(gh-231): remove and require users to install via extras_require.
