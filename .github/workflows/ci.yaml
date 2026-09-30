@@ -34,8 +34,9 @@ on:
 
   workflow_dispatch:
 
-# Declare default workflow permissions as read only.
-permissions: read-all
+# Declare the minimum workflow permissions needed to check out the repository.
+permissions:
+  contents: read
 
 concurrency:
   # Cancel any previously-started but still active runs on the same branch.
