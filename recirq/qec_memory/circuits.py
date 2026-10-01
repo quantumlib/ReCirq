@@ -55,14 +55,9 @@ def replace_loop_repetitions(
             op = moment.operations[0]
             new_moments.append(
                 cirq.Moment(
-                    cirq.CircuitOperation(
-                        circuit=op.circuit,
+                    op.replace(
                         repetitions=cycles - original_cycles + op.repetitions,
-                        qubit_map=op.qubit_map,
-                        measurement_key_map=op.measurement_key_map,
-                        param_resolver=op.param_resolver,
-                        parent_path=op.parent_path,
-                        repeat_until=op.repeat_until,
+                        repetition_ids=None,
                     )
                 )
             )
@@ -137,5 +132,8 @@ def add_sweep_bits(
     data_qubits = sorted(identify_data_qubits(circuit))
     include = rng.random(len(data_qubits))
     qubits_to_flip = np.array(data_qubits)[include > 0.5]
-    idx = int(isinstance(circuit[0].operations[0].gate, cirq.WaitGate))
+    idx = int(
+        isinstance(circuit[0].operations[0].gate, cirq.WaitGate)
+        and len(circuit[0].operations) == 1
+    )
     return circuit[:idx] + cirq.X.on_each(qubits_to_flip) + circuit[idx:]

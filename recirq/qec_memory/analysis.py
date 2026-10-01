@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import scipy
+import scipy.optimize
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Literal
@@ -113,6 +113,27 @@ class SurfaceCodeParams:
 
 
 class LambdaExperimentResults:
+    """Contains and processes the results of running a lambda experiment.
+
+    To use it, first initialize using
+    ```
+    results = LambdaExperimentResults(cycles_list, repetitions, num_sweep_bit_choices)
+    ```
+    and then add results using
+    ```
+    results.add_result(params, lep, shuffled_cycles)
+    ```
+    and finally plot the analyzed data using
+    ```
+    results.plot(ax)
+    ```
+
+    Attrs:
+        cycles_list: The cycles for which the experiment is run.
+        repetitions: The number of repetitions for which each memory experiment is run.
+        num_sweep_bit_choices: The number of choices for random X gates inserted on data qubits at the beginning of the circuit.
+    """
+
     def __init__(
         self, cycles_list: list[int], repetitions: int, num_sweep_bit_choices: int
     ):
@@ -132,6 +153,14 @@ class LambdaExperimentResults:
     def add_result(
         self, params: SurfaceCodeParams, lep: np.ndarray, shuffled_cycles: np.ndarray
     ):
+        """
+        Add experimental data to LambdaExperimentResults.
+
+        Args:
+            params: The params for which the experiment was run (distance, shift, and observable).
+            lep: The measured logical error probability. Should be in the same order as shuffled_cycles.
+            shuffled_cycles: The cycles that were run, in the order in which they were run.
+        """
         self.params_all.append(params)
         self.shuffled_cycles_all.append(shuffled_cycles)
 
@@ -142,6 +171,10 @@ class LambdaExperimentResults:
         )
 
     def average_instances(self):
+        """Average the logical error probability over params and sweep bits for each code distance.
+
+        Results get stored in self.avg_lep_by_distance and statistical uncertainties in self.d_avg_lep_by_distance.
+        """
         distances = sorted({params.distance for params in self.params_all})
         lep_by_distance = {distance: [] for distance in distances}
         for lep, params in zip(self.lep_all, self.params_all):
@@ -161,6 +194,12 @@ class LambdaExperimentResults:
             ) / np.sqrt(self.num_sweep_bit_choices * len(lep_by_distance[distance]))
 
     def fit_exponential(self):
+        """Fit the averaged logical error probability vs cycle number to extract the logical error rate.
+
+        Results are stored in self.fitted_ler and statistical uncertainties in self.d_fitted_ler.
+
+        See Section III of the SM to https://www.nature.com/articles/s41586-022-05434-1.
+        """
         self.average_instances()
         for distance, lep in self.avg_lep_by_distance.items():
             d_lep = copy.deepcopy(self.d_avg_lep_by_distance[distance])
@@ -173,27 +212,36 @@ class LambdaExperimentResults:
             self.d_fitted_ler[distance] = np.sqrt(cov[1, 1])
 
     def plot(self, ax: plt.Axes) -> plt.Axes:
+        """Plot logical error probability vs cycles with the data and fitted curves and show fitted LEP and lambda.
+
+        Generates a plot similar to Fig 1c of https://www.nature.com/articles/s41586-024-08449-y.
+
+        Args:
+            ax: The axes on which to plot.
+
+        Returns:
+            The updated axes.
+        """
         self.fit_exponential()
         included_distances = set()
         for params, lep in zip(self.params_all, self.lep_all):
             distance = params.distance
             marker = get_marker(distance)
             color = get_color(distance)
-            for sweep_idx in range(self.num_sweep_bit_choices):
-                ax.plot(
-                    self.cycles_list,
-                    lep[:, sweep_idx],
-                    marker=marker,
-                    color=color,
-                    linestyle="none",
-                    alpha=0.3,
-                    label=(
-                        f"$d = {params.distance}$ (individual)"
-                        if distance not in included_distances
-                        else None
-                    ),
-                )
-                included_distances.add(distance)
+            ax.plot(
+                self.cycles_list,
+                np.mean(lep, axis=1),
+                marker=marker,
+                color=color,
+                linestyle="none",
+                alpha=0.3,
+                label=(
+                    f"$d = {params.distance}$ (individual)"
+                    if distance not in included_distances
+                    else None
+                ),
+            )
+            included_distances.add(distance)
 
         for distance, avg_lep in self.avg_lep_by_distance.items():
             marker = get_marker(distance)

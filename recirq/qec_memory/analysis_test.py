@@ -43,7 +43,7 @@ def test_lambda_experiment_results():
         epsilon_3 = 2 * epsilon_5
         amp = 0.8
         cycles_all = np.repeat(cycles, num_sweep_bit_choices)
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(0)
         for distance, epsilon in [(3, epsilon_3), (5, epsilon_5), (7, epsilon_7)]:
             for shift in [(0, 0), (0, 4), (4, 0)]:
                 for basis in ["H", "V"]:
@@ -68,5 +68,5 @@ def test_lambda_experiment_results():
         fig, ax = plt.subplots(dpi=150, facecolor="white")
         ax = lambda_results.plot(ax=ax)
         num_lines = len(ax.get_lines())
-        assert num_lines == 84 if num_sweep_bit_choices == 4 else 30
+        assert num_lines == 30
         plt.close(fig)
