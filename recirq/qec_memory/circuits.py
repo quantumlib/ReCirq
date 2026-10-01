@@ -24,6 +24,9 @@ def get_pre_loop_key(keys: list[str]) -> int:
 
     Returns:
         The key as an integer.
+
+    Raises:
+        ValueError: If keys does not contain some non-consecutive integers strings.
     """
     digit_keys = sorted([int(key) for key in keys if key.isdigit()])
     for i in range(len(digit_keys) - 1):
