@@ -34,8 +34,9 @@ on:
 
   workflow_dispatch:
 
-# Declare default workflow permissions as read only.
-permissions: read-all
+# Declare the minimum workflow permissions needed to check out the repository.
+permissions:
+  contents: read
 
 concurrency:
   # Cancel any previously-started but still active runs on the same branch.
@@ -89,11 +90,16 @@ jobs:
           pip install --no-deps -e .
 
       - name: Test with pytest
+        env:
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+          MKL_NUM_THREADS: "1"
+          NUMEXPR_NUM_THREADS: "1"
+          RECIRQ_IMPORT_FAILSAFE: "y"
         run: |
           # OMP_NUM_THREADS: PySCF's poor OpenMP performance slows down QCQMC tests.
           # RECIRQ_IMPORT_FAILSAFE: skip tests on unsupported Cirq configurations.
-          export OMP_NUM_THREADS=1
-          RECIRQ_IMPORT_FAILSAFE=y pytest -n logical -v --skipslow
+          pytest -n 2 -v --skipslow
 
   pylint:
     name: Run Python linters
