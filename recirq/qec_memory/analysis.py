@@ -238,7 +238,7 @@ class LambdaExperimentResults:
             )
             included_distances.add(distance)
 
-        for distance, avg_lep in self.avg_lep_by_distance.items():
+        for distance, avg_lep in sorted(self.avg_lep_by_distance.items()):
             marker = get_marker(distance)
             color = get_color(distance)
             d_avg_lep = self.d_avg_lep_by_distance[distance]
@@ -265,7 +265,7 @@ class LambdaExperimentResults:
                 )
                 / 2,
                 color=color,
-                label=f"Fit, LER={self.fitted_ler[distance]*100:.3f}% ± {self.d_fitted_ler[distance]*100:.3f}%",
+                label=f"$\\varepsilon_{{{distance}}}={self.fitted_ler[distance]*100:.3f}\\% \\pm {self.d_fitted_ler[distance]*100:.3f}\\%$",
             )
 
         if 3 in self.fitted_ler and 5 in self.fitted_ler:
@@ -286,7 +286,7 @@ class LambdaExperimentResults:
         ax.set_xlim(-1, 255)
         ax.set_ylim(-0.01, 0.55)
         ax.set_xlabel("Quantum error correction cycle, $t$")
-        ax.set_ylabel("Logical error probability $p_L$")
+        ax.set_ylabel("Logical error probability, $p_L$")
         ax.legend(frameon=False, labelcolor="linecolor", loc="upper left")
         ax.tick_params(direction="in", top=True, right=True)
 
