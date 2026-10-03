@@ -223,7 +223,6 @@ class LambdaExperimentResults:
             The updated axes.
         """
         self.fit_exponential()
-        included_distances = set()
         for params, lep in zip(self.params_all, self.lep_all):
             distance = params.distance
             marker = get_marker(distance)
@@ -236,7 +235,6 @@ class LambdaExperimentResults:
                 linestyle="none",
                 alpha=0.3,
             )
-            included_distances.add(distance)
 
         for distance, avg_lep in sorted(self.avg_lep_by_distance.items()):
             marker = get_marker(distance)
