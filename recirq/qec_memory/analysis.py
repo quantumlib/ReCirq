@@ -263,14 +263,14 @@ class LambdaExperimentResults:
                 )
                 / 2,
                 color=color,
-                label=f"$\\varepsilon_{{{distance}}}={self.fitted_ler[distance]*100:.3f}\\% \\pm {self.d_fitted_ler[distance]*100:.3f}\\%$",
+                label=rf"$\varepsilon_{{{distance}}}={self.fitted_ler[distance]*100:.3f}\% \pm {self.d_fitted_ler[distance]*100:.3f}\%$",
             )
 
         if 3 in self.fitted_ler and 5 in self.fitted_ler:
             ax.text(
                 175,
                 0.06,
-                f"$\\Lambda_{{35}} = {self.fitted_ler[3]/self.fitted_ler[5]:.2f} \\pm {np.sqrt( (self.d_fitted_ler[3]/self.fitted_ler[5])**2 + (self.fitted_ler[3]*self.d_fitted_ler[5]/self.fitted_ler[5]**2)**2 ):.2f}$",
+                rf"$\Lambda_{{35}} = {self.fitted_ler[3]/self.fitted_ler[5]:.2f} \pm {np.sqrt( (self.d_fitted_ler[3]/self.fitted_ler[5])**2 + (self.fitted_ler[3]*self.d_fitted_ler[5]/self.fitted_ler[5]**2)**2 ):.2f}$",
                 va="top",
             )
         if 5 in self.fitted_ler and 7 in self.fitted_ler:

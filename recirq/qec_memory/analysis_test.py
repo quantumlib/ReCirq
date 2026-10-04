@@ -69,4 +69,14 @@ def test_lambda_experiment_results():
         ax = lambda_results.plot(ax=ax)
         num_lines = len(ax.get_lines())
         assert num_lines == 30
+        fig.canvas.draw()  # Force mathtext parsing of labels and annotations.
+        legend_labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        assert legend_labels == [
+            "$\\varepsilon_{3}=0.400\\% \\pm 0.000\\%$",
+            "$\\varepsilon_{5}=0.200\\% \\pm 0.000\\%$",
+            "$\\varepsilon_{7}=0.100\\% \\pm 0.000\\%$",
+            "$d = 3$",
+            "$d = 5$",
+            "$d = 7$",
+        ]
         plt.close(fig)
