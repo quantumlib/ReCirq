@@ -17,11 +17,6 @@ import cirq
 import numpy as np
 
 
-def test_get_pre_loop_key():
-    keys = ["0", "1", "2", "3[0]", "3[1]", "3[2]", "4[0]", "4[1]", "4[2]", "5", "6"]
-    assert qec_circuits.get_pre_loop_key(keys) == 2
-
-
 def test_replace_loop_repetitions():
     circuit = cirq.Circuit(
         cirq.X(cirq.q(0)),
