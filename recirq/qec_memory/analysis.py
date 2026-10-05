@@ -223,7 +223,6 @@ class LambdaExperimentResults:
             The updated axes.
         """
         self.fit_exponential()
-        included_distances = set()
         for params, lep in zip(self.params_all, self.lep_all):
             distance = params.distance
             marker = get_marker(distance)
@@ -235,15 +234,9 @@ class LambdaExperimentResults:
                 color=color,
                 linestyle="none",
                 alpha=0.3,
-                label=(
-                    f"$d = {params.distance}$ (individual)"
-                    if distance not in included_distances
-                    else None
-                ),
             )
-            included_distances.add(distance)
 
-        for distance, avg_lep in self.avg_lep_by_distance.items():
+        for distance, avg_lep in sorted(self.avg_lep_by_distance.items()):
             marker = get_marker(distance)
             color = get_color(distance)
             d_avg_lep = self.d_avg_lep_by_distance[distance]
@@ -255,7 +248,7 @@ class LambdaExperimentResults:
                 color=color,
                 linestyle="none",
                 capsize=3,
-                label=f"$d = {distance}$ (mean)",
+                label=f"$d = {distance}$",
                 mec="k",
                 ecolor="k",
                 zorder=100,
@@ -270,20 +263,20 @@ class LambdaExperimentResults:
                 )
                 / 2,
                 color=color,
-                label=f"Fit, LER={self.fitted_ler[distance]*100:.3f}% ± {self.d_fitted_ler[distance]*100:.3f}%",
+                label=rf"$\varepsilon_{{{distance}}}={self.fitted_ler[distance]*100:.3f}\% \pm {self.d_fitted_ler[distance]*100:.3f}\%$",
             )
 
         if 3 in self.fitted_ler and 5 in self.fitted_ler:
             ax.text(
                 175,
-                0.5,
-                f"$\\Lambda_{{35}} = {self.fitted_ler[3]/self.fitted_ler[5]:.2f} \\pm {np.sqrt( (self.d_fitted_ler[3]/self.fitted_ler[5])**2 + (self.fitted_ler[3]*self.d_fitted_ler[5]/self.fitted_ler[5]**2)**2 ):.2f}$",
+                0.06,
+                rf"$\Lambda_{{35}} = {self.fitted_ler[3]/self.fitted_ler[5]:.2f} \pm {np.sqrt( (self.d_fitted_ler[3]/self.fitted_ler[5])**2 + (self.fitted_ler[3]*self.d_fitted_ler[5]/self.fitted_ler[5]**2)**2 ):.2f}$",
                 va="top",
             )
         if 5 in self.fitted_ler and 7 in self.fitted_ler:
             ax.text(
                 175,
-                0.5,
+                0.06,
                 f"\n$\\Lambda_{{57}} = {self.fitted_ler[5]/self.fitted_ler[7]:.2f} \\pm {np.sqrt( (self.d_fitted_ler[5]/self.fitted_ler[7])**2 + (self.fitted_ler[5]*self.d_fitted_ler[7]/self.fitted_ler[7]**2)**2 ):.2f}$",
                 va="top",
             )
@@ -291,7 +284,7 @@ class LambdaExperimentResults:
         ax.set_xlim(-1, 255)
         ax.set_ylim(-0.01, 0.55)
         ax.set_xlabel("Quantum error correction cycle, $t$")
-        ax.set_ylabel("Logical error probability $p_L$")
+        ax.set_ylabel("Logical error probability, $p_L$")
         ax.legend(frameon=False, labelcolor="linecolor", loc="upper left")
         ax.tick_params(direction="in", top=True, right=True)
 
