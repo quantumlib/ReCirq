@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+from collections.abc import Sequence
+
 import cirq
+import numpy as np
+import pandas as pd
 import pymatching
 import stim
 import stimcirq
 import stimflow
-import re
-import numpy as np
-import pandas as pd
-from typing import Sequence
 
 
 def _get_pre_loop_key(keys: Sequence[str]) -> int:
@@ -45,8 +46,7 @@ def _get_pre_loop_key(keys: Sequence[str]) -> int:
 
 
 def cirq_df_to_stim_array(data: pd.DataFrame) -> np.ndarray:
-    """
-    Convert from cirq.Result.data to the format expected by stim.
+    """Convert from cirq.Result.data to the format expected by Stim.
 
     Args:
         data: The measurement, as returned by cirq.Result.data.
@@ -90,6 +90,8 @@ def cirq_to_stim_hardware_circuit(hardware_circuit: cirq.Circuit) -> stim.Circui
     Returns:
         A corresponding stim circuit.
     """
+    # `hardware_circuit` may contain paramterized gates Z rotations, known as ADEPT
+    # phases, to correct hardware noise. We set them to 0 here. See arXiv:1603.03082.
     zero_adept_phases = {key: 0 for key in hardware_circuit._parameter_names_()}
     hardware_circuit_no_adept = cirq.resolve_parameters(
         hardware_circuit, zero_adept_phases
@@ -161,7 +163,7 @@ def decode(detection_events: np.ndarray, dem: stim.DetectorErrorModel) -> np.nda
 
 def get_logical_error_probability(
     data: pd.DataFrame, circuit: cirq.Circuit, si_1000_error_rate: float
-) -> list[float]:
+) -> float:
     """Decode using pymatching and get the logical error probability.
 
     Args:
@@ -171,10 +173,15 @@ def get_logical_error_probability(
 
     Returns:
         The logical error probability.
+
+    Raises:
+        NotImplementedError: If the circuit contains multiple observables.
     """
     hardware_stim_circuit = cirq_to_stim_hardware_circuit(circuit)
     dem = create_dem(hardware_stim_circuit, si_1000_error_rate)
     dets_arr, obs_arr = extract_detection_events(data, hardware_stim_circuit)
+    if obs_arr.shape[1] != 1:
+        raise NotImplementedError("Multiple observables are not currently supported.")
     predictions = decode(dets_arr, dem)
     decoded_obs = predictions ^ obs_arr
-    return decoded_obs.mean()
+    return float(decoded_obs.mean())

@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import recirq.qec_memory.circuits as qec_circuits
 import cirq
 import numpy as np
+
+import recirq.qec_memory.circuits as qec_circuits
 
 
 def test_replace_loop_repetitions():

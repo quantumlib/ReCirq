@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import recirq.qec_memory.analysis as qec_analysis
-import numpy as np
-import matplotlib.pyplot as plt
 import copy
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+import recirq.qec_memory.analysis as qec_analysis
 
 
 def test_fit_logical_error_per_cycle():
