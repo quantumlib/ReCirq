@@ -12,14 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import recirq.qec_memory.circuits as qec_circuits
 import cirq
 import numpy as np
 
-
-def test_get_pre_loop_key():
-    keys = ["0", "1", "2", "3[0]", "3[1]", "3[2]", "4[0]", "4[1]", "4[2]", "5", "6"]
-    assert qec_circuits.get_pre_loop_key(keys) == 2
+import recirq.qec_memory.circuits as qec_circuits
 
 
 def test_replace_loop_repetitions():

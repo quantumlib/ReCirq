@@ -16,27 +16,6 @@ import cirq
 import numpy as np
 
 
-def get_pre_loop_key(keys: list[str]) -> int:
-    """Find the last measure key before the ones from within the CircuitOperation.
-
-    Args:
-        keys: A list of the measure keys.
-
-    Returns:
-        The key as an integer.
-
-    Raises:
-        ValueError: If keys does not contain some non-consecutive integers strings.
-    """
-    digit_keys = sorted([int(key) for key in keys if key.isdigit()])
-    for i in range(len(digit_keys) - 1):
-        if digit_keys[i + 1] - digit_keys[i] > 1:
-            return digit_keys[i]
-    raise ValueError(
-        "`keys` must contain some integer strings and they must not all be consecutive"
-    )
-
-
 def replace_loop_repetitions(
     circuit: cirq.Circuit, cycles: int, original_cycles: int = 10
 ) -> cirq.Circuit:

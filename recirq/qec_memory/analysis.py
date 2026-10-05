@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import scipy.optimize
-import numpy as np
-import matplotlib.pyplot as plt
-from typing import Literal
 import copy
 import dataclasses
+from typing import Literal
+
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.optimize
 
 
 def fit_logical_error_per_cycle(

@@ -36,7 +36,7 @@ def _parse_requirements(path: pathlib.Path):
 install_requires = _parse_requirements(pathlib.Path('requirements.txt'))
 extras_require = [
     'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard', 'qml_lfe',
-    'seniority_zero', 'qcqmc'
+    'seniority_zero', 'qcqmc', 'qec_memory'
 ]
 extras_require = {
     r: _parse_requirements(pathlib.Path(f'recirq/{r}/extra-requirements.txt'))
