@@ -34,7 +34,7 @@ def _get_pre_loop_key(keys: Sequence[str]) -> int:
         The key as an integer.
 
     Raises:
-        ValueError: If keys does not contain some non-consecutive integers strings.
+        ValueError: If keys does not contain some non-consecutive integer strings.
     """
     digit_keys = sorted([int(key) for key in keys if key.isdigit()])
     for i in range(len(digit_keys) - 1):
@@ -65,6 +65,9 @@ def cirq_df_to_stim_array(data: pd.DataFrame) -> np.ndarray:
 
         Returns:
             A tuple that can be used to sort the keys.
+
+        Raises:
+            NotImplementedError: If col_name is not either an integer or of the form r"(\d+)\[(\d+)\]".
         """
         col_str = str(col_name)
         re_match = re.match(r"(\d+)\[(\d+)\]", col_str)
@@ -76,9 +79,11 @@ def cirq_df_to_stim_array(data: pd.DataFrame) -> np.ndarray:
                 return 0, int(col_str)
             else:
                 return int(col_str) + len(data.columns), 0  # sends these to the end
+        else:
+            raise NotImplementedError("Unrecognized column name")
 
     df_sorted = data.sort_index(axis=1, key=lambda cols: cols.map(_parse_column_name))
-    return df_sorted.values.astype(dtype=np.bool_)
+    return df_sorted.to_numpy(dtype=np.bool_)
 
 
 def cirq_to_stim_hardware_circuit(hardware_circuit: cirq.Circuit) -> stim.Circuit:
@@ -112,7 +117,7 @@ def create_dem(
         si_1000_error_rate: The parameter p in stimflow.NoiseModel.si1000.
 
     Returns:
-        The detector error model
+        The detector error model.
     """
     noisy_hardware_stim_circuit = stimflow.NoiseModel.si1000(
         p=si_1000_error_rate
