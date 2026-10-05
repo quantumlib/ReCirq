@@ -29,3 +29,15 @@ def try_fetch_publication_data():
 
     fetch_publication_data(base_dir=base_dir)
     assert os.path.exists(base_dir + os.path.sep + "trapping_3u3d")
+
+
+def test_publication_data_functions():
+    import recirq.fermi_hubbard as fh
+    from recirq.fermi_hubbard.publication import (
+        fetch_publication_data,
+        get_publication_data,
+    )
+
+    assert get_publication_data is fetch_publication_data
+    assert fh.fetch_publication_data is fetch_publication_data
+    assert fh.get_publication_data is fetch_publication_data

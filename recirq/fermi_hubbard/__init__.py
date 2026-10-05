@@ -76,3 +76,8 @@ from recirq.fermi_hubbard.post_processing import (
     apply_rescalings_to_bundles,
     find_bundles_rescalings
 )
+
+from recirq.fermi_hubbard.publication import (
+    fetch_publication_data,
+    get_publication_data,
+)

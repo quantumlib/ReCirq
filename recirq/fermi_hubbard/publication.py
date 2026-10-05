@@ -282,3 +282,5 @@ def fetch_publication_data(
             zfile.extractall(base_dir)
             print(f"Successfully downloaded and extracted {file_name}.\n")
 
+
+get_publication_data = fetch_publication_data
