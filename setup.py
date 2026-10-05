@@ -19,52 +19,64 @@ import runpy
 
 from setuptools import find_packages, setup
 
-__version__ = runpy.run_path('recirq/_version.py')['__version__']
-assert __version__, 'Version string cannot be empty'
+__version__ = runpy.run_path("recirq/_version.py")["__version__"]
+assert __version__, "Version string cannot be empty"
 
 description = (
-    'A collection of Python modules that implement algorithms and experiments '
-    'in quantum computing, written in and using Cirq. Research using Cirq!'
+    "A collection of Python modules that implement algorithms and experiments "
+    "in quantum computing, written in and using Cirq. Research using Cirq!"
 )
 
 
 def _parse_requirements(path: pathlib.Path):
     lines = [line.strip() for line in path.read_text().splitlines() if line]
-    return [line for line in lines if not line.startswith('#')]
+    return [line for line in lines if not line.startswith("#")]
 
 
-install_requires = _parse_requirements(pathlib.Path('requirements.txt'))
+install_requires = _parse_requirements(pathlib.Path("requirements.txt"))
 extras_require = [
-    'otoc', 'qaoa', 'optimize', 'hfvqe', 'fermi_hubbard', 'qml_lfe',
-    'seniority_zero', 'qcqmc'
+    "otoc",
+    "qaoa",
+    "optimize",
+    "hfvqe",
+    "fermi_hubbard",
+    "qml_lfe",
+    "seniority_zero",
+    "qcqmc",
+    "qec_memory",
 ]
 extras_require = {
-    r: _parse_requirements(pathlib.Path(f'recirq/{r}/extra-requirements.txt'))
+    r: _parse_requirements(pathlib.Path(f"recirq/{r}/extra-requirements.txt"))
     for r in extras_require
 }
 
 # TODO(gh-231): remove and require users to install via extras_require.
-install_requires = functools.reduce(operator.add, extras_require.values(), install_requires)
+install_requires = functools.reduce(
+    operator.add, extras_require.values(), install_requires
+)
 
-setup(name='recirq',
-      version=__version__,
-      url='http://github.com/quantumlib/recirq',
-      author='Quantum AI team and collaborators',
-      maintainer_email="quantum-oss-maintainers@google.com",
-      python_requires='>=3.10.0',
-      install_requires=install_requires,
-      extras_require=extras_require,
-      license='Apache 2',
-      description=description,
-      long_description=open('README.md', encoding='utf-8').read(),
-      long_description_content_type='text/markdown',
-      packages=find_packages(),
-      package_data={'recirq': [
-          # https://github.com/quantumlib/ReCirq/issues/101
-          'hfvqe/molecular_data/hydrogen_chains/*/*/*',
-          # Needed for ftbbl docs
-          'otoc/loschmidt/tilted_square_lattice/*',
-          # Needed for qcqmc notebooks
-          'qcqmc/data/integrals/*/*',
-      ]},
-      )
+setup(
+    name="recirq",
+    version=__version__,
+    url="http://github.com/quantumlib/recirq",
+    author="Quantum AI team and collaborators",
+    maintainer_email="quantum-oss-maintainers@google.com",
+    python_requires=">=3.10.0",
+    install_requires=install_requires,
+    extras_require=extras_require,
+    license="Apache 2",
+    description=description,
+    long_description=open("README.md", encoding="utf-8").read(),
+    long_description_content_type="text/markdown",
+    packages=find_packages(),
+    package_data={
+        "recirq": [
+            # https://github.com/quantumlib/ReCirq/issues/101
+            "hfvqe/molecular_data/hydrogen_chains/*/*/*",
+            # Needed for ftbbl docs
+            "otoc/loschmidt/tilted_square_lattice/*",
+            # Needed for qcqmc notebooks
+            "qcqmc/data/integrals/*/*",
+        ]
+    },
+)
