@@ -22,7 +22,7 @@ import pytest
 
 def test_get_pre_loop_key():
     keys = ["0", "1", "2", "3[0]", "3[1]", "3[2]", "4[0]", "4[1]", "4[2]", "5", "6"]
-    assert qec_decoding.get_pre_loop_key(keys) == 2
+    assert qec_decoding._get_pre_loop_key(keys) == 2
 
 
 @pytest.mark.skipif(
