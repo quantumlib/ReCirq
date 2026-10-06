@@ -124,6 +124,15 @@ included:
       description: Analyze published experimental wavefunctions.
       path: /cirq/experiments/qcqmc/experimental_wavefunctions
 
+- heading: Quantum Error Correction
+  description: Surface Code Memory Experiment
+  options:
+    - cards
+  items:
+    - heading: Quantum Engine tutorial
+      path: /cirq/experiments/qec_memory/surface_code_lambda
+    - heading: Code Layout
+
 - heading: Lattice Gauge Theory
   description: Simulations for Charges and Strings in (2+1)D Lattice Gauge Theories
   options:
