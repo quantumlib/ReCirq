@@ -131,7 +131,6 @@ included:
   items:
     - heading: Quantum Engine tutorial
       path: /cirq/experiments/qec_memory/surface_code_lambda
-    - heading: Code Layout
 
 - heading: Lattice Gauge Theory
   description: Simulations for Charges and Strings in (2+1)D Lattice Gauge Theories
@@ -140,7 +139,6 @@ included:
   items:
     - heading: Experiment Example
       path: /cirq/experiments/lattice_gauge/lattice_gauge
-    - heading: Code Layout
 
 - heading: Random Circuit Sampling
   description: Random circuit sampling (RCS) on simulators and real quantum hardware
@@ -149,4 +147,3 @@ included:
   items:
     - heading: Experiment Example
       path: /cirq/experiments/random_circuit_sampling/rcs_experiment_demonstration
-    - heading: Code Layout
