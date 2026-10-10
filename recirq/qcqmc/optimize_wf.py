@@ -15,6 +15,7 @@
 
 import copy
 import itertools
+import numbers
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import cirq
@@ -56,7 +57,7 @@ def get_and_check_energy(
     two_body_params: np.ndarray,
     one_body_basis_change_mat: np.ndarray,
     params: trial_wf.PerfectPairingPlusTrialWavefunctionParams,
-) -> Tuple[float, float]:
+) -> Tuple[numbers.Real, numbers.Real]:
     """Compute the energy of the ansatz circuit and check against known values where possible.
 
     Args:
@@ -225,7 +226,7 @@ def get_rotated_hamiltonians(
     one_body_basis_change_mat: np.ndarray,
     mode_qubit_map: Mapping[fermion_mode.FermionicMode, cirq.Qid],
     ordered_qubits: Sequence[cirq.Qid],
-) -> Tuple[fqe_hams.RestrictedHamiltonian, float, scipy.sparse.csc_matrix]:
+) -> Tuple[fqe_hams.RestrictedHamiltonian, numbers.Real, scipy.sparse.csc_matrix]:
     """A helper method that gets the hamiltonians in the basis of the trial_wf.
 
     Args:
@@ -267,10 +268,10 @@ def get_energy_and_check_sanity(
     unrotated_fqe_wf: fqe_wfn.Wavefunction,
     fqe_ham: fqe_hams.RestrictedHamiltonian,
     sparse_ham: scipy.sparse.csc_matrix,
-    e_core: float,
+    e_core: numbers.Real,
     mode_qubit_map: Mapping[fermion_mode.FermionicMode, cirq.Qid],
     ordered_qubits: Sequence[cirq.Qid],
-) -> float:
+) -> numbers.Real:
     """A method that checks for consistency and returns the ansatz energy.
 
     Args:
@@ -295,7 +296,7 @@ def get_energy_and_check_sanity(
     ansatz_energy = np.real_if_close(
         (np.conj(circuit_wf) @ sparse_ham @ circuit_wf)
     ).item()
-    assert isinstance(ansatz_energy, float)
+    assert isinstance(ansatz_energy, numbers.Real)
 
     fqe_energy = np.real(fqe_wf.expectationValue(fqe_ham) + e_core)
     np.testing.assert_array_almost_equal(ansatz_energy, fqe_energy)
@@ -435,8 +436,8 @@ def evaluate_energy_and_gradient(
     two_body_params: np.ndarray,
     gate_generators: List[of.FermionOperator],
     restricted: bool,
-    e_core: float,
-) -> Tuple[float, np.ndarray]:
+    e_core: numbers.Real,
+) -> Tuple[numbers.Real, np.ndarray]:
     """Evaluate gradient and cost function for optimization.
 
     Uses the linear scaling algorithm (see algo 1 from
@@ -542,7 +543,7 @@ def compute_finite_difference_grad(
     two_body_params: np.ndarray,
     ham: fqe_hams.RestrictedHamiltonian,
     initial_wf: fqe_wfn.Wavefunction,
-    dtheta: float = 1e-4,
+    dtheta: numbers.Real = 1e-4,
     restricted: bool = False,
 ):
     """Compute the parameter gradient using finite differences.
@@ -620,9 +621,9 @@ def objective(
     n_orb: int,
     restricted: bool,
     initial_orbital_rotation: np.ndarray,
-    e_core: float,
+    e_core: numbers.Real,
     do_print: bool = False,
-) -> float:
+) -> numbers.Real:
     """Helper function to compute energy from the variational parameters.
 
     Args:
@@ -671,9 +672,9 @@ def objective_and_gradient(
     gate_generators: List[of.FermionOperator],
     n_orb: int,
     restricted: bool,
-    e_core: float,
+    e_core: numbers.Real,
     do_print: bool = False,
-) -> Tuple[float, np.array]:
+) -> Tuple[numbers.Real, np.array]:
     """Helper function to compute energy and gradient from the variational parameters
 
     Args:
@@ -719,12 +720,12 @@ def optimize_parameters(
     n_one_body_params: int,
     n_two_body_params: int,
     fqe_ham: fqe_hams.RestrictedHamiltonian,
-    e_core: float,
+    e_core: numbers.Real,
     initial_orbital_rotation: Optional[np.ndarray] = None,
     restricted: bool = False,
     use_fast_gradients: bool = False,
     n_optimization_restarts: int = 1,
-    random_parameter_scale: float = 1.0,
+    random_parameter_scale: numbers.Real = 1.0,
     do_print: bool = True,
 ) -> Optional[scipy.optimize.OptimizeResult]:
     """Optimize the cost function (total energy) for the PP+ ansatz.
@@ -821,7 +822,7 @@ def get_pp_plus_params(
     *,
     hamiltonian_data: hamiltonian.HamiltonianData,
     restricted: bool = False,
-    random_parameter_scale: float = 1.0,
+    random_parameter_scale: numbers.Real = 1.0,
     initial_orbital_rotation: Optional[np.ndarray] = None,
     heuristic_layers: Tuple[layer_spec.LayerSpec, ...],
     do_pp: bool = True,

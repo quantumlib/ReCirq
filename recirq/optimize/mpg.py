@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple, Any
+from numbers import Real
 
 import numpy as np
 import scipy
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 
 
 def _get_quadratic_model(
-    xs: List[np.ndarray], ys: List[float], xopt: np.ndarray
+    xs: List[np.ndarray], ys: List[Real], xopt: np.ndarray
 ) -> Pipeline:
     """Fit a least squares quadratic model.
 
@@ -61,36 +62,36 @@ def _get_quadratic_model(
 @dataclass(frozen=True)
 class _ExponentialSchedule:
     """The Exponential schedule for some hyperparameter (e.g. learning_rate)
-    
-    Exponential decay for the `learning rate`. For each `decay_steps`, the learning 
-    rate is scheduled to decay at the `decay_rate`. The `staircase` controls whether 
+
+    Exponential decay for the `learning rate`. For each `decay_steps`, the learning
+    rate is scheduled to decay at the `decay_rate`. The `staircase` controls whether
     to decay smoothly or discontinuously. After this many timesteps pass, the final
     learning rate is returned.
 
-    Args: 
-        learning rate: the initial learning rate 
-        decay_steps: the learning rate is scheduled to decay every such number of steps 
+    Args:
+        learning rate: the initial learning rate
+        decay_steps: the learning rate is scheduled to decay every such number of steps
         decay_rate: the learning rate is scheduled to decay at the such rate
-        staircase: if True, the learning rate keeps the same before every decay steps; 
-                    otherwise, the learning rate decays smoothly according 
+        staircase: if True, the learning rate keeps the same before every decay steps;
+                    otherwise, the learning rate decays smoothly according
                     to exponential interpolation.
-    
-    Returns: 
+
+    Returns:
         a class of the schedule
     """
 
-    learning_rate: float
+    learning_rate: Real
     decay_steps: int
-    decay_rate: float
+    decay_rate: Real
     staircase: bool = False
 
-    def value(self, t):
-        """Return the value of the schedule at time step t 
+    def value(self, t: Real) -> Real:
+        """Return the value of the schedule at time step t
 
-        Args: 
-            t: the time step for the schedule 
+        Args:
+            t: the time step for the schedule
 
-        Returns: 
+        Returns:
             the schedule value
         """
         m = t / self.decay_steps
@@ -106,32 +107,32 @@ def _adam_update(
     step: int,
     m: np.ndarray,
     v: np.ndarray,
-    lr_schedule=_ExponentialSchedule(0.001, 10, 0.93),
-    b1: float = 0.9,
-    b2: float = 0.999,
-    eps: float = 10 ** -8,
-):
-    """Performs a single optimization step of the optimizer Adam: a method for stochastic gradient descent  
+    lr_schedule: _ExponentialSchedule = _ExponentialSchedule(0.001, 10, 0.93),
+    b1: Real = 0.9,
+    b2: Real = 0.999,
+    eps: Real = 10 ** -8,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Performs a single optimization step of the optimizer Adam: a method for stochastic gradient descent
 
         Adam as described in http://arxiv.org/pdf/1412.6980.pdf.
         adapted from https://github.com/HIPS/autograd/blob/master/autograd/misc/optimizers.py#L57-L71
 
         Args:
-            grad: the gradient computed at the current update.  
-            x: the current value of the parameters. 
-            step: current iteration step. 
+            grad: the gradient computed at the current update.
+            x: the current value of the parameters.
+            step: current iteration step.
             m: first moment estimate for Adam.
             v: second moment estimate for Adam.
             lr_schedule: the class of learning rate decay schedule. Defaults to ExponentialSchedule(0.001, 10, 0.93).
-            b1 (float, optional): coefficients used for computing
+            b1: coefficients used for computing
                 running averages of gradient. Defaults to 0.9.
-            b2 (float, optional): coefficients used for computing
+            b2: coefficients used for computing
                 running averages of gradient's square. Defaults to 0.999.
-            eps (float, optional): term added to the denominator to improve
+            eps: term added to the denominator to improve
                 numerical stability. Defaults to 10**-8.
 
         Returns:
-            x: the updated parameter values. 
+            x: the updated parameter values.
             m: the updated first moment estimate.
             v: the updated second moment estimate.
         """
@@ -151,28 +152,28 @@ def _adam_update(
 
 
 def model_policy_gradient(
-    f: Callable[..., float],
+    f: Callable[..., Real],
     x0: np.ndarray,
     *,
-    args=(),
-    learning_rate: float = 1e-2,
-    decay_rate: float = 0.96,
+    args: Tuple[Any, ...] = (),
+    learning_rate: Real = 1e-2,
+    decay_rate: Real = 0.96,
     decay_steps: int = 5,
-    log_sigma_init: float = -5.0,
+    log_sigma_init: Real = -5.0,
     max_iterations: int = 1000,
     batch_size: int = 10,
-    radius_coeff: float = 3.0,
+    radius_coeff: Real = 3.0,
     warmup_steps: int = 10,
     batch_size_model: int = 65536,
     save_func_vals: bool = False,
     random_state: "cirq.RANDOM_STATE_OR_SEED_LIKE" = None,
-    known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
+    known_values: Optional[Tuple[List[np.ndarray], List[Real]]] = None,
     max_evaluations: Optional[int] = None
 ) -> scipy.optimize.OptimizeResult:
     """Model policy gradient algorithm for black-box optimization.
 
     The idea of this algorithm is to perform policy gradient, but estimate
-    the function values using a surrogate model. 
+    the function values using a surrogate model.
     The surrogate model is a least-squared quadratic
     fit to points sampled from the vicinity of the current iterate.
 
@@ -184,23 +185,23 @@ def model_policy_gradient(
         decay_rate: the learning decay rate for the Adam optimizer.
         decay_steps: the learning decay steps for the Adam optimizer.
         log_sigma_init: the initial value for the sigma of the policy
-            in the log scale. 
+            in the log scale.
         max_iterations: The maximum number of iterations to allow before
             termination.
-        batch_size: The number of points to sample in each iteration. The cost 
-            of evaluation of these samples are computed through the 
+        batch_size: The number of points to sample in each iteration. The cost
+            of evaluation of these samples are computed through the
             quantum computer cost model.
-        radius_coeff: The ratio determining the size of the radius around 
+        radius_coeff: The ratio determining the size of the radius around
             the current iterate to sample points from to build the quadratic model.
-            The ratio is with respect to the maximal ratio of the samples 
-            from the current policy. 
-        warmup_steps: The number of steps before the model policy gradient is performed. 
-            before these steps, we use the policy gradient without the model. 
-        batch_size_model: The model sample batch size. 
-            After we fit the quadratic model, we use the model to evaluate 
+            The ratio is with respect to the maximal ratio of the samples
+            from the current policy.
+        warmup_steps: The number of steps before the model policy gradient is performed.
+            before these steps, we use the policy gradient without the model.
+        batch_size_model: The model sample batch size.
+            After we fit the quadratic model, we use the model to evaluate
             on big enough batch of samples.
-        save_func_vals: whether to compute and save the function values for 
-            the current value of parameter.   
+        save_func_vals: whether to compute and save the function values for
+            the current value of parameter.
         random_state: A seed (int) or `np.random.RandomState` class to use when
             generating random values. If not set, defaults to using the module
             methods in `np.random`.
