@@ -10,7 +10,7 @@ The Python package in the `recirq/` directory contains a subdirectory for each
 experiment, such as `qaoa`, `hfvqe`, `fermi_hubbard`, `otoc`, `toric_code`,
 `kpz`, `qcqmc`, `qec_memory`, `time_crystals`, and `random_circuit_sampling`,
 along with the `cirqflow` workflow utilities and other shared helpers. The
-`docs/` directory contains the tutorials and Jupyter notebooks that accompany
+`docs/` directory contains tutorials and Colab/Jupyter notebooks that accompany
 the experiments; they are published at https://quantumai.google/cirq/experiments.
 
 ## Installation and Documentation
@@ -18,7 +18,8 @@ the experiments; they are published at https://quantumai.google/cirq/experiments
 ReCirq requires Python 3.10 or later. It is not available as a PyPI package, so
 please clone this repository and install from source. We recommend doing this
 inside a virtual Python environment (for example, one created with Python's
-built-in [`venv`](https://docs.python.org/3/library/venv.html) module):
+built-in [`venv`](https://docs.python.org/3/library/venv.html) module). Once
+you have a Python virtual environment, then do these steps:
 
 ```shell
 git clone https://github.com/quantumlib/ReCirq.git
