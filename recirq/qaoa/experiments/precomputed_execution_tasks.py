@@ -30,6 +30,21 @@ def _abbrev_n_shots(n_shots: int) -> str:
                                     registry=recirq.Registry,
                                     frozen=True)
 class PrecomputedDataCollectionTask:
+    """Collect data from QAOA circuits using precomputed angles.
+
+    See Also:
+        :py:func:`collect_data`
+
+    Attributes:
+        dataset_id: A unique identifier for this dataset.
+        precomputation_task: The input task which specifies the problem
+            instance and precomputed optimal angles.
+        device_name: The device or simulator to run the experiment on.
+        n_shots: The number of measurement repetitions (shots) to collect.
+        structured: Whether to use structured circuit compilation.
+        echoed: Whether to include dynamical decoupling echo sequences. Must be
+            True only if structured is True.
+    """
     dataset_id: str
     precomputation_task: AnglePrecomputationTask
 
