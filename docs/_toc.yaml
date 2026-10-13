@@ -84,6 +84,10 @@ toc:
 - title: "Experimental Wavefunctions"
   path: /cirq/experiments/qcqmc/experimental_wavefunctions
 
+- heading: "Quantum Error Correction"
+- title: "Surface Code Memory Experiment"
+  path: /cirq/experiments/qec_memory/surface_code_lambda
+
 - heading: "Lattice Gauge Theory"
 - title: "Simulation of Charges and Strings"
   path: /cirq/experiments/lattice_gauge/lattice_gauge

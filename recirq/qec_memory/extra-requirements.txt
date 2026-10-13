@@ -1,0 +1,5 @@
+pymatching
+stim
+stimcirq
+stimflow
+wget
