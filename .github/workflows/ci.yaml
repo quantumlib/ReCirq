@@ -87,7 +87,7 @@ jobs:
           pip install -r requirements.txt
           python dev_tools/write-ci-requirements.py \
             --relative-cirq-version=${{ matrix.cirq-version }} --all-extras
-          pip install -r ci-requirements.txt
+          pip install --no-binary fqe -r ci-requirements.txt
           pip install --no-deps -e .
 
       - name: Test with pytest
