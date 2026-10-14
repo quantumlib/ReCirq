@@ -34,7 +34,8 @@ def _parse_requirements(path: pathlib.Path):
 
 
 install_requires = _parse_requirements(pathlib.Path('requirements.txt'))
-requirements_files = pathlib.Path('recirq').glob('*/extra-requirements.txt')
+requirements_files = list(pathlib.Path('recirq').glob('*/extra-requirements.txt'))
+assert requirements_files, 'No recirq/*/extra-requirements.txt files found'
 extras_require = {
     req_file.parent.name: _parse_requirements(req_file)
     for req_file in sorted(requirements_files)
