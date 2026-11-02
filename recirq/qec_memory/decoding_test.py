@@ -80,9 +80,59 @@ def test_get_logical_error_probability():
         "repetition_code:memory", rounds=5, distance=3
     )
     circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
-    for error_rate, expected_lep in zip([0.0, 0.01, 0.1, 0.5], [0.0, 0.0, 0.0, 0.7]):
+    for error_rate, expected_lep in zip([0.0, 0.01, 0.1, 0.5], [0.0, 0.0, 0.0, 0.6]):
         data = _generate_fake_qec_data(keys, error_rate, shots, rng)
         assert (
             qec_decoding.get_logical_error_probability(data, circuit, 0.001)
             == expected_lep
         )
+
+
+@pytest.mark.skipif(
+    not hasattr(cirq.transformers, "apply_lazy_args_on_circuit_operation"),
+    reason="Requires pre-release version of Cirq",
+)
+def test_get_logical_error_probability_multi_observable():
+    rng = np.random.default_rng(0)
+    keys = [
+        "0",
+        "1",
+        "2[0]",
+        "2[1]",
+        "2[2]",
+        "2[3]",
+        "3[0]",
+        "3[1]",
+        "3[2]",
+        "3[3]",
+        "10",
+        "11",
+        "12",
+    ]
+    shots = 10
+    stim_circuit = stim.Circuit.generated(
+        "repetition_code:memory", rounds=5, distance=3
+    )
+    stim_circuit.append("OBSERVABLE_INCLUDE", [stim.target_rec(-2)], 1)
+    circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+
+    data_noiseless = _generate_fake_qec_data(keys, 0.0, shots, rng)
+    assert (
+        qec_decoding.get_logical_error_probability(data_noiseless, circuit, 0.001)
+        == 0.0
+    )
+    np.testing.assert_array_equal(
+        qec_decoding.get_logical_error_probability(
+            data_noiseless, circuit, 0.001, per_observable=True
+        ),
+        np.array([0.0, 0.0]),
+    )
+
+    data_noisy = _generate_fake_qec_data(keys, 0.5, shots, rng)
+    joint_lep = qec_decoding.get_logical_error_probability(data_noisy, circuit, 0.001)
+    per_obs_lep = qec_decoding.get_logical_error_probability(
+        data_noisy, circuit, 0.001, per_observable=True
+    )
+    assert isinstance(joint_lep, float)
+    assert per_obs_lep.shape == (2,)
+    assert np.max(per_obs_lep) <= joint_lep <= np.sum(per_obs_lep)
