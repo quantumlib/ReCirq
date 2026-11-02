@@ -37,7 +37,7 @@ def test_bits_roundtrip():
     b = recirq.BitArray(bitstring)
 
     buffer = io.StringIO()
-    cirq.to_json(b, buffer)
+    cirq.to_json(b, buffer, indent=2)
 
     buffer.seek(0)
     text = buffer.read()
