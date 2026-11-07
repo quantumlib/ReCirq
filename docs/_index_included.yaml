@@ -147,3 +147,13 @@ included:
   items:
     - heading: Experiment Example
       path: /cirq/experiments/random_circuit_sampling/rcs_experiment_demonstration
+
+- heading: Kibble-Zurek
+  description: Preparing low-temperature states of the 2D quantum XY model via the Kibble-Zurek mechanism.
+  options:
+    - cards
+  items:
+    - heading: Vanilla Kibble-Zurek (KZ) experiment
+      description: Adiabatic state preparation and XY correlation analysis on a quantum processor.
+      path: /cirq/experiments/kibble_zurek/vanilla_kz_experiment
+

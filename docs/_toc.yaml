@@ -95,3 +95,8 @@ toc:
 - heading: "Random Circuit Sampling"
 - title: "Demonstration of random circuit sampling"
   path: /cirq/experiments/random_circuit_sampling/rcs_experiment_demonstration
+
+- heading: "Kibble-Zurek"
+- title: "Vanilla Kibble-Zurek (KZ) experiment"
+  path: /cirq/experiments/kibble_zurek/vanilla_kz_experiment
+
