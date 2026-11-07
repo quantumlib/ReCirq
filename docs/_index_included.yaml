@@ -153,7 +153,7 @@ included:
   options:
     - cards
   items:
-    - heading: Vanilla Kibble-Zurek (KZ) experiment
+    - heading: Kibble-Zurek (KZ) experiment
       description: Adiabatic state preparation and XY correlation analysis on a quantum processor.
-      path: /cirq/experiments/kibble_zurek/vanilla_kz_experiment
+      path: /cirq/experiments/kibble_zurek/kz_experiment
 
