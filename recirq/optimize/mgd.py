@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Callable, List, Optional, Tuple
+from numbers import Real
 
 import numpy as np
 import scipy
@@ -26,7 +27,7 @@ from recirq.optimize._util import wrap_function
 
 def _get_least_squares_model_gradient(
         xs: List[np.ndarray],
-        ys: List[float],
+        ys: List[Real],
         xopt: np.ndarray,
 ) -> Tuple[np.ndarray, Pipeline]:
     """Fit a least squares quadratic model and return its gradient.
@@ -58,7 +59,7 @@ def _get_least_squares_model_gradient(
     return linear_coeffs, model
 
 
-def _random_point_in_ball(n: int, radius: float) -> np.ndarray:
+def _random_point_in_ball(n: int, radius: Real) -> np.ndarray:
     """Return a point uniformly at random from a ball centered at the origin.
 
     Args:
@@ -76,19 +77,19 @@ def _random_point_in_ball(n: int, radius: float) -> np.ndarray:
 
 
 def model_gradient_descent(
-        f: Callable[..., float],
+        f: Callable[..., Real],
         x0: np.ndarray,
         *,
         args=(),
-        rate: float = 1e-1,
-        sample_radius: float = 1e-1,
+        rate: Real = 1e-1,
+        sample_radius: Real = 1e-1,
         n_sample_points: int = 100,
-        n_sample_points_ratio: Optional[float] = None,
-        rate_decay_exponent: float = 0.0,
-        stability_constant: float = 0.0,
-        sample_radius_decay_exponent: float = 0.0,
-        tol: float = 1e-8,
-        known_values: Optional[Tuple[List[np.ndarray], List[float]]] = None,
+        n_sample_points_ratio: Optional[Real] = None,
+        rate_decay_exponent: Real = 0.0,
+        stability_constant: Real = 0.0,
+        sample_radius_decay_exponent: Real = 0.0,
+        tol: Real = 1e-8,
+        known_values: Optional[Tuple[List[np.ndarray], List[Real]]] = None,
         max_iterations: Optional[int] = None,
         max_evaluations: Optional[int] = None) -> scipy.optimize.OptimizeResult:
     """Model gradient descent algorithm for black-box optimization.

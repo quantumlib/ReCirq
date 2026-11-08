@@ -18,7 +18,7 @@ from typing import Any, Dict, Iterable, Optional, Tuple, Type, Union
 
 import abc
 from itertools import product
-from numbers import Number
+from numbers import Number, Real
 
 import cirq
 import numpy as np
@@ -29,8 +29,6 @@ from recirq.fermi_hubbard.layouts import (
     QubitsLayout,
     ZigZagLayout
 )
-
-Real = Union[int, float]
 
 
 @dataclass(init=False)
@@ -102,45 +100,45 @@ class Hamiltonian:
 
     @property
     def j_array(self) -> np.ndarray:
-        if isinstance(self.j, tuple):
-            return np.array(self.j)
-        return np.full(self.interactions_count, self.j)
+        if isinstance(self.j, Real):
+            return np.full(self.interactions_count, self.j)
+        return np.array(self.j)
 
     @property
     def u_array(self) -> np.ndarray:
-        if isinstance(self.u, tuple):
-            return np.array(self.u)
-        return np.full(self.sites_count, self.u)
+        if isinstance(self.u, Real):
+            return np.full(self.sites_count, self.u)
+        return np.array(self.u)
 
     @property
     def v_array(self) -> np.ndarray:
-        if isinstance(self.v, tuple):
-            return np.array(self.v)
-        return np.full(self.interactions_count, self.v)
+        if isinstance(self.v, Real):
+            return np.full(self.interactions_count, self.v)
+        return np.array(self.v)
 
     @property
     def local_charge_array(self) -> np.ndarray:
-        if isinstance(self.local_charge, tuple):
-            return np.array(self.local_charge)
-        return np.full(self.sites_count, self.local_charge)
+        if isinstance(self.local_charge, Real):
+            return np.full(self.sites_count, self.local_charge)
+        return np.array(self.local_charge)
 
     @property
     def local_spin_array(self) -> np.ndarray:
-        if isinstance(self.local_spin, tuple):
-            return np.array(self.local_spin)
-        return np.full(self.sites_count, self.local_spin)
+        if isinstance(self.local_spin, Real):
+            return np.full(self.sites_count, self.local_spin)
+        return np.array(self.local_spin)
 
     @property
     def mu_up_array(self) -> np.ndarray:
-        if isinstance(self.mu_up, tuple):
-            return np.array(self.mu_up)
-        return np.full(self.sites_count, self.mu_up)
+        if isinstance(self.mu_up, Real):
+            return np.full(self.sites_count, self.mu_up)
+        return np.array(self.mu_up)
 
     @property
     def mu_down_array(self) -> np.ndarray:
-        if isinstance(self.mu_down, tuple):
-            return np.array(self.mu_down)
-        return np.full(self.sites_count, self.mu_down)
+        if isinstance(self.mu_down, Real):
+            return np.full(self.sites_count, self.mu_down)
+        return np.array(self.mu_down)
 
     @property
     def local_up_array(self):
@@ -257,7 +255,7 @@ class FixedSingleParticle(SingleParticle):
         if sites_count != len(self.amplitudes):
             raise ValueError(f'Fixed single particle not compatible with '
                              f'{sites_count} sites')
-        return np.array(self.potential)
+        return np.array(self.amplitudes)
 
     def _json_dict_(self):
         return cirq.dataclass_json_dict(self)
@@ -638,10 +636,10 @@ def _potential_to_quadratic_hamiltonian(
 ) -> openfermion.QuadraticHamiltonian:
     sites_count = len(potential)
 
-    if isinstance(j, Iterable):
-        j = np.array(j)
-    else:
+    if isinstance(j, Real):
         j = np.full(sites_count - 1, j)
+    else:
+        j = np.array(j)
 
     if len(j) != sites_count - 1:
         raise ValueError('Hopping coefficient size incompatible with potential')

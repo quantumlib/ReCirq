@@ -14,7 +14,7 @@
 
 """Sycamore native circuit building blocks."""
 from typing import Callable, Dict, List, Tuple
-from numbers import Number
+from numbers import Real
 
 import os
 import cirq
@@ -29,7 +29,7 @@ def _load_circuit(fname: str) -> cirq.Circuit:
         return cirq.read_json(f)
 
 
-def tsym_block(qubits: List[cirq.Qid], params: List[Number]) -> List[cirq.Operation]:
+def tsym_block(qubits: List[cirq.Qid], params: List[Real]) -> List[cirq.Operation]:
     """Create a tsym block.
 
     Y axis rotations followed by a real entried permutation operation.
@@ -48,7 +48,7 @@ def tsym_block(qubits: List[cirq.Qid], params: List[Number]) -> List[cirq.Operat
     return rots + list(mapped_circuit.all_operations())
 
 
-def _get_op(code: Number) -> cirq.Gate:
+def _get_op(code: Real) -> cirq.Gate:
     if code <= 4 / 3:
         return cirq.X ** 0.5
     elif code <= 2 * (4 / 3):
@@ -60,7 +60,7 @@ def _get_op(code: Number) -> cirq.Gate:
 
 
 def scrambling_block(
-    qubits: List[cirq.Qid], params: List[Number]
+    qubits: List[cirq.Qid], params: List[Real]
 ) -> List[cirq.Operation]:
     """Create a scrambling block.
 
@@ -84,7 +84,7 @@ def block_1d_circuit(
     qubits: List[cirq.Qid],
     depth: int,
     block_fn: Callable,
-    random_source: List[List[Number]],
+    random_source: List[List[Real]],
 ) -> cirq.Circuit:
     """Create a 1D block structure circuit using block_fn.
 

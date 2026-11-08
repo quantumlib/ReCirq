@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numbers
 import numpy as np
 
 from recirq.optimize.mgd import model_gradient_descent
@@ -72,7 +73,7 @@ def test_model_gradient_descent_limited_iterations():
                                     max_iterations=15)
 
     assert isinstance(result.x, np.ndarray)
-    assert isinstance(result.fun, float)
+    assert isinstance(result.fun, numbers.Real)
     assert result.nit == 15
 
 
@@ -90,5 +91,5 @@ def test_model_gradient_descent_limited_evaluations():
                                     max_evaluations=15)
 
     assert isinstance(result.x, np.ndarray)
-    assert isinstance(result.fun, float)
+    assert isinstance(result.fun, numbers.Real)
     assert result.nfev == 12
