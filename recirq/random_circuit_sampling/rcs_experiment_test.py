@@ -30,16 +30,6 @@ def test_rcs_multi_depth_regression():
     N_REPETITIONS = 10000
     FIXED_SEED = 2026
 
-    # Benchmark values from the deterministic run
-    expected_benchmarks = {
-        (0, 30): 0.9846,
-        (0, 50): 0.9753,
-        (1, 30): 0.9896,
-        (1, 50): 0.9967,
-        (2, 30): 1.0030,
-        (2, 50): 0.9927,
-    }
-
     experiment = rcs.RCSExperiment(
         patches=patches,
         depths=DEPTHS,
@@ -50,6 +40,26 @@ def test_rcs_multi_depth_regression():
 
     simulator = cirq.Simulator(seed=FIXED_SEED)
     results = experiment.run(sampler=simulator, n_repetitions=N_REPETITIONS, characterize=False)
+
+    # Benchmark values from the deterministic run (Generator in Cirq >= 1.8 vs RandomState)
+    if isinstance(simulator._prng, np.random.Generator):
+        expected_benchmarks = {
+            (0, 30): 0.9783,
+            (0, 50): 0.9768,
+            (1, 30): 0.9781,
+            (1, 50): 0.9923,
+            (2, 30): 0.9905,
+            (2, 50): 1.0086,
+        }
+    else:
+        expected_benchmarks = {
+            (0, 30): 0.9846,
+            (0, 50): 0.9753,
+            (1, 30): 0.9896,
+            (1, 50): 0.9967,
+            (2, 30): 1.0030,
+            (2, 50): 0.9927,
+        }
 
     fidelities = results.fidelities_lin()
 

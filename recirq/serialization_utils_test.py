@@ -41,15 +41,15 @@ def test_bits_roundtrip():
 
     buffer.seek(0)
     text = buffer.read()
-    assert (
-        text
-        == """{
+    assert text in (
+        '{"cirq_type": "recirq.BitArray", "shape": [10], "packedbits": "5e40"}',
+        """{
   "cirq_type": "recirq.BitArray",
   "shape": [
     10
   ],
   "packedbits": "5e40"
-}"""
+}""",
     )
 
     buffer.seek(0)
