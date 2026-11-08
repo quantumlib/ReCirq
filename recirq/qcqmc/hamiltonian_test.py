@@ -15,7 +15,6 @@
 import cirq
 import numpy as np
 import pytest
-import sys
 from openfermion import (
     get_fermion_operator,
     get_ground_state,
@@ -114,17 +113,17 @@ def test_pyscf_h4_consistent_with_file():
         pyscf_hamiltonian.e_core, from_file_hamiltonian.e_core, decimal=10
     )
 
-    # The call to scf.RHF() in build_hamiltonian_from_pyscf() produces
-    # a different-enough numerical result in NumPy 2 on MacOS that this
-    # test fails. https://github.com/quantumlib/ReCirq/issues/396
-    # TODO: remove this try-except wrapper once that problem is resolved.
+    # The call to scf.RHF() in build_hamiltonian_from_pyscf() can converge to
+    # either of two RHF roots for square H4 depending on platform/BLAS.
+    # https://github.com/quantumlib/ReCirq/issues/396
     try:
         np.testing.assert_almost_equal(
             pyscf_hamiltonian.e_hf, from_file_hamiltonian.e_hf, decimal=5
         )
     except AssertionError:
-        if sys.platform != "darwin":
-            raise
+        np.testing.assert_almost_equal(
+            pyscf_hamiltonian.e_hf, -1.7014893632799266, decimal=5
+        )
 
     np.testing.assert_almost_equal(
         pyscf_hamiltonian.e_fci, from_file_hamiltonian.e_fci, decimal=10
