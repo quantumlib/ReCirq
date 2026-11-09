@@ -110,7 +110,7 @@ def cirq_to_stim_hardware_circuit(hardware_circuit: cirq.Circuit) -> stim.Circui
 def create_dem(
     hardware_stim_circuit: stim.Circuit,
     si_1000_error_rate: float,
-    decompose_errors: bool = True,
+    decompose_errors: bool = False,
 ) -> stim.DetectorErrorModel:
     """Create a detector error model for a given circuit, assuming the si1000 noise model.
 
@@ -177,7 +177,7 @@ def get_logical_error_probability(
     si_1000_error_rate: float,
     *,
     per_observable: bool = False,
-    decompose_errors: bool = True,
+    decompose_errors: bool = False,
 ) -> float | np.ndarray:
     """Decode using pymatching and get the logical error probability.
 
@@ -194,6 +194,9 @@ def get_logical_error_probability(
     Returns:
         The joint logical error probability as a float if `per_observable` is False,
         or a 1D numpy array of per-observable logical error probabilities if True.
+
+    Raises:
+        ValueError: If the circuit does not contain any observables.
     """
     hardware_stim_circuit = cirq_to_stim_hardware_circuit(circuit)
     dem = create_dem(
@@ -202,6 +205,8 @@ def get_logical_error_probability(
         decompose_errors=decompose_errors,
     )
     dets_arr, obs_arr = extract_detection_events(data, hardware_stim_circuit)
+    if obs_arr.shape[1] == 0:
+        raise ValueError("The circuit must contain at least one observable.")
     predictions = decode(dets_arr, dem)
     decoded_obs = predictions ^ obs_arr
     if per_observable:

@@ -80,11 +80,71 @@ def test_get_logical_error_probability():
         "repetition_code:memory", rounds=5, distance=3
     )
     circuit = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
-    for error_rate, expected_lep in zip([0.0, 0.01, 0.1, 0.5], [0.0, 0.0, 0.0, 0.6]):
+    for error_rate, expected_lep_false, expected_lep_true in zip(
+        [0.0, 0.01, 0.1, 0.5],
+        [0.0, 0.0, 0.0, 0.7],
+        [0.0, 0.0, 0.0, 0.6],
+    ):
         data = _generate_fake_qec_data(keys, error_rate, shots, rng)
         assert (
             qec_decoding.get_logical_error_probability(data, circuit, 0.001)
-            == expected_lep
+            == expected_lep_false
+        )
+        assert (
+            qec_decoding.get_logical_error_probability(
+                data, circuit, 0.001, decompose_errors=False
+            )
+            == expected_lep_false
+        )
+        assert (
+            qec_decoding.get_logical_error_probability(
+                data, circuit, 0.001, decompose_errors=True
+            )
+            == expected_lep_true
+        )
+
+
+@pytest.mark.skipif(
+    not hasattr(cirq.transformers, "apply_lazy_args_on_circuit_operation"),
+    reason="Requires pre-release version of Cirq",
+)
+def test_get_logical_error_probability_no_observables():
+    rng = np.random.default_rng(0)
+    keys = [
+        "0",
+        "1",
+        "2[0]",
+        "2[1]",
+        "2[2]",
+        "2[3]",
+        "3[0]",
+        "3[1]",
+        "3[2]",
+        "3[3]",
+        "10",
+        "11",
+        "12",
+    ]
+    shots = 10
+    stim_circuit = stim.Circuit.generated(
+        "repetition_code:memory", rounds=5, distance=3
+    )
+    stim_circuit_no_obs = stim.Circuit()
+    for inst in stim_circuit:
+        if inst.name != "OBSERVABLE_INCLUDE":
+            stim_circuit_no_obs.append(inst)
+    circuit_no_obs = stimcirq.stim_circuit_to_cirq_circuit(stim_circuit_no_obs)
+    data = _generate_fake_qec_data(keys, 0.1, shots, rng)
+
+    hardware_stim_circuit = qec_decoding.cirq_to_stim_hardware_circuit(circuit_no_obs)
+    _, obs_arr = qec_decoding.extract_detection_events(data, hardware_stim_circuit)
+    assert obs_arr.shape == (shots, 0)
+
+    with pytest.raises(ValueError, match="at least one observable"):
+        qec_decoding.get_logical_error_probability(data, circuit_no_obs, 0.001)
+    with pytest.raises(ValueError, match="at least one observable"):
+        qec_decoding.get_logical_error_probability(
+            data, circuit_no_obs, 0.001, per_observable=True
         )
 
 
