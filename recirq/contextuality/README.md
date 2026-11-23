@@ -45,9 +45,8 @@ Each of the four experiments in the paper has its own module, with unit tests in
     of Bravyi et al. (Fig. 4). `ShallowCircuitExperiment` generates and runs
     random constant-depth Clifford circuits on a 2D grid of qubits.
     `ShallowCircuitResults` uses Stim to check whether each measured bitstring
-    is a valid solution, and computes the fraction of valid outcomes, the
-    effective number of two-qubit gate layers, and the paper's conjectured lower
-    bound on the classical circuit depth.
+    is a valid solution, and computes the fraction of valid outcomes and the
+    paper's conjectured lower bound on the classical circuit depth.
 
 ## Installation
 
