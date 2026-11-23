@@ -55,8 +55,7 @@ Doing so also installs [Stim](https://github.com/quantumlib/Stim) and `stimcirq`
 module needs and which are listed in `extra-requirements.txt`.
 
 ```shell
-pip install -r requirements.txt
-pip install -r recirq/contextuality/extra-requirements.txt
+pip install "recirq[contextuality] @ git+https://github.com/quantumlib/ReCirq.git"
 ```
 
 ## Usage
@@ -84,7 +83,7 @@ pytest recirq/contextuality
 
 ## Citation
 
-If you use this code, please cite the paper:
+If you use this code, please cite this publication:
 
 ```bibtex
 @article{GoogleQuantumAI2026contextuality,
