@@ -2,7 +2,7 @@
 
 This module contains Cirq implementations of the quantum contextuality experiments described in
 "Quantum-classical separation in bounded-resource tasks arising from measurement contextuality,"
-(Google Quantum AI and Collaborators, _Science_ 394, 870–874, 2026)[paper]. In quantum mechanics,
+[(Google Quantum AI and Collaborators, _Science_ 394, 870–874, 2026)][paper]. In quantum mechanics,
 the outcome of a measurement can depend on which other compatible measurements are made alongside it
 (its _context_). The experiments use this property, known as contextuality, to perform tasks on a
 superconducting quantum processor with success probabilities beyond the limits of classical
