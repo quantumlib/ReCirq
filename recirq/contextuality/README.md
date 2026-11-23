@@ -98,7 +98,6 @@ If you use this code, please cite this publication:
   pages     = {870--874},
   year      = {2026},
   doi       = {10.1126/science.aec3042},
-  url       = {https://doi.org/10.1126/science.aec3042}
   publisher = {American Association for the Advancement of Science}
 }
 ```
