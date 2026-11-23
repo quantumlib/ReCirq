@@ -26,7 +26,7 @@ Each of the four experiments in the paper has its own module, with unit tests in
     how often the players satisfy the parity rules and agree on the cell that
     they share.
 
-*   `kochen_specker.py`: a test of the Kochen–Specker–Bell inequality (Fig. 2). A
+*   `kochen_specker.py`: a test of the Bell–Kochen–Specker (BKS) inequality (Fig. 2). A
     long random sequence of rows and columns of a Mermin–Peres square is
     measured on two data qubits, using an ancilla qubit to make quantum
     nondemolition measurements. `MagicSquare.kochen_specker_expt()` builds the
