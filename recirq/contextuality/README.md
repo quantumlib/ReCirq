@@ -86,18 +86,17 @@ pytest recirq/contextuality
 If you use this code, please cite this publication:
 
 ```bibtex
-@article{GoogleQuantumAI2026contextuality,
+@article{google_qai_2026_contextuality,
   title     = {Quantum-classical separation in bounded-resource tasks arising from
                measurement contextuality},
   author    = {{Google Quantum AI and Collaborators}},
   journal   = {Science},
-  year      = {2026},
-  month     = nov,
   volume    = {394},
   number    = {6826},
   pages     = {870--874},
+  year      = {2026},
   doi       = {10.1126/science.aec3042},
-  url       = {https://www.science.org/doi/10.1126/science.aec3042},
+  url       = {https://doi.org/10.1126/science.aec3042}
   publisher = {American Association for the Advancement of Science}
 }
 ```
