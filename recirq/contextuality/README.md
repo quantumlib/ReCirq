@@ -9,8 +9,10 @@ superconducting quantum processor with success probabilities beyond the limits o
 strategies. The code for the four experiments are provided in this directory: two few-qubit
 protocols (the Mermin–Peres magic square game and a Kochen–Specker–Bell inequality test) and two
 scalable many-body tasks (the $N$-player GHZ parity game and the 2D hidden linear function problem).
+Experimental datasets from the paper are archived on [Zenodo][data].
 
-[paper]: https://www.science.org/doi/10.1126/science.aec3042
+[paper]: https://doi.org/10.1126/science.aec3042
+[data]: https://doi.org/10.5281/zenodo.18059876
 
 ## Contents
 
