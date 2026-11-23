@@ -84,8 +84,8 @@ def test_experiment():
     on a perfect simulator. It verifies that the results match theoretical
     expectations for a noiseless execution:
     - The probability of valid outcomes should be 1.0.
-    - The effective number of layers should be 4.0.
-    - The classical complexity should be greater than the effective layers.
+    - The conjectured classical bound should equal 4 / classical_layers.
+    - The valid-outcome probability should exceed the conjectured classical bound.
     """
 
     n_qubits_list = np.arange(10, 15, 1)
@@ -108,17 +108,14 @@ def test_experiment():
     results = hlf_experiment.run(sampler, n_repetitions)
 
     probability_of_valid_outcomes = results.probability_of_valid_outcomes
-    effective_number_of_layers = results.effective_layers
     classical_layers = results.classical_layers
+    classical_bound = results.classical_bound
 
     # Running noiseless experiment, mean should be 1
     for key in probability_of_valid_outcomes.keys():
         assert np.mean(probability_of_valid_outcomes[key]) == 1
 
-    # Running noiseless experiment, mean should be 4
-    for key in effective_number_of_layers.keys():
-        assert np.mean(effective_number_of_layers[key]) == 4
-
-    # Running noiseless experiment, classical layers should be more than the effective layers
+    # Conjectured classical probability threshold is 4 / classical_layers and below 1
     for key in classical_layers.keys():
-        assert np.mean(effective_number_of_layers[key]) < classical_layers[key]
+        assert np.isclose(classical_bound[key], 4.0 / classical_layers[key])
+        assert np.mean(probability_of_valid_outcomes[key]) > classical_bound[key]

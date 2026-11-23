@@ -15,8 +15,9 @@
 """Builds and runs experiment for finding hidden linear functions (HLF) with shallow circuits.
 
 This module provides the fundamental building blocks for generating, executing,
-and analyzing results for finding HLF with shallow circuits experiment,
-as described in https://arxiv.org/abs/2512.02284.
+and analyzing results for the shallow-circuits HLF experiment described in
+Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
+(https://doi.org/10.1126/science.aec3042).
 """
 
 import math
@@ -324,12 +325,11 @@ class ShallowCircuitResults:
     Attributes:
         _probability_of_valid_outcomes: Dict mapping `n_qubits` to a list of fidelity scores
             after matching the outcome of the experiment to the ideal outcome.
-        _effective_layers: Dict mapping `n_qubits` to a list of effective layer
-            counts. Calculated as `4 / probability`, this estimates the
-            equivalent number of noisy layers the hardware executed.
-        _classical_layers: Dict mapping `n_qubits` to the classical degrees of
-            freedom (DOF) for each circuit. Represents the problem complexity,
-            calculated as log2(total_dof = num_qubits + total possible CZ gates).
+        _classical_layers: Dict mapping `n_qubits` to the conjectured lower bound on classical
+            circuit depth, calculated as `ceil(log2(total_dof))` where
+            `total_dof = num_qubits + total possible CZ gates`.
+        _classical_bound: Dict mapping `n_qubits` to the conjectured classical
+            success-probability threshold (`4 / classical_layers`, Fig. 4B in the paper).
     """
 
     def __init__(
@@ -346,8 +346,8 @@ class ShallowCircuitResults:
 
         # Attribute
         self._probability_of_valid_outcomes: dict[int, list[float]] | None = None
-        self._effective_layers: dict[int, list[float]] | None = None
         self._classical_layers: dict[int, int] | None = None
+        self._classical_bound: dict[int, float] | None = None
 
     @staticmethod
     def _preprocess_stim_circuit(circuit: stim.Circuit) -> tuple[stim.TableauSimulator, list[int]]:
@@ -393,15 +393,11 @@ class ShallowCircuitResults:
         return True
 
     def _analyze(self) -> None:
-        """Analyzes experiment results to compute the probability of valid outcomes.
-
-        Returns:
-            A dictionary mapping each qubit count to a list of scores (probabilities).
-        """
+        """Analyzes experiment results to compute valid-outcome probabilities and bounds."""
 
         scores: dict[int, list[float]] = defaultdict(list)
-        eff_layers: dict[int, list[float]] = defaultdict(list)
         classical_layers: dict[int, int] = {}
+        classical_bound: dict[int, float] = {}
 
         for i, measurements in enumerate(tqdm(self.measurements, desc="Analyzing Circuits")):
             n_qubits = self.n_qubits_map[i]
@@ -412,16 +408,15 @@ class ShallowCircuitResults:
 
             score = np.mean([self._is_output_possible(sim, meas_qubits, m) for m in measurements])
             scores[n_qubits].append(float(score))
-            if score > 0:
-                eff_layers[n_qubits].append(4 / float(score))
 
         for num_qubits in self.total_dof.keys():
             classical_layers[num_qubits] = math.ceil(np.log2(self.total_dof[num_qubits]))
+            classical_bound[num_qubits] = 4.0 / classical_layers[num_qubits]
 
         print("Analysis complete.")
         self._probability_of_valid_outcomes = scores
-        self._effective_layers = eff_layers
         self._classical_layers = classical_layers
+        self._classical_bound = classical_bound
 
     @property
     def probability_of_valid_outcomes(self) -> dict[int, list[float]] | None:
@@ -431,15 +426,15 @@ class ShallowCircuitResults:
         return self._probability_of_valid_outcomes
 
     @property
-    def effective_layers(self) -> dict[int, list[float]] | None:
-        """Effective number of layers required to solve the HLF problem for each circuit."""
-        if self._effective_layers is None:
-            self._analyze()
-        return self._effective_layers
-
-    @property
     def classical_layers(self) -> dict[int, int] | None:
-        """Lower bound on number of classical layers required to solve the HLF problem."""
+        """Conjectured lower bound on classical circuit depth required to solve the HLF problem."""
         if self._classical_layers is None:
             self._analyze()
         return self._classical_layers
+
+    @property
+    def classical_bound(self) -> dict[int, float] | None:
+        """Conjectured classical success-probability threshold (`4 / classical_layers`)."""
+        if self._classical_bound is None:
+            self._analyze()
+        return self._classical_bound
