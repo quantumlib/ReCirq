@@ -17,7 +17,7 @@ scalable many-body tasks (the $N$-player GHZ parity game and the 2D hidden linea
 Each of the four experiments in the paper has its own module, with unit tests in the matching
 `*_test.py` file.
 
-*   `magic_square_game.py`: the Mermin–Peres magic square game (Fig. 1 in the
+*   `magic_square_game.py`: the magic square game (Fig. 1 in the
     paper). Alice and Bob share two Bell pairs and, without communicating, fill
     in a row and a column of a 3×3 table of ±1 values. The best classical
     strategy wins with probability 8/9, while the ideal quantum strategy always
