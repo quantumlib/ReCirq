@@ -1,21 +1,21 @@
 # Quantum Contextuality Experiments
 
 This module contains Cirq implementations of the quantum contextuality experiments described in
-[Quantum–Classical Separation in Bounded-Resource Tasks Arising from Measurement
-Contextuality][paper] (Google Quantum AI, arXiv:2512.02284). In quantum mechanics, the outcome of a
-measurement can depend on which other compatible measurements are made alongside it (its _context_).
-The paper uses this property, known as contextuality, to perform tasks on a superconducting quantum
-processor with success probabilities beyond the limits of classical strategies. The code for the
-four experiments are provided in this directory: two few-qubit protocols (the Mermin–Peres magic
-square game and a Kochen–Specker–Bell inequality test) and two scalable many-body tasks (the
-$N$-player GHZ parity game and the 2D hidden linear function problem).
+"Quantum-classical separation in bounded-resource tasks arising from measurement contextuality,"
+(Google Quantum AI and Collaborators, _Science_ 394, 870–874, 2026)[paper]. In quantum mechanics,
+the outcome of a measurement can depend on which other compatible measurements are made alongside it
+(its _context_). The experiments use this property, known as contextuality, to perform tasks on a
+superconducting quantum processor with success probabilities beyond the limits of classical
+strategies. The code for the four experiments are provided in this directory: two few-qubit
+protocols (the Mermin–Peres magic square game and a Kochen–Specker–Bell inequality test) and two
+scalable many-body tasks (the $N$-player GHZ parity game and the 2D hidden linear function problem).
 
-[paper]: https://arxiv.org/abs/2512.02284
+[paper]: https://www.science.org/doi/10.1126/science.aec3042
 
 ## Contents
 
-Each of the four experiments in the paper has its own module, with unit tests in
-the matching `*_test.py` file.
+Each of the four experiments in the paper has its own module, with unit tests in the matching
+`*_test.py` file.
 
 *   `magic_square_game.py`: the Mermin–Peres magic square game (Fig. 1 in the
     paper). Alice and Bob share two Bell pairs and, without communicating, fill
@@ -88,14 +88,20 @@ pytest recirq/contextuality
 If you use this code, please cite the paper:
 
 ```bibtex
-@misc{google_qai_2025_contextuality,
-  title         = {Quantum--Classical Separation in Bounded-Resource Tasks Arising from
-                   Measurement Contextuality},
-  author        = {{Google Quantum AI and Collaborators}},
-  year          = {2025},
-  eprint        = {2512.02284},
-  archivePrefix = {arXiv},
-  primaryClass  = {quant-ph},
-  url           = {https://arxiv.org/abs/2512.02284}
+@article{GoogleQuantumAI2026contextuality,
+  title     = {Quantum-classical separation in bounded-resource tasks arising from
+               measurement contextuality},
+  author    = {{Google Quantum AI and Collaborators}},
+  journal   = {Science},
+  year      = {2026},
+  month     = nov,
+  volume    = {394},
+  number    = {6826},
+  pages     = {870--874},
+  doi       = {10.1126/science.aec3042},
+  url       = {https://www.science.org/doi/10.1126/science.aec3042},
+  publisher = {American Association for the Advancement of Science}
 }
 ```
+
+A preprint version is available on arXiv ([arXiv:2512.02284](https://arxiv.org/abs/2512.02284)).
