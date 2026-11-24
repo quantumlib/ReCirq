@@ -112,6 +112,11 @@ def test_experiment():
     classical_bound = results.classical_bound
 
     # Running noiseless experiment, mean should be 1
+    assert (
+        classical_bound.keys()
+        == classical_layers.keys()
+        == probability_of_valid_outcomes.keys()
+    )
     for key in probability_of_valid_outcomes.keys():
         assert np.mean(probability_of_valid_outcomes[key]) == 1
 
@@ -119,3 +124,24 @@ def test_experiment():
     for key in classical_layers.keys():
         assert np.isclose(classical_bound[key], 4.0 / classical_layers[key])
         assert np.mean(probability_of_valid_outcomes[key]) > classical_bound[key]
+
+
+def test_classical_bound_small_dof_and_lazy_init():
+    """Tests small-DOF clamping (including total_dof=1) and lazy classical_bound init."""
+    results = hlf.ShallowCircuitResults(
+        circuits=[],
+        measurements=[],
+        n_qubits_map=[],
+        total_dof={1: 1, 4: 8, 7: 16, 9: 21},
+    )
+
+    # Access classical_bound first to exercise its lazy-initialization branch.
+    classical_bound = results.classical_bound
+    classical_layers = results.classical_layers
+
+    assert classical_bound.keys() == classical_layers.keys() == {1, 4, 7, 9}
+    assert classical_layers == {1: 0, 4: 3, 7: 4, 9: 5}
+    assert classical_bound[1] == 1.0
+    assert classical_bound[4] == 1.0
+    assert classical_bound[7] == 1.0
+    assert np.isclose(classical_bound[9], 0.8)

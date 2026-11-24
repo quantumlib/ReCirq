@@ -329,7 +329,8 @@ class ShallowCircuitResults:
             circuit depth, calculated as `ceil(log2(total_dof))` where
             `total_dof = num_qubits + total possible CZ gates`.
         _classical_bound: Dict mapping `n_qubits` to the conjectured classical
-            success-probability threshold (`4 / classical_layers`, Fig. 4B in the paper).
+            success-probability threshold (`min(1.0, 4 / classical_layers)`, Fig. 4B in the
+            paper; capped at `1.0` when `classical_layers <= 4`).
     """
 
     def __init__(
@@ -410,8 +411,11 @@ class ShallowCircuitResults:
             scores[n_qubits].append(float(score))
 
         for num_qubits in self.total_dof.keys():
-            classical_layers[num_qubits] = math.ceil(np.log2(self.total_dof[num_qubits]))
-            classical_bound[num_qubits] = 4.0 / classical_layers[num_qubits]
+            n_classical = math.ceil(np.log2(self.total_dof[num_qubits]))
+            classical_layers[num_qubits] = n_classical
+            classical_bound[num_qubits] = (
+                min(1.0, 4.0 / n_classical) if n_classical > 0 else 1.0
+            )
 
         print("Analysis complete.")
         self._probability_of_valid_outcomes = scores
@@ -433,8 +437,9 @@ class ShallowCircuitResults:
         return self._classical_layers
 
     @property
-    def classical_bound(self) -> dict[int, float] | None:
-        """Conjectured classical success-probability threshold (`4 / classical_layers`)."""
+    def classical_bound(self) -> dict[int, float]:
+        """Conjectured classical success-probability threshold (min(1, 4 / classical_layers))."""
         if self._classical_bound is None:
             self._analyze()
+        assert self._classical_bound is not None
         return self._classical_bound

@@ -250,7 +250,7 @@ class GHZ2dExperiment:
         add_dd_and_align_right: bool = True,
         rng_or_seed: int | np.random.Generator | None = None,
     ) -> tuple[list[cirq.Circuit], list[dict[str, Any]]]:
-        """Generates a master list of all individual circuits required for the batch run,
+        """Generates a primary list of all individual circuits required for the batch run,
         including GHZ game trials (that are same for X-stabilizer) and Z-stabilizer
         circuits for each base circuit.
 

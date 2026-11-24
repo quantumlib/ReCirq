@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Bell-Kochen-Specker (BKS) state-independent contextuality experiment.
+
+This module implements continuous quantum nondemolition (QND) measurements of
+magic square contexts to test the Bell-Kochen-Specker inequality, as described in
+Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
+(https://doi.org/10.1126/science.aec3042).
+"""
+
 from __future__ import annotations
 import warnings
 import collections
@@ -114,9 +122,9 @@ class MagicSquare:
         qnd_strategy: QndStrategy = "map_all_paulis_to_ancilla",
         virtual_z_half_turns: float = 0.0,
     ) -> MagicSquareExperiment:
-        """Builds a Bell-Kochen-Specker (BKS) experiment, which measures state-independent contextuality.
+        """Builds a Bell-Kochen-Specker (BKS) experiment, which measures state-independent
 
-        See Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
+        contextuality. See Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
         (https://doi.org/10.1126/science.aec3042) for more details.
 
         Args:
@@ -270,7 +278,7 @@ class MagicSquareResult:
         """Squeeze the ResultDict.records.values() ndarrays to 2D.
 
         Since there is only one qubit per measurement key in our experiments, the third index is
-        a dummy index. This helps us process data more easily.
+        a placeholder index. This helps us process data more easily.
         """
         squeezed_records = {
             pauli_key: np.squeeze(records_values)
@@ -368,10 +376,10 @@ class MagicSquareResult:
                 Each PauliString can show up in a circuit as part of a context that
                 corresponds to either a row or a column. For the compatible pairs of
                 measurements in a Bell-Kochen-Specker circuit (and only the compatible pairs),
-                this dictionary is a mapping between each PauliString in the MagicSquare to a
-                list of tuples containing whether each tuples of previous context, where each
-                tuple contains the axis context corresponds to a row or column context. For the
-                example we are analysing, this would give:
+                this dictionary maps each Pauli operator in the MagicSquare to a list of
+                `(previous_axis, current_axis)` tuples indicating whether each measurement in
+                the pair came from a `'row'` or `'col'` context. For the example we are
+                analysing, this would give:
 
                 pauli_to_compatible_contexts[ZZ] = [('row', 'col'), ('col', 'col')]
         """
@@ -947,7 +955,7 @@ def get_parities_from_single_context_experiments(
 def get_chi_from_single_context_experiment(
     context_to_parities: dict[tuple[Axis, int], tuple[float, float]],
 ) -> tuple[float, float]:
-    """Estimate chi (with uncertainty) from a context_to_parities mapping."""
+    """Estimate chi_BKS (with uncertainty) from a context_to_parities mapping."""
     chi_mean = sum(
         avg * (1 if axis == "row" else -1)
         for (axis, _idx), (avg, _unc) in context_to_parities.items()
