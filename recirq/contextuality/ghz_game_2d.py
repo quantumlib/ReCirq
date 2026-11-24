@@ -16,7 +16,9 @@ r"""Functions and Classes for the 2D GHZ Game Experiment.
 
 This module provides a complete pipeline for benchmarking the fidelity of
 Greenberger-Horne-Zeilinger (GHZ) states on a 2D grid of qubits.
-This is the code used for the implementation of the GHZ game detailed in arxiv.2512.02284
+This is the code used for the implementation of the GHZ game detailed in
+Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
+(https://doi.org/10.1126/science.aec3042).
 
 The GHZ Game:
 The GHZ game is a non-communication game that can be won against classical
@@ -248,7 +250,7 @@ class GHZ2dExperiment:
         add_dd_and_align_right: bool = True,
         rng_or_seed: int | np.random.Generator | None = None,
     ) -> tuple[list[cirq.Circuit], list[dict[str, Any]]]:
-        """Generates a master list of all individual circuits required for the batch run,
+        """Generates a primary list of all individual circuits required for the batch run,
         including GHZ game trials (that are same for X-stabilizer) and Z-stabilizer
         circuits for each base circuit.
 

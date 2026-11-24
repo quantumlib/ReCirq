@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Bell-Kochen-Specker (BKS) state-independent contextuality experiment.
+
+This module implements continuous quantum nondemolition (QND) measurements of
+magic square contexts to test the Bell-Kochen-Specker inequality, as described in
+Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
+(https://doi.org/10.1126/science.aec3042).
+"""
+
 from __future__ import annotations
 import warnings
 import collections
@@ -42,7 +50,7 @@ class MagicSquare:
     """Represents a MagicSquare.
 
     A MagicSquare is a 3x3 grid of two-qubit Pauli operators used to demonstrate quantum
-    contextuality, specifically the Kochen-Specker theorem.
+    contextuality, specifically the Bell-Kochen-Specker (BKS) theorem.
 
     The operators in each row and each column mutually commute.
     The product of operators in each row is +I.
@@ -114,9 +122,10 @@ class MagicSquare:
         qnd_strategy: QndStrategy = "map_all_paulis_to_ancilla",
         virtual_z_half_turns: float = 0.0,
     ) -> MagicSquareExperiment:
-        """Builds a Kochen-Specker experiment, which measures state-independent contextuality.
+        """Builds a Bell-Kochen-Specker (BKS) experiment, which measures state-independent
 
-        See https://arxiv.org/pdf/2512.02284 for more details.
+        contextuality. See Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
+        (https://doi.org/10.1126/science.aec3042) for more details.
 
         Args:
             q0: First data qubit.
@@ -241,7 +250,7 @@ class MagicSquareResult:
     """The results of a `MagicSquareExperiment`.
 
     This class holds the `cirq.Result` from running the experiment and provides
-    methods to analyze the results, such as estimating the Kochen-Specker value (chi)
+    methods to analyze the results, such as estimating the Bell-Kochen-Specker value (chi_BKS)
     and other statistical properties.
 
     Attributes:
@@ -253,10 +262,10 @@ class MagicSquareResult:
     result: cirq.Result
 
     def estimate_chi(self) -> tuple[float, float]:
-        """Estimate chi out of the 6 parity averages.
+        """Estimate chi_BKS out of the 6 parity averages.
 
-        This method takes the cirq.Result output by the Kochen-Specker
-        experiment and returns an estimate of chi. We assume that the length of the
+        This method takes the cirq.Result output by the Bell-Kochen-Specker
+        experiment and returns an estimate of chi_BKS. We assume that the length of the
         circuit ran was long enough to contain at least one instance of each of the
         six 3-observable parities, e.g. (1X X1 XX).
         """
@@ -269,7 +278,7 @@ class MagicSquareResult:
         """Squeeze the ResultDict.records.values() ndarrays to 2D.
 
         Since there is only one qubit per measurement key in our experiments, the third index is
-        a dummy index. This helps us process data more easily.
+        a placeholder index. This helps us process data more easily.
         """
         squeezed_records = {
             pauli_key: np.squeeze(records_values)
@@ -366,11 +375,11 @@ class MagicSquareResult:
                 This dictionary is useful for debugging purposes.
                 Each PauliString can show up in a circuit as part of a context that
                 corresponds to either a row or a column. For the compatible pairs of
-                measurements in a Kochen Specker circuit (and only the compatible pairs),
-                this dictionary is a mapping between each PauliString in the MagicSquare to a
-                list of tuples containing whether each tuples of previous context, where each
-                tuple contains the axis context corresponds to a row or column context. For the
-                example we are analysing, this would give:
+                measurements in a Bell-Kochen-Specker circuit (and only the compatible pairs),
+                this dictionary maps each Pauli operator in the MagicSquare to a list of
+                `(previous_axis, current_axis)` tuples indicating whether each measurement in
+                the pair came from a `'row'` or `'col'` context. For the example we are
+                analysing, this would give:
 
                 pauli_to_compatible_contexts[ZZ] = [('row', 'col'), ('col', 'col')]
         """
@@ -896,11 +905,11 @@ def estimate_chi(
     records: Mapping[str, np.ndarray],
     contexts: Mapping[tuple[Axis, int], Sequence[PauliKey]],
 ) -> tuple[float, float]:
-    """Estimate chi out of the 6 parity averages.
+    """Estimate chi_BKS out of the 6 parity averages.
 
-    This method takes the output of the Kochen-Specker experiment and returns an estimate of chi.
-    We assume that the length of the circuit ran was long enough to contain at least one instance of
-    each of the six 3-observable parities, e.g. (1X X1 XX).
+    This method takes the output of the Bell-Kochen-Specker experiment and returns an estimate of
+    chi_BKS. We assume that the length of the circuit ran was long enough to contain at least one
+    instance of each of the six 3-observable parities, e.g. (1X X1 XX).
     """
     context_averages = estimate_parities(records, contexts)
 
@@ -919,7 +928,7 @@ def get_parities_from_single_context_experiments(
 ) -> dict[tuple[Axis, int], tuple[float, float]]:
     """Get the parities (with uncertainties) for each context.
 
-    Assumes that we ran 6 single-context Kochen Specker experiments. Returns a mapping from
+    Assumes that we ran 6 single-context Bell-Kochen-Specker experiments. Returns a mapping from
     context to their parities (with uncertainties).
 
     Args:
@@ -946,7 +955,7 @@ def get_parities_from_single_context_experiments(
 def get_chi_from_single_context_experiment(
     context_to_parities: dict[tuple[Axis, int], tuple[float, float]],
 ) -> tuple[float, float]:
-    """Estimate chi (with uncertainty) from a context_to_parities mapping."""
+    """Estimate chi_BKS (with uncertainty) from a context_to_parities mapping."""
     chi_mean = sum(
         avg * (1 if axis == "row" else -1)
         for (axis, _idx), (avg, _unc) in context_to_parities.items()

@@ -20,10 +20,13 @@ time, players using shared entangled quantum states can win with 100% certainty 
 non-local correlations. The game serves as a "proof" of quantum contextuality, demonstrating that
 the outcome of a measurement depends on the other measurements performed alongside it (its context).
 In a classical world, each cell in the square would have a fixed, pre-existing value regardless
-of whether it's being measured as part of a row or a column. However, the Mermin-Peres game
+of whether it's being measured as part of a row or a column. However, the magic square game
 proves that these values cannot exist independently of their measurement context,
 as the algebraic requirements for the rows and columns are mathematically impossible to satisfy
 simultaneously with fixed values.
+
+See Google Quantum AI and Collaborators, Science 394, 870-874 (2026)
+(https://doi.org/10.1126/science.aec3042).
 """
 
 import dataclasses
