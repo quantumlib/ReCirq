@@ -108,13 +108,16 @@ def cirq_to_stim_hardware_circuit(hardware_circuit: cirq.Circuit) -> stim.Circui
 
 
 def create_dem(
-    hardware_stim_circuit: stim.Circuit, si_1000_error_rate: float
+    hardware_stim_circuit: stim.Circuit,
+    si_1000_error_rate: float,
+    decompose_errors: bool = False,
 ) -> stim.DetectorErrorModel:
     """Create a detector error model for a given circuit, assuming the si1000 noise model.
 
     Args:
         hardware_stim_circuit: The circuit that was run on hardware, converted to a stim circuit.
         si_1000_error_rate: The parameter p in stimflow.NoiseModel.si1000.
+        decompose_errors: Whether to decompose errors into graphlike components.
 
     Returns:
         The detector error model.
@@ -122,7 +125,9 @@ def create_dem(
     noisy_hardware_stim_circuit = stimflow.NoiseModel.si1000(
         p=si_1000_error_rate
     ).noisy_circuit(hardware_stim_circuit)
-    return noisy_hardware_stim_circuit.detector_error_model()
+    return noisy_hardware_stim_circuit.detector_error_model(
+        decompose_errors=decompose_errors
+    )
 
 
 def extract_detection_events(
@@ -167,26 +172,43 @@ def decode(detection_events: np.ndarray, dem: stim.DetectorErrorModel) -> np.nda
 
 
 def get_logical_error_probability(
-    data: pd.DataFrame, circuit: cirq.Circuit, si_1000_error_rate: float
-) -> float:
+    data: pd.DataFrame,
+    circuit: cirq.Circuit,
+    si_1000_error_rate: float,
+    *,
+    per_observable: bool = False,
+    decompose_errors: bool = False,
+) -> float | np.ndarray:
     """Decode using pymatching and get the logical error probability.
 
     Args:
         data: The measurement results, formatted as in cirq.Result.data.
         circuit: The circuit that was run on hardware.
         si_1000_error_rate: The parameter p in stimflow.NoiseModel.si1000.
+        per_observable: If True, return a 1D array of logical error probabilities
+            for each observable individually. If False (default), return the joint
+            logical error probability (probability that any observable flipped).
+        decompose_errors: Whether to decompose errors into graphlike components
+            when constructing the detector error model.
 
     Returns:
-        The logical error probability.
+        The joint logical error probability as a float if `per_observable` is False,
+        or a 1D numpy array of per-observable logical error probabilities if True.
 
     Raises:
-        NotImplementedError: If the circuit contains multiple observables.
+        ValueError: If the circuit does not contain any observables.
     """
     hardware_stim_circuit = cirq_to_stim_hardware_circuit(circuit)
-    dem = create_dem(hardware_stim_circuit, si_1000_error_rate)
+    dem = create_dem(
+        hardware_stim_circuit,
+        si_1000_error_rate,
+        decompose_errors=decompose_errors,
+    )
     dets_arr, obs_arr = extract_detection_events(data, hardware_stim_circuit)
-    if obs_arr.shape[1] != 1:
-        raise NotImplementedError("Multiple observables are not currently supported.")
+    if obs_arr.shape[1] == 0:
+        raise ValueError("The circuit must contain at least one observable.")
     predictions = decode(dets_arr, dem)
     decoded_obs = predictions ^ obs_arr
-    return float(decoded_obs.mean())
+    if per_observable:
+        return decoded_obs.mean(axis=0)
+    return float(np.any(decoded_obs, axis=1).mean())
